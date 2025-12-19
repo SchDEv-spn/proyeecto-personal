@@ -1,0 +1,255 @@
+/* Variables de Color basadas en tu paleta */
+:root {
+    --color-primary: #4FB13B;
+    --color-dark-bg: #303037; /* Fondo oscuro principal */
+    --color-card-bg: #1e1e23; /* Un gris más oscuro para la tabla */
+    --color-text-light: #f4f4f4; /* Texto principal claro */
+    --color-text-secondary: #aaaaaa; /* Texto secundario y etiquetas */
+    --color-text-dark: #000000; /* Texto oscuro (sobre acentos claros) */
+    --color-border: rgba(255, 255, 255, 0.1);
+
+    /* Colores para estados/tags */
+    --estado-activo: var(--color-primary); /* Verde para Activo/Utilidad */
+    --estado-inactivo: #A52A2A; /* Rojo-marrón para Inactivo */
+    --color-wa: #25D366; /* Verde WhatsApp para el botón 'Ver landing' (simula un botón de acción) */
+}
+
+/* --- Estilos Generales y Estructura --- */
+
+body {
+    background-color: var(--color-dark-bg);
+    color: var(--color-text-light);
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h1 {
+    color: var(--color-text-light);
+    margin-top: 0;
+}
+
+/* --- Header y Navegación --- */
+
+.admin-header {
+    margin-bottom: 30px;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 20px;
+}
+
+.admin-header p {
+    color: var(--color-text-secondary);
+}
+
+.btn-volver {
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: var(--color-card-bg);
+    color: var(--color-text-light);
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin-right: 5px;
+    transition: background-color 0.3s;
+    font-size: 0.9em;
+}
+
+.btn-volver:hover {
+    background-color: var(--color-primary);
+    color: var(--color-text-dark);
+}
+
+/* --- Tabla de Productos (Admin Table) --- */
+
+.admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 800px;
+    background-color: var(--color-card-bg);
+    border-radius: 12px;
+    overflow: hidden; /* Para contener los bordes redondeados */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.admin-table th {
+    background-color: var(--color-dark-bg);
+    color: var(--color-primary);
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.85em;
+}
+
+.admin-table tbody tr:hover {
+    background-color: var(--color-dark-bg);
+    transition: background-color 0.3s;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Columna de Utilidad Destacada */
+.admin-table tr td:nth-child(5) {
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+/* Tags de Estado */
+.tag-estado {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: bold;
+    text-transform: uppercase;
+    min-width: 60px;
+    text-align: center;
+}
+
+.tag-estado:contains('Activo') {
+    background-color: var(--estado-activo);
+    color: var(--color-text-dark);
+}
+
+.tag-estado:contains('Inactivo') {
+    background-color: var(--estado-inactivo);
+    color: var(--color-text-light);
+}
+
+/* Botones de Acción */
+
+/* Botón 'Ver Landing' (Estilo WhatsApp/Verde más claro) */
+.btn-wa {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: var(--color-wa);
+    color: var(--color-text-dark);
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: opacity 0.2s;
+    font-size: 0.9em;
+}
+
+.btn-wa:hover {
+    opacity: 0.9;
+}
+
+/* Botón 'Editar Landing' (Estilo Primario) */
+.btn-estado {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: var(--color-primary);
+    color: var(--color-text-dark);
+    text-decoration: none;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    font-size: 0.9em;
+}
+
+.btn-estado:hover {
+    background-color: #69D856; /* Tono más claro de verde */
+}
+
+/* Contenedor de Acciones */
+td div[style*="display:flex"] {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* --- Responsive (Para móviles) --- */
+
+@media (max-width: 850px) {
+    .container {
+        padding: 10px;
+    }
+
+    .admin-header p {
+        margin-bottom: 10px;
+    }
+
+    .btn-volver {
+        margin-bottom: 10px;
+    }
+
+    .admin-table {
+        min-width: 100%;
+        margin-top: 20px;
+        border-radius: 0;
+    }
+
+    .admin-table thead {
+        display: none;
+    }
+
+    .admin-table,
+    .admin-table tbody,
+    .admin-table tr,
+    .admin-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .admin-table tr {
+        margin-bottom: 15px;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        background-color: var(--color-card-bg);
+    }
+
+    .admin-table td {
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Mostrar etiqueta de columna como pseudo-elemento */
+    .admin-table td:nth-child(1)::before { content: "ID"; color: var(--color-primary); }
+    .admin-table td:nth-child(2)::before { content: "Nombre"; color: var(--color-primary); }
+    .admin-table td:nth-child(3)::before { content: "P. Venta"; color: var(--color-primary); }
+    .admin-table td:nth-child(4)::before { content: "P. Proveedor"; color: var(--color-primary); }
+    .admin-table td:nth-child(5)::before { content: "Utilidad Estimada"; color: var(--color-primary); }
+    .admin-table td:nth-child(6)::before { content: "Estado"; color: var(--color-primary); }
+    .admin-table td:nth-child(7)::before { content: "Acciones"; color: var(--color-primary); }
+
+    .admin-table td::before {
+        position: absolute;
+        left: 0;
+        width: 45%;
+        padding-left: 15px;
+        font-weight: bold;
+        text-align: left;
+    }
+
+    /* Centrar los botones de acción en móvil */
+    .admin-table td:last-child {
+        text-align: center;
+    }
+
+    .admin-table td:last-child div {
+        justify-content: center;
+        width: 100%;
+    }
+}

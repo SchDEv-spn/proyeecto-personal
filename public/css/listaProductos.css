@@ -1,0 +1,441 @@
+/* Importar fuentes de Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+/* Definir paleta de colores */
+:root {
+    --color-primary: #071E22;
+    --color-secondary: #1D7874;
+    --color-accent: #679289;
+    --color-text: #333333;
+    --color-light: #FFFFFF;
+    --color-background: #F8F9FA;
+    --color-border: #E0E0E0;
+    --color-success: #28A745;
+    --color-warning: #FFC107;
+    --color-danger: #DC3545;
+    --color-info: #17A2B8;
+}
+
+/* Estilos base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    color: var(--color-text);
+    background-color: var(--color-background);
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* Container */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.admin-page {
+    padding: 2rem 0;
+}
+
+/* Header Styles */
+.admin-header {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: var(--color-light);
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(7, 30, 34, 0.1);
+}
+
+.admin-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.admin-header h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-light);
+    margin-bottom: 0.5rem;
+}
+
+.admin-header p {
+    font-size: 1rem;
+    opacity: 0.9;
+    font-weight: 300;
+}
+
+.admin-nav {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.btn-nav {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-light);
+    text-decoration: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.btn-nav:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Alertas de éxito */
+.admin-alert-success {
+    background: rgba(40, 167, 69, 0.1);
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    font-weight: 500;
+    font-family: 'Montserrat', sans-serif;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.1);
+    animation: slideDown 0.5s ease-out;
+}
+
+/* Botón crear */
+.btn-crear {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--color-secondary), var(--color-accent));
+    color: var(--color-light);
+    text-decoration: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(29, 120, 116, 0.3);
+    margin-bottom: 1.5rem;
+}
+
+.btn-crear:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(29, 120, 116, 0.4);
+}
+
+/* Table Styles */
+.admin-table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(7, 30, 34, 0.08);
+    background: var(--color-light);
+}
+
+.admin-table {
+    width: 100%;
+    background: var(--color-light);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-collapse: collapse;
+}
+
+.admin-table thead {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+}
+
+.admin-table th {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    color: var(--color-light);
+    padding: 1.25rem 1rem;
+    text-align: left;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-table td {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.875rem;
+    vertical-align: top;
+}
+
+.admin-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.admin-table tbody tr:hover {
+    background-color: rgba(103, 146, 137, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(7, 30, 34, 0.1);
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status Tags */
+.tag-estado {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tag-estado {
+    background: rgba(40, 167, 69, 0.15);
+    color: var(--color-success);
+}
+
+/* Celda de acciones */
+.acciones-cell {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Button Styles */
+.btn-wa, .btn-estado, .btn-detalle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.btn-wa {
+    background: var(--color-info);
+    color: var(--color-light);
+}
+
+.btn-wa:hover {
+    background: #138496;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+}
+
+.btn-estado {
+    background: var(--color-secondary);
+    color: var(--color-light);
+}
+
+.btn-estado:hover {
+    background: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(7, 30, 34, 0.3);
+}
+
+.btn-detalle {
+    background: var(--color-accent);
+    color: var(--color-light);
+}
+
+.btn-detalle:hover {
+    background: var(--color-secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(103, 146, 137, 0.3);
+}
+
+/* Empty State */
+p {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--color-text);
+    font-size: 1.1rem;
+    background: var(--color-light);
+    margin: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(7, 30, 34, 0.08);
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .acciones-cell {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .btn-wa, .btn-estado, .btn-detalle {
+        min-width: auto;
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-header-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .admin-nav {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .admin-header {
+        padding: 1.5rem;
+    }
+    
+    .admin-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .admin-table-wrapper {
+        margin: 0 -1rem;
+        border-radius: 0;
+    }
+    
+    .admin-table {
+        font-size: 0.75rem;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 1rem 0.75rem;
+    }
+    
+    .btn-crear {
+        width: 100%;
+        justify-content: center;
+        padding: 1.25rem 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-page {
+        padding: 1rem 0;
+    }
+    
+    .admin-header {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .admin-nav {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .btn-nav {
+        width: 100%;
+        text-align: center;
+        padding: 0.75rem 1rem;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.7rem;
+    }
+    
+    .btn-wa, .btn-estado, .btn-detalle {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.75rem;
+    }
+}
+
+/* Animaciones */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.admin-table tbody tr {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Utilidad destacada */
+.admin-table td:nth-child(5) {
+    font-weight: 600;
+    color: var(--color-success);
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* Estados inactivos */
+.admin-table tr:has(.tag-estado:not(:contains("Activo"))) {
+    opacity: 0.7;
+}
+
+.admin-table tr:has(.tag-estado:not(:contains("Activo"))) .tag-estado {
+    background: rgba(108, 117, 125, 0.15);
+    color: #6c757d;
+}
+
+/* Hover effects mejorados */
+.btn-crear::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-crear {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-crear:hover::before {
+    left: 100%;
+}

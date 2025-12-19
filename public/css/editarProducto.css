@@ -1,0 +1,286 @@
+/* editarProducto.css
+   Importa el tema admin actual y agrega estilos específicos del formulario.
+*/
+@import url("/tienda_mvc/public/css/admin.css");
+
+/* Esta vista no usa stats fijas (solo header) */
+.material-main.material-main--simple{
+  padding-top: calc(var(--header-height) + 2rem);
+}
+
+/* Header: botón menú para móvil */
+.header-greeting--with-menu{
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-menu{
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: var(--light);
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-menu:hover{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+}
+
+/* Evitar desborde del texto del usuario */
+.sidebar-user-text small{
+  display: block;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Card del formulario */
+.form-card{
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.form-card-header{
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+}
+
+.form-card-header h3{
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--light);
+  background: linear-gradient(90deg, var(--light), var(--accent-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.form-card-body{
+  padding: 1.5rem 2rem 2rem 2rem;
+}
+
+/* Alert */
+.admin-alert-error{
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  color: #fecaca;
+}
+.admin-alert-title{
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  font-weight: 800;
+  color: #fca5a5;
+  margin-bottom: .5rem;
+}
+.admin-alert-error ul{
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.admin-alert-error li{
+  margin: .25rem 0;
+}
+
+/* Grid */
+.form-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+}
+.form-group{
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.form-group--full{
+  grid-column: 1 / -1;
+}
+
+.form-group label{
+  color: var(--gray-light);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.req{
+  color: var(--accent-light);
+  font-weight: 900;
+}
+
+.help{
+  color: var(--gray-light);
+  font-size: .82rem;
+  opacity: .9;
+}
+
+/* Inputs */
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="file"]{
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--light);
+  border-radius: 14px;
+  padding: .8rem .95rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group input[type="file"]:focus{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+/* Preview imagen */
+.img-preview{
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1rem;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 1rem;
+}
+.img-preview img{
+  width: 200px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 25px -14px rgba(0,0,0,0.6);
+}
+.img-preview-meta{
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+/* Sin imagen */
+.img-empty{
+  display: inline-flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .9rem 1rem;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px dashed rgba(255,255,255,0.18);
+  border-radius: 16px;
+  color: var(--gray-light);
+}
+.img-empty i{
+  color: var(--accent);
+}
+
+/* Checkbox */
+.check-row{
+  display: inline-flex;
+  align-items: center;
+  gap: .7rem;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255,255,255,0.10);
+  padding: .8rem 1rem;
+  border-radius: 14px;
+}
+.check-row input{
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+/* Acciones */
+.form-actions{
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.btn-primary{
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  border: none;
+  cursor: pointer;
+  padding: .75rem 1.1rem;
+  border-radius: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  transition: var(--transition);
+  box-shadow: 0 10px 25px -12px rgba(249,115,22,0.55);
+}
+.btn-primary:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 16px 35px -16px rgba(249,115,22,0.7);
+}
+
+.btn-ghost{
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .75rem 1.1rem;
+  border-radius: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  color: var(--light);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: var(--transition);
+}
+.btn-ghost:hover{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+}
+
+/* Responsive */
+@media (max-width: 768px){
+  body{ padding-left: 0; }
+
+  .material-sidebar{
+    transform: translateX(-100%);
+    transition: var(--transition);
+  }
+  .material-sidebar.active{
+    transform: translateX(0);
+  }
+
+  .material-header{ left: 0; }
+
+  .form-card-body,
+  .form-card-header{
+    padding: 1rem;
+  }
+
+  .form-grid{
+    grid-template-columns: 1fr;
+  }
+
+  .img-preview{
+    grid-template-columns: 1fr;
+  }
+  .img-preview img{
+    width: 100%;
+    height: 180px;
+  }
+}
