@@ -34,7 +34,10 @@
       this.agregarEstilosNeonCompatibles();
 
       this.cacheRefs();
-      this.initMenuHamburguesa();
+
+      // ✅ IMPORTANTE: el menú hamburguesa se maneja SOLO en initAdminMenu() (global)
+      // this.initMenuHamburguesa();  // ❌ eliminado
+
       this.initTablaBusquedaYDataTables();
 
       this.obtenerContadorInicial();
@@ -60,32 +63,6 @@
       if (this.tableEl) {
         this.rowsCache = Array.from(this.tableEl.querySelectorAll('tbody tr'));
       }
-    }
-
-    // =========================
-    // MENU HAMBURGUESA
-    // =========================
-    initMenuHamburguesa() {
-      const btn = document.getElementById('btnMenu');
-      const sidebar = document.querySelector('.material-sidebar');
-
-      if (!btn || !sidebar) return;
-
-      btn.addEventListener('click', () => {
-        sidebar.classList.toggle('active');
-      });
-
-      document.addEventListener('click', (e) => {
-        const isMobile = window.matchMedia('(max-width: 768px)').matches;
-        if (!isMobile) return;
-
-        const clickInsideSidebar = sidebar.contains(e.target);
-        const clickOnButton = btn.contains(e.target);
-
-        if (!clickInsideSidebar && !clickOnButton) {
-          sidebar.classList.remove('active');
-        }
-      });
     }
 
     // =========================
@@ -126,22 +103,22 @@
 
       this.limpiarHighlights();
 
+      const options = {
+        dom: 'rtip',          // r=processing, t=table, i=info, p=pagination
+        pageLength: 10,       // ✅ 10 registros por página
+        paging: true,         // ✅ habilita paginación
+        // pagingType: 'simple', // ✅ opcional: solo "Anterior / Siguiente"
+        // lengthChange: false,  // ✅ opcional: oculta selector de cantidad
+        order: [[0, 'desc']],
+        columnDefs: [{ orderable: false, targets: [7, 8, 9] }]
+      };
+
       if (hasDT2) {
         this.dtMode = 'dt2';
-        this.dt = new window.DataTable(this.tableEl, {
-          dom: 'rtip',
-          pageLength: 25,
-          order: [[0, 'desc']],
-          columnDefs: [{ orderable: false, targets: [7, 8, 9] }]
-        });
+        this.dt = new window.DataTable(this.tableEl, options);
       } else {
         this.dtMode = 'dt1';
-        this.dt = window.jQuery(this.tableEl).DataTable({
-          dom: 'rtip',
-          pageLength: 25,
-          order: [[0, 'desc']],
-          columnDefs: [{ orderable: false, targets: [7, 8, 9] }]
-        });
+        this.dt = window.jQuery(this.tableEl).DataTable(options);
       }
 
       if (this.inputSearch && this.inputSearch.value) {
@@ -213,7 +190,7 @@
     highlightRow(row, q) {
       const escapeHtml = (str) =>
         String(str).replace(/[&<>"']/g, (m) => ({
-          '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         }[m]));
 
       const query = (q || '').trim();
@@ -428,7 +405,7 @@
             this.audioCtx = new Ctx();
             if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
           }
-        } catch (_) {}
+        } catch (_) { }
 
         try {
           if (this.sonidoNotificacion && this.sonidoNotificacion.src) {
@@ -438,7 +415,7 @@
             this.sonidoNotificacion.currentTime = 0;
             this.sonidoNotificacion.muted = false;
           }
-        } catch (_) {}
+        } catch (_) { }
       };
 
       window.addEventListener('pointerdown', unlock, { once: true });
@@ -465,7 +442,7 @@
           this.usarBeep = false;
           console.log(`🔊 Sonido configurado: ${ruta}`);
           return;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       this.usarBeep = true;
@@ -509,7 +486,7 @@
         osc.stop(ctx.currentTime + duration);
 
         this.audioCtx = ctx;
-      } catch (_) {}
+      } catch (_) { }
     }
 
     parseNumber(text) {
@@ -749,7 +726,7 @@
               .filter(Boolean)
               .map(String);
             if (ids.length) return ids;
-          } catch (_) {}
+          } catch (_) { }
         }
 
         // Fallback DOM (respeta display:none del filtro manual)
@@ -764,7 +741,7 @@
 
         const btnPrev = body.querySelector('.js-prev-pedido');
         const btnNext = body.querySelector('.js-next-pedido');
-        const pager  = body.querySelector('.js-pedido-pager');
+        const pager = body.querySelector('.js-pedido-pager');
 
         const prevId = idx > 0 ? ids[idx - 1] : null;
         const nextId = (idx >= 0 && idx < ids.length - 1) ? ids[idx + 1] : null;
@@ -821,7 +798,7 @@
             if (this.dt && typeof this.dt.rows === 'function') {
               this.dt.rows().invalidate().draw(false);
             }
-          } catch (_) {}
+          } catch (_) { }
         });
       };
 
@@ -904,50 +881,9 @@
     window.adminPedidosUI = new AdminPedidosUI();
   });
 })();
-// admin-ui.js
-(() => {
-  const initMenuHamburguesa = () => {
-    const btn = document.getElementById('btnMenu');
-    const sidebar = document.querySelector('.material-sidebar');
-    if (!btn || !sidebar) return;
 
-    const open = () => sidebar.classList.add('active');
-    const close = () => sidebar.classList.remove('active');
-    const toggle = () => sidebar.classList.toggle('active');
 
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggle();
-    });
-
-    // Click fuera para cerrar (solo móvil)
-    document.addEventListener('click', (e) => {
-      const isMobile = window.matchMedia('(max-width: 768px)').matches;
-      if (!isMobile) return;
-
-      const clickInsideSidebar = sidebar.contains(e.target);
-      const clickOnButton = btn.contains(e.target);
-
-      if (!clickInsideSidebar && !clickOnButton) close();
-    });
-
-    // ESC para cerrar
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') close();
-    });
-
-    // Si pasas de mobile->desktop, asegúrate de dejarlo visible normal
-    window.addEventListener('resize', () => {
-      const isDesktop = window.matchMedia('(min-width: 769px)').matches;
-      if (isDesktop) close(); // quita "active" para evitar estados raros
-    });
-  };
-
-  document.addEventListener('DOMContentLoaded', () => {
-    initMenuHamburguesa();
-  });
-})();
-// admin-ui.js
+// admin-ui.js (ÚNICO controlador del sidebar: móvil open/close + desktop collapse con preferencia)
 (() => {
   const KEY = 'admin_sidebar_collapsed';
   const mqMobile = window.matchMedia('(max-width: 768px)');
@@ -962,7 +898,7 @@
     if (btn.dataset.menuBound === '1') return;
     btn.dataset.menuBound = '1';
 
-    // Poner tooltips a los links (útil cuando colapsa)
+    // Tooltips en links (útil cuando colapsa)
     document.querySelectorAll('.sidebar-nav a').forEach(a => {
       const label = (a.textContent || '').replace(/\s+/g, ' ').trim();
       if (label) a.setAttribute('title', label);
@@ -990,7 +926,7 @@
       // Siempre quitamos "active" al cambiar modo para evitar estados raros
       sidebar.classList.remove('active');
 
-      // Móvil: NO mantenemos colapsado visualmente (pero sí guardamos preferencia)
+      // Móvil: NO mantenemos colapsado visualmente
       if (mqMobile.matches) {
         document.body.classList.remove('sidebar-collapsed');
         setBtnIcon();
@@ -1005,6 +941,7 @@
 
     // Click del botón: móvil => open/close, desktop => collapse/expand
     btn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
 
       if (mqMobile.matches) {
@@ -1015,6 +952,16 @@
       const collapsed = document.body.classList.toggle('sidebar-collapsed');
       localStorage.setItem(KEY, collapsed ? '1' : '0');
       setBtnIcon();
+    });
+
+    // ✅ Cerrar al hacer clic en links del sidebar (solo móvil)
+    sidebar.addEventListener('click', (e) => {
+      const link = e.target.closest('a');
+      if (!link) return;
+      if (!mqMobile.matches) return;
+
+      sidebar.classList.remove('active');
+      // No hacemos preventDefault: dejamos que navegue normal
     });
 
     // Click fuera: cerrar sidebar solo en móvil
@@ -1029,7 +976,7 @@
       }
     });
 
-    // ESC: cerrar en móvil / expandir en desktop (opcional pero útil)
+    // ESC: cerrar en móvil / expandir en desktop
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
 
@@ -1038,7 +985,6 @@
         return;
       }
 
-      // En desktop, ESC expande (si estaba colapsado)
       if (document.body.classList.contains('sidebar-collapsed')) {
         document.body.classList.remove('sidebar-collapsed');
         localStorage.setItem(KEY, '0');

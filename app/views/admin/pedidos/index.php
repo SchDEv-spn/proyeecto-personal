@@ -49,24 +49,26 @@
 
     <!-- Main Content -->
     <main class="material-main">
-        <header class="material-header">
-            <div class="header-greeting">
-                <h3>¡Hola, <?= htmlspecialchars($usuarioNombre) ?>!</h3>
-                <p>Revisa y gestiona los pedidos de hoy</p>
-            </div>
-            <div class="header-actions">
-                <button class="btn-menu" id="btnMenu" aria-label="Abrir menú">
-                    <i class="fas fa-bars"></i>
-                </button>
+<header class="material-header">
+  <div class="header-greeting header-greeting--with-menu">
+    <button class="btn-menu" id="btnMenu" aria-label="Abrir menú">
+      <i class="fas fa-bars"></i>
+    </button>
 
-                <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input id="searchPedidos" type="text" placeholder="Buscar por cliente, teléfono, ciudad, producto, estado, ID...">
-                </div>
+    <div>
+      <h3>¡Hola, <?= htmlspecialchars($usuarioNombre) ?>!</h3>
+      <p>Revisa y gestiona los pedidos de hoy</p>
+    </div>
+  </div>
 
-            </div>
+  <div class="header-actions">
+    <div class="search-bar">
+      <i class="fas fa-search"></i>
+      <input id="searchPedidos" type="text" placeholder="Buscar por cliente, teléfono, ciudad, producto, estado, ID...">
+    </div>
+  </div>
+</header>
 
-        </header>
 
         <section class="material-content">
             <!-- Tarjetas de resumen con glow -->

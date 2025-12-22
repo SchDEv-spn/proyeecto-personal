@@ -3,14 +3,14 @@
 // 🚀 GATILLOS DE CONVERSIÓN - VERSIÓN SIMPLIFICADA
 // ===================================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    
+document.addEventListener('DOMContentLoaded', function () {
+
     // 1. GATILLO DE ESCASEZ (Stock Counter)
     function showStockCounter() {
         // Stock simulado: entre 8 y 15 unidades
         const stock = Math.floor(Math.random() * 8) + 8;
         let sold = Math.floor(Math.random() * (stock - 5)) + 3; // Ya vendidas
-        
+
         // Crear contador de stock
         const stockEl = document.createElement('div');
         stockEl.className = 'stock-counter';
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             
             <div class="stock-progress-container">
-                <div class="stock-progress-bar" style="width: ${(sold/stock)*100}%"></div>
+                <div class="stock-progress-bar" style="width: ${(sold / stock) * 100}%"></div>
             </div>
             
             <div class="stock-details">
@@ -42,55 +42,55 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="warning-text">Última oportunidad de compra</span>
             </div>
         `;
-        
+
         // Insertar después del precio
         const priceBox = document.querySelector('.price-box');
         if (priceBox && priceBox.parentNode) {
             priceBox.parentNode.insertBefore(stockEl, priceBox.nextSibling);
         }
-        
+
         // Animar entrada
         setTimeout(() => {
             stockEl.style.opacity = '1';
             stockEl.style.transform = 'translateY(0)';
         }, 100);
-        
+
         // Actualizar stock cada 45 segundos
         setInterval(() => {
             sold = Math.min(stock, sold + Math.floor(Math.random() * 2) + 1);
             const remaining = stock - sold;
-            
+
             // Actualizar elementos
             const progressBar = stockEl.querySelector('.stock-progress-bar');
             const remainingText = stockEl.querySelector('.remaining-text');
             const soldCount = stockEl.querySelector('.sold-count');
             const warningText = stockEl.querySelector('.warning-text');
-            
-            if (progressBar) progressBar.style.width = `${(sold/stock)*100}%`;
+
+            if (progressBar) progressBar.style.width = `${(sold / stock) * 100}%`;
             if (soldCount) soldCount.textContent = sold;
-            
+
             // Efectos especiales cuando queda poco stock
             if (remaining <= 3) {
                 stockEl.style.background = 'linear-gradient(135deg, #fff5f5, #ffe5e5)';
                 stockEl.style.border = '2px solid #ff4757';
-                
+
                 if (remainingText) {
                     remainingText.innerHTML = `¡SOLO ${remaining} ${remaining === 1 ? 'UNIDAD' : 'UNIDADES'}!`;
                     remainingText.style.color = '#ff4757';
                     remainingText.style.fontWeight = '900';
                 }
-                
+
                 if (warningText) {
                     warningText.innerHTML = '🚨 ¡APÚRATE! Últimas unidades disponibles';
                     warningText.style.color = '#ff4757';
                 }
-                
+
                 // Parpadeo cuando queda 1 unidad
                 if (remaining === 1) {
                     stockEl.style.animation = 'lastUnitPulse 1s infinite';
                 }
             }
-            
+
             if (remaining === 0) {
                 remainingText.innerHTML = '❌ AGOTADO';
                 warningText.innerHTML = 'Lamentamos, ya no hay stock disponible';
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 stockEl.style.border = '2px solid #ddd';
                 stockEl.style.color = '#999';
             }
-            
+
             // Actualizar timestamp
             const updateEl = stockEl.querySelector('.stock-update');
             if (updateEl) {
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateEl.textContent = 'Actualizado hace 1 min';
                 }, 5000);
             }
-            
+
         }, 45000); // Cada 45 segundos
     }
 
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function showRealTimePurchases() {
         const cities = ['Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Bucaramanga', 'Pereira'];
         const names = ['Ana', 'Carlos', 'María', 'Pedro', 'Laura', 'Juan', 'Sofía', 'Andrés', 'Camila', 'David'];
-        
+
         // Crear contenedor para notificaciones
         const notificationContainer = document.createElement('div');
         notificationContainer.className = 'purchase-notifications';
@@ -130,12 +130,12 @@ document.addEventListener('DOMContentLoaded', function() {
             max-width: 300px;
         `;
         document.body.appendChild(notificationContainer);
-        
+
         // Mostrar primera notificación después de 18 segundos
         setTimeout(() => {
             showPurchaseNotification();
         }, 18000);
-        
+
         // Mostrar notificaciones periódicamente
         setInterval(() => {
             // Solo mostrar si no hay muchas notificaciones activas
@@ -143,12 +143,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 showPurchaseNotification();
             }
         }, 65000); // Cada 65 segundos
-        
+
         function showPurchaseNotification() {
             const randomCity = cities[Math.floor(Math.random() * cities.length)];
             const randomName = names[Math.floor(Math.random() * names.length)];
             const minutesAgo = Math.floor(Math.random() * 8) + 1;
-            
+
             const notification = document.createElement('div');
             notification.className = 'purchase-notification';
             notification.innerHTML = `
@@ -163,15 +163,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="purchase-time">justo ahora</span>
                 </div>
             `;
-            
+
             notificationContainer.appendChild(notification);
-            
+
             // Animar entrada
             setTimeout(() => {
                 notification.style.opacity = '1';
                 notification.style.transform = 'translateX(0)';
             }, 10);
-            
+
             // Auto-remover después de 12 segundos
             setTimeout(() => {
                 notification.style.opacity = '0';
@@ -190,10 +190,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Elementos que mostrarán el stock dinámico
         const stockElements = document.querySelectorAll('.stock-remaining, .last-units, .units-left');
         if (stockElements.length === 0) return;
-        
+
         // Stock inicial aleatorio entre 3 y 12 unidades
         let dynamicStock = Math.floor(Math.random() * 10) + 3;
-        
+
         function updateStockDisplay() {
             stockElements.forEach(el => {
                 if (dynamicStock <= 3) {
@@ -207,14 +207,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     el.style.color = 'white';
                     el.style.fontWeight = '900';
                     el.style.animation = 'urgentPulse 1.5s infinite';
-                    
+
                     // Añadir contador si no existe
                     if (!el.querySelector('.stock-timer')) {
                         const timer = document.createElement('div');
                         timer.className = 'stock-timer';
                         timer.innerHTML = 'Oferta termina en: <span class="timer-count">05:00</span>';
                         el.appendChild(timer);
-                        
+
                         // Iniciar contador de 5 minutos
                         startStockTimer(timer.querySelector('.timer-count'));
                     }
@@ -238,10 +238,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
-        
+
         function startStockTimer(timerElement) {
             let timeLeft = 5 * 60; // 5 minutos en segundos
-            
+
             const timerInterval = setInterval(() => {
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
@@ -251,12 +251,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateStockDisplay();
                     return;
                 }
-                
+
                 const minutes = Math.floor(timeLeft / 60);
                 const seconds = timeLeft % 60;
                 timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 timeLeft--;
-                
+
                 // Reducir stock aleatoriamente durante la cuenta regresiva
                 if (timeLeft % 30 === 0 && dynamicStock > 0) { // Cada 30 segundos
                     dynamicStock -= Math.floor(Math.random() * 2);
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }, 1000);
         }
-        
+
         // Actualizar stock cada minuto
         const stockInterval = setInterval(() => {
             if (dynamicStock > 0) {
@@ -272,17 +272,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 dynamicStock -= Math.floor(Math.random() * 3);
                 if (dynamicStock < 0) dynamicStock = 0;
                 updateStockDisplay();
-                
+
                 // Si se agota el stock, detener el intervalo
                 if (dynamicStock === 0) {
                     clearInterval(stockInterval);
                 }
             }
         }, 60000); // Cada minuto
-        
+
         // Inicializar display
         updateStockDisplay();
-        
+
         // También actualizar cuando el usuario hace scroll (para más urgencia)
         let lastScrollUpdate = 0;
         window.addEventListener('scroll', () => {
@@ -327,30 +327,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon: '📦'
             }
         ];
-        
+
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    const offer = offers.find(o => 
+                    const offer = offers.find(o =>
                         entry.target.matches(o.selector) || entry.target.closest(o.selector)
                     );
-                    
+
                     if (offer && !entry.target.dataset.scrollTriggered) {
                         entry.target.dataset.scrollTriggered = 'true';
                         showScrollOffer(offer);
                     }
                 }
             });
-        }, { 
+        }, {
             threshold: 0.3,
             rootMargin: '0px 0px -100px 0px'
         });
-        
+
         offers.forEach(offer => {
             const element = document.querySelector(offer.selector);
             if (element) observer.observe(element);
         });
-        
+
         function showScrollOffer(offer) {
             const notification = document.createElement('div');
             notification.className = 'scroll-offer';
@@ -361,14 +361,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <button class="scroll-offer-close">×</button>
             `;
-            
+
             document.body.appendChild(notification);
-            
+
             // Animar entrada
             setTimeout(() => {
                 notification.classList.add('visible');
             }, 100);
-            
+
             // Auto remover después de 5 segundos
             setTimeout(() => {
                 notification.classList.remove('visible');
@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 500);
             }, 5000);
-            
+
             // Botón cerrar
             notification.querySelector('.scroll-offer-close').addEventListener('click', () => {
                 notification.classList.remove('visible');
@@ -394,30 +394,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===================================================
     // INICIALIZAR LOS GATILLOS
     // ===================================================
-    
+
     // Esperar a que la página cargue completamente
     setTimeout(() => {
         // 1. Gatillo de Escasez (Stock Counter)
         showStockCounter();
-        
+
         // 2. Gatillo de Prueba Social
         showRealTimePurchases();
-        
+
         // 3. Gatillo de Últimas Unidades Dinámico
         updateDynamicStock();
-        
+
         // 4. Gatillo de Scroll Triggers
         setupScrollTriggers();
-        
+
         console.log('✅ Gatillos de conversión activados');
     }, 1500);
 
     // ===================================================
     // CSS DINÁMICO PARA LOS GATILLOS
     // ===================================================
-    
-const style = document.createElement('style');
-style.textContent = `
+
+    const style = document.createElement('style');
+    style.textContent = `
     /* STOCK COUNTER */
     .stock-counter {
         background: linear-gradient(135deg, #fff9e6, #ffe8a1);
@@ -801,54 +801,54 @@ style.textContent = `
     // ===================================================
     // INICIALIZAR SLIDER DE TESTIMONIOS (de tu código)
     // ===================================================
-    
-const track = document.getElementById('sliderTrack');
-const slides = document.querySelectorAll('.testimonial-slide');
-const nextBtn = document.querySelector('.next-btn');
-const prevBtn = document.querySelector('.prev-btn');
-const dots = document.querySelectorAll('.dot');
 
-let counter = 1;
-const size = slides[0].clientWidth;
+    const track = document.getElementById('sliderTrack');
+    const slides = document.querySelectorAll('.testimonial-slide');
+    const nextBtn = document.querySelector('.next-btn');
+    const prevBtn = document.querySelector('.prev-btn');
+    const dots = document.querySelectorAll('.dot');
 
-// Inicializar posición
-track.style.transform = 'translateX(' + (-size * counter) + 'px)';
+    let counter = 1;
+    const size = slides[0].clientWidth;
 
-nextBtn.addEventListener('click', () => {
-    if (counter >= slides.length - 1) return;
-    track.style.transition = "transform 0.4s ease-in-out";
-    counter++;
+    // Inicializar posición
     track.style.transform = 'translateX(' + (-size * counter) + 'px)';
-    updateDots();
-});
 
-prevBtn.addEventListener('click', () => {
-    if (counter <= 0) return;
-    track.style.transition = "transform 0.4s ease-in-out";
-    counter--;
-    track.style.transform = 'translateX(' + (-size * counter) + 'px)';
-    updateDots();
-});
-
-track.addEventListener('transitionend', () => {
-    if (slides[counter].dataset.index === '0-clone') {
-        track.style.transition = "none";
-        counter = 1;
+    nextBtn.addEventListener('click', () => {
+        if (counter >= slides.length - 1) return;
+        track.style.transition = "transform 0.4s ease-in-out";
+        counter++;
         track.style.transform = 'translateX(' + (-size * counter) + 'px)';
-    }
-    if (slides[counter].dataset.index === '4-clone') {
-        track.style.transition = "none";
-        counter = slides.length - 2;
-        track.style.transform = 'translateX(' + (-size * counter) + 'px)';
-    }
-});
+        updateDots();
+    });
 
-function updateDots() {
-    let dotActive = counter - 1;
-    if (counter > 5) dotActive = 0;
-    if (counter < 1) dotActive = 4;
-    dots.forEach(dot => dot.classList.remove('active'));
-    dots[dotActive].classList.add('active');
-}
+    prevBtn.addEventListener('click', () => {
+        if (counter <= 0) return;
+        track.style.transition = "transform 0.4s ease-in-out";
+        counter--;
+        track.style.transform = 'translateX(' + (-size * counter) + 'px)';
+        updateDots();
+    });
+
+    track.addEventListener('transitionend', () => {
+        if (slides[counter].dataset.index === '0-clone') {
+            track.style.transition = "none";
+            counter = 1;
+            track.style.transform = 'translateX(' + (-size * counter) + 'px)';
+        }
+        if (slides[counter].dataset.index === '4-clone') {
+            track.style.transition = "none";
+            counter = slides.length - 2;
+            track.style.transform = 'translateX(' + (-size * counter) + 'px)';
+        }
+    });
+
+    function updateDots() {
+        let dotActive = counter - 1;
+        if (counter > 5) dotActive = 0;
+        if (counter < 1) dotActive = 4;
+        dots.forEach(dot => dot.classList.remove('active'));
+        dots[dotActive].classList.add('active');
+    }
 
 });
