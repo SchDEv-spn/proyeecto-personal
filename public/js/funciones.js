@@ -35,8 +35,8 @@
 
       this.cacheRefs();
 
-      // ✅ IMPORTANTE: el menú hamburguesa se maneja SOLO en initAdminMenu() (global)
-      // this.initMenuHamburguesa();  // ❌ eliminado
+      // ✅ IMPORTANTE: el menú hamburguesa se maneja SOLO en admin-ui.js (archivo separado)
+      // NO llamar a initMenuHamburguesa() aquí
 
       this.initTablaBusquedaYDataTables();
 
@@ -104,11 +104,9 @@
       this.limpiarHighlights();
 
       const options = {
-        dom: 'rtip',          // r=processing, t=table, i=info, p=pagination
-        pageLength: 10,       // ✅ 10 registros por página
-        paging: true,         // ✅ habilita paginación
-        // pagingType: 'simple', // ✅ opcional: solo "Anterior / Siguiente"
-        // lengthChange: false,  // ✅ opcional: oculta selector de cantidad
+        dom: 'rtip',
+        pageLength: 10,
+        paging: true,
         order: [[0, 'desc']],
         columnDefs: [{ orderable: false, targets: [7, 8, 9] }]
       };
@@ -881,24 +879,57 @@
     window.adminPedidosUI = new AdminPedidosUI();
   });
 })();
-
-
-// admin-ui.js (ÚNICO controlador del sidebar: móvil open/close + desktop collapse con preferencia)
+// admin-ui-sidebar.js  (ANTI-FLASH + preferencia en desktop)
 (() => {
   const KEY = 'admin_sidebar_collapsed';
   const mqMobile = window.matchMedia('(max-width: 768px)');
-  const mqDesktop = window.matchMedia('(min-width: 769px)');
 
-  const initAdminMenu = () => {
+  // 1) Aplicar estado lo más temprano posible (antes de render completo)
+  const applyCollapsedEarly = () => {
+    try {
+      // En móvil NO colapsamos (solo off-canvas)
+      if (mqMobile.matches) return;
+
+      const saved = localStorage.getItem(KEY) === '1';
+
+      // Si body aún no existe, usamos <html> como “bandera”
+      const root = document.documentElement;
+      if (!document.body) {
+        root.classList.toggle('sidebar-collapsed', saved);
+        root.classList.add('no-transitions');
+        return;
+      }
+
+      document.body.classList.toggle('sidebar-collapsed', saved);
+      document.body.classList.add('no-transitions');
+    } catch (_) {}
+  };
+
+  applyCollapsedEarly();
+
+  const initSidebar = () => {
     const btn = document.getElementById('btnMenu');
     const sidebar = document.querySelector('.material-sidebar');
     if (!btn || !sidebar) return;
 
     // Evitar doble binding
-    if (btn.dataset.menuBound === '1') return;
-    btn.dataset.menuBound = '1';
+    if (btn.dataset.sidebarBound === '1') return;
+    btn.dataset.sidebarBound = '1';
 
-    // Tooltips en links (útil cuando colapsa)
+    // Si aplicamos clase temprano en <html>, la movemos a <body>
+    try {
+      const root = document.documentElement;
+      if (root.classList.contains('sidebar-collapsed')) {
+        document.body.classList.add('sidebar-collapsed');
+        root.classList.remove('sidebar-collapsed');
+      }
+      if (root.classList.contains('no-transitions')) {
+        document.body.classList.add('no-transitions');
+        root.classList.remove('no-transitions');
+      }
+    } catch (_) {}
+
+    // Tooltips para cuando esté colapsado
     document.querySelectorAll('.sidebar-nav a').forEach(a => {
       const label = (a.textContent || '').replace(/\s+/g, ' ').trim();
       if (label) a.setAttribute('title', label);
@@ -908,14 +939,13 @@
       const icon = btn.querySelector('i');
       if (!icon) return;
 
-      // En móvil: hamburguesa
       if (mqMobile.matches) {
         icon.className = 'fas fa-bars';
         btn.setAttribute('aria-label', 'Abrir menú');
+        btn.removeAttribute('aria-expanded');
         return;
       }
 
-      // En desktop: indicar acción (colapsar/expandir)
       const collapsed = document.body.classList.contains('sidebar-collapsed');
       icon.className = collapsed ? 'fas fa-angles-right' : 'fas fa-angles-left';
       btn.setAttribute('aria-label', collapsed ? 'Expandir menú' : 'Colapsar menú');
@@ -923,25 +953,21 @@
     };
 
     const applyMode = () => {
-      // Siempre quitamos "active" al cambiar modo para evitar estados raros
       sidebar.classList.remove('active');
 
-      // Móvil: NO mantenemos colapsado visualmente
       if (mqMobile.matches) {
         document.body.classList.remove('sidebar-collapsed');
         setBtnIcon();
         return;
       }
 
-      // Desktop: restaurar preferencia
       const saved = localStorage.getItem(KEY) === '1';
       document.body.classList.toggle('sidebar-collapsed', saved);
       setBtnIcon();
     };
 
-    // Click del botón: móvil => open/close, desktop => collapse/expand
+    // Botón: móvil => abrir/cerrar | desktop => colapsar/expandir
     btn.addEventListener('click', (e) => {
-      e.preventDefault();
       e.stopPropagation();
 
       if (mqMobile.matches) {
@@ -954,17 +980,7 @@
       setBtnIcon();
     });
 
-    // ✅ Cerrar al hacer clic en links del sidebar (solo móvil)
-    sidebar.addEventListener('click', (e) => {
-      const link = e.target.closest('a');
-      if (!link) return;
-      if (!mqMobile.matches) return;
-
-      sidebar.classList.remove('active');
-      // No hacemos preventDefault: dejamos que navegue normal
-    });
-
-    // Click fuera: cerrar sidebar solo en móvil
+    // Click fuera (solo móvil)
     document.addEventListener('click', (e) => {
       if (!mqMobile.matches) return;
 
@@ -976,7 +992,7 @@
       }
     });
 
-    // ESC: cerrar en móvil / expandir en desktop
+    // ESC: cerrar móvil / expandir desktop
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
 
@@ -992,13 +1008,17 @@
       }
     });
 
-    // Cambios de breakpoint
     mqMobile.addEventListener('change', applyMode);
-    mqDesktop.addEventListener('change', applyMode);
 
-    // Inicial
+    // 2) Habilitar transiciones luego del primer frame (evita flash al cargar + DataTables)
+    requestAnimationFrame(() => {
+      document.body.classList.remove('no-transitions');
+      setBtnIcon();
+    });
+
     applyMode();
   };
 
-  document.addEventListener('DOMContentLoaded', initAdminMenu);
+  // DOM listo
+  document.addEventListener('DOMContentLoaded', initSidebar);
 })();
