@@ -91,6 +91,37 @@ class LandingConfig extends Model
                     cta_faq_button           = :cta_faq_button,
                     cta_sticky_mobile_text   = :cta_sticky_mobile_text,
 
+                    -- ===== WhatsApp Testimonios (editable) =====
+                    wa_enabled     = :wa_enabled,
+                    wa_title       = :wa_title,
+                    wa_subtitle    = :wa_subtitle,
+                    wa_footer_note = :wa_footer_note,
+
+                    wa1_name       = :wa1_name,
+                    wa1_time       = :wa1_time,
+                    wa1_text       = :wa1_text,
+                    wa1_image_path = :wa1_image_path,
+
+                    wa2_name       = :wa2_name,
+                    wa2_time       = :wa2_time,
+                    wa2_text       = :wa2_text,
+                    wa2_image_path = :wa2_image_path,
+
+                    wa3_name       = :wa3_name,
+                    wa3_time       = :wa3_time,
+                    wa3_text       = :wa3_text,
+                    wa3_image_path = :wa3_image_path,
+
+                    wa4_name       = :wa4_name,
+                    wa4_time       = :wa4_time,
+                    wa4_text       = :wa4_text,
+                    wa4_image_path = :wa4_image_path,
+
+                    wa5_name       = :wa5_name,
+                    wa5_time       = :wa5_time,
+                    wa5_text       = :wa5_text,
+                    wa5_image_path = :wa5_image_path,
+
                     primary_color           = :primary_color,
                     secondary_color         = :secondary_color,
                     accent_color            = :accent_color,
@@ -160,6 +191,37 @@ class LandingConfig extends Model
             ':cta_faq_text'            => $data['cta_faq_text'] ?? null,
             ':cta_faq_button'          => $data['cta_faq_button'] ?? null,
             ':cta_sticky_mobile_text'  => $data['cta_sticky_mobile_text'] ?? null,
+
+            // ===== WhatsApp Testimonios (editable) =====
+            ':wa_enabled'     => isset($data['wa_enabled']) ? (int)$data['wa_enabled'] : 1,
+            ':wa_title'       => $data['wa_title'] ?? null,
+            ':wa_subtitle'    => $data['wa_subtitle'] ?? null,
+            ':wa_footer_note' => $data['wa_footer_note'] ?? null,
+
+            ':wa1_name'       => $data['wa1_name'] ?? null,
+            ':wa1_time'       => $data['wa1_time'] ?? null,
+            ':wa1_text'       => $data['wa1_text'] ?? null,
+            ':wa1_image_path' => $data['wa1_image_path'] ?? null,
+
+            ':wa2_name'       => $data['wa2_name'] ?? null,
+            ':wa2_time'       => $data['wa2_time'] ?? null,
+            ':wa2_text'       => $data['wa2_text'] ?? null,
+            ':wa2_image_path' => $data['wa2_image_path'] ?? null,
+
+            ':wa3_name'       => $data['wa3_name'] ?? null,
+            ':wa3_time'       => $data['wa3_time'] ?? null,
+            ':wa3_text'       => $data['wa3_text'] ?? null,
+            ':wa3_image_path' => $data['wa3_image_path'] ?? null,
+
+            ':wa4_name'       => $data['wa4_name'] ?? null,
+            ':wa4_time'       => $data['wa4_time'] ?? null,
+            ':wa4_text'       => $data['wa4_text'] ?? null,
+            ':wa4_image_path' => $data['wa4_image_path'] ?? null,
+
+            ':wa5_name'       => $data['wa5_name'] ?? null,
+            ':wa5_time'       => $data['wa5_time'] ?? null,
+            ':wa5_text'       => $data['wa5_text'] ?? null,
+            ':wa5_image_path' => $data['wa5_image_path'] ?? null,
 
             ':primary_color'           => $data['primary_color'] ?? null,
             ':secondary_color'         => $data['secondary_color'] ?? null,

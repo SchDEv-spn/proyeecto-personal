@@ -69,6 +69,22 @@ $test3Name  = $cfg['test3_name']       ?? 'Laura P.';
 $test3Text  = $cfg['test3_text']       ?? 'Lo recomiendo totalmente. Me dieron confianza con el pago contraentrega y cumplió 10/10.';
 $test3Photo = $cfg['test3_photo_path'] ?? '/tienda_mvc/public/img/producto/uso-1.jpg';
 
+// ===== TESTIMONIOS WHATSAPP (editable) =====
+$waEnabled    = isset($cfg['wa_enabled']) ? (int)$cfg['wa_enabled'] : 1;
+$waTitle      = $cfg['wa_title'] ?? '📱 Testimonios Reales de WhatsApp';
+$waSubtitle   = $cfg['wa_subtitle'] ?? 'Capturas reales de conversaciones con nuestros clientes';
+$waFooterNote = $cfg['wa_footer_note'] ?? '💡 Desliza para ver más • Capturas 100% reales de WhatsApp';
+
+$waItems = [];
+for ($i = 1; $i <= 5; $i++) {
+    $waItems[] = [
+        'name'  => $cfg["wa{$i}_name"] ?? '',
+        'time'  => $cfg["wa{$i}_time"] ?? '',
+        'text'  => $cfg["wa{$i}_text"] ?? '',
+        'image' => $cfg["wa{$i}_image_path"] ?? '',
+    ];
+}
+
 // ===== FAQ =====
 $faq1_q = $cfg['faq1_q'] ?? '¿Cuánto tarda en llegar mi pedido?';
 $faq1_a = $cfg['faq1_a'] ?? 'Los tiempos de entrega pueden variar según tu ciudad, pero normalmente tu pedido llega entre 2 y 5 días hábiles después de la confirmación.';
@@ -138,8 +154,8 @@ $textColor       = $config['text_color']       ?? '#222222';
     </style>
 
     <script src="/tienda_mvc/public/js/main.js" defer></script>
-    
-                   <script>
+
+    <script>
         ! function(f, b, e, v, n, t, s) {
             if (f.fbq) return;
             n = f.fbq = function() {
@@ -164,10 +180,10 @@ $textColor       = $config['text_color']       ?? '#222222';
     <noscript><img height="1" width="1" style="display:none"
             src="https://www.facebook.com/tr?id=1248724310406936&ev=PageView&noscript=1" />
     </noscript>
-    
-    
-        <script>
-        document.addEventListener('DOMContentLoaded', function () {
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
             if (typeof fbq === 'function') {
                 fbq('track', 'ViewContent', {
                     content_name: <?= json_encode($producto['nombre'] ?? 'Producto') ?>,
@@ -363,143 +379,121 @@ $textColor       = $config['text_color']       ?? '#222222';
             </div>
 
             <!-- Galería de clientes satisfechos (por ahora estática) -->
-            <section class="testimonials-section">
-                <div class="container">
-                    <div class="section-header">
-                        <h2 class="section-title">📱 Testimonios Reales de WhatsApp</h2>
-                        <p class="subtitle">Capturas reales de conversaciones con nuestros clientes</p>
-                    </div>
+            <?php if ($waEnabled === 1): ?>
+                <section class="testimonials-section">
+                    <div class="container">
+                        <div class="section-header">
+                            <h2 class="section-title"><?= htmlspecialchars($waTitle) ?></h2>
+                            <p class="subtitle"><?= htmlspecialchars($waSubtitle) ?></p>
+                        </div>
 
-                    <div class="testimonials-slider-outer">
-                        <button class="slider-btn prev-btn" aria-label="Anterior">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-                            </svg>
-                        </button>
-                        <button class="slider-btn next-btn" aria-label="Siguiente">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-                            </svg>
-                        </button>
+                        <div class="testimonials-slider-outer">
+                            <button class="slider-btn prev-btn" aria-label="Anterior">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                                </svg>
+                            </button>
+                            <button class="slider-btn next-btn" aria-label="Siguiente">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+                                </svg>
+                            </button>
 
-                        <div class="testimonials-slider-container">
-                            <div class="slider-track" id="sliderTrack">
+                            <div class="testimonials-slider-container">
+                                <div class="slider-track" id="sliderTrack">
 
-                                <div class="testimonial-slide" data-index="4-clone">
-                                    <div class="whatsapp-card">
-                                        <div class="badge-verified">✅ Compra Verificada</div>
-                                        <div class="img-wrapper">
-                                            <img src="/tienda_mvc/public/img/testimonios/5.jpeg" alt="Testimonio WhatsApp Laura" class="whatsapp-screenshot">
+                                    <?php
+                                    // Para mantener el JS estable: siempre 5 items.
+                                    // Si alguno viene vacío, ponemos fallbacks mínimos.
+                                    $defaults = [
+                                        1 => ['name' => 'María González',   'time' => '• Hace 24 horas', 'text' => '¡Llegó antes de lo esperado! La calidad superó mis expectativas completamente.'],
+                                        2 => ['name' => 'Carlos Rodríguez', 'time' => '• Hace 3 días',    'text' => 'Ya le recomendé a 3 amigos. El servicio post-venta es excelente.'],
+                                        3 => ['name' => 'Ana Martínez',     'time' => '• Hace 1 semana',  'text' => 'Segunda compra y vuelvo a quedar encantada. Definitivamente mi tienda de confianza.'],
+                                        4 => ['name' => 'Pedro López',      'time' => '• Hace 2 días',    'text' => 'Envío express en 24h. ¡Increíble! Justo lo que necesitaba con urgencia.'],
+                                        5 => ['name' => 'Laura Sánchez',    'time' => '• Hace 4 días',    'text' => 'Viralicé en mis stories. Todos preguntan dónde compré. ¡Éxito total!'],
+                                    ];
+
+                                    // Normaliza los 5 items con defaults si faltan campos
+                                    $items = [];
+                                    for ($i = 1; $i <= 5; $i++) {
+                                        $it = $waItems[$i - 1] ?? [];
+                                        $items[$i] = [
+                                            'name'  => trim($it['name']  ?? '') !== '' ? $it['name']  : $defaults[$i]['name'],
+                                            'time'  => trim($it['time']  ?? '') !== '' ? $it['time']  : $defaults[$i]['time'],
+                                            'text'  => trim($it['text']  ?? '') !== '' ? $it['text']  : $defaults[$i]['text'],
+                                            'image' => trim($it['image'] ?? ''),
+                                        ];
+                                    }
+
+                                    // Clones para infinite loop: último al inicio, primero al final
+                                    $first = $items[1];
+                                    $last  = $items[5];
+
+                                    // Helpers para imprimir un slide
+                                    $renderSlide = function ($idx, $data, $suffix = '') {
+                                        $dataIndex = $suffix ? ($idx . '-' . $suffix) : (string)($idx - 1); // 0..4 en slides reales
+                                        $name  = $data['name'] ?? '';
+                                        $time  = $data['time'] ?? '';
+                                        $text  = $data['text'] ?? '';
+                                        $image = $data['image'] ?? '';
+
+                                        // Si no hay imagen configurada, dejamos vacío para que tú la subas.
+                                        // (Si quieres, puedes poner un placeholder aquí.)
+                                    ?>
+                                        <div class="testimonial-slide" data-index="<?= htmlspecialchars($dataIndex) ?>">
+                                            <div class="whatsapp-card">
+                                                <div class="badge-verified">✅ Compra Verificada</div>
+                                                <div class="img-wrapper">
+                                                    <?php if (!empty($image)): ?>
+                                                        <img src="<?= htmlspecialchars($image) ?>" alt="Testimonio WhatsApp <?= htmlspecialchars($name) ?>" class="whatsapp-screenshot">
+                                                    <?php else: ?>
+                                                        <img src="/tienda_mvc/public/img/testimonios/1.jpeg" alt="Testimonio WhatsApp" class="whatsapp-screenshot">
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="card-content">
+                                                    <strong><?= htmlspecialchars($name) ?></strong>
+                                                    <span><?= htmlspecialchars($time) ?></span>
+                                                    <p>"<?= htmlspecialchars($text) ?>"</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="card-content">
-                                            <strong>Laura Sánchez</strong>
-                                            <span>• Hace 4 días</span>
-                                            <p>"Viralicé en mis stories. Todos preguntan dónde compré. ¡Éxito total!"</p>
-                                        </div>
-                                    </div>
+                                    <?php
+                                    };
+
+                                    // Clone del último (index 4-clone)
+                                    $renderSlide(5, $last, 'clone');
+
+                                    // Slides reales (index 0..4)
+                                    for ($i = 1; $i <= 5; $i++) {
+                                        $renderSlide($i, $items[$i]);
+                                    }
+
+                                    // Clone del primero (index 0-clone)
+                                    $renderSlide(1, $first, 'clone');
+                                    ?>
+
                                 </div>
-
-                                <div class="testimonial-slide" data-index="0">
-                                    <div class="whatsapp-card">
-                                        <div class="badge-verified">✅ Compra Verificada</div>
-                                        <div class="img-wrapper">
-                                            <img src="/tienda_mvc/public/img/testimonios/1.jpeg" alt="Testimonio WhatsApp María" class="whatsapp-screenshot">
-                                        </div>
-                                        <div class="card-content">
-                                            <strong>María González</strong>
-                                            <span>• Hace 24 horas</span>
-                                            <p>"¡Llegó antes de lo esperado! La calidad superó mis expectativas completamente."</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="testimonial-slide" data-index="1">
-                                    <div class="whatsapp-card">
-                                        <div class="badge-verified">✅ Compra Verificada</div>
-                                        <div class="img-wrapper">
-                                            <img src="/tienda_mvc/public/img/testimonios/2.jpeg" alt="Testimonio WhatsApp Carlos" class="whatsapp-screenshot">
-                                        </div>
-                                        <div class="card-content">
-                                            <strong>Carlos Rodríguez</strong>
-                                            <span>• Hace 3 días</span>
-                                            <p>"Ya le recomendé a 3 amigos. El servicio post-venta es excelente."</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="testimonial-slide" data-index="2">
-                                    <div class="whatsapp-card">
-                                        <div class="badge-verified">✅ Compra Verificada</div>
-                                        <div class="img-wrapper">
-                                            <img src="/tienda_mvc/public/img/testimonios/3.jpeg" alt="Testimonio WhatsApp Ana" class="whatsapp-screenshot">
-                                        </div>
-                                        <div class="card-content">
-                                            <strong>Ana Martínez</strong>
-                                            <span>• Hace 1 semana</span>
-                                            <p>"Segunda compra y vuelvo a quedar encantada. Definitivamente mi tienda de confianza."</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="testimonial-slide" data-index="3">
-                                    <div class="whatsapp-card">
-                                        <div class="badge-verified">✅ Compra Verificada</div>
-                                        <div class="img-wrapper">
-                                            <img src="/tienda_mvc/public/img/testimonios/4.jpeg" alt="Testimonio WhatsApp Pedro" class="whatsapp-screenshot">
-                                        </div>
-                                        <div class="card-content">
-                                            <strong>Pedro López</strong>
-                                            <span>• Hace 2 días</span>
-                                            <p>"Envío express en 24h. ¡Increíble! Justo lo que necesitaba con urgencia."</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="testimonial-slide" data-index="4">
-                                    <div class="whatsapp-card">
-                                        <div class="badge-verified">✅ Compra Verificada</div>
-                                        <div class="img-wrapper">
-                                            <img src="/tienda_mvc/public/img/testimonios/5.jpeg" alt="Testimonio WhatsApp Laura" class="whatsapp-screenshot">
-                                        </div>
-                                        <div class="card-content">
-                                            <strong>Laura Sánchez</strong>
-                                            <span>• Hace 4 días</span>
-                                            <p>"Viralicé en mis stories. Todos preguntan dónde compré. ¡Éxito total!"</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="testimonial-slide" data-index="0-clone">
-                                    <div class="whatsapp-card">
-                                        <div class="badge-verified">✅ Compra Verificada</div>
-                                        <div class="img-wrapper">
-                                            <img src="/tienda_mvc/public/img/testimonios/1.jpeg" alt="Testimonio WhatsApp María" class="whatsapp-screenshot">
-                                        </div>
-                                        <div class="card-content">
-                                            <strong>María González</strong>
-                                            <span>• Hace 24 horas</span>
-                                            <p>"¡Llegó antes de lo esperado! La calidad superó mis expectativas completamente."</p>
-                                        </div>
-                                    </div>
-                                </div>
-
                             </div>
                         </div>
-                    </div>
 
-                    <div class="slider-pagination">
-                        <span class="dot active" data-dot="0"></span>
-                        <span class="dot" data-dot="1"></span>
-                        <span class="dot" data-dot="2"></span>
-                        <span class="dot" data-dot="3"></span>
-                        <span class="dot" data-dot="4"></span>
-                    </div>
+                        <div class="slider-pagination">
+                            <span class="dot active" data-dot="0"></span>
+                            <span class="dot" data-dot="1"></span>
+                            <span class="dot" data-dot="2"></span>
+                            <span class="dot" data-dot="3"></span>
+                            <span class="dot" data-dot="4"></span>
+                        </div>
 
-                    <div class="slider-footer-note">
-                        <p>💡 <strong>Desliza para ver más</strong> • Capturas 100% reales de WhatsApp</p>
+                        <div class="slider-footer-note">
+                            <p><?= htmlspecialchars($waFooterNote) ?></p>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            <?php endif; ?>
+
+
+
+
             <!-- CTA de sección -->
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaTestimonialsText) ?></p>
@@ -655,42 +649,44 @@ $textColor       = $config['text_color']       ?? '#222222';
         <?= htmlspecialchars($footerText) ?>
     </footer>
 
-       <!-- CTA sticky para móviles -->
+    <!-- CTA sticky para móviles -->
     <a href="#form-pedido" class="cta-sticky-mobile">
         <?= htmlspecialchars($ctaStickyMobileText) ?>
     </a>
 
-<?php
-$success        = $success ?? '';
-$precioProducto = (float)($producto['precio_venta'] ?? 0);
-$nombreProducto = $producto['nombre'] ?? 'Producto';
-?>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var successMsg = <?= json_encode($success, JSON_UNESCAPED_UNICODE) ?>;
+    <?php
+    $success        = $success ?? '';
+    $precioProducto = (float)($producto['precio_venta'] ?? 0);
+    $nombreProducto = $producto['nombre'] ?? 'Producto';
+    ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var successMsg = <?= json_encode($success, JSON_UNESCAPED_UNICODE) ?>;
 
-        if (successMsg) {
-            alert(successMsg);
+            if (successMsg) {
+                alert(successMsg);
 
-            var formSection = document.getElementById('form-pedido');
-            if (formSection) {
-                formSection.scrollIntoView({ behavior: 'smooth' });
+                var formSection = document.getElementById('form-pedido');
+                if (formSection) {
+                    formSection.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+
+                // Evento de conversión al crear pedido
+                if (typeof fbq === 'function') {
+                    fbq('track', 'Lead', {
+                        content_name: <?= json_encode($nombreProducto) ?>,
+                        value: <?= json_encode($precioProducto) ?>,
+                        currency: 'COP'
+                    });
+
+                    // Si prefieres trabajar con Purchase (conversión de compra directa), cambia:
+                    // fbq('track', 'Purchase', { ... });
+                }
             }
-
-            // Evento de conversión al crear pedido
-            if (typeof fbq === 'function') {
-                fbq('track', 'Lead', {
-                    content_name: <?= json_encode($nombreProducto) ?>,
-                    value: <?= json_encode($precioProducto) ?>,
-                    currency: 'COP'
-                });
-
-                // Si prefieres trabajar con Purchase (conversión de compra directa), cambia:
-                // fbq('track', 'Purchase', { ... });
-            }
-        }
-    });
-</script>
+        });
+    </script>
 
 
     <script src="/tienda_mvc/public/js/testiGati.js" defer></script>

@@ -110,7 +110,21 @@ class AdminLandingController extends Controller
             'cta_faq_text'            => trim($_POST['cta_faq_text'] ?? ''),
             'cta_faq_button'          => trim($_POST['cta_faq_button'] ?? ''),
             'cta_sticky_mobile_text'  => trim($_POST['cta_sticky_mobile_text'] ?? ''),
+
+            // ===== WhatsApp Testimonios (editable) =====
+            // Si lo pones como checkbox, cuando no viene -> 0. Si lo pones como select 0/1, también funciona.
+            'wa_enabled'     => (isset($_POST['wa_enabled']) && (string)($_POST['wa_enabled']) !== '0') ? 1 : 0,
+            'wa_title'       => trim($_POST['wa_title'] ?? ''),
+            'wa_subtitle'    => trim($_POST['wa_subtitle'] ?? ''),
+            'wa_footer_note' => trim($_POST['wa_footer_note'] ?? ''),
         ];
+
+        // WhatsApp items (1..5)
+        for ($i = 1; $i <= 5; $i++) {
+            $data["wa{$i}_name"] = trim($_POST["wa{$i}_name"] ?? '');
+            $data["wa{$i}_time"] = trim($_POST["wa{$i}_time"] ?? '');
+            $data["wa{$i}_text"] = trim($_POST["wa{$i}_text"] ?? '');
+        }
 
         // 2. Colores
         $data['primary_color']    = $_POST['primary_color']    ?: null;
@@ -130,6 +144,11 @@ class AdminLandingController extends Controller
         $data['test2_photo_path']     = $_POST['test2_photo_path_actual']     ?? null;
         $data['test3_photo_path']     = $_POST['test3_photo_path_actual']     ?? null;
 
+        // WhatsApp images actuales (1..5)
+        for ($i = 1; $i <= 5; $i++) {
+            $data["wa{$i}_image_path"] = $_POST["wa{$i}_image_path_actual"] ?? null;
+        }
+
         // 4. Manejo de archivos
         $basePath  = dirname(__DIR__, 2);
         $uploadDir = $basePath . '/public/uploads/landing/';
@@ -148,6 +167,13 @@ class AdminLandingController extends Controller
             'test1_photo_file'     => 'test1_photo_path',
             'test2_photo_file'     => 'test2_photo_path',
             'test3_photo_file'     => 'test3_photo_path',
+
+            // ===== WhatsApp Testimonios (editable) =====
+            'wa1_image_file'       => 'wa1_image_path',
+            'wa2_image_file'       => 'wa2_image_path',
+            'wa3_image_file'       => 'wa3_image_path',
+            'wa4_image_file'       => 'wa4_image_path',
+            'wa5_image_file'       => 'wa5_image_path',
         ];
 
         foreach ($fileMap as $inputName => $column) {
