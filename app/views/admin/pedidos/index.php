@@ -49,25 +49,25 @@
 
     <!-- Main Content -->
     <main class="material-main">
-<header class="material-header">
-  <div class="header-greeting header-greeting--with-menu">
-    <button class="btn-menu" id="btnMenu" aria-label="Abrir menú">
-      <i class="fas fa-bars"></i>
-    </button>
+        <header class="material-header">
+            <div class="header-greeting header-greeting--with-menu">
+                <button class="btn-menu" id="btnMenu" aria-label="Abrir menú">
+                    <i class="fas fa-bars"></i>
+                </button>
 
-    <div>
-      <h3>¡Hola, <?= htmlspecialchars($usuarioNombre) ?>!</h3>
-      <p>Revisa y gestiona los pedidos de hoy</p>
-    </div>
-  </div>
+                <div>
+                    <h3>¡Hola, <?= htmlspecialchars($usuarioNombre) ?>!</h3>
+                    <p>Revisa y gestiona los pedidos de hoy</p>
+                </div>
+            </div>
 
-  <div class="header-actions">
-    <div class="search-bar">
-      <i class="fas fa-search"></i>
-      <input id="searchPedidos" type="text" placeholder="Buscar por cliente, teléfono, ciudad, producto, estado, ID...">
-    </div>
-  </div>
-</header>
+            <div class="header-actions">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input id="searchPedidos" type="text" placeholder="Buscar por cliente, teléfono, ciudad, producto, estado, ID...">
+                </div>
+            </div>
+        </header>
 
 
         <section class="material-content">
@@ -248,8 +248,10 @@
         </div>
     </div>
 
-    <script src="/tienda_mvc/public/js/funciones.js"></script>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/tienda_mvc/public/js/funciones.js"></script>
+
     <script src="https://cdn.datatables.net/2.3.5/js/dataTables.min.js"></script>
 
 </body>

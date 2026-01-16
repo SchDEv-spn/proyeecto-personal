@@ -215,3 +215,26 @@ function initAccordion() {
         });
     });
 }
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-product-gallery]').forEach(function (gallery) {
+    var main = gallery.querySelector('.product-gallery__main-img');
+    if (!main) return;
+
+    gallery.addEventListener('click', function (e) {
+      var btn = e.target.closest('.product-gallery__thumb');
+      if (!btn || !gallery.contains(btn)) return;
+
+      var thumbSrc = btn.getAttribute('data-src');
+      if (!thumbSrc) return;
+
+      // SWAP: la miniatura sube, la principal baja a esa miniatura
+      var currentMainSrc = main.getAttribute('src');
+
+      main.setAttribute('src', thumbSrc);
+      btn.setAttribute('data-src', currentMainSrc);
+
+      var thumbImg = btn.querySelector('img');
+      if (thumbImg) thumbImg.setAttribute('src', currentMainSrc);
+    });
+  });
+});

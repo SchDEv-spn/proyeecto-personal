@@ -275,30 +275,69 @@ $textColor       = $config['text_color']       ?? '#222222';
         </section>
 
         <!-- GALERÍA DESLIZABLE -->
+        <!-- GALERÍA (principal + miniaturas) -->
         <section class="container">
             <h2 class="section-title">Mira más del producto</h2>
-            <div class="slider" id="slider">
-                <div class="slides" id="slides">
-                    <?php if (!empty($galleryPaths)): ?>
-                        <?php foreach ($galleryPaths as $g): ?>
-                            <img src="<?= htmlspecialchars($g) ?>" alt="Foto del producto">
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <img src="/tienda_mvc/public/img/producto/uso-1.jpg" alt="Foto 1 del producto">
-                        <img src="/tienda_mvc/public/img/producto/uso-1.jpg" alt="Foto 2 del producto">
-                        <img src="/tienda_mvc/public/img/producto/uso-1.jpg" alt="Foto 3 del producto">
-                    <?php endif; ?>
-                </div>
-            </div>
 
-            <!-- CTA de sección -->
+            <?php
+            // Si no hay imágenes configuradas, usa fallbacks
+            $gallery = $galleryPaths;
+            if (empty($gallery)) {
+                $gallery = [
+                    '/tienda_mvc/public/img/producto/uso-1.jpg',
+                    '/tienda_mvc/public/img/producto/uso-1.jpg',
+                    '/tienda_mvc/public/img/producto/uso-1.jpg',
+                ];
+            }
+
+            $mainImg   = $gallery[0] ?? '';
+            $thumbImgs = array_slice($gallery, 1, 2); // solo 2 miniaturas
+            ?>
+
+            <div class="product-gallery" data-product-gallery>
+                <figure class="product-gallery__main">
+                    <img
+                        class="product-gallery__main-img"
+                        src="<?= htmlspecialchars($mainImg) ?>"
+                        alt="Foto principal del producto"
+                        loading="lazy"
+                        decoding="async">
+                </figure>
+
+                <?php if (!empty($thumbImgs)): ?>
+                    <div class="product-gallery__thumbs" role="list">
+                        <?php foreach ($thumbImgs as $i => $src): ?>
+                            <?php if (trim($src) === '') continue; ?>
+                            <button
+                                type="button"
+                                class="product-gallery__thumb"
+                                role="listitem"
+                                aria-label="Ver imagen <?= (int)($i + 2) ?>"
+                                data-src="<?= htmlspecialchars($src) ?>">
+                                <img
+                                    src="<?= htmlspecialchars($src) ?>"
+                                    alt="Miniatura <?= (int)($i + 2) ?>"
+                                    loading="lazy"
+                                    decoding="async">
+                            </button>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaGalleryText) ?></p>
                 <a href="#form-pedido" class="btn-primary btn-cta-section">
                     <?= htmlspecialchars($ctaGalleryButton) ?>
                 </a>
             </div>
+
+            <!-- CTA de sección -->
+
         </section>
+
+
+        <!-- CTA de sección -->
+
 
         <!-- CONTADOR PROMOCIÓN -->
         <section class="container">
@@ -689,7 +728,7 @@ $textColor       = $config['text_color']       ?? '#222222';
     </script>
 
 
-    <script src="/tienda_mvc/public/js/testiGati.js" defer></script>
+    <script src="/tienda_mvc/public/js/funcionesLandin.js" defer></script>
 </body>
 
 </html>
