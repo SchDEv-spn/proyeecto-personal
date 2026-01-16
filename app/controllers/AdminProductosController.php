@@ -13,7 +13,6 @@ class AdminProductosController extends Controller
     /** Genera un slug básico a partir del nombre */
     private function generarSlug(string $texto): string
     {
-        // Intentamos quitar acentos (si iconv está disponible)
         if (function_exists('iconv')) {
             $texto = iconv('UTF-8', 'ASCII//TRANSLIT', $texto);
         }
@@ -27,6 +26,24 @@ class AdminProductosController extends Controller
         }
 
         return $texto;
+    }
+
+    /** NUEVO: normaliza colores recibidos del form */
+    private function normalizarColores($input): array
+    {
+        $colores = $input ?? [];
+        if (!is_array($colores)) $colores = [];
+
+        $colores = array_map(fn($c) => trim((string)$c), $colores);
+        $colores = array_filter($colores, fn($c) => $c !== '');
+        $colores = array_values(array_unique($colores));
+
+        // límite por seguridad (opcional)
+        if (count($colores) > 30) {
+            $colores = array_slice($colores, 0, 30);
+        }
+
+        return $colores;
     }
 
     public function index()
@@ -58,6 +75,7 @@ class AdminProductosController extends Controller
             'precio_venta'     => '',
             'precio_proveedor' => '',
             'activo'           => 1,
+            'colores'          => [''], // NUEVO: para que el form muestre 1 input
         ];
 
         $this->view('admin/productos/crear', [
@@ -75,11 +93,14 @@ class AdminProductosController extends Controller
             exit;
         }
 
-        $nombre           = trim($_POST['nombre']           ?? '');
-        $slugInput        = trim($_POST['slug']             ?? '');
-        $precioVenta      = (float)($_POST['precio_venta']  ?? 0);
+        $nombre           = trim($_POST['nombre'] ?? '');
+        $slugInput        = trim($_POST['slug'] ?? '');
+        $precioVenta      = (float)($_POST['precio_venta'] ?? 0);
         $precioProveedor  = (float)($_POST['precio_proveedor'] ?? 0);
         $activo           = isset($_POST['activo']) && $_POST['activo'] == '1' ? 1 : 0;
+
+        // NUEVO: colores desde el form
+        $colores = $this->normalizarColores($_POST['colores'] ?? []);
 
         $slug = $slugInput !== '' ? $slugInput : $this->generarSlug($nombre);
 
@@ -101,6 +122,7 @@ class AdminProductosController extends Controller
             'precio_venta'     => $precioVenta,
             'precio_proveedor' => $precioProveedor,
             'activo'           => $activo,
+            'colores'          => $colores, // NUEVO
         ];
 
         if (!empty($errores)) {
@@ -114,7 +136,7 @@ class AdminProductosController extends Controller
         // Manejo de imagen principal
         $imagenPrincipal = null;
 
-        $basePath  = dirname(__DIR__, 2); // /ruta/a/tienda_mvc
+        $basePath  = dirname(__DIR__, 2);
         $uploadDir = $basePath . '/public/uploads/productos/';
 
         if (!is_dir($uploadDir)) {
@@ -139,7 +161,9 @@ class AdminProductosController extends Controller
         }
 
         $productoModel = new Producto();
-        $productoModel->crear([
+
+        // NUEVO: crear devolviendo ID para poder guardar colores
+        $productoId = $productoModel->crearConId([
             'nombre'           => $nombre,
             'slug'             => $slug,
             'precio_venta'     => $precioVenta,
@@ -147,6 +171,17 @@ class AdminProductosController extends Controller
             'imagen_principal' => $imagenPrincipal,
             'activo'           => $activo,
         ]);
+
+        if ($productoId <= 0) {
+            $this->view('admin/productos/crear', [
+                'errores' => ["No se pudo crear el producto. Intenta nuevamente."],
+                'old'     => $old,
+            ]);
+            return;
+        }
+
+        // NUEVO: guardar colores
+        $productoModel->syncColoresProducto((int)$productoId, $colores);
 
         $_SESSION['admin_productos_success'] = "Producto creado correctamente.";
         header("Location: /tienda_mvc/AdminProductos/index");
@@ -172,6 +207,9 @@ class AdminProductosController extends Controller
             exit;
         }
 
+        // NUEVO: cargar colores para precargar en la vista
+        $colores = $productoModel->getColoresByProducto($id);
+
         $old = [
             'id'               => $producto['id'],
             'nombre'           => $producto['nombre'],
@@ -180,12 +218,14 @@ class AdminProductosController extends Controller
             'precio_proveedor' => $producto['precio_proveedor'],
             'activo'           => $producto['activo'] ?? 1,
             'imagen_principal' => $producto['imagen_principal'] ?? '',
+            'colores'          => $colores, // NUEVO
         ];
 
         $this->view('admin/productos/editar', [
             'producto' => $producto,
             'errores'  => [],
             'old'      => $old,
+            'colores'  => $colores, // NUEVO (tu vista edit que te pasé lo usa)
         ]);
     }
 
@@ -213,14 +253,16 @@ class AdminProductosController extends Controller
             exit;
         }
 
-        $nombre           = trim($_POST['nombre']           ?? '');
-        $slugInput        = trim($_POST['slug']             ?? '');
-        $precioVenta      = (float)($_POST['precio_venta']  ?? 0);
+        $nombre           = trim($_POST['nombre'] ?? '');
+        $slugInput        = trim($_POST['slug'] ?? '');
+        $precioVenta      = (float)($_POST['precio_venta'] ?? 0);
         $precioProveedor  = (float)($_POST['precio_proveedor'] ?? 0);
         $activo           = isset($_POST['activo']) && $_POST['activo'] == '1' ? 1 : 0;
         $imagenPrincipal  = $_POST['imagen_principal_actual'] ?? ($productoExistente['imagen_principal'] ?? null);
 
-        // Si el slug viene vacío, lo generamos a partir del nombre
+        // NUEVO: colores desde el form
+        $colores = $this->normalizarColores($_POST['colores'] ?? []);
+
         $slug = $slugInput !== '' ? $slugInput : ($productoExistente['slug'] ?? $this->generarSlug($nombre));
 
         $errores = [];
@@ -243,6 +285,7 @@ class AdminProductosController extends Controller
             'precio_proveedor' => $precioProveedor,
             'activo'           => $activo,
             'imagen_principal' => $imagenPrincipal,
+            'colores'          => $colores, // NUEVO
         ];
 
         if (!empty($errores)) {
@@ -250,6 +293,7 @@ class AdminProductosController extends Controller
                 'producto' => $productoExistente,
                 'errores'  => $errores,
                 'old'      => $old,
+                'colores'  => $colores,
             ]);
             return;
         }
@@ -279,7 +323,7 @@ class AdminProductosController extends Controller
             }
         }
 
-        $productoModel->actualizar($id, [
+        $ok = $productoModel->actualizar($id, [
             'nombre'           => $nombre,
             'slug'             => $slug,
             'precio_venta'     => $precioVenta,
@@ -288,8 +332,20 @@ class AdminProductosController extends Controller
             'activo'           => $activo,
         ]);
 
-        $_SESSION['admin_productos_success'] = "Producto actualizado correctamente.";
+        if (!$ok) {
+            $this->view('admin/productos/editar', [
+                'producto' => $productoExistente,
+                'errores'  => ["No se pudo actualizar el producto. Intenta nuevamente."],
+                'old'      => $old,
+                'colores'  => $colores,
+            ]);
+            return;
+        }
 
+        // NUEVO: sincronizar colores
+        $productoModel->syncColoresProducto($id, $colores);
+
+        $_SESSION['admin_productos_success'] = "Producto actualizado correctamente.";
         header("Location: /tienda_mvc/AdminProductos/index");
         exit;
     }

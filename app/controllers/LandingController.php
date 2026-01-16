@@ -27,17 +27,21 @@ class LandingController extends Controller
             }
         }
 
+        // ✅ NUEVO: Colores del producto
+        $colores = $productoModel->getColoresByProducto((int)$producto['id']);
+
         // Mensaje de éxito simple (cuando se viene de enviarPedido)
         $success = $_SESSION['success'] ?? '';
         unset($_SESSION['success']);
 
         // Config de landing por producto
         $configModel = new LandingConfig();
-        $config      = $configModel->obtenerPorProducto($productoId) ?? [];
+        $config      = $configModel->obtenerPorProducto((int)$producto['id']) ?? [];
 
         // Render sin errores ni old (GET limpio)
         $this->view('landing/index', [
             'producto' => $producto,
+            'colores'  => $colores, // ✅ NUEVO
             'errores'  => [],
             'old'      => [],
             'success'  => $success,
@@ -60,6 +64,23 @@ class LandingController extends Controller
             $productoId = 1;
         }
 
+        $productoModel = new Producto();
+        $producto      = $productoModel->obtenerPorId($productoId);
+
+        // Si no existe, intentamos con 1 (misma lógica que index)
+        if (!$producto) {
+            $productoId = 1;
+            $producto   = $productoModel->obtenerPorId($productoId);
+            if (!$producto) {
+                header("HTTP/1.0 404 Not Found");
+                echo "Producto no encontrado";
+                exit;
+            }
+        }
+
+        // ✅ NUEVO: Colores disponibles para este producto
+        $coloresDisponibles = $productoModel->getColoresByProducto((int)$producto['id']);
+
         // Campos del formulario
         $nombre       = trim($_POST['nombre']       ?? '');
         $apellidos    = trim($_POST['apellidos']    ?? '');
@@ -81,6 +102,10 @@ class LandingController extends Controller
             'direccion'    => $direccion,
         ];
 
+        // Config de landing por producto
+        $configModel  = new LandingConfig();
+        $config       = $configModel->obtenerPorProducto((int)$producto['id']) ?? [];
+
         // Validaciones
         $errores = [];
 
@@ -94,16 +119,24 @@ class LandingController extends Controller
             $errores[] = "La dirección es obligatoria para envío a domicilio.";
         }
 
-        $productoModel = new Producto();
-        $producto      = $productoModel->obtenerPorId($productoId);
-
-        $configModel  = new LandingConfig();
-        $config       = $configModel->obtenerPorProducto($productoId) ?? [];
+        // ✅ NUEVO: Validación de color SOLO si el producto tiene colores configurados
+        if (!empty($coloresDisponibles)) {
+            if ($color === '') {
+                $errores[] = "Selecciona un color.";
+            } elseif (!in_array($color, $coloresDisponibles, true)) {
+                $errores[] = "Selecciona un color válido.";
+            }
+        } else {
+            // Si no hay colores configurados, no guardamos basura
+            $color = '';
+            $old['color'] = '';
+        }
 
         // Si hay errores, volvemos a la landing con los mensajes
         if (!empty($errores)) {
             $this->view('landing/index', [
                 'producto' => $producto,
+                'colores'  => $coloresDisponibles, // ✅ NUEVO
                 'errores'  => $errores,
                 'old'      => $old,
                 'success'  => '',
@@ -120,7 +153,7 @@ class LandingController extends Controller
         $utilidad        = $precioVenta - $precioProveedor;
 
         $pedidoData = [
-            'producto_id'      => $productoId,
+            'producto_id'      => (int)$producto['id'],
             'nombre'           => $nombre,
             'apellidos'        => $apellidos,
             'telefono'         => $telefono,
@@ -141,7 +174,7 @@ class LandingController extends Controller
         $_SESSION['success'] = "Tu pedido se ha registrado correctamente. En breve un asesor te contactará por WhatsApp.";
 
         // Redirigir a la landing del mismo producto (versión por ID)
-        header("Location: /tienda_mvc/Landing/index?producto_id=" . $productoId);
+        header("Location: /tienda_mvc/Landing/index?producto_id=" . (int)$producto['id']);
         exit;
     }
 
@@ -167,6 +200,9 @@ class LandingController extends Controller
 
         $productoId = (int)$producto['id'];
 
+        // ✅ NUEVO: Colores del producto
+        $colores = $productoModel->getColoresByProducto($productoId);
+
         $configModel = new LandingConfig();
         $config      = $configModel->obtenerPorProducto($productoId) ?? [];
 
@@ -174,10 +210,9 @@ class LandingController extends Controller
         $success = $_SESSION['success'] ?? '';
         unset($_SESSION['success']);
 
-        // En este flujo normalmente no usamos errores/old por sesión,
-        // porque en enviarPedido devolvemos directamente la vista con errores
         $this->view('landing/index', [
             'producto' => $producto,
+            'colores'  => $colores, // ✅ NUEVO
             'config'   => $config,
             'success'  => $success,
             'errores'  => [],

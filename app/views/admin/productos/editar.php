@@ -6,11 +6,22 @@
     <title>Admin - Editar producto</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- CSS tal cual lo mencionas -->
     <link rel="stylesheet" href="/tienda_mvc/public/css/editarProducto.css">
-
-    <!-- Iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Estilos mínimos para el bloque de colores -->
+    <style>
+        .colors-wrap { display: grid; gap: 10px; margin-top: 8px; }
+        .color-row { display: flex; gap: 10px; align-items: center; }
+        .color-row input { flex: 1; }
+        .btn-remove-color {
+            border: 0; background: rgba(0,0,0,.08);
+            width: 40px; height: 40px; border-radius: 10px;
+            cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .btn-remove-color:hover { background: rgba(0,0,0,.14); }
+        .btn-add-color { margin-top: 10px; }
+    </style>
 </head>
 
 <body>
@@ -19,6 +30,10 @@
     $old      = $old      ?? [];
     $producto = $producto ?? null;
 
+    // IMPORTANTE: el controlador debe enviar $colores (array) con los colores del producto.
+    // Si no viene, aquí no falla: queda en [].
+    $colores = $colores ?? [];
+
     $usuarioNombre = $_SESSION['usuario_nombre'] ?? 'Admin';
     $usuarioEmail  = $_SESSION['usuario_email'] ?? 'admin@tuempresa.com';
 
@@ -26,9 +41,15 @@
     $imgActual  = $old['imagen_principal'] ?? ($producto['imagen_principal'] ?? '');
     $nombreProd = $old['nombre'] ?? ($producto['nombre'] ?? '');
     $activoVal  = $old['activo'] ?? ($producto['activo'] ?? 1);
+
+    // Colores para re-pintar el formulario si hubo error
+    $coloresForm = $old['colores'] ?? $colores;
+    if (is_string($coloresForm)) $coloresForm = array_map('trim', explode(',', $coloresForm));
+    if (!is_array($coloresForm)) $coloresForm = [];
+    $coloresForm = array_values(array_filter(array_map(fn($c) => trim((string)$c), $coloresForm), fn($c) => $c !== ''));
+    if (empty($coloresForm)) $coloresForm = ['']; // al menos 1 input visible
     ?>
 
-    <!-- Sidebar -->
     <aside class="material-sidebar" aria-label="Menú admin">
         <div class="sidebar-logo">
             <h2>FEDORA ULTIMATE</h2>
@@ -55,9 +76,7 @@
         </nav>
     </aside>
 
-    <!-- Main -->
     <main class="material-main material-main--simple">
-        <!-- Header fijo -->
         <header class="material-header">
             <div class="header-greeting header-greeting--with-menu">
                 <button class="btn-menu" id="btnMenu" aria-label="Abrir menú">
@@ -147,6 +166,30 @@
                                 <small class="help">Costo base para calcular utilidad.</small>
                             </div>
 
+                            <!-- ✅ COLORES (NUEVO) -->
+                            <div class="form-group form-group--full">
+                                <label>Colores disponibles (opcional)</label>
+
+                                <div id="colorsWrap" class="colors-wrap">
+                                    <?php foreach ($coloresForm as $c): ?>
+                                        <div class="color-row">
+                                            <input type="text" name="colores[]" placeholder="Ej: Negro" value="<?= htmlspecialchars($c) ?>">
+                                            <button type="button" class="btn-remove-color" aria-label="Quitar color">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+
+                                <button type="button" id="addColorBtn" class="btn-ghost btn-add-color">
+                                    <i class="fas fa-plus"></i> Agregar otro color
+                                </button>
+
+                                <small class="help">
+                                    Si dejas todos los colores vacíos, la landing no mostrará selector de color.
+                                </small>
+                            </div>
+
                             <div class="form-group form-group--full">
                                 <label>Imagen principal actual</label>
 
@@ -197,8 +240,48 @@
         </section>
     </main>
 
-
     <script src="/tienda_mvc/public/js/funciones.js"></script>
+
+    <!-- JS del bloque de colores -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const wrap = document.getElementById('colorsWrap');
+            const btnAdd = document.getElementById('addColorBtn');
+
+            function makeRow(value = '') {
+                const row = document.createElement('div');
+                row.className = 'color-row';
+                row.innerHTML = `
+                    <input type="text" name="colores[]" placeholder="Ej: Azul" value="${value.replace(/"/g,'&quot;')}">
+                    <button type="button" class="btn-remove-color" aria-label="Quitar color">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                return row;
+            }
+
+            btnAdd.addEventListener('click', () => {
+                wrap.appendChild(makeRow(''));
+            });
+
+            wrap.addEventListener('click', (e) => {
+                const btn = e.target.closest('.btn-remove-color');
+                if (!btn) return;
+
+                const row = btn.closest('.color-row');
+                if (!row) return;
+
+                // Si es la única fila, solo limpia el input (no la borra)
+                const rows = wrap.querySelectorAll('.color-row');
+                if (rows.length <= 1) {
+                    const input = row.querySelector('input[name="colores[]"]');
+                    if (input) input.value = '';
+                    return;
+                }
+                row.remove();
+            });
+        });
+    </script>
 </body>
 
 </html>

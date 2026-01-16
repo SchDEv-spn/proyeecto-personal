@@ -27,6 +27,9 @@ class Producto extends Model
         return $row ?: null;
     }
 
+    /**
+     * Mantengo tu método original (retorna bool) por compatibilidad.
+     */
     public function crear(array $data): bool
     {
         $sql = "INSERT INTO productos
@@ -43,6 +46,31 @@ class Producto extends Model
             ':imagen_principal' => $data['imagen_principal'] ?? null,
             ':activo'           => $data['activo'] ?? 1,
         ]);
+    }
+
+    /**
+     * NUEVO: crea y devuelve el ID insertado (o 0 si falla).
+     */
+    public function crearConId(array $data): int
+    {
+        $sql = "INSERT INTO productos
+                (nombre, slug, precio_venta, precio_proveedor, imagen_principal, activo)
+                VALUES
+                (:nombre, :slug, :precio_venta, :precio_proveedor, :imagen_principal, :activo)";
+        $stmt = $this->db->prepare($sql);
+
+        $ok = $stmt->execute([
+            ':nombre'           => $data['nombre'],
+            ':slug'             => $data['slug'] ?? null,
+            ':precio_venta'     => $data['precio_venta'],
+            ':precio_proveedor' => $data['precio_proveedor'],
+            ':imagen_principal' => $data['imagen_principal'] ?? null,
+            ':activo'           => $data['activo'] ?? 1,
+        ]);
+
+        if (!$ok) return 0;
+
+        return (int)$this->db->lastInsertId();
     }
 
     public function actualizar(int $id, array $data): bool
@@ -66,5 +94,52 @@ class Producto extends Model
             ':imagen_principal' => $data['imagen_principal'] ?? null,
             ':activo'           => $data['activo'] ?? 1,
         ]);
+    }
+
+    // =========================
+    // NUEVO: COLORES POR PRODUCTO
+    // =========================
+
+    public function getColoresByProducto(int $productoId): array
+    {
+        $sql = "SELECT color
+                FROM producto_colores
+                WHERE producto_id = :pid AND activo = 1
+                ORDER BY id ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':pid' => $productoId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    }
+
+    public function syncColoresProducto(int $productoId, array $colores): void
+    {
+        // Borramos y reinsertamos (simple y estable)
+        $this->db->prepare("DELETE FROM producto_colores WHERE producto_id = :pid")
+                 ->execute([':pid' => $productoId]);
+
+        if (empty($colores)) return;
+
+        $ins = $this->db->prepare(
+            "INSERT INTO producto_colores (producto_id, color, activo)
+             VALUES (:pid, :color, 1)"
+        );
+
+        foreach ($colores as $c) {
+            $c = mb_substr(trim((string)$c), 0, 50);
+            if ($c === '') continue;
+            $ins->execute([':pid' => $productoId, ':color' => $c]);
+        }
+    }
+
+    /**
+     * Útil para validar pedidos (landing): verifica que el color exista para el producto.
+     */
+    public function colorExisteParaProducto(int $productoId, string $color): bool
+    {
+        $sql = "SELECT COUNT(*) FROM producto_colores
+                WHERE producto_id = :pid AND color = :color AND activo = 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':pid' => $productoId, ':color' => $color]);
+        return ((int)$stmt->fetchColumn()) > 0;
     }
 }

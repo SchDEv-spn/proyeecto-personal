@@ -626,11 +626,25 @@ $textColor       = $config['text_color']       ?? '#222222';
                             value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
                     </div>
 
-                    <div class="form-group">
-                        <label for="color">Color del producto (si aplica)</label>
-                        <input type="text" id="color" name="color"
-                            value="<?= htmlspecialchars($old['color'] ?? '') ?>">
-                    </div>
+                    <?php $colores = $colores ?? []; ?>
+
+                    <?php if (!empty($colores)): ?>
+                        <div class="form-group">
+                            <label for="color">Color del producto *</label>
+                            <select id="color" name="color" required>
+                                <option value="">Selecciona un color</option>
+                                <?php foreach ($colores as $c): ?>
+                                    <option value="<?= htmlspecialchars($c) ?>"
+                                        <?= (($old['color'] ?? '') === $c) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($c) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php else: ?>
+                        <input type="hidden" name="color" value="">
+                    <?php endif; ?>
+
 
                     <div class="form-group">
                         <label for="departamento">Departamento *</label>
