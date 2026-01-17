@@ -28,7 +28,7 @@ class AdminProductosController extends Controller
         return $texto;
     }
 
-    /** NUEVO: normaliza colores recibidos del form */
+    /** Normaliza colores recibidos del form */
     private function normalizarColores($input): array
     {
         $colores = $input ?? [];
@@ -38,7 +38,6 @@ class AdminProductosController extends Controller
         $colores = array_filter($colores, fn($c) => $c !== '');
         $colores = array_values(array_unique($colores));
 
-        // límite por seguridad (opcional)
         if (count($colores) > 30) {
             $colores = array_slice($colores, 0, 30);
         }
@@ -73,9 +72,11 @@ class AdminProductosController extends Controller
             'nombre'           => '',
             'slug'             => '',
             'precio_venta'     => '',
+            'precio_regular'   => '',   // ✅ NUEVO
             'precio_proveedor' => '',
+            'costo_envio'      => 0,
             'activo'           => 1,
-            'colores'          => [''], // NUEVO: para que el form muestre 1 input
+            'colores'          => [''],
         ];
 
         $this->view('admin/productos/crear', [
@@ -95,14 +96,17 @@ class AdminProductosController extends Controller
 
         $nombre           = trim($_POST['nombre'] ?? '');
         $slugInput        = trim($_POST['slug'] ?? '');
+
         $precioVenta      = (float)($_POST['precio_venta'] ?? 0);
+        $precioRegular    = (float)($_POST['precio_regular'] ?? 0); // ✅ NUEVO
         $precioProveedor  = (float)($_POST['precio_proveedor'] ?? 0);
+        $costoEnvio       = (float)($_POST['costo_envio'] ?? 0);
+
         $activo           = isset($_POST['activo']) && $_POST['activo'] == '1' ? 1 : 0;
+        if ($costoEnvio < 0) $costoEnvio = 0;
 
-        // NUEVO: colores desde el form
         $colores = $this->normalizarColores($_POST['colores'] ?? []);
-
-        $slug = $slugInput !== '' ? $slugInput : $this->generarSlug($nombre);
+        $slug    = $slugInput !== '' ? $slugInput : $this->generarSlug($nombre);
 
         $errores = [];
 
@@ -112,17 +116,28 @@ class AdminProductosController extends Controller
         if ($precioVenta <= 0) {
             $errores[] = "El precio de venta debe ser mayor a 0.";
         }
+        if ($precioRegular <= 0) {
+            $errores[] = "El precio regular (antes) es obligatorio.";
+        }
+        if ($precioRegular > 0 && $precioRegular < $precioVenta) {
+            $errores[] = "El precio regular debe ser mayor o igual al precio de venta.";
+        }
         if ($precioProveedor < 0) {
             $errores[] = "El precio del proveedor no puede ser negativo.";
+        }
+        if ($costoEnvio < 0) {
+            $errores[] = "El costo de envío no puede ser negativo.";
         }
 
         $old = [
             'nombre'           => $nombre,
             'slug'             => $slugInput,
             'precio_venta'     => $precioVenta,
+            'precio_regular'   => $precioRegular, // ✅
             'precio_proveedor' => $precioProveedor,
+            'costo_envio'      => $costoEnvio,
             'activo'           => $activo,
-            'colores'          => $colores, // NUEVO
+            'colores'          => $colores,
         ];
 
         if (!empty($errores)) {
@@ -162,12 +177,13 @@ class AdminProductosController extends Controller
 
         $productoModel = new Producto();
 
-        // NUEVO: crear devolviendo ID para poder guardar colores
         $productoId = $productoModel->crearConId([
             'nombre'           => $nombre,
             'slug'             => $slug,
             'precio_venta'     => $precioVenta,
+            'precio_regular'   => $precioRegular, // ✅
             'precio_proveedor' => $precioProveedor,
+            'costo_envio'      => $costoEnvio,
             'imagen_principal' => $imagenPrincipal,
             'activo'           => $activo,
         ]);
@@ -180,7 +196,6 @@ class AdminProductosController extends Controller
             return;
         }
 
-        // NUEVO: guardar colores
         $productoModel->syncColoresProducto((int)$productoId, $colores);
 
         $_SESSION['admin_productos_success'] = "Producto creado correctamente.";
@@ -207,7 +222,6 @@ class AdminProductosController extends Controller
             exit;
         }
 
-        // NUEVO: cargar colores para precargar en la vista
         $colores = $productoModel->getColoresByProducto($id);
 
         $old = [
@@ -215,17 +229,19 @@ class AdminProductosController extends Controller
             'nombre'           => $producto['nombre'],
             'slug'             => $producto['slug'] ?? '',
             'precio_venta'     => $producto['precio_venta'],
+            'precio_regular'   => $producto['precio_regular'] ?? 0, // ✅
             'precio_proveedor' => $producto['precio_proveedor'],
+            'costo_envio'      => $producto['costo_envio'] ?? 0,
             'activo'           => $producto['activo'] ?? 1,
             'imagen_principal' => $producto['imagen_principal'] ?? '',
-            'colores'          => $colores, // NUEVO
+            'colores'          => $colores,
         ];
 
         $this->view('admin/productos/editar', [
             'producto' => $producto,
             'errores'  => [],
             'old'      => $old,
-            'colores'  => $colores, // NUEVO (tu vista edit que te pasé lo usa)
+            'colores'  => $colores,
         ]);
     }
 
@@ -255,15 +271,19 @@ class AdminProductosController extends Controller
 
         $nombre           = trim($_POST['nombre'] ?? '');
         $slugInput        = trim($_POST['slug'] ?? '');
+
         $precioVenta      = (float)($_POST['precio_venta'] ?? 0);
+        $precioRegular    = (float)($_POST['precio_regular'] ?? 0); // ✅
         $precioProveedor  = (float)($_POST['precio_proveedor'] ?? 0);
+        $costoEnvio       = (float)($_POST['costo_envio'] ?? 0);
+
         $activo           = isset($_POST['activo']) && $_POST['activo'] == '1' ? 1 : 0;
         $imagenPrincipal  = $_POST['imagen_principal_actual'] ?? ($productoExistente['imagen_principal'] ?? null);
 
-        // NUEVO: colores desde el form
-        $colores = $this->normalizarColores($_POST['colores'] ?? []);
+        if ($costoEnvio < 0) $costoEnvio = 0;
 
-        $slug = $slugInput !== '' ? $slugInput : ($productoExistente['slug'] ?? $this->generarSlug($nombre));
+        $colores = $this->normalizarColores($_POST['colores'] ?? []);
+        $slug    = $slugInput !== '' ? $slugInput : ($productoExistente['slug'] ?? $this->generarSlug($nombre));
 
         $errores = [];
 
@@ -273,8 +293,17 @@ class AdminProductosController extends Controller
         if ($precioVenta <= 0) {
             $errores[] = "El precio de venta debe ser mayor a 0.";
         }
+        if ($precioRegular <= 0) {
+            $errores[] = "El precio regular (antes) es obligatorio.";
+        }
+        if ($precioRegular > 0 && $precioRegular < $precioVenta) {
+            $errores[] = "El precio regular debe ser mayor o igual al precio de venta.";
+        }
         if ($precioProveedor < 0) {
             $errores[] = "El precio del proveedor no puede ser negativo.";
+        }
+        if ($costoEnvio < 0) {
+            $errores[] = "El costo de envío no puede ser negativo.";
         }
 
         $old = [
@@ -282,10 +311,12 @@ class AdminProductosController extends Controller
             'nombre'           => $nombre,
             'slug'             => $slugInput,
             'precio_venta'     => $precioVenta,
+            'precio_regular'   => $precioRegular, // ✅
             'precio_proveedor' => $precioProveedor,
+            'costo_envio'      => $costoEnvio,
             'activo'           => $activo,
             'imagen_principal' => $imagenPrincipal,
-            'colores'          => $colores, // NUEVO
+            'colores'          => $colores,
         ];
 
         if (!empty($errores)) {
@@ -298,7 +329,7 @@ class AdminProductosController extends Controller
             return;
         }
 
-        // Manejo de imagen (si suben una nueva, reemplaza a la anterior)
+        // Manejo de imagen
         $basePath  = dirname(__DIR__, 2);
         $uploadDir = $basePath . '/public/uploads/productos/';
 
@@ -327,7 +358,9 @@ class AdminProductosController extends Controller
             'nombre'           => $nombre,
             'slug'             => $slug,
             'precio_venta'     => $precioVenta,
+            'precio_regular'   => $precioRegular, // ✅
             'precio_proveedor' => $precioProveedor,
+            'costo_envio'      => $costoEnvio,
             'imagen_principal' => $imagenPrincipal,
             'activo'           => $activo,
         ]);
@@ -342,7 +375,6 @@ class AdminProductosController extends Controller
             return;
         }
 
-        // NUEVO: sincronizar colores
         $productoModel->syncColoresProducto($id, $colores);
 
         $_SESSION['admin_productos_success'] = "Producto actualizado correctamente.";

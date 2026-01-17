@@ -11,16 +11,41 @@
 
     <!-- Estilos mínimos para el bloque de colores -->
     <style>
-        .colors-wrap { display: grid; gap: 10px; margin-top: 8px; }
-        .color-row { display: flex; gap: 10px; align-items: center; }
-        .color-row input { flex: 1; }
-        .btn-remove-color {
-            border: 0; background: rgba(0,0,0,.08);
-            width: 40px; height: 40px; border-radius: 10px;
-            cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+        .colors-wrap {
+            display: grid;
+            gap: 10px;
+            margin-top: 8px;
         }
-        .btn-remove-color:hover { background: rgba(0,0,0,.14); }
-        .btn-add-color { margin-top: 10px; }
+
+        .color-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .color-row input {
+            flex: 1;
+        }
+
+        .btn-remove-color {
+            border: 0;
+            background: rgba(0, 0, 0, .08);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-remove-color:hover {
+            background: rgba(0, 0, 0, .14);
+        }
+
+        .btn-add-color {
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -121,6 +146,15 @@
                             </div>
 
                             <div class="form-group">
+                                <label for="precio_regular">Precio regular (antes) <span class="req">*</span></label>
+                                <input type="number" id="precio_regular" name="precio_regular"
+                                    value="<?= htmlspecialchars($old['precio_regular'] ?? '') ?>"
+                                    step="100" min="0" required>
+                                <small class="help">Este es el precio tachado. Debe ser >= precio de venta.</small>
+                            </div>
+
+
+                            <div class="form-group">
                                 <label for="precio_venta">Precio de venta <span class="req">*</span></label>
                                 <input type="number" id="precio_venta" name="precio_venta"
                                     value="<?= htmlspecialchars($old['precio_venta'] ?? '') ?>"
@@ -135,6 +169,15 @@
                                     step="100" min="0" required>
                                 <small class="help">Costo base para calcular utilidad.</small>
                             </div>
+
+                            <div class="form-group">
+                                <label for="costo_envio">Costo de envío (interno)</label>
+                                <input type="number" id="costo_envio" name="costo_envio"
+                                    value="<?= htmlspecialchars($old['costo_envio'] ?? ($producto['costo_envio'] ?? 0)) ?>"
+                                    step="100" min="0">
+                                <small class="help">Este valor NO lo ve el cliente. Se usa para calcular utilidad real.</small>
+                            </div>
+
 
                             <!-- ✅ COLORES (NUEVO) -->
                             <div class="form-group form-group--full">

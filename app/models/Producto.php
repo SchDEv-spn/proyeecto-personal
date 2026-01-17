@@ -27,49 +27,46 @@ class Producto extends Model
         return $row ?: null;
     }
 
-    /**
-     * Mantengo tu método original (retorna bool) por compatibilidad.
-     */
     public function crear(array $data): bool
     {
         $sql = "INSERT INTO productos
-                (nombre, slug, precio_venta, precio_proveedor, imagen_principal, activo)
+                (nombre, slug, precio_venta, precio_regular, precio_proveedor, costo_envio, imagen_principal, activo)
                 VALUES
-                (:nombre, :slug, :precio_venta, :precio_proveedor, :imagen_principal, :activo)";
+                (:nombre, :slug, :precio_venta, :precio_regular, :precio_proveedor, :costo_envio, :imagen_principal, :activo)";
         $stmt = $this->db->prepare($sql);
 
         return $stmt->execute([
             ':nombre'           => $data['nombre'],
             ':slug'             => $data['slug'] ?? null,
             ':precio_venta'     => $data['precio_venta'],
+            ':precio_regular'   => $data['precio_regular'] ?? 0,
             ':precio_proveedor' => $data['precio_proveedor'],
+            ':costo_envio'      => $data['costo_envio'] ?? 0,
             ':imagen_principal' => $data['imagen_principal'] ?? null,
             ':activo'           => $data['activo'] ?? 1,
         ]);
     }
 
-    /**
-     * NUEVO: crea y devuelve el ID insertado (o 0 si falla).
-     */
     public function crearConId(array $data): int
     {
         $sql = "INSERT INTO productos
-                (nombre, slug, precio_venta, precio_proveedor, imagen_principal, activo)
+                (nombre, slug, precio_venta, precio_regular, precio_proveedor, costo_envio, imagen_principal, activo)
                 VALUES
-                (:nombre, :slug, :precio_venta, :precio_proveedor, :imagen_principal, :activo)";
+                (:nombre, :slug, :precio_venta, :precio_regular, :precio_proveedor, :costo_envio, :imagen_principal, :activo)";
         $stmt = $this->db->prepare($sql);
 
         $ok = $stmt->execute([
             ':nombre'           => $data['nombre'],
             ':slug'             => $data['slug'] ?? null,
             ':precio_venta'     => $data['precio_venta'],
+            ':precio_regular'   => $data['precio_regular'] ?? 0,
             ':precio_proveedor' => $data['precio_proveedor'],
+            ':costo_envio'      => $data['costo_envio'] ?? 0,
             ':imagen_principal' => $data['imagen_principal'] ?? null,
             ':activo'           => $data['activo'] ?? 1,
         ]);
 
         if (!$ok) return 0;
-
         return (int)$this->db->lastInsertId();
     }
 
@@ -79,7 +76,9 @@ class Producto extends Model
                 SET nombre           = :nombre,
                     slug             = :slug,
                     precio_venta     = :precio_venta,
+                    precio_regular   = :precio_regular,
                     precio_proveedor = :precio_proveedor,
+                    costo_envio      = :costo_envio,
                     imagen_principal = :imagen_principal,
                     activo           = :activo
                 WHERE id = :id";
@@ -90,14 +89,16 @@ class Producto extends Model
             ':nombre'           => $data['nombre'],
             ':slug'             => $data['slug'] ?? null,
             ':precio_venta'     => $data['precio_venta'],
+            ':precio_regular'   => $data['precio_regular'] ?? 0,
             ':precio_proveedor' => $data['precio_proveedor'],
+            ':costo_envio'      => $data['costo_envio'] ?? 0,
             ':imagen_principal' => $data['imagen_principal'] ?? null,
             ':activo'           => $data['activo'] ?? 1,
         ]);
     }
 
     // =========================
-    // NUEVO: COLORES POR PRODUCTO
+    // COLORES POR PRODUCTO
     // =========================
 
     public function getColoresByProducto(int $productoId): array
@@ -113,7 +114,6 @@ class Producto extends Model
 
     public function syncColoresProducto(int $productoId, array $colores): void
     {
-        // Borramos y reinsertamos (simple y estable)
         $this->db->prepare("DELETE FROM producto_colores WHERE producto_id = :pid")
                  ->execute([':pid' => $productoId]);
 
@@ -131,9 +131,6 @@ class Producto extends Model
         }
     }
 
-    /**
-     * Útil para validar pedidos (landing): verifica que el color exista para el producto.
-     */
     public function colorExisteParaProducto(int $productoId, string $color): bool
     {
         $sql = "SELECT COUNT(*) FROM producto_colores

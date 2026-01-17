@@ -1,8 +1,16 @@
 <?php
 // $producto viene del controlador
-$precio_venta     = $producto['precio_venta'] ?? 0;
-$precio_proveedor = $producto['precio_proveedor'] ?? 0;
-$ahorro           = $precio_venta - $precio_proveedor;
+$precio_venta     = (float)($producto['precio_venta'] ?? 0);
+$precio_proveedor = (float)($producto['precio_proveedor'] ?? 0);
+
+$precio_regular = (float)($producto['precio_regular'] ?? 0);
+if ($precio_regular <= 0 || $precio_regular < $precio_venta) {
+    $precio_regular = $precio_venta;
+}
+
+$ahorro = max(0, $precio_regular - $precio_venta);
+
+
 
 // Config general de la landing
 $config = $config ?? [];
@@ -213,14 +221,16 @@ $textColor       = $config['text_color']       ?? '#222222';
             <div class="price-box">
                 <div class="price-label">Oferta de hoy</div>
                 <div class="old">
-                    Antes: $<?= number_format($precio_venta + 30000, 0, ',', '.') ?>
+                    Antes: $<?= number_format($precio_regular, 0, ',', '.') ?>
                 </div>
+
                 <div class="new">
                     Hoy: $<?= number_format($precio_venta, 0, ',', '.') ?>
                 </div>
                 <div class="save">
                     Te ahorras: $<?= number_format($ahorro, 0, ',', '.') ?>
                 </div>
+
             </div>
 
             <a href="#form-pedido" class="btn-primary">
@@ -626,25 +636,233 @@ $textColor       = $config['text_color']       ?? '#222222';
                             value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
                     </div>
 
-                    <?php $colores = $colores ?? []; ?>
+                    <?php
+                    $colores = $colores ?? [];
+
+                    $oldColorItems = $old['color_item'] ?? [];
+                    $oldQtyItems   = $old['qty_item'] ?? [];
+                    if (!is_array($oldColorItems)) $oldColorItems = [];
+                    if (!is_array($oldQtyItems))   $oldQtyItems = [];
+
+                    $rowsCount  = max(1, count($oldColorItems), count($oldQtyItems));
+                    $colorsJson = json_encode(array_values($colores), JSON_UNESCAPED_UNICODE);
+                    ?>
 
                     <?php if (!empty($colores)): ?>
                         <div class="form-group">
-                            <label for="color">Color del producto *</label>
-                            <select id="color" name="color" required>
-                                <option value="">Selecciona un color</option>
-                                <?php foreach ($colores as $c): ?>
-                                    <option value="<?= htmlspecialchars($c) ?>"
-                                        <?= (($old['color'] ?? '') === $c) ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($c) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    <?php else: ?>
-                        <input type="hidden" name="color" value="">
-                    <?php endif; ?>
+                            <label>Colores y cantidades *</label>
 
+                            <div id="colorsQtyWrap" class="colors-qty-wrap">
+                                <?php for ($r = 0; $r < $rowsCount; $r++): ?>
+                                    <?php
+                                    $selColor = $oldColorItems[$r] ?? '';
+                                    $selQty   = (int)($oldQtyItems[$r] ?? 1);
+                                    if ($selQty < 1) $selQty = 1;
+                                    if ($selQty > 5) $selQty = 5;
+                                    ?>
+                                    <div class="color-qty-row">
+                                        <select name="color_item[]" required class="color-select">
+                                            <option value="">Selecciona un color</option>
+                                            <?php foreach ($colores as $c): ?>
+                                                <option value="<?= htmlspecialchars($c) ?>" <?= ($selColor === $c) ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($c) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+
+                                        <select name="qty_item[]" required class="qty-select">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <option value="<?= $i ?>" <?= ($selQty === $i) ? 'selected' : '' ?>>
+                                                    <?= $i ?>
+                                                </option>
+                                            <?php endfor; ?>
+                                        </select>
+
+                                        <button type="button" class="remove-color-qty" aria-label="Quitar">
+                                            <span class="remove-icon">×</span>
+                                            <span class="remove-text">Borrar</span>
+                                        </button>
+
+                                    </div>
+                                <?php endfor; ?>
+                            </div>
+
+                            <button type="button" id="addColorQtyBtn" class="btn-ghost add-color-btn">
+                                + Agregar otro color
+                            </button>
+
+                            <input type="hidden" id="cantidad_total" name="cantidad_total"
+                                value="<?= htmlspecialchars((string)($old['cantidad_total'] ?? 1)) ?>">
+
+                            <small class="help total-units-note">
+                                Total unidades: <strong id="totalUnits">1</strong>
+                            </small>
+                        </div>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', () => {
+                                const COLORS = <?= $colorsJson ?>;
+
+                                const wrap = document.getElementById('colorsQtyWrap');
+                                const btnAdd = document.getElementById('addColorQtyBtn');
+                                const totalUnitsEl = document.getElementById('totalUnits');
+                                const totalHidden = document.getElementById('cantidad_total');
+
+                                // Escapar HTML para evitar romper atributos/HTML si algún color trae caracteres raros
+                                function escHtml(s) {
+                                    return String(s)
+                                        .replace(/&/g, '&amp;')
+                                        .replace(/</g, '&lt;')
+                                        .replace(/>/g, '&gt;')
+                                        .replace(/"/g, '&quot;')
+                                        .replace(/'/g, '&#39;');
+                                }
+
+                                function optionsHtml() {
+                                    return ['<option value="">Selecciona un color</option>']
+                                        .concat(COLORS.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`))
+                                        .join('');
+                                }
+
+                                function qtyOptionsHtml(defaultQty = 1) {
+                                    return Array.from({
+                                            length: 5
+                                        }, (_, i) => i + 1)
+                                        .map(n => `<option value="${n}" ${n === defaultQty ? 'selected' : ''}>${n}</option>`)
+                                        .join('');
+                                }
+
+                                function formatCOP(num) {
+                                    try {
+                                        return new Intl.NumberFormat('es-CO', {
+                                            style: 'currency',
+                                            currency: 'COP',
+                                            maximumFractionDigits: 0
+                                        }).format(num);
+                                    } catch (e) {
+                                        return '$' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                                    }
+                                }
+
+                                // Regla: 2da unidad 15% OFF, 3ra en adelante 20% OFF
+                                function totalConDescuento(units, priceUnit) {
+                                    if (units <= 0) return 0;
+                                    if (units === 1) return priceUnit;
+
+                                    let total = 0;
+                                    total += priceUnit; // 1ra sin descuento
+                                    total += priceUnit * 0.85; // 2da -15%
+                                    if (units >= 3) {
+                                        total += priceUnit * 0.80 * (units - 2); // 3ra+ -20%
+                                    }
+                                    return total;
+                                }
+
+                                function updateSummary(totalUnits) {
+                                    const summary = document.getElementById('orderSummary');
+                                    if (!summary) return;
+
+                                    const priceUnit = parseFloat(summary.dataset.priceUnit || '0') || 0;
+                                    const priceRegular = parseFloat(summary.dataset.priceRegular || summary.dataset.priceUnit || '0') || 0;
+
+                                    const subtotal = priceUnit * totalUnits;
+                                    const totalPay = totalConDescuento(totalUnits, priceUnit);
+                                    const discount = Math.max(0, subtotal - totalPay);
+
+                                    // Ahorro real del cliente usando precio_regular
+                                    const baseRegular = priceRegular * totalUnits;
+                                    const ahorroTotal = Math.max(0, baseRegular - totalPay);
+
+                                    const qtyEl = document.getElementById('summaryQty');
+                                    const qtyWordEl = document.getElementById('summaryQtyWord');
+                                    const subEl = document.getElementById('summarySubtotal');
+                                    const disEl = document.getElementById('summaryDiscount');
+                                    const totEl = document.getElementById('summaryTotal');
+                                    const savEl = document.getElementById('summarySave');
+
+                                    if (qtyEl) qtyEl.textContent = String(totalUnits);
+                                    if (qtyWordEl) qtyWordEl.textContent = totalUnits > 1 ? 'unidades' : 'unidad';
+
+                                    if (subEl) subEl.textContent = formatCOP(subtotal);
+                                    if (disEl) disEl.textContent = formatCOP(discount);
+                                    if (totEl) totEl.textContent = formatCOP(totalPay);
+                                    if (savEl) savEl.textContent = formatCOP(ahorroTotal);
+                                }
+
+                                function rowTemplate() {
+                                    const row = document.createElement('div');
+                                    row.className = 'color-qty-row';
+                                    row.innerHTML = `
+                                            <select name="color_item[]" required class="color-select">
+                                            ${optionsHtml()}
+                                            </select>
+
+                                            <select name="qty_item[]" required class="qty-select">
+                                            ${qtyOptionsHtml(1)}
+                                            </select>
+
+                                            <button type="button" class="remove-color-qty" aria-label="Quitar">
+                                            <span class="remove-icon">×</span>
+                                            <span class="remove-text">Borrar</span>
+                                            </button>
+                                        `;
+                                        return row;
+                                }
+
+
+                                function recalcTotal() {
+                                    let total = 0;
+
+                                    wrap.querySelectorAll('select[name="qty_item[]"]').forEach(sel => {
+                                        const v = parseInt(sel.value || '0', 10);
+                                        if (!isNaN(v)) total += v;
+                                    });
+
+                                    if (total < 1) total = 1;
+
+                                    totalUnitsEl.textContent = String(total);
+                                    totalHidden.value = String(total);
+
+                                    updateSummary(total);
+                                }
+
+                                // Agregar fila
+                                btnAdd.addEventListener('click', () => {
+                                    wrap.appendChild(rowTemplate());
+                                    recalcTotal();
+                                });
+
+                                // Eliminar fila (delegado)
+                                wrap.addEventListener('click', (e) => {
+                                    const btn = e.target.closest('.remove-color-qty');
+                                    if (!btn) return;
+
+                                    const row = btn.closest('.color-qty-row');
+                                    const rows = wrap.querySelectorAll('.color-qty-row');
+
+                                    if (rows.length <= 1) {
+                                        row.querySelector('select[name="color_item[]"]').value = '';
+                                        row.querySelector('select[name="qty_item[]"]').value = '1';
+                                    } else {
+                                        row.remove();
+                                    }
+                                    recalcTotal();
+                                });
+
+                                // Recalcular cuando cambia cantidad
+                                wrap.addEventListener('change', (e) => {
+                                    if (e.target && e.target.name === 'qty_item[]') recalcTotal();
+                                });
+
+                                // Inicial
+                                recalcTotal();
+                            });
+                        </script>
+
+
+                    <?php else: ?>
+                        <input type="hidden" name="cantidad_total" value="1">
+                    <?php endif; ?>
 
                     <div class="form-group">
                         <label for="departamento">Departamento *</label>
@@ -687,6 +905,61 @@ $textColor       = $config['text_color']       ?? '#222222';
                         <input type="text" id="direccion" name="direccion"
                             value="<?= htmlspecialchars($old['direccion'] ?? '') ?>">
                     </div>
+
+                    <?php
+                    $precioUnit = (float)($producto['precio_venta'] ?? 0);
+                    ?>
+                    <?php
+                    $precioVenta      = (float)($producto['precio_venta'] ?? 0);
+                    $precioProveedor  = (float)($producto['precio_proveedor'] ?? 0);
+                    ?>
+
+                    <div class="order-summary" id="orderSummary"
+                        data-price-unit="<?= htmlspecialchars((string)$precioVenta) ?>"
+                        data-price-supplier="<?= htmlspecialchars((string)$precioProveedor) ?>">
+                        <h3 class="order-summary__title">Resumen de tu compra</h3>
+
+                        <div class="order-summary__rows">
+                            <div class="order-summary__row">
+                                <span>Subtotal (<strong id="summaryQty">1</strong> unidad)</span>
+                                <strong id="summarySubtotal">$0</strong>
+                            </div>
+
+                            <div class="order-summary__row">
+                                <span>Descuento por cantidad</span>
+                                <strong id="summaryDiscount">$0</strong>
+                            </div>
+
+                            <div class="order-summary__row">
+                                <span>Envío</span>
+                                <strong class="summary-free">GRATIS</strong>
+                            </div>
+
+                            <div class="order-summary__row">
+                                <span>Ahorro total</span>
+                                <strong class="summary-save" id="summarySave">$0</strong>
+                            </div>
+
+                            <div class="order-summary__row order-summary__row--total">
+                                <span>Total a pagar al recibir</span>
+                                <strong id="summaryTotal">$0</strong>
+                            </div>
+                        </div>
+
+                        <p class="order-summary__question">¿Estás 100% seguro de tu compra?</p>
+
+                        <label class="order-summary__confirm">
+                            <input type="checkbox" id="confirmPurchase" name="confirm_purchase" value="1" required
+                                <?= !empty($old['confirm_purchase']) ? 'checked' : '' ?>>
+                            Sí, quiero el producto y pagaré al recibirlo.
+                        </label>
+
+                        <small class="order-summary__note">
+                            Al confirmar, aceptas que un asesor te contacte para validar tu pedido.
+                        </small>
+                    </div>
+
+
 
                     <button type="submit" class="btn-primary btn-full">Confirmar mi pedido</button>
                     <p class="form-note">

@@ -10,9 +10,29 @@ $estadosPosibles = ['nuevo','contactado','confirmado','enviado','entregado','can
 $estadoActual = $pedido['estado'] ?? 'nuevo';
 $estadoSafe = in_array($estadoActual, $estadosPosibles, true) ? $estadoActual : 'nuevo';
 
-$precioVenta     = (float)($pedido['precio_venta'] ?? 0);
-$precioProveedor = (float)($pedido['precio_proveedor'] ?? 0);
-$utilidad        = (float)($pedido['utilidad'] ?? ($precioVenta - $precioProveedor));
+// ==== Valores numéricos seguros ====
+$cantidadTotal = (int)($pedido['cantidad_total'] ?? 1);
+if ($cantidadTotal < 1) $cantidadTotal = 1;
+
+$precioUnit      = (float)($pedido['precio_venta'] ?? 0);
+$proveedorUnit   = (float)($pedido['precio_proveedor'] ?? 0);
+$utilidadUnit    = (float)($pedido['utilidad'] ?? ($precioUnit - $proveedorUnit));
+
+$subtotal        = $precioUnit * $cantidadTotal;
+$descuentoTotal  = (float)($pedido['descuento_total'] ?? 0);
+
+$precioTotal     = (float)($pedido['precio_total'] ?? 0);
+if ($precioTotal <= 0) $precioTotal = max(0, $subtotal - $descuentoTotal);
+
+$costoEnvio = (float)($pedido['costo_envio'] ?? ($pedido['costo_envio_total'] ?? 0));
+if ($costoEnvio < 0) $costoEnvio = 0;
+
+$costoProveedorTotal = $proveedorUnit * $cantidadTotal;
+
+$utilidadTotal = (float)($pedido['utilidad_total'] ?? 0);
+if ($utilidadTotal == 0.0) {
+  $utilidadTotal = $precioTotal - $costoProveedorTotal - $costoEnvio;
+}
 
 // WhatsApp URL
 $telRaw    = $pedido['telefono'] ?? '';
@@ -95,23 +115,61 @@ if ($telLimpio !== '') {
       </div>
 
       <div class="detalle-item">
-        <span class="detalle-label">Precio venta</span>
-        <span class="detalle-value">$<?= number_format($precioVenta, 0, ',', '.') ?></span>
-      </div>
-
-      <div class="detalle-item">
-        <span class="detalle-label">Costo proveedor</span>
-        <span class="detalle-value">$<?= number_format($precioProveedor, 0, ',', '.') ?></span>
-      </div>
-
-      <div class="detalle-item">
-        <span class="detalle-label">Utilidad estimada</span>
-        <span class="detalle-value">$<?= number_format($utilidad, 0, ',', '.') ?></span>
+        <span class="detalle-label">Cantidad total</span>
+        <span class="detalle-value"><?= number_format($cantidadTotal, 0, ',', '.') ?></span>
       </div>
 
       <div class="detalle-item">
         <span class="detalle-label">Color</span>
         <span class="detalle-value"><?= htmlspecialchars(($pedido['color'] ?? '') ?: '-') ?></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container" style="margin-top:1.25rem;">
+    <div class="table-header">
+      <h3>Totales del pedido</h3>
+    </div>
+
+    <div class="detalle-grid" style="padding:1.5rem 2rem;">
+      <div class="detalle-item">
+        <span class="detalle-label">Precio unitario</span>
+        <span class="detalle-value">$<?= number_format($precioUnit, 0, ',', '.') ?></span>
+      </div>
+
+      <div class="detalle-item">
+        <span class="detalle-label">Subtotal</span>
+        <span class="detalle-value">$<?= number_format($subtotal, 0, ',', '.') ?></span>
+      </div>
+
+      <div class="detalle-item">
+        <span class="detalle-label">Descuento total</span>
+        <span class="detalle-value">$<?= number_format($descuentoTotal, 0, ',', '.') ?></span>
+      </div>
+
+      <div class="detalle-item">
+        <span class="detalle-label">Total a cobrar</span>
+        <span class="detalle-value"><strong>$<?= number_format($precioTotal, 0, ',', '.') ?></strong></span>
+      </div>
+
+      <div class="detalle-item">
+        <span class="detalle-label">Costo proveedor total</span>
+        <span class="detalle-value">$<?= number_format($costoProveedorTotal, 0, ',', '.') ?></span>
+      </div>
+
+      <div class="detalle-item">
+        <span class="detalle-label">Costo envío interno</span>
+        <span class="detalle-value">$<?= number_format($costoEnvio, 0, ',', '.') ?></span>
+      </div>
+
+      <div class="detalle-item">
+        <span class="detalle-label">Utilidad total</span>
+        <span class="detalle-value"><strong>$<?= number_format($utilidadTotal, 0, ',', '.') ?></strong></span>
+      </div>
+
+      <div class="detalle-item">
+        <span class="detalle-label">Utilidad (unitaria)</span>
+        <span class="detalle-value">$<?= number_format($utilidadUnit, 0, ',', '.') ?></span>
       </div>
     </div>
   </div>

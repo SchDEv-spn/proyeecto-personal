@@ -42,10 +42,33 @@ if ($telLimpio !== '') {
     );
 }
 
-// Valores numéricos seguros
-$precioVenta      = (float)($pedido['precio_venta'] ?? 0);
-$precioProveedor  = (float)($pedido['precio_proveedor'] ?? 0);
-$utilidad         = (float)($pedido['utilidad'] ?? ($precioVenta - $precioProveedor));
+// ==== Valores numéricos seguros (compatibles con tu BD actual) ====
+$cantidadTotal = (int)($pedido['cantidad_total'] ?? 1);
+if ($cantidadTotal < 1) $cantidadTotal = 1;
+
+$precioUnit      = (float)($pedido['precio_venta'] ?? 0);        // precio unitario
+$proveedorUnit   = (float)($pedido['precio_proveedor'] ?? 0);    // costo unitario proveedor
+$utilidadUnit    = (float)($pedido['utilidad'] ?? ($precioUnit - $proveedorUnit));
+
+$subtotal        = $precioUnit * $cantidadTotal;
+
+$descuentoTotal  = (float)($pedido['descuento_total'] ?? 0);
+
+$precioTotal     = (float)($pedido['precio_total'] ?? 0);
+if ($precioTotal <= 0) $precioTotal = max(0, $subtotal - $descuentoTotal);
+
+// costo envío interno (fallback si no existe columna)
+$costoEnvio = (float)($pedido['costo_envio'] ?? ($pedido['costo_envio_total'] ?? 0));
+if ($costoEnvio < 0) $costoEnvio = 0;
+
+$costoProveedorTotal = $proveedorUnit * $cantidadTotal;
+
+// utilidad_total (fallback si no existe / viene en 0)
+$utilidadTotal = (float)($pedido['utilidad_total'] ?? 0);
+if ($utilidadTotal == 0.0) {
+    // Nota: solo lo calculamos como fallback visual
+    $utilidadTotal = $precioTotal - $costoProveedorTotal - $costoEnvio;
+}
 
 $municipio        = $pedido['municipio'] ?? '';
 $departamento     = $pedido['departamento'] ?? '';
@@ -92,7 +115,6 @@ $color            = $pedido['color'] ?? '';
         </div>
 
         <div class="header-actions">
-            <!-- Botón menú (para mobile) -->
             <button class="btn-menu" id="btnMenu" aria-label="Abrir menú">
                 <i class="fas fa-bars"></i>
             </button>
@@ -107,7 +129,7 @@ $color            = $pedido['color'] ?? '';
         </div>
     </header>
 
-    <!-- Stats (para mantener coherencia con tu layout fijo) -->
+    <!-- Stats -->
     <div class="stats-grid">
         <div class="stat-card glow-red">
             <div class="stat-info">
@@ -120,18 +142,18 @@ $color            = $pedido['color'] ?? '';
 
         <div class="stat-card glow-purple">
             <div class="stat-info">
-                <small>Precio venta</small>
-                <h3>$<?= number_format($precioVenta, 0, ',', '.') ?></h3>
-                <span class="target">Ticket del pedido</span>
+                <small>Total a cobrar</small>
+                <h3>$<?= number_format($precioTotal, 0, ',', '.') ?></h3>
+                <span class="target">Incluye descuento por cantidad</span>
             </div>
             <i class="fas fa-dollar-sign stat-icon"></i>
         </div>
 
         <div class="stat-card glow-blue">
             <div class="stat-info">
-                <small>Utilidad estimada</small>
-                <h3>$<?= number_format($utilidad, 0, ',', '.') ?></h3>
-                <span class="target">Margen esperado</span>
+                <small>Utilidad total</small>
+                <h3>$<?= number_format($utilidadTotal, 0, ',', '.') ?></h3>
+                <span class="target">Ya contempla costos</span>
             </div>
             <i class="fas fa-chart-line stat-icon"></i>
         </div>
@@ -148,7 +170,7 @@ $color            = $pedido['color'] ?? '';
 
     <section class="material-content">
 
-        <!-- Sección: Estado / Producto -->
+        <!-- Estado / Producto -->
         <div class="table-container">
             <div class="table-header">
                 <h3>Estado y producto</h3>
@@ -180,8 +202,8 @@ $color            = $pedido['color'] ?? '';
                 </div>
 
                 <div class="detalle-item">
-                    <span class="detalle-label">Costo proveedor</span>
-                    <span class="detalle-value">$<?= number_format($precioProveedor, 0, ',', '.') ?></span>
+                    <span class="detalle-label">Cantidad total</span>
+                    <span class="detalle-value"><?= number_format($cantidadTotal, 0, ',', '.') ?></span>
                 </div>
 
                 <div class="detalle-item">
@@ -191,7 +213,56 @@ $color            = $pedido['color'] ?? '';
             </div>
         </div>
 
-        <!-- Sección: Cliente -->
+        <!-- Totales del pedido -->
+        <div class="table-container" style="margin-top:1.5rem;">
+            <div class="table-header">
+                <h3>Totales del pedido</h3>
+            </div>
+
+            <div class="detalle-grid">
+                <div class="detalle-item">
+                    <span class="detalle-label">Precio unitario</span>
+                    <span class="detalle-value">$<?= number_format($precioUnit, 0, ',', '.') ?></span>
+                </div>
+
+                <div class="detalle-item">
+                    <span class="detalle-label">Subtotal (sin descuento)</span>
+                    <span class="detalle-value">$<?= number_format($subtotal, 0, ',', '.') ?></span>
+                </div>
+
+                <div class="detalle-item">
+                    <span class="detalle-label">Descuento total</span>
+                    <span class="detalle-value">$<?= number_format($descuentoTotal, 0, ',', '.') ?></span>
+                </div>
+
+                <div class="detalle-item">
+                    <span class="detalle-label">Total a cobrar</span>
+                    <span class="detalle-value"><strong>$<?= number_format($precioTotal, 0, ',', '.') ?></strong></span>
+                </div>
+
+                <div class="detalle-item">
+                    <span class="detalle-label">Costo proveedor (unitario)</span>
+                    <span class="detalle-value">$<?= number_format($proveedorUnit, 0, ',', '.') ?></span>
+                </div>
+
+                <div class="detalle-item">
+                    <span class="detalle-label">Costo proveedor (total)</span>
+                    <span class="detalle-value">$<?= number_format($costoProveedorTotal, 0, ',', '.') ?></span>
+                </div>
+
+                <div class="detalle-item">
+                    <span class="detalle-label">Costo envío interno</span>
+                    <span class="detalle-value">$<?= number_format($costoEnvio, 0, ',', '.') ?></span>
+                </div>
+
+                <div class="detalle-item">
+                    <span class="detalle-label">Utilidad total</span>
+                    <span class="detalle-value"><strong>$<?= number_format($utilidadTotal, 0, ',', '.') ?></strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cliente -->
         <div class="table-container" style="margin-top:1.5rem;">
             <div class="table-header">
                 <h3>Datos del cliente</h3>
@@ -225,7 +296,7 @@ $color            = $pedido['color'] ?? '';
             <?php endif; ?>
         </div>
 
-        <!-- Sección: Envío -->
+        <!-- Envío -->
         <div class="table-container" style="margin-top:1.5rem;">
             <div class="table-header">
                 <h3>Envío y ubicación</h3>
@@ -259,7 +330,6 @@ $color            = $pedido['color'] ?? '';
     </section>
 </main>
 
-<!-- Importa tus funciones (menú, notificaciones, etc.) -->
 <script src="/tienda_mvc/public/js/funciones.js"></script>
 </body>
 </html>

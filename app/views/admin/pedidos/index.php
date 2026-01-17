@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/tienda_mvc/public/css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.min.css">
-
 </head>
 
 <body>
@@ -69,9 +68,8 @@
             </div>
         </header>
 
-
         <section class="material-content">
-            <!-- Tarjetas de resumen con glow -->
+            <!-- Tarjetas de resumen -->
             <div class="stats-grid">
                 <div class="stat-card glow-green">
                     <div class="stat-info">
@@ -94,7 +92,7 @@
                 <div class="stat-card glow-purple">
                     <div class="stat-info">
                         <small>Ventas Totales</small>
-                        <h3>$<?= number_format($total_venta, 0, ',', '.') ?></h3>
+                        <h3>$<?= number_format((float)$total_venta, 0, ',', '.') ?></h3>
                         <span class="target">87% objetivo alcanzado</span>
                     </div>
                     <i class="fas fa-dollar-sign stat-icon"></i>
@@ -103,14 +101,13 @@
                 <div class="stat-card glow-blue">
                     <div class="stat-info">
                         <small>Utilidad Acumulada</small>
-                        <h3>$<?= number_format($total_utilidad, 0, ',', '.') ?></h3>
+                        <h3>$<?= number_format((float)$total_utilidad, 0, ',', '.') ?></h3>
                         <span class="target">Margen bruto excelente</span>
                     </div>
                     <i class="fas fa-chart-line stat-icon"></i>
                 </div>
             </div>
 
-            <!-- Tabla de pedidos -->
             <?php if (empty($pedidos)): ?>
                 <div class="empty-state">
                     <p>No hay pedidos registrados todavía.</p>
@@ -122,7 +119,6 @@
                     </div>
 
                     <table class="material-table" id="tablaPedidos">
-
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -158,12 +154,30 @@
 
                                 $estadoActual = $p['estado'] ?? 'nuevo';
                                 $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'entregado', 'cancelado'];
+
+                                $cantidadTotal   = (int)($p['cantidad_total'] ?? 1);
+                                if ($cantidadTotal < 1) $cantidadTotal = 1;
+
+                                $precioUnit      = (float)($p['precio_venta'] ?? 0);
+                                $precioProvUnit  = (float)($p['precio_proveedor'] ?? 0);
+
+                                // ✅ Totales correctos (fallbacks seguros)
+                                $precioTotal = isset($p['precio_total']) ? (float)$p['precio_total'] : ($precioUnit * $cantidadTotal);
+
+                                $utilidadTotal = null;
+                                if (isset($p['utilidad_total'])) {
+                                    $utilidadTotal = (float)$p['utilidad_total'];
+                                } elseif (isset($p['precio_total'])) {
+                                    $utilidadTotal = $precioTotal - ($precioProvUnit * $cantidadTotal);
+                                } else {
+                                    // último fallback: si en tu sistema guardabas utilidad unitaria
+                                    $utilidadUnit = (float)($p['utilidad'] ?? ($precioUnit - $precioProvUnit));
+                                    $utilidadTotal = $utilidadUnit * $cantidadTotal;
+                                }
                                 ?>
 
                                 <tr data-pedido-id="<?= htmlspecialchars($p['id'] ?? '') ?>">
-
                                     <td data-label="ID"><?= htmlspecialchars($p['id'] ?? '') ?></td>
-
                                     <td data-label="Fecha"><?= htmlspecialchars($p['created_at'] ?? '') ?></td>
 
                                     <td data-label="Cliente">
@@ -176,16 +190,31 @@
                                         <small><?= htmlspecialchars($p['departamento'] ?? '') ?></small>
                                     </td>
 
-                                    <td data-label="Producto"><?= htmlspecialchars($p['producto_nombre'] ?? '') ?></td>
+                                    <td data-label="Producto">
+                                        <?= htmlspecialchars($p['producto_nombre'] ?? '') ?>
+                                        <br>
+                                        <small style="opacity:.85;">
+                                            <?= (string)$cantidadTotal ?> unidad<?= $cantidadTotal > 1 ? 'es' : '' ?>
+                                            <?php if (!empty($p['color'])): ?>
+                                                • <?= htmlspecialchars($p['color']) ?>
+                                            <?php endif; ?>
+                                        </small>
+                                    </td>
 
                                     <td data-label="Precio">
-                                        $<?= number_format((float)($p['precio_venta'] ?? 0), 0, ',', '.') ?>
+                                        <strong>$<?= number_format($precioTotal, 0, ',', '.') ?></strong>
+                                        <?php if ($cantidadTotal > 1): ?>
+                                            <br><small style="opacity:.85;">Unit: $<?= number_format($precioUnit, 0, ',', '.') ?></small>
+                                        <?php endif; ?>
                                     </td>
 
                                     <td data-label="Utilidad">
                                         <span class="profit-tag">
-                                            $<?= number_format((float)($p['utilidad'] ?? 0), 0, ',', '.') ?>
+                                            $<?= number_format($utilidadTotal, 0, ',', '.') ?>
                                         </span>
+                                        <?php if ($cantidadTotal > 1): ?>
+                                            <br><small style="opacity:.85;">Total pedido</small>
+                                        <?php endif; ?>
                                     </td>
 
                                     <td data-label="Estado">
@@ -223,7 +252,6 @@
                                             data-id="<?= htmlspecialchars($p['id'] ?? '') ?>">
                                             Ver detalle
                                         </a>
-
                                     </td>
                                 </tr>
 
@@ -234,6 +262,7 @@
             <?php endif; ?>
         </section>
     </main>
+
     <!-- Modal Detalle Pedido -->
     <div class="modal-overlay" id="pedidoModal" aria-hidden="true">
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="pedidoModalTitle">
@@ -248,12 +277,9 @@
         </div>
     </div>
 
-
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="/tienda_mvc/public/js/funciones.js"></script>
-
     <script src="https://cdn.datatables.net/2.3.5/js/dataTables.min.js"></script>
-
 </body>
 
 </html>
