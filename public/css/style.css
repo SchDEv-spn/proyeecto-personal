@@ -366,35 +366,22 @@ body {
 }
 
 /* =========================================
-   SECCIÓN GALERÍA DE PRODUCTO (9:16)
+   SECCIÓN GALERÍA DE PRODUCTO (ASPECT RATIO 5/7)
    ========================================= */
-
-/* =========================================
-   SECCIÓN: GALERÍA DE PRODUCTO (CORREGIDA 4 IMGS)
-   ========================================= */
-
-.section-title {
-    text-align: center;
-    font-size: 1.8rem;
-    font-weight: 800;
-    margin-bottom: 30px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-color);
-}
 
 .product-gallery {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    max-width: 500px;
+    gap: 12px;
+    max-width: 500px; /* Al ser 5/7, podemos permitir un poco más de ancho */
     margin: 0 auto;
+    padding: 0 10px;
 }
 
-/* Imagen Principal con Aspect Ratio 9:16 */
+/* Imagen Principal */
 .product-gallery__main {
     width: 100%;
-    aspect-ratio: 9 / 16;
+    aspect-ratio: 5 / 7; /* CAMBIO: De 9/16 a 5/7 */
     border-radius: var(--border-radius);
     overflow: hidden;
     background-color: #000;
@@ -406,26 +393,25 @@ body {
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: var(--transition);
 }
 
-/* Contenedor de Miniaturas (Móvil: 3 columnas para las 3 miniaturas extra) */
+/* Contenedor de Miniaturas (Móvil) */
 .product-gallery__thumbs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* CAMBIO: 3 columnas para las miniaturas */
-    gap: 15px;
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 10px;
 }
 
 /* Estilo de cada Miniatura */
 .product-gallery__thumb {
-    aspect-ratio: 9 / 16;
-    border-radius: calc(var(--border-radius) / 2);
+    aspect-ratio: 5 / 7; /* CAMBIO: Mantener consistencia con la principal */
+    border-radius: 8px;
     overflow: hidden;
     border: 2px solid transparent;
     padding: 0;
     cursor: pointer;
     background: none;
-    transition: var(--transition);
+    transition: all 0.3s ease;
 }
 
 .product-gallery__thumb img {
@@ -433,34 +419,18 @@ body {
     height: 100%;
     object-fit: cover;
     display: block;
+    opacity: 0.6;
 }
 
 /* Estado activo/hover */
-.product-gallery__thumb:hover,
-.product-gallery__thumb:focus {
-    border-color: var(--primary-color);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
+.product-gallery__thumb:hover img,
+.product-gallery__thumb.active img {
+    opacity: 1;
 }
 
 .product-gallery__thumb.active {
     border-color: var(--primary-color);
-}
-
-/* CTA de la Galería */
-.section-cta {
-    margin-top: 40px;
-    text-align: center;
-    padding: 30px 20px;
-    background: var(--white);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-sm);
-}
-
-.section-cta p {
-    font-size: 1.1rem;
-    margin-bottom: 20px;
-    color: var(--text-muted);
+    transform: scale(0.95);
 }
 
 /* =========================================
@@ -470,26 +440,27 @@ body {
 @media (min-width: 992px) {
     .product-gallery {
         flex-direction: row; 
-        max-width: 900px;
-        align-items: flex-start;
+        max-width: 900px; /* Ajuste de ancho para 5/7 */
+        gap: 20px;
+        align-items: stretch;
     }
 
     .product-gallery__main {
-        flex: 2; /* Ocupa 2 partes */
+        flex: 3;
     }
 
     .product-gallery__thumbs {
-        flex: 1; /* Ocupa 1 parte */
-        grid-template-columns: 1fr; /* Miniaturas vuelven a ser una columna */
-        gap: 15px;
+        flex: 1;
+        grid-template-columns: 1fr;
+        height: 100%;
+        align-content: space-between;
     }
     
-    .section-title {
-        font-size: 2.5rem;
+    .product-gallery__thumb {
+        /* Ajustamos el cálculo de altura para 5/7 */
+        max-height: calc(100% / 3.3); 
     }
 }
-
-
 /* =========================================
    SECCIÓN COUNTDOWN (URGENCIA PREMIUM)
    ========================================= */
