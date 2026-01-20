@@ -49,6 +49,7 @@ class LandingConfig extends Model
                     gallery_1_path = :gallery_1_path,
                     gallery_2_path = :gallery_2_path,
                     gallery_3_path = :gallery_3_path,
+                    gallery_4_path = :gallery_4_path, -- NUEVO: Añadido al SQL
 
                     countdown_title = :countdown_title,
                     countdown_text  = :countdown_text,
@@ -150,6 +151,7 @@ class LandingConfig extends Model
             ':gallery_1_path' => $data['gallery_1_path'] ?? null,
             ':gallery_2_path' => $data['gallery_2_path'] ?? null,
             ':gallery_3_path' => $data['gallery_3_path'] ?? null,
+            ':gallery_4_path' => $data['gallery_4_path'] ?? null, // NUEVO: Pasando el valor
 
             ':countdown_title' => $data['countdown_title'] ?? null,
             ':countdown_text'  => $data['countdown_text'] ?? null,

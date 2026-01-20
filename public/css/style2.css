@@ -380,8 +380,9 @@ body {
 /* Contenedor de Miniaturas */
 .product-gallery__thumbs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  /* CAMBIO: De 1fr 1fr a 3 columnas iguales para las 3 miniaturas */
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 1rem; /* Reducimos un poco el gap para que quepan mejor en móviles */
 }
 
 /* Botón de Miniatura (Estética Premium) */
@@ -442,13 +443,16 @@ body {
    BREAKPOINTS (DESKTOP)
    ========================================= */
 @media (min-width: 768px) {
-  .product-gallery {
-    grid-template-columns: 1.5fr 0.5fr; /* Diseño asimétrico elegante */
+.product-gallery {
+    /* Ajustamos la proporción: 80% principal, 20% miniaturas */
+    grid-template-columns: 4fr 1fr; 
     align-items: start;
   }
 
-  .product-gallery__thumbs {
-    grid-template-columns: 1fr; /* Miniaturas apiladas al lado de la principal */
+.product-gallery__thumbs {
+    /* En desktop se mantienen apiladas (una debajo de otra) */
+    grid-template-columns: 1fr; 
+    gap: 1rem;
   }
 
   .product-gallery__main {
@@ -457,12 +461,12 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .product-gallery {
+.product-gallery {
     gap: 2rem;
   }
   
-  .product-gallery__thumbs {
-    gap: 2rem;
+.product-gallery__thumbs {
+    gap: 1.5rem; /* Ajuste de espacio para pantallas grandes */
   }
 }
 

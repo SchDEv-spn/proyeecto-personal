@@ -39,7 +39,7 @@ $benefitsMediaPath = $cfg['benefits_media_path'] ?? '/tienda_mvc/public/img/prod
 
 // ===== GALERÍA =====
 $galleryPaths = [];
-for ($i = 1; $i <= 3; $i++) {
+for ($i = 1; $i <= 4; $i++) {
     $key = 'gallery_' . $i . '_path';
     if (!empty($cfg[$key]) && trim($cfg[$key]) !== '') {
         $galleryPaths[] = $cfg[$key];
@@ -289,18 +289,20 @@ $textColor       = $config['text_color']       ?? '#222222';
             <h2 class="section-title">MIRA LOS COLORES</h2>
 
             <?php
-            // Si no hay imágenes configuradas, usa fallbacks
+            // Si no hay imágenes configuradas, usa fallbacks (ahora con 4 elementos)
             $gallery = $galleryPaths;
             if (empty($gallery)) {
                 $gallery = [
                     '/tienda_mvc/public/img/producto/uso-1.jpg',
                     '/tienda_mvc/public/img/producto/uso-1.jpg',
                     '/tienda_mvc/public/img/producto/uso-1.jpg',
+                    '/tienda_mvc/public/img/producto/uso-1.jpg', // Cuarta imagen de respaldo
                 ];
             }
 
             $mainImg   = $gallery[0] ?? '';
-            $thumbImgs = array_slice($gallery, 1, 2); // solo 2 miniaturas
+            // Cambiado de 2 a 3 para obtener las 3 miniaturas que acompañan a la principal
+            $thumbImgs = array_slice($gallery, 1, 3);
             ?>
 
             <div class="product-gallery" data-product-gallery>
@@ -333,17 +335,14 @@ $textColor       = $config['text_color']       ?? '#222222';
                     </div>
                 <?php endif; ?>
             </div>
+
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaGalleryText) ?></p>
                 <a href="#form-pedido" class="btn-primary btn-cta-section">
                     <?= htmlspecialchars($ctaGalleryButton) ?>
                 </a>
             </div>
-
-            <!-- CTA de sección -->
-
         </section>
-
         <!-- CONTADOR PROMOCIÓN -->
         <section class="container">
             <div class="countdown">

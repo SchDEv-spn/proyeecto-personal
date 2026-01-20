@@ -369,6 +369,10 @@ body {
    SECCIÓN GALERÍA DE PRODUCTO (9:16)
    ========================================= */
 
+/* =========================================
+   SECCIÓN: GALERÍA DE PRODUCTO (CORREGIDA 4 IMGS)
+   ========================================= */
+
 .section-title {
     text-align: center;
     font-size: 1.8rem;
@@ -405,16 +409,16 @@ body {
     transition: var(--transition);
 }
 
-/* Contenedor de Miniaturas */
+/* Contenedor de Miniaturas (Móvil: 3 columnas para las 3 miniaturas extra) */
 .product-gallery__thumbs {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* Dos miniaturas una al lado de la otra */
+    grid-template-columns: repeat(3, 1fr); /* CAMBIO: 3 columnas para las miniaturas */
     gap: 15px;
 }
 
 /* Estilo de cada Miniatura */
 .product-gallery__thumb {
-    aspect-ratio: 9 / 16; /* Mantenemos consistencia visual absoluta */
+    aspect-ratio: 9 / 16;
     border-radius: calc(var(--border-radius) / 2);
     overflow: hidden;
     border: 2px solid transparent;
@@ -431,7 +435,7 @@ body {
     display: block;
 }
 
-/* Estado activo/hover de la miniatura */
+/* Estado activo/hover */
 .product-gallery__thumb:hover,
 .product-gallery__thumb:focus {
     border-color: var(--primary-color);
@@ -439,10 +443,11 @@ body {
     box-shadow: var(--shadow-md);
 }
 
-/* CTA de la Galería */
-/* Reutilizamos los estilos de .section-cta que definimos en la sección anterior 
-   para mantener la consistencia visual */
+.product-gallery__thumb.active {
+    border-color: var(--primary-color);
+}
 
+/* CTA de la Galería */
 .section-cta {
     margin-top: 40px;
     text-align: center;
@@ -464,19 +469,19 @@ body {
 
 @media (min-width: 992px) {
     .product-gallery {
-        flex-direction: row; /* En desktop, la galería se vuelve horizontal */
+        flex-direction: row; 
         max-width: 900px;
         align-items: flex-start;
     }
 
     .product-gallery__main {
-        flex: 2; /* Imagen principal más grande */
+        flex: 2; /* Ocupa 2 partes */
     }
 
     .product-gallery__thumbs {
-        flex: 1;
-        grid-template-columns: 1fr; /* Miniaturas en columna al lado de la principal */
-        height: 100%;
+        flex: 1; /* Ocupa 1 parte */
+        grid-template-columns: 1fr; /* Miniaturas vuelven a ser una columna */
+        gap: 15px;
     }
     
     .section-title {

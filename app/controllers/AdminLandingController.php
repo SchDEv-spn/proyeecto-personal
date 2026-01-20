@@ -136,9 +136,10 @@ class AdminLandingController extends Controller
         // 3. Paths actuales
         $data['hero_media_path']      = $_POST['hero_media_path_actual']      ?? null;
         $data['benefits_media_path']  = $_POST['benefits_media_path_actual']  ?? null;
-        $data['gallery_1_path']       = $_POST['gallery_1_path_actual']       ?? null;
-        $data['gallery_2_path']       = $_POST['gallery_2_path_actual']       ?? null;
-        $data['gallery_3_path']       = $_POST['gallery_3_path_actual']       ?? null;
+        $data['gallery_1_path'] = $_POST['gallery_1_path_actual'] ?? null;
+        $data['gallery_2_path'] = $_POST['gallery_2_path_actual'] ?? null;
+        $data['gallery_3_path'] = $_POST['gallery_3_path_actual'] ?? null;
+        $data['gallery_4_path'] = $_POST['gallery_4_path_actual'] ?? null; // NUEVO: Cuarta imagen
         $data['porque_media_path']    = $_POST['porque_media_path_actual']    ?? null;
         $data['test1_photo_path']     = $_POST['test1_photo_path_actual']     ?? null;
         $data['test2_photo_path']     = $_POST['test2_photo_path_actual']     ?? null;
@@ -163,6 +164,7 @@ class AdminLandingController extends Controller
             'gallery_1_file'       => 'gallery_1_path',
             'gallery_2_file'       => 'gallery_2_path',
             'gallery_3_file'       => 'gallery_3_path',
+            'gallery_4_file'       => 'gallery_4_path', // NUEVO: Procesar archivo de la cuarta imagen
             'porque_media_file'    => 'porque_media_path',
             'test1_photo_file'     => 'test1_photo_path',
             'test2_photo_file'     => 'test2_photo_path',
