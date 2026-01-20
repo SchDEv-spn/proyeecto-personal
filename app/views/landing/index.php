@@ -130,9 +130,9 @@ $ctaFaqButton          = $cfg['cta_faq_button'] ?? 'Sí, quiero pedirlo ahora';
 $ctaStickyMobileText   = $cfg['cta_sticky_mobile_text'] ?? '🔥 Aprovechar oferta hoy';
 
 // Colores con fallback
-$primaryColor    = $config['primary_color']    ?? '#28a745';
+$primaryColor    = $config['primary_color']    ?? '#3c7a4a';
 $secondaryColor  = $config['secondary_color']  ?? '#007bff';
-$accentColor     = $config['accent_color']     ?? '#ffc107';
+$accentColor     = $config['accent_color']     ?? '#730dad';
 $backgroundColor = $config['background_color'] ?? '#f5f5f5';
 $textColor       = $config['text_color']       ?? '#222222';
 ?>
@@ -261,13 +261,13 @@ $textColor       = $config['text_color']       ?? '#222222';
 
                     <?php if (!empty($benefits)): ?>
                         <?php foreach ($benefits as $b): ?>
-                            <div class="benefit-item">✅ <?= htmlspecialchars($b) ?></div>
+                            <div class="benefit-item"> <?= htmlspecialchars($b) ?></div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div class="benefit-item">✅ Beneficio 1 enfocado en el resultado que quiere el cliente.</div>
-                        <div class="benefit-item">✅ Beneficio 2 que ataque su principal dolor o problema.</div>
-                        <div class="benefit-item">✅ Beneficio 3 que resalte comodidad, rapidez o facilidad.</div>
-                        <div class="benefit-item">✅ Beneficio 4 relacionado con garantía, soporte o confianza.</div>
+                        <div class="benefit-item"> Beneficio 1 enfocado en el resultado que quiere el cliente.</div>
+                        <div class="benefit-item"> Beneficio 2 que ataque su principal dolor o problema.</div>
+                        <div class="benefit-item"> Beneficio 3 que resalte comodidad, rapidez o facilidad.</div>
+                        <div class="benefit-item"> Beneficio 4 relacionado con garantía, soporte o confianza.</div>
                     <?php endif; ?>
                 </div>
                 <div class="col col-media">
@@ -284,10 +284,9 @@ $textColor       = $config['text_color']       ?? '#222222';
             </div>
         </section>
 
-        <!-- GALERÍA DESLIZABLE -->
         <!-- GALERÍA (principal + miniaturas) -->
         <section class="container">
-            <h2 class="section-title">Mira más del producto</h2>
+            <h2 class="section-title">MIRA LOS COLORES</h2>
 
             <?php
             // Si no hay imágenes configuradas, usa fallbacks
@@ -344,10 +343,6 @@ $textColor       = $config['text_color']       ?? '#222222';
             <!-- CTA de sección -->
 
         </section>
-
-
-        <!-- CTA de sección -->
-
 
         <!-- CONTADOR PROMOCIÓN -->
         <section class="container">
@@ -593,7 +588,6 @@ $textColor       = $config['text_color']       ?? '#222222';
             </div>
         </section>
 
-
         <!-- FORMULARIO: REALIZA TU PEDIDO -->
         <section class="container" id="form-pedido">
             <h2 class="section-title">Realiza tu pedido ahora y paga al recibir</h2>
@@ -671,12 +665,15 @@ $textColor       = $config['text_color']       ?? '#222222';
                                         </select>
 
                                         <select name="qty_item[]" required class="qty-select">
+                                            <option value="" disabled <?= ($selQty < 1) ? 'selected' : '' ?>>Selecciona cantidad</option>
                                             <?php for ($i = 1; $i <= 5; $i++): ?>
                                                 <option value="<?= $i ?>" <?= ($selQty === $i) ? 'selected' : '' ?>>
                                                     <?= $i ?>
                                                 </option>
                                             <?php endfor; ?>
                                         </select>
+
+
 
                                         <button type="button" class="remove-color-qty" aria-label="Quitar">
                                             <span class="remove-icon">×</span>
@@ -724,13 +721,19 @@ $textColor       = $config['text_color']       ?? '#222222';
                                         .join('');
                                 }
 
-                                function qtyOptionsHtml(defaultQty = 1) {
-                                    return Array.from({
+                                function qtyOptionsHtml(defaultQty = '') {
+                                    const phSelected = (defaultQty === '' || defaultQty === null) ? 'selected' : '';
+                                    const ph = `<option value="" disabled ${phSelected}>Selecciona cantidad</option>`;
+
+                                    const nums = Array.from({
                                             length: 5
                                         }, (_, i) => i + 1)
-                                        .map(n => `<option value="${n}" ${n === defaultQty ? 'selected' : ''}>${n}</option>`)
+                                        .map(n => `<option value="${n}" ${Number(defaultQty) === n ? 'selected' : ''}>${n}</option>`)
                                         .join('');
+
+                                    return ph + nums;
                                 }
+
 
                                 function formatCOP(num) {
                                     try {
@@ -806,7 +809,7 @@ $textColor       = $config['text_color']       ?? '#222222';
                                             <span class="remove-text">Borrar</span>
                                             </button>
                                         `;
-                                        return row;
+                                    return row;
                                 }
 
 
@@ -971,9 +974,13 @@ $textColor       = $config['text_color']       ?? '#222222';
 
     </main>
 
-    <footer class="footer">
+
+
+    <div class="footer-text">
         <?= htmlspecialchars($footerText) ?>
-    </footer>
+    </div>
+
+
 
     <!-- CTA sticky para móviles -->
     <a href="#form-pedido" class="cta-sticky-mobile">
