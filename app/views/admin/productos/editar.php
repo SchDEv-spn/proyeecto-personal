@@ -175,7 +175,7 @@
                                     value="<?= htmlspecialchars($nombreProd) ?>" required>
                             </div>
 
-                            
+
                             <div class="form-group">
                                 <label for="precio_regular">Precio regular (antes) <span class="req">*</span></label>
                                 <input type="number" id="precio_regular" name="precio_regular"
@@ -207,6 +207,23 @@
                                     value="<?= htmlspecialchars($old['costo_envio'] ?? ($producto['costo_envio'] ?? 0)) ?>"
                                     step="100" min="0">
                                 <small class="help">Este valor NO lo ve el cliente. Se usa para calcular utilidad real.</small>
+                            </div>
+
+
+                            <div class="form-group">
+                                <label for="descuento_2da">Descuento 2da unidad (%) <span class="req">*</span></label>
+                                <input type="number" id="descuento_2da" name="descuento_2da"
+                                    value="<?= htmlspecialchars($old['descuento_2da'] ?? ($producto['descuento_2da'] ?? '15')) ?>"
+                                    min="0" max="100" required>
+                                <small class="help">Valor actual: <?= $producto['descuento_2da'] ?? '15' ?>%</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="descuento_3ra">Descuento 3ra+ unidad (%) <span class="req">*</span></label>
+                                <input type="number" id="descuento_3ra" name="descuento_3ra"
+                                    value="<?= htmlspecialchars($old['descuento_3ra'] ?? ($producto['descuento_3ra'] ?? '20')) ?>"
+                                    min="0" max="100" required>
+                                <small class="help">Valor actual: <?= $producto['descuento_3ra'] ?? '20' ?>%</small>
                             </div>
 
 

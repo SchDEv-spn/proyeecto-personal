@@ -179,6 +179,31 @@
                             </div>
 
 
+                            <div class="form-group ">
+                                <h4">
+                                    <i class="fas fa-tags"></i> Estrategia de Descuento (Multicantidad)
+                                </h4>
+
+                                
+                                    <div class="form-group">
+                                        <label for="descuento_2da">Descuento 2da unidad (%)</label>
+                                        <input type="number" id="descuento_2da" name="descuento_2da"
+                                            value="<?= htmlspecialchars($old['descuento_2da'] ?? '15') ?>"
+                                            min="0" max="100" step="1">
+                                        <small class="help">Ej: 15 para aplicar el 15% OFF a la segunda unidad.</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="descuento_3ra">Descuento 3ra+ unidad (%)</label>
+                                        <input type="number" id="descuento_3ra" name="descuento_3ra"
+                                            value="<?= htmlspecialchars($old['descuento_3ra'] ?? '20') ?>"
+                                            min="0" max="100" step="1">
+                                        <small class="help">Ej: 20 para aplicar el 20% OFF de la tercera en adelante.</small>
+                                    </div>
+                               
+                            </div>
+
+
                             <!-- ✅ COLORES (NUEVO) -->
                             <div class="form-group form-group--full">
                                 <label>Colores disponibles (opcional)</label>

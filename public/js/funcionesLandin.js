@@ -120,3 +120,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+document.addEventListener('DOMContentLoaded', () => {
+    const accordionItems = document.querySelectorAll('.accordion-item');
+
+    accordionItems.forEach(item => {
+        const header = item.querySelector('.accordion-header');
+        const body = item.querySelector('.accordion-body');
+
+        header.addEventListener('click', () => {
+            const isOpen = item.classList.contains('active');
+
+            // 1. Opcional: Cerrar todos los demás acordeones antes de abrir el nuevo
+            // Si prefieres que puedan estar varios abiertos, borra este bloque forEach
+            accordionItems.forEach(otherItem => {
+                if (otherItem !== item) {
+                    otherItem.classList.remove('active');
+                    otherItem.querySelector('.accordion-body').style.maxHeight = null;
+                }
+            });
+
+            // 2. Alternar la clase activa en el item actual
+            item.classList.toggle('active');
+
+            // 3. Controlar la altura máxima para la animación fluida
+            if (!isOpen) {
+                // Si lo estamos abriendo, calculamos el scrollHeight del contenido
+                body.style.maxHeight = body.scrollHeight + "px";
+            } else {
+                // Si lo estamos cerrando, reseteamos a null
+                body.style.maxHeight = null;
+            }
+        });
+    });
+});

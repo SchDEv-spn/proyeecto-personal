@@ -39,7 +39,7 @@ $benefitsMediaPath = $cfg['benefits_media_path'] ?? '/tienda_mvc/public/img/prod
 
 // ===== GALERÍA =====
 $galleryPaths = [];
-for ($i = 1; $i <= 3; $i++) {
+for ($i = 1; $i <= 4; $i++) {
     $key = 'gallery_' . $i . '_path';
     if (!empty($cfg[$key]) && trim($cfg[$key]) !== '') {
         $galleryPaths[] = $cfg[$key];
@@ -130,9 +130,9 @@ $ctaFaqButton          = $cfg['cta_faq_button'] ?? 'Sí, quiero pedirlo ahora';
 $ctaStickyMobileText   = $cfg['cta_sticky_mobile_text'] ?? '🔥 Aprovechar oferta hoy';
 
 // Colores con fallback
-$primaryColor    = $config['primary_color']    ?? '#28a745';
+$primaryColor    = $config['primary_color']    ?? '#3c7a4a';
 $secondaryColor  = $config['secondary_color']  ?? '#007bff';
-$accentColor     = $config['accent_color']     ?? '#ffc107';
+$accentColor     = $config['accent_color']     ?? '#730dad';
 $backgroundColor = $config['background_color'] ?? '#f5f5f5';
 $textColor       = $config['text_color']       ?? '#222222';
 ?>
@@ -261,13 +261,13 @@ $textColor       = $config['text_color']       ?? '#222222';
 
                     <?php if (!empty($benefits)): ?>
                         <?php foreach ($benefits as $b): ?>
-                            <div class="benefit-item">✅ <?= htmlspecialchars($b) ?></div>
+                            <div class="benefit-item"> <?= htmlspecialchars($b) ?></div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div class="benefit-item">✅ Beneficio 1 enfocado en el resultado que quiere el cliente.</div>
-                        <div class="benefit-item">✅ Beneficio 2 que ataque su principal dolor o problema.</div>
-                        <div class="benefit-item">✅ Beneficio 3 que resalte comodidad, rapidez o facilidad.</div>
-                        <div class="benefit-item">✅ Beneficio 4 relacionado con garantía, soporte o confianza.</div>
+                        <div class="benefit-item"> Beneficio 1 enfocado en el resultado que quiere el cliente.</div>
+                        <div class="benefit-item"> Beneficio 2 que ataque su principal dolor o problema.</div>
+                        <div class="benefit-item"> Beneficio 3 que resalte comodidad, rapidez o facilidad.</div>
+                        <div class="benefit-item"> Beneficio 4 relacionado con garantía, soporte o confianza.</div>
                     <?php endif; ?>
                 </div>
                 <div class="col col-media">
@@ -284,24 +284,25 @@ $textColor       = $config['text_color']       ?? '#222222';
             </div>
         </section>
 
-        <!-- GALERÍA DESLIZABLE -->
         <!-- GALERÍA (principal + miniaturas) -->
         <section class="container">
-            <h2 class="section-title">Mira más del producto</h2>
+            <h2 class="section-title">MIRA LOS COLORES</h2>
 
             <?php
-            // Si no hay imágenes configuradas, usa fallbacks
+            // Si no hay imágenes configuradas, usa fallbacks (ahora con 4 elementos)
             $gallery = $galleryPaths;
             if (empty($gallery)) {
                 $gallery = [
                     '/tienda_mvc/public/img/producto/uso-1.jpg',
                     '/tienda_mvc/public/img/producto/uso-1.jpg',
                     '/tienda_mvc/public/img/producto/uso-1.jpg',
+                    '/tienda_mvc/public/img/producto/uso-1.jpg', // Cuarta imagen de respaldo
                 ];
             }
 
             $mainImg   = $gallery[0] ?? '';
-            $thumbImgs = array_slice($gallery, 1, 2); // solo 2 miniaturas
+            // Cambiado de 2 a 3 para obtener las 3 miniaturas que acompañan a la principal
+            $thumbImgs = array_slice($gallery, 1, 3);
             ?>
 
             <div class="product-gallery" data-product-gallery>
@@ -334,21 +335,14 @@ $textColor       = $config['text_color']       ?? '#222222';
                     </div>
                 <?php endif; ?>
             </div>
+
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaGalleryText) ?></p>
                 <a href="#form-pedido" class="btn-primary btn-cta-section">
                     <?= htmlspecialchars($ctaGalleryButton) ?>
                 </a>
             </div>
-
-            <!-- CTA de sección -->
-
         </section>
-
-
-        <!-- CTA de sección -->
-
-
         <!-- CONTADOR PROMOCIÓN -->
         <section class="container">
             <div class="countdown">
@@ -592,7 +586,6 @@ $textColor       = $config['text_color']       ?? '#222222';
                 </a>
             </div>
         </section>
-
 
         <!-- FORMULARIO: REALIZA TU PEDIDO -->
         <section class="container" id="form-pedido">
@@ -980,9 +973,13 @@ $textColor       = $config['text_color']       ?? '#222222';
 
     </main>
 
-    <footer class="footer">
+
+
+    <div class="footer-text">
         <?= htmlspecialchars($footerText) ?>
-    </footer>
+    </div>
+
+
 
     <!-- CTA sticky para móviles -->
     <a href="#form-pedido" class="cta-sticky-mobile">

@@ -253,7 +253,9 @@
                   <h2>Galería</h2>
 
                   <div class="gallery-grid">
-                    <?php for ($i = 1; $i <= 3; $i++):
+                    <?php
+                    // CAMBIO: Cambiamos el 3 por el 4 para que genere automáticamente el cuarto bloque
+                    for ($i = 1; $i <= 4; $i++):
                       $key       = "gallery_{$i}_path";
                       $inputName = "gallery_{$i}_file";
                       $actual    = "gallery_{$i}_path_actual";
