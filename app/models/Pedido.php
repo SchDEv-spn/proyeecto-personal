@@ -3,10 +3,8 @@
 class Pedido extends Model
 {
     /**
-     * Regla de descuento:
-     * - 1 unidad: sin descuento
-     * - 2da unidad: 15% OFF
-     * - 3ra en adelante: 20% OFF
+     * (Fallback) Regla antigua si el controller no manda precio_total.
+     * Idealmente el controller manda precio_total/descuento_total/utilidad_total.
      */
     private function totalConDescuento(int $cantidad, float $precioUnit): float
     {
@@ -14,28 +12,16 @@ class Pedido extends Model
         if ($cantidad === 1) return $precioUnit;
 
         $total = 0.0;
-
-        // 1ra sin descuento
-        $total += $precioUnit;
-
-        // 2da -15%
-        $total += $precioUnit * 0.85;
-
-        // 3ra+ -20%
+        $total += $precioUnit;        // 1ra
+        $total += $precioUnit * 0.85; // 2da -15%
         if ($cantidad >= 3) {
-            $total += $precioUnit * 0.80 * ($cantidad - 2);
+            $total += $precioUnit * 0.80 * ($cantidad - 2); // 3ra+ -20%
         }
-
         return $total;
     }
 
-    /**
-     * Crea pedido y retorna el ID insertado.
-     * Útil para luego guardar detalle en pedido_colores.
-     */
     public function crearConId(array $data): int
     {
-        // Base
         $nombre       = trim((string)($data['nombre'] ?? ''));
         $apellidos    = trim((string)($data['apellidos'] ?? ''));
         $telefono     = trim((string)($data['telefono'] ?? ''));
@@ -49,22 +35,21 @@ class Pedido extends Model
         $precioVenta     = (float)($data['precio_venta'] ?? 0);
         $precioProveedor = (float)($data['precio_proveedor'] ?? 0);
 
-        // Cantidad total
         $cantidadTotal = (int)($data['cantidad_total'] ?? 1);
         if ($cantidadTotal < 1) $cantidadTotal = 1;
-        if ($cantidadTotal > 20) $cantidadTotal = 20; // límite sano
+        if ($cantidadTotal > 20) $cantidadTotal = 20;
 
-        // Utilidad unitaria (mantienes compatibilidad con tu lógica anterior)
         $utilidadUnit = isset($data['utilidad'])
             ? (float)$data['utilidad']
             : ($precioVenta - $precioProveedor);
 
-        // Totales (si el controller no los manda, los calculamos aquí)
+        // Totales fallback (si el controller no los manda)
         $subtotal       = $precioVenta * $cantidadTotal;
         $precioTotal    = $this->totalConDescuento($cantidadTotal, $precioVenta);
         $descuentoTotal = max(0, $subtotal - $precioTotal);
 
-        // Utilidad total real con descuento aplicado
+        // Nota: aquí NO incluimos envío porque pedidos no tiene costo_envio.
+        // El controller sí lo calcula y lo manda en utilidad_total (recomendado).
         $utilidadTotal = $precioTotal - ($precioProveedor * $cantidadTotal);
 
         // Si vienen desde controller, respetarlos
@@ -72,11 +57,9 @@ class Pedido extends Model
         if (isset($data['descuento_total'])) $descuentoTotal = (float)$data['descuento_total'];
         if (isset($data['utilidad_total']))  $utilidadTotal = (float)$data['utilidad_total'];
 
-        // Estado
         $estado = trim((string)($data['estado'] ?? 'nuevo'));
         if ($estado === '') $estado = 'nuevo';
 
-        // Normaliza dirección
         if ($tipoEntrega !== 'domicilio') {
             $direccion = null;
         } else {
@@ -84,7 +67,6 @@ class Pedido extends Model
             if ($direccion === '') $direccion = null;
         }
 
-        // Protege longitud del campo "color" (si tu DB es VARCHAR(50))
         if ($color !== '') {
             $color = mb_substr($color, 0, 50);
         }
@@ -122,9 +104,6 @@ class Pedido extends Model
         return (int)$this->db->lastInsertId();
     }
 
-    /**
-     * Compatibilidad: método antiguo que devuelve boolean.
-     */
     public function crear($data): bool
     {
         return $this->crearConId((array)$data) > 0;
@@ -132,7 +111,10 @@ class Pedido extends Model
 
     public function obtenerTodos($limit = 200): array
     {
-        $sql = "SELECT p.*, pr.nombre AS producto_nombre
+        $sql = "SELECT
+                    p.*,
+                    pr.nombre AS producto_nombre,
+                    pr.costo_envio AS producto_costo_envio
                 FROM pedidos p
                 INNER JOIN productos pr ON p.producto_id = pr.id
                 ORDER BY p.created_at DESC
@@ -145,7 +127,10 @@ class Pedido extends Model
 
     public function obtenerPorId($id): ?array
     {
-        $sql = "SELECT p.*, pr.nombre AS producto_nombre
+        $sql = "SELECT
+                    p.*,
+                    pr.nombre AS producto_nombre,
+                    pr.costo_envio AS producto_costo_envio
                 FROM pedidos p
                 INNER JOIN productos pr ON p.producto_id = pr.id
                 WHERE p.id = :id
@@ -167,17 +152,12 @@ class Pedido extends Model
         ]);
     }
 
-    /**
-     * Guarda detalle de colores/cantidades en pedido_colores.
-     * items: ['Negro' => 2, 'Azul' => 1]
-     */
     public function syncColoresPedido(int $pedidoId, array $items): void
     {
         if ($pedidoId <= 0) return;
 
-        // Borra detalle anterior
         $this->db->prepare("DELETE FROM pedido_colores WHERE pedido_id = :pid")
-                 ->execute([':pid' => $pedidoId]);
+            ->execute([':pid' => $pedidoId]);
 
         $ins = $this->db->prepare(
             "INSERT INTO pedido_colores (pedido_id, color, cantidad)

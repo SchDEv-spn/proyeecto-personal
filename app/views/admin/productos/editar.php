@@ -211,20 +211,52 @@
 
 
                             <div class="form-group">
-                                <label for="descuento_2da">Descuento 2da unidad (%) <span class="req">*</span></label>
-                                <input type="number" id="descuento_2da" name="descuento_2da"
-                                    value="<?= htmlspecialchars($old['descuento_2da'] ?? ($producto['descuento_2da'] ?? '15')) ?>"
-                                    min="0" max="100" required>
-                                <small class="help">Valor actual: <?= $producto['descuento_2da'] ?? '15' ?>%</small>
+                                <h4>
+                                    <i class="fas fa-tags"></i> Estrategia de Descuento (Multicantidad)
+                                </h4>
+
+                                <div class="form-group">
+                                    <label>
+                                        <!-- ✅ importante: asegura que SIEMPRE llegue algo en POST -->
+                                        <input type="hidden" name="descuento_multicantidad_activo" value="0">
+
+                                        <input type="checkbox"
+                                            name="descuento_multicantidad_activo"
+                                            value="1"
+                                            <?= ((int)($old['descuento_multicantidad_activo'] ?? 1) === 1) ? 'checked' : '' ?>>
+                                        Activar descuentos por multicantidad
+                                    </label>
+
+                                    <small class="help">
+                                        Si lo desactivas, los pedidos cobrarán precio normal aunque existan porcentajes configurados.
+                                    </small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="descuento_2da">Descuento 2da unidad (%)</label>
+                                    <input type="number"
+                                        id="descuento_2da"
+                                        name="descuento_2da"
+                                        value="<?= htmlspecialchars((string)($old['descuento_2da'] ?? 15)) ?>"
+                                        min="0"
+                                        max="100"
+                                        step="1">
+                                    <small class="help">Ej: 40 para aplicar el 40% OFF a la segunda unidad.</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="descuento_3ra">Descuento 3ra+ unidad (%)</label>
+                                    <input type="number"
+                                        id="descuento_3ra"
+                                        name="descuento_3ra"
+                                        value="<?= htmlspecialchars((string)($old['descuento_3ra'] ?? 20)) ?>"
+                                        min="0"
+                                        max="100"
+                                        step="1">
+                                    <small class="help">Ej: 50 para aplicar el 50% OFF desde la tercera unidad en adelante.</small>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="descuento_3ra">Descuento 3ra+ unidad (%) <span class="req">*</span></label>
-                                <input type="number" id="descuento_3ra" name="descuento_3ra"
-                                    value="<?= htmlspecialchars($old['descuento_3ra'] ?? ($producto['descuento_3ra'] ?? '20')) ?>"
-                                    min="0" max="100" required>
-                                <small class="help">Valor actual: <?= $producto['descuento_3ra'] ?? '20' ?>%</small>
-                            </div>
 
 
                             <!-- ✅ COLORES (NUEVO) -->

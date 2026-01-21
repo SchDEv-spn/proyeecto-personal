@@ -733,7 +733,6 @@ $textColor       = $config['text_color']       ?? '#222222';
                                     return ph + nums;
                                 }
 
-
                                 function formatCOP(num) {
                                     try {
                                         return new Intl.NumberFormat('es-CO', {
@@ -746,17 +745,28 @@ $textColor       = $config['text_color']       ?? '#222222';
                                     }
                                 }
 
-                                // Regla: 2da unidad 15% OFF, 3ra en adelante 20% OFF
-                                function totalConDescuento(units, priceUnit) {
+                                // ✅ Total con descuento dinámico según producto:
+                                // - 1ra unidad: sin descuento
+                                // - 2da unidad: d2% OFF
+                                // - 3ra+ unidad: d3% OFF
+                                // Si activo=0, no aplica descuento.
+                                function totalConDescuento(units, priceUnit, d2, d3, activo) {
+                                    units = parseInt(units || '0', 10);
+                                    priceUnit = parseFloat(priceUnit || '0') || 0;
+
+                                    d2 = Math.max(0, Math.min(100, parseInt(d2 || '15', 10)));
+                                    d3 = Math.max(0, Math.min(100, parseInt(d3 || '20', 10)));
+                                    activo = parseInt(activo || '1', 10);
+
                                     if (units <= 0) return 0;
+
+                                    if (activo !== 1) return priceUnit * units;
                                     if (units === 1) return priceUnit;
 
                                     let total = 0;
                                     total += priceUnit; // 1ra sin descuento
-                                    total += priceUnit * 0.85; // 2da -15%
-                                    if (units >= 3) {
-                                        total += priceUnit * 0.80 * (units - 2); // 3ra+ -20%
-                                    }
+                                    if (units >= 2) total += priceUnit * (1 - d2 / 100); // 2da
+                                    if (units >= 3) total += (units - 2) * (priceUnit * (1 - d3 / 100)); // 3ra+
                                     return total;
                                 }
 
@@ -767,11 +777,15 @@ $textColor       = $config['text_color']       ?? '#222222';
                                     const priceUnit = parseFloat(summary.dataset.priceUnit || '0') || 0;
                                     const priceRegular = parseFloat(summary.dataset.priceRegular || summary.dataset.priceUnit || '0') || 0;
 
+                                    const d2 = parseInt(summary.dataset.d2 || '15', 10);
+                                    const d3 = parseInt(summary.dataset.d3 || '20', 10);
+                                    const act = parseInt(summary.dataset.act || '1', 10);
+
                                     const subtotal = priceUnit * totalUnits;
-                                    const totalPay = totalConDescuento(totalUnits, priceUnit);
+                                    const totalPay = totalConDescuento(totalUnits, priceUnit, d2, d3, act);
                                     const discount = Math.max(0, subtotal - totalPay);
 
-                                    // Ahorro real del cliente usando precio_regular
+                                    // Ahorro total real usando precio_regular vs totalPay
                                     const baseRegular = priceRegular * totalUnits;
                                     const ahorroTotal = Math.max(0, baseRegular - totalPay);
 
@@ -794,23 +808,22 @@ $textColor       = $config['text_color']       ?? '#222222';
                                 function rowTemplate() {
                                     const row = document.createElement('div');
                                     row.className = 'color-qty-row';
-                                    row.innerHTML = `
+                                                                            row.innerHTML = `
                                             <select name="color_item[]" required class="color-select">
-                                            ${optionsHtml()}
+                                                ${optionsHtml()}
                                             </select>
 
                                             <select name="qty_item[]" required class="qty-select">
-                                            ${qtyOptionsHtml(1)}
+                                                ${qtyOptionsHtml(1)}
                                             </select>
 
                                             <button type="button" class="remove-color-qty" aria-label="Quitar">
-                                            <span class="remove-icon">×</span>
-                                            <span class="remove-text">Borrar</span>
+                                                <span class="remove-icon">×</span>
+                                                <span class="remove-text">Borrar</span>
                                             </button>
-                                        `;
-                                    return row;
+                                            `;
+                                                                            return row;
                                 }
-
 
                                 function recalcTotal() {
                                     let total = 0;
@@ -822,17 +835,19 @@ $textColor       = $config['text_color']       ?? '#222222';
 
                                     if (total < 1) total = 1;
 
-                                    totalUnitsEl.textContent = String(total);
-                                    totalHidden.value = String(total);
+                                    if (totalUnitsEl) totalUnitsEl.textContent = String(total);
+                                    if (totalHidden) totalHidden.value = String(total);
 
                                     updateSummary(total);
                                 }
 
                                 // Agregar fila
-                                btnAdd.addEventListener('click', () => {
-                                    wrap.appendChild(rowTemplate());
-                                    recalcTotal();
-                                });
+                                if (btnAdd) {
+                                    btnAdd.addEventListener('click', () => {
+                                        wrap.appendChild(rowTemplate());
+                                        recalcTotal();
+                                    });
+                                }
 
                                 // Eliminar fila (delegado)
                                 wrap.addEventListener('click', (e) => {
@@ -860,6 +875,7 @@ $textColor       = $config['text_color']       ?? '#222222';
                                 recalcTotal();
                             });
                         </script>
+
 
 
                     <?php else: ?>
@@ -915,15 +931,35 @@ $textColor       = $config['text_color']       ?? '#222222';
                     $precioVenta      = (float)($producto['precio_venta'] ?? 0);
                     $precioProveedor  = (float)($producto['precio_proveedor'] ?? 0);
                     ?>
+                    <?php
+                    $precioVenta   = (float)($producto['precio_venta'] ?? 0);
+                    $precioProveedor = (float)($producto['precio_proveedor'] ?? 0);
+
+                    $precioRegular = (float)($producto['precio_regular'] ?? $precioVenta);
+                    if ($precioRegular <= 0 || $precioRegular < $precioVenta) {
+                        $precioRegular = $precioVenta;
+                    }
+
+                    // Descuentos del producto (defaults)
+                    $d2  = (int)($producto['descuento_2da'] ?? 15);
+                    $d3  = (int)($producto['descuento_3ra'] ?? 20);
+                    $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
+                    ?>
 
                     <div class="order-summary" id="orderSummary"
                         data-price-unit="<?= htmlspecialchars((string)$precioVenta) ?>"
-                        data-price-supplier="<?= htmlspecialchars((string)$precioProveedor) ?>">
+                        data-price-regular="<?= htmlspecialchars((string)$precioRegular) ?>"
+                        data-price-supplier="<?= htmlspecialchars((string)$precioProveedor) ?>"
+                        data-d2="<?= htmlspecialchars((string)$d2) ?>"
+                        data-d3="<?= htmlspecialchars((string)$d3) ?>"
+                        data-act="<?= htmlspecialchars((string)$act) ?>">
                         <h3 class="order-summary__title">Resumen de tu compra</h3>
 
                         <div class="order-summary__rows">
                             <div class="order-summary__row">
-                                <span>Subtotal (<strong id="summaryQty">1</strong> unidad)</span>
+                                <span>
+                                    Subtotal (<strong id="summaryQty">1</strong> <span id="summaryQtyWord">unidad</span>)
+                                </span>
                                 <strong id="summarySubtotal">$0</strong>
                             </div>
 
@@ -960,6 +996,7 @@ $textColor       = $config['text_color']       ?? '#222222';
                             Al confirmar, aceptas que un asesor te contacte para validar tu pedido.
                         </small>
                     </div>
+
 
 
 

@@ -45,6 +45,37 @@ class AdminProductosController extends Controller
         return $colores;
     }
 
+    /** Limpia y acota descuento 0..100 */
+    private function clampDescuento($v, int $default): int
+    {
+        if ($v === null || $v === '') return $default;
+        $v = (int)$v;
+        return max(0, min(100, $v));
+    }
+
+    /** Valida imagen subida (mínimo) */
+    private function validarImagenUpload(array $file, array &$errores): bool
+    {
+        if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) return false;
+
+        $origName = $file['name'] ?? '';
+        $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+
+        $permitidas = ['jpg', 'jpeg', 'png', 'webp'];
+        if (!in_array($ext, $permitidas, true)) {
+            $errores[] = "La imagen debe ser JPG, PNG o WEBP.";
+            return false;
+        }
+
+        $info = @getimagesize($file['tmp_name']);
+        if ($info === false) {
+            $errores[] = "El archivo subido no parece ser una imagen válida.";
+            return false;
+        }
+
+        return true;
+    }
+
     public function index()
     {
         $this->requireLogin();
@@ -72,11 +103,16 @@ class AdminProductosController extends Controller
             'nombre'           => '',
             'slug'             => '',
             'precio_venta'     => '',
-            'precio_regular'   => '',   // ✅ NUEVO
+            'precio_regular'   => '',
             'precio_proveedor' => '',
             'costo_envio'      => 0,
             'activo'           => 1,
             'colores'          => [''],
+
+            // ✅ Descuentos multicantidad (defaults)
+            'descuento_2da' => 15,
+            'descuento_3ra' => 20,
+            'descuento_multicantidad_activo' => 1,
         ];
 
         $this->view('admin/productos/crear', [
@@ -94,19 +130,31 @@ class AdminProductosController extends Controller
             exit;
         }
 
-        $nombre           = trim($_POST['nombre'] ?? '');
-        $slugInput        = trim($_POST['slug'] ?? '');
+        $nombre    = trim($_POST['nombre'] ?? '');
+        $slugInput = trim($_POST['slug'] ?? '');
 
         $precioVenta      = (float)($_POST['precio_venta'] ?? 0);
-        $precioRegular    = (float)($_POST['precio_regular'] ?? 0); // ✅ NUEVO
+        $precioRegular    = (float)($_POST['precio_regular'] ?? 0);
         $precioProveedor  = (float)($_POST['precio_proveedor'] ?? 0);
         $costoEnvio       = (float)($_POST['costo_envio'] ?? 0);
 
-        $activo           = isset($_POST['activo']) && $_POST['activo'] == '1' ? 1 : 0;
+        // ✅ Descuentos
+        $descuento2 = $this->clampDescuento($_POST['descuento_2da'] ?? null, 15);
+        $descuento3 = $this->clampDescuento($_POST['descuento_3ra'] ?? null, 20);
+        // ✅ Si el campo no viene en el POST, asumimos ACTIVO por defecto
+        $descActivo = isset($_POST['descuento_multicantidad_activo'])
+            ? (($_POST['descuento_multicantidad_activo'] == '1') ? 1 : 0)
+            : 1;
+
+
+
+        $activo = (isset($_POST['activo']) && $_POST['activo'] == '1') ? 1 : 0;
         if ($costoEnvio < 0) $costoEnvio = 0;
 
         $colores = $this->normalizarColores($_POST['colores'] ?? []);
-        $slug    = $slugInput !== '' ? $slugInput : $this->generarSlug($nombre);
+
+        // ✅ Si el admin escribe slug manual, lo sanitizamos
+        $slug = $slugInput !== '' ? $this->generarSlug($slugInput) : $this->generarSlug($nombre);
 
         $errores = [];
 
@@ -129,24 +177,25 @@ class AdminProductosController extends Controller
             $errores[] = "El costo de envío no puede ser negativo.";
         }
 
+        // Opcional recomendado: coherencia
+        if ($descuento3 < $descuento2) {
+            $errores[] = "El descuento 3ra+ debería ser mayor o igual al de 2da unidad.";
+        }
+
         $old = [
             'nombre'           => $nombre,
             'slug'             => $slugInput,
             'precio_venta'     => $precioVenta,
-            'precio_regular'   => $precioRegular, // ✅
+            'precio_regular'   => $precioRegular,
             'precio_proveedor' => $precioProveedor,
             'costo_envio'      => $costoEnvio,
             'activo'           => $activo,
             'colores'          => $colores,
-        ];
 
-        if (!empty($errores)) {
-            $this->view('admin/productos/crear', [
-                'errores' => $errores,
-                'old'     => $old,
-            ]);
-            return;
-        }
+            'descuento_2da' => $descuento2,
+            'descuento_3ra' => $descuento3,
+            'descuento_multicantidad_activo' => $descActivo,
+        ];
 
         // Manejo de imagen principal
         $imagenPrincipal = null;
@@ -160,19 +209,30 @@ class AdminProductosController extends Controller
 
         if (
             isset($_FILES['imagen_principal_file']) &&
-            $_FILES['imagen_principal_file']['error'] === UPLOAD_ERR_OK &&
-            is_uploaded_file($_FILES['imagen_principal_file']['tmp_name'])
+            $_FILES['imagen_principal_file']['error'] === UPLOAD_ERR_OK
         ) {
-            $tmpName  = $_FILES['imagen_principal_file']['tmp_name'];
-            $origName = $_FILES['imagen_principal_file']['name'];
+            if ($this->validarImagenUpload($_FILES['imagen_principal_file'], $errores)) {
+                $tmpName  = $_FILES['imagen_principal_file']['tmp_name'];
+                $origName = $_FILES['imagen_principal_file']['name'];
 
-            $ext     = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-            $newName = 'prod_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
+                $ext     = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                $newName = 'prod_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
 
-            $destPath = $uploadDir . $newName;
-            if (move_uploaded_file($tmpName, $destPath)) {
-                $imagenPrincipal = '/tienda_mvc/public/uploads/productos/' . $newName;
+                $destPath = $uploadDir . $newName;
+                if (move_uploaded_file($tmpName, $destPath)) {
+                    $imagenPrincipal = '/tienda_mvc/public/uploads/productos/' . $newName;
+                } else {
+                    $errores[] = "No se pudo guardar la imagen. Intenta nuevamente.";
+                }
             }
+        }
+
+        if (!empty($errores)) {
+            $this->view('admin/productos/crear', [
+                'errores' => $errores,
+                'old'     => $old,
+            ]);
+            return;
         }
 
         $productoModel = new Producto();
@@ -181,11 +241,16 @@ class AdminProductosController extends Controller
             'nombre'           => $nombre,
             'slug'             => $slug,
             'precio_venta'     => $precioVenta,
-            'precio_regular'   => $precioRegular, // ✅
+            'precio_regular'   => $precioRegular,
             'precio_proveedor' => $precioProveedor,
             'costo_envio'      => $costoEnvio,
             'imagen_principal' => $imagenPrincipal,
             'activo'           => $activo,
+
+            // ✅ descuentos
+            'descuento_2da' => $descuento2,
+            'descuento_3ra' => $descuento3,
+            'descuento_multicantidad_activo' => $descActivo,
         ]);
 
         if ($productoId <= 0) {
@@ -229,12 +294,17 @@ class AdminProductosController extends Controller
             'nombre'           => $producto['nombre'],
             'slug'             => $producto['slug'] ?? '',
             'precio_venta'     => $producto['precio_venta'],
-            'precio_regular'   => $producto['precio_regular'] ?? 0, // ✅
+            'precio_regular'   => $producto['precio_regular'] ?? 0,
             'precio_proveedor' => $producto['precio_proveedor'],
             'costo_envio'      => $producto['costo_envio'] ?? 0,
             'activo'           => $producto['activo'] ?? 1,
             'imagen_principal' => $producto['imagen_principal'] ?? '',
             'colores'          => $colores,
+
+            // ✅ descuentos
+            'descuento_2da' => $producto['descuento_2da'] ?? 15,
+            'descuento_3ra' => $producto['descuento_3ra'] ?? 20,
+            'descuento_multicantidad_activo' => $producto['descuento_multicantidad_activo'] ?? 1,
         ];
 
         $this->view('admin/productos/editar', [
@@ -260,8 +330,8 @@ class AdminProductosController extends Controller
             exit;
         }
 
-        $productoModel      = new Producto();
-        $productoExistente  = $productoModel->obtenerPorId($id);
+        $productoModel     = new Producto();
+        $productoExistente = $productoModel->obtenerPorId($id);
 
         if (!$productoExistente) {
             $_SESSION['admin_productos_success'] = "El producto no existe.";
@@ -269,21 +339,33 @@ class AdminProductosController extends Controller
             exit;
         }
 
-        $nombre           = trim($_POST['nombre'] ?? '');
-        $slugInput        = trim($_POST['slug'] ?? '');
+        $nombre    = trim($_POST['nombre'] ?? '');
+        $slugInput = trim($_POST['slug'] ?? '');
 
         $precioVenta      = (float)($_POST['precio_venta'] ?? 0);
-        $precioRegular    = (float)($_POST['precio_regular'] ?? 0); // ✅
+        $precioRegular    = (float)($_POST['precio_regular'] ?? 0);
         $precioProveedor  = (float)($_POST['precio_proveedor'] ?? 0);
         $costoEnvio       = (float)($_POST['costo_envio'] ?? 0);
 
-        $activo           = isset($_POST['activo']) && $_POST['activo'] == '1' ? 1 : 0;
-        $imagenPrincipal  = $_POST['imagen_principal_actual'] ?? ($productoExistente['imagen_principal'] ?? null);
+        // ✅ descuentos
+        $descuento2 = $this->clampDescuento($_POST['descuento_2da'] ?? null, (int)($productoExistente['descuento_2da'] ?? 15));
+        $descuento3 = $this->clampDescuento($_POST['descuento_3ra'] ?? null, (int)($productoExistente['descuento_3ra'] ?? 20));
+        // ✅ Si el campo no viene, NO lo apagues; conserva el valor actual del producto
+        $descActivo = isset($_POST['descuento_multicantidad_activo'])
+            ? (($_POST['descuento_multicantidad_activo'] == '1') ? 1 : 0)
+            : (int)($productoExistente['descuento_multicantidad_activo'] ?? 1);
+
+
+
+        $activo          = (isset($_POST['activo']) && $_POST['activo'] == '1') ? 1 : 0;
+        $imagenPrincipal = $_POST['imagen_principal_actual'] ?? ($productoExistente['imagen_principal'] ?? null);
 
         if ($costoEnvio < 0) $costoEnvio = 0;
 
         $colores = $this->normalizarColores($_POST['colores'] ?? []);
-        $slug    = $slugInput !== '' ? $slugInput : ($productoExistente['slug'] ?? $this->generarSlug($nombre));
+
+        // ✅ Sanitizar slug manual
+        $slug = $slugInput !== '' ? $this->generarSlug($slugInput) : ($productoExistente['slug'] ?? $this->generarSlug($nombre));
 
         $errores = [];
 
@@ -306,28 +388,26 @@ class AdminProductosController extends Controller
             $errores[] = "El costo de envío no puede ser negativo.";
         }
 
+        if ($descuento3 < $descuento2) {
+            $errores[] = "El descuento 3ra+ debería ser mayor o igual al de 2da unidad.";
+        }
+
         $old = [
             'id'               => $id,
             'nombre'           => $nombre,
             'slug'             => $slugInput,
             'precio_venta'     => $precioVenta,
-            'precio_regular'   => $precioRegular, // ✅
+            'precio_regular'   => $precioRegular,
             'precio_proveedor' => $precioProveedor,
             'costo_envio'      => $costoEnvio,
             'activo'           => $activo,
             'imagen_principal' => $imagenPrincipal,
             'colores'          => $colores,
-        ];
 
-        if (!empty($errores)) {
-            $this->view('admin/productos/editar', [
-                'producto' => $productoExistente,
-                'errores'  => $errores,
-                'old'      => $old,
-                'colores'  => $colores,
-            ]);
-            return;
-        }
+            'descuento_2da' => $descuento2,
+            'descuento_3ra' => $descuento3,
+            'descuento_multicantidad_activo' => $descActivo,
+        ];
 
         // Manejo de imagen
         $basePath  = dirname(__DIR__, 2);
@@ -339,30 +419,47 @@ class AdminProductosController extends Controller
 
         if (
             isset($_FILES['imagen_principal_file']) &&
-            $_FILES['imagen_principal_file']['error'] === UPLOAD_ERR_OK &&
-            is_uploaded_file($_FILES['imagen_principal_file']['tmp_name'])
+            $_FILES['imagen_principal_file']['error'] === UPLOAD_ERR_OK
         ) {
-            $tmpName  = $_FILES['imagen_principal_file']['tmp_name'];
-            $origName = $_FILES['imagen_principal_file']['name'];
+            if ($this->validarImagenUpload($_FILES['imagen_principal_file'], $errores)) {
+                $tmpName  = $_FILES['imagen_principal_file']['tmp_name'];
+                $origName = $_FILES['imagen_principal_file']['name'];
 
-            $ext     = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-            $newName = 'prod_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
+                $ext     = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                $newName = 'prod_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
 
-            $destPath = $uploadDir . $newName;
-            if (move_uploaded_file($tmpName, $destPath)) {
-                $imagenPrincipal = '/tienda_mvc/public/uploads/productos/' . $newName;
+                $destPath = $uploadDir . $newName;
+                if (move_uploaded_file($tmpName, $destPath)) {
+                    $imagenPrincipal = '/tienda_mvc/public/uploads/productos/' . $newName;
+                } else {
+                    $errores[] = "No se pudo guardar la imagen. Intenta nuevamente.";
+                }
             }
+        }
+
+        if (!empty($errores)) {
+            $this->view('admin/productos/editar', [
+                'producto' => $productoExistente,
+                'errores'  => $errores,
+                'old'      => $old,
+                'colores'  => $colores,
+            ]);
+            return;
         }
 
         $ok = $productoModel->actualizar($id, [
             'nombre'           => $nombre,
             'slug'             => $slug,
             'precio_venta'     => $precioVenta,
-            'precio_regular'   => $precioRegular, // ✅
+            'precio_regular'   => $precioRegular,
             'precio_proveedor' => $precioProveedor,
             'costo_envio'      => $costoEnvio,
             'imagen_principal' => $imagenPrincipal,
             'activo'           => $activo,
+
+            'descuento_2da' => $descuento2,
+            'descuento_3ra' => $descuento3,
+            'descuento_multicantidad_activo' => $descActivo,
         ]);
 
         if (!$ok) {

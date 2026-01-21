@@ -30,9 +30,13 @@ class Producto extends Model
     public function crear(array $data): bool
     {
         $sql = "INSERT INTO productos
-                (nombre, slug, precio_venta, precio_regular, precio_proveedor, costo_envio, imagen_principal, activo)
+                (nombre, slug, precio_venta, precio_regular, precio_proveedor, costo_envio,
+                 descuento_2da, descuento_3ra, descuento_multicantidad_activo,
+                 imagen_principal, activo)
                 VALUES
-                (:nombre, :slug, :precio_venta, :precio_regular, :precio_proveedor, :costo_envio, :imagen_principal, :activo)";
+                (:nombre, :slug, :precio_venta, :precio_regular, :precio_proveedor, :costo_envio,
+                 :descuento_2da, :descuento_3ra, :descuento_multicantidad_activo,
+                 :imagen_principal, :activo)";
         $stmt = $this->db->prepare($sql);
 
         return $stmt->execute([
@@ -42,6 +46,11 @@ class Producto extends Model
             ':precio_regular'   => $data['precio_regular'] ?? 0,
             ':precio_proveedor' => $data['precio_proveedor'],
             ':costo_envio'      => $data['costo_envio'] ?? 0,
+
+            ':descuento_2da'    => $data['descuento_2da'] ?? 15,
+            ':descuento_3ra'    => $data['descuento_3ra'] ?? 20,
+            ':descuento_multicantidad_activo' => $data['descuento_multicantidad_activo'] ?? 1,
+
             ':imagen_principal' => $data['imagen_principal'] ?? null,
             ':activo'           => $data['activo'] ?? 1,
         ]);
@@ -50,9 +59,13 @@ class Producto extends Model
     public function crearConId(array $data): int
     {
         $sql = "INSERT INTO productos
-                (nombre, slug, precio_venta, precio_regular, precio_proveedor, costo_envio, imagen_principal, activo)
+                (nombre, slug, precio_venta, precio_regular, precio_proveedor, costo_envio,
+                 descuento_2da, descuento_3ra, descuento_multicantidad_activo,
+                 imagen_principal, activo)
                 VALUES
-                (:nombre, :slug, :precio_venta, :precio_regular, :precio_proveedor, :costo_envio, :imagen_principal, :activo)";
+                (:nombre, :slug, :precio_venta, :precio_regular, :precio_proveedor, :costo_envio,
+                 :descuento_2da, :descuento_3ra, :descuento_multicantidad_activo,
+                 :imagen_principal, :activo)";
         $stmt = $this->db->prepare($sql);
 
         $ok = $stmt->execute([
@@ -62,6 +75,11 @@ class Producto extends Model
             ':precio_regular'   => $data['precio_regular'] ?? 0,
             ':precio_proveedor' => $data['precio_proveedor'],
             ':costo_envio'      => $data['costo_envio'] ?? 0,
+
+            ':descuento_2da'    => $data['descuento_2da'] ?? 15,
+            ':descuento_3ra'    => $data['descuento_3ra'] ?? 20,
+            ':descuento_multicantidad_activo' => $data['descuento_multicantidad_activo'] ?? 1,
+
             ':imagen_principal' => $data['imagen_principal'] ?? null,
             ':activo'           => $data['activo'] ?? 1,
         ]);
@@ -79,6 +97,9 @@ class Producto extends Model
                     precio_regular   = :precio_regular,
                     precio_proveedor = :precio_proveedor,
                     costo_envio      = :costo_envio,
+                    descuento_2da    = :descuento_2da,
+                    descuento_3ra    = :descuento_3ra,
+                    descuento_multicantidad_activo = :descuento_multicantidad_activo,
                     imagen_principal = :imagen_principal,
                     activo           = :activo
                 WHERE id = :id";
@@ -92,6 +113,11 @@ class Producto extends Model
             ':precio_regular'   => $data['precio_regular'] ?? 0,
             ':precio_proveedor' => $data['precio_proveedor'],
             ':costo_envio'      => $data['costo_envio'] ?? 0,
+
+            ':descuento_2da'    => $data['descuento_2da'] ?? 15,
+            ':descuento_3ra'    => $data['descuento_3ra'] ?? 20,
+            ':descuento_multicantidad_activo' => $data['descuento_multicantidad_activo'] ?? 1,
+
             ':imagen_principal' => $data['imagen_principal'] ?? null,
             ':activo'           => $data['activo'] ?? 1,
         ]);

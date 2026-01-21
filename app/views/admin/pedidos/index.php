@@ -127,7 +127,7 @@
                                 <th>Ubicación</th>
                                 <th>Producto</th>
                                 <th>Precio</th>
-                                <th>Utilidad</th>
+                                <th>Utilidad total</th>
                                 <th>Estado</th>
                                 <th>Contacto</th>
                                 <th>Acción</th>
@@ -161,19 +161,29 @@
                                 $precioUnit      = (float)($p['precio_venta'] ?? 0);
                                 $precioProvUnit  = (float)($p['precio_proveedor'] ?? 0);
 
-                                // ✅ Totales correctos (fallbacks seguros)
-                                $precioTotal = isset($p['precio_total']) ? (float)$p['precio_total'] : ($precioUnit * $cantidadTotal);
+                                // ✅ Total cobrado (ya con descuento si existe)
+                                $precioTotal = isset($p['precio_total'])
+                                    ? (float)$p['precio_total']
+                                    : ($precioUnit * $cantidadTotal);
 
-                                $utilidadTotal = null;
-                                if (isset($p['utilidad_total'])) {
-                                    $utilidadTotal = (float)$p['utilidad_total'];
-                                } elseif (isset($p['precio_total'])) {
-                                    $utilidadTotal = $precioTotal - ($precioProvUnit * $cantidadTotal);
-                                } else {
-                                    // último fallback: si en tu sistema guardabas utilidad unitaria
-                                    $utilidadUnit = (float)($p['utilidad'] ?? ($precioUnit - $precioProvUnit));
-                                    $utilidadTotal = $utilidadUnit * $cantidadTotal;
+                                // ✅ Costo envío (prioridad: pedido -> producto -> 0)
+                                // Si no tienes pedidos.costo_envio, usa producto_costo_envio (JOIN en el modelo)
+                                $costoEnvio = 0.0;
+                                if (isset($p['costo_envio'])) {
+                                    $costoEnvio = (float)$p['costo_envio'];
+                                } elseif (isset($p['producto_costo_envio'])) {
+                                    $costoEnvio = (float)$p['producto_costo_envio'];
                                 }
+                                if ($costoEnvio < 0) $costoEnvio = 0;
+
+                                // ✅ Utilidad total REAL (con envío incluido en el costo)
+                                $costoTotal = ($precioProvUnit * $cantidadTotal) + $costoEnvio;
+                                $utilidadTotal = $precioTotal - $costoTotal;
+
+
+                                if (!is_finite($utilidadTotal)) $utilidadTotal = 0.0;
+
+
                                 ?>
 
                                 <tr data-pedido-id="<?= htmlspecialchars($p['id'] ?? '') ?>">
@@ -208,14 +218,24 @@
                                         <?php endif; ?>
                                     </td>
 
-                                    <td data-label="Utilidad">
+                                    <td data-label="Utilidad total">
                                         <span class="profit-tag">
                                             $<?= number_format($utilidadTotal, 0, ',', '.') ?>
                                         </span>
+
                                         <?php if ($cantidadTotal > 1): ?>
-                                            <br><small style="opacity:.85;">Total pedido</small>
+                                            <?php $utilidadUnitShow = ($cantidadTotal > 0) ? ($utilidadTotal / $cantidadTotal) : 0; ?>
+                                            <br><small style="opacity:.85;">Unit aprox: $<?= number_format($utilidadUnitShow, 0, ',', '.') ?></small>
                                         <?php endif; ?>
+
+                                        <?php if ($costoEnvio > 0): ?>
+                                            <br><small style="opacity:.85;">Incluye envío: $<?= number_format((float)$costoEnvio, 0, ',', '.') ?></small>
+                                        <?php else: ?>
+                                            <br><small style="opacity:.85;">Incluye envío: $0</small>
+                                        <?php endif; ?>
+
                                     </td>
+
 
                                     <td data-label="Estado">
                                         <span class="status-tag status-<?= htmlspecialchars($estadoActual) ?>">

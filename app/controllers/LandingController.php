@@ -3,22 +3,42 @@
 class LandingController extends Controller
 {
     /**
-     * Total con descuento:
-     * - 1 unidad: sin descuento
-     * - 2da unidad: 15% OFF
-     * - 3ra en adelante: 20% OFF
+     * Total con descuento dinámico según producto:
+     * - 1ra unidad: sin descuento
+     * - 2da unidad: d2% OFF
+     * - 3ra+ unidad: d3% OFF
+     * Si activo != 1 => no aplica descuento multicantidad.
      */
-    private function totalConDescuento(int $cantidad, float $precioUnit): float
+    private function totalConDescuento(int $cantidad, float $precioUnit, int $d2, int $d3, int $activo = 1): float
     {
         if ($cantidad <= 0) return 0.0;
+
+        $d2 = max(0, min(100, (int)$d2));
+        $d3 = max(0, min(100, (int)$d3));
+        $activo = (int)$activo;
+
+        // Si está apagado, cobra normal
+        if ($activo !== 1) {
+            return $precioUnit * $cantidad;
+        }
+
         if ($cantidad === 1) return $precioUnit;
 
         $total = 0.0;
-        $total += $precioUnit;        // 1ra sin descuento
-        $total += $precioUnit * 0.85; // 2da -15%
-        if ($cantidad >= 3) {
-            $total += $precioUnit * 0.80 * ($cantidad - 2); // 3ra+ -20%
+
+        // 1ra sin descuento
+        $total += $precioUnit;
+
+        // 2da con d2%
+        if ($cantidad >= 2) {
+            $total += $precioUnit * (1 - ($d2 / 100));
         }
+
+        // 3ra+ con d3%
+        if ($cantidad >= 3) {
+            $total += ($cantidad - 2) * ($precioUnit * (1 - ($d3 / 100)));
+        }
+
         return $total;
     }
 
@@ -46,7 +66,6 @@ class LandingController extends Controller
         $configModel = new LandingConfig();
         $config      = $configModel->obtenerPorProducto($productoId) ?? [];
 
-        // Colores
         $productoColorModel = new ProductoColor();
         $colores = $productoColorModel->obtenerActivosPorProducto((int)$producto['id']);
 
@@ -82,7 +101,6 @@ class LandingController extends Controller
         $configModel = new LandingConfig();
         $config      = $configModel->obtenerPorProducto($productoId) ?? [];
 
-        // Colores permitidos
         $productoColorModel = new ProductoColor();
         $coloresPermitidos  = $productoColorModel->obtenerActivosPorProducto($productoId);
 
@@ -95,7 +113,6 @@ class LandingController extends Controller
         $tipoEntrega  = trim($_POST['tipo_entrega'] ?? '');
         $direccion    = trim($_POST['direccion']    ?? '');
 
-        // Confirmación checkbox
         $confirmPurchase = isset($_POST['confirm_purchase']) && $_POST['confirm_purchase'] == '1';
 
         // Arrays color/cantidad
@@ -104,7 +121,6 @@ class LandingController extends Controller
         if (!is_array($colorItems)) $colorItems = [];
         if (!is_array($qtyItems))   $qtyItems = [];
 
-        // Old para re-render
         $old = [
             'nombre'           => $nombre,
             'apellidos'        => $apellidos,
@@ -196,22 +212,27 @@ class LandingController extends Controller
         }
 
         // ===== PRECIOS Y COSTOS =====
-        $precioVenta     = (float)($producto['precio_venta'] ?? 0);        // unitario
-        $precioProveedor = (float)($producto['precio_proveedor'] ?? 0);    // unitario
-        $costoEnvio      = (float)($producto['costo_envio'] ?? 0);         // por pedido (1 sola vez)
+        $precioVenta     = (float)($producto['precio_venta'] ?? 0);
+        $precioProveedor = (float)($producto['precio_proveedor'] ?? 0);
+        $costoEnvio      = (float)($producto['costo_envio'] ?? 0);
         if ($costoEnvio < 0) $costoEnvio = 0;
 
+        // ===== DESCUENTOS DINÁMICOS (desde producto) =====
+        $d2  = (int)($producto['descuento_2da'] ?? 15);
+        $d3  = (int)($producto['descuento_3ra'] ?? 20);
+        $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
+
         $subtotal       = $precioVenta * $cantidadTotal;
-        $precioTotal    = $this->totalConDescuento($cantidadTotal, $precioVenta);
+        $precioTotal    = $this->totalConDescuento($cantidadTotal, $precioVenta, $d2, $d3, $act);
         $descuentoTotal = max(0, $subtotal - $precioTotal);
 
         // costos reales: proveedor * cantidad + envío (una sola vez)
         $costoTotal    = ($precioProveedor * $cantidadTotal) + $costoEnvio;
 
-        // utilidad unitaria (sin envío)
+        // utilidad unitaria (sin envío, solo referencia)
         $utilidadUnit  = $precioVenta - $precioProveedor;
 
-        // utilidad total real
+        // utilidad total real (incluye envío)
         $utilidadTotal = $precioTotal - $costoTotal;
 
         // Guardar pedido
@@ -229,12 +250,12 @@ class LandingController extends Controller
             'tipo_entrega'     => $tipoEntrega,
             'direccion'        => ($tipoEntrega === 'domicilio') ? $direccion : null,
 
-            // unitarios (para referencia)
+            // unitarios
             'precio_venta'     => $precioVenta,
             'precio_proveedor' => $precioProveedor,
             'utilidad'         => $utilidadUnit,
 
-            // totales reales
+            // totales
             'descuento_total'  => $descuentoTotal,
             'precio_total'     => $precioTotal,
             'utilidad_total'   => $utilidadTotal,

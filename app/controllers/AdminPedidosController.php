@@ -5,32 +5,64 @@ class AdminPedidosController extends Controller
     public function index()
     {
         $this->requireLogin();
+
         $pedidoModel = new Pedido();
         $pedidos = $pedidoModel->obtenerTodos(300);
 
         $totalPedidos    = count($pedidos);
-        $totalUtilidad   = 0;
-        $totalVenta      = 0;
-        $totalProveedor  = 0;
+        $totalUtilidad   = 0.0;
+        $totalVenta      = 0.0;
+        $totalProveedor  = 0.0;
         $pedidosNuevos   = 0;
 
         foreach ($pedidos as $p) {
+            $estado = $p['estado'] ?? '';
+
             $cantidad = (int)($p['cantidad_total'] ?? 1);
             if ($cantidad < 1) $cantidad = 1;
 
-            // Totales correctos (fallback por compatibilidad)
-            $precioTotal   = isset($p['precio_total']) ? (float)$p['precio_total'] : ((float)($p['precio_venta'] ?? 0) * $cantidad);
-            $utilidadTotal = isset($p['utilidad_total']) ? (float)$p['utilidad_total'] : ((float)($p['utilidad'] ?? 0) * $cantidad);
+            $precioUnit     = (float)($p['precio_venta'] ?? 0);
+            $precioProvUnit = (float)($p['precio_proveedor'] ?? 0);
+
+            // Total cobrado al cliente (si viene precio_total, úsalo; si no, fallback)
+            $precioTotal = isset($p['precio_total'])
+                ? (float)$p['precio_total']
+                : ($precioUnit * $cantidad);
+
+            // Costo de envío: prioridad pedido -> producto -> 0
+            // (En tu DB actual no existe pedidos.costo_envio, por eso usamos producto_costo_envio)
+            $costoEnvio = 0.0;
+            if (isset($p['costo_envio'])) {
+                $costoEnvio = (float)$p['costo_envio'];
+            } elseif (isset($p['producto_costo_envio'])) {
+                $costoEnvio = (float)$p['producto_costo_envio'];
+            }
+            if ($costoEnvio < 0) $costoEnvio = 0;
+
+            // Utilidad total REAL:
+            // utilidad_total guardada > cálculo con proveedor*cantidad + envío
+            if (isset($p['utilidad_total'])) {
+                $utilidadTotal = (float)$p['utilidad_total'];
+            } else {
+                $costoTotal = ($precioProvUnit * $cantidad) + $costoEnvio;
+                $utilidadTotal = $precioTotal - $costoTotal;
+            }
+            if (!is_finite($utilidadTotal)) $utilidadTotal = 0.0;
+
+            if ($estado === 'nuevo') {
+                $pedidosNuevos++;
+            }
+
+            // Métricas: excluimos cancelados (recomendado)
+            if ($estado === 'cancelado') {
+                continue;
+            }
 
             $totalVenta     += $precioTotal;
             $totalUtilidad  += $utilidadTotal;
 
-            // Costo proveedor total (sin envío porque no está en pedidos)
-            $totalProveedor += ((float)($p['precio_proveedor'] ?? 0) * $cantidad);
-
-            if (($p['estado'] ?? '') === 'nuevo') {
-                $pedidosNuevos++;
-            }
+            // Proveedor total (solo proveedor*cantidad; envío no es “proveedor”)
+            $totalProveedor += ($precioProvUnit * $cantidad);
         }
 
         $this->view('admin/pedidos/index', [
@@ -84,7 +116,7 @@ class AdminPedidosController extends Controller
         $estado = trim($_POST['estado'] ?? '');
 
         if ($id <= 0 || $estado === '') {
-            if (isset($_POST['ajax']) && $_POST['ajax'] == '1') {
+            if (!empty($_POST['ajax']) && $_POST['ajax'] == '1') {
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode(['ok' => false, 'error' => 'Datos inválidos']);
                 return;
@@ -95,7 +127,7 @@ class AdminPedidosController extends Controller
 
         $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'entregado', 'cancelado'];
         if (!in_array($estado, $estadosPosibles, true)) {
-            if (isset($_POST['ajax']) && $_POST['ajax'] == '1') {
+            if (!empty($_POST['ajax']) && $_POST['ajax'] == '1') {
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode(['ok' => false, 'error' => 'Estado no permitido']);
                 return;
@@ -107,7 +139,7 @@ class AdminPedidosController extends Controller
         $pedidoModel = new Pedido();
         $pedidoModel->actualizarEstado($id, $estado);
 
-        if (isset($_POST['ajax']) && $_POST['ajax'] == '1') {
+        if (!empty($_POST['ajax']) && $_POST['ajax'] == '1') {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
                 'ok' => true,
