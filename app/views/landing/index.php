@@ -671,12 +671,15 @@ $textColor       = $config['text_color']       ?? '#222222';
                                         </select>
 
                                         <select name="qty_item[]" required class="qty-select">
+                                            <option value="" disabled <?= ($selQty < 1) ? 'selected' : '' ?>>Selecciona cantidad</option>
                                             <?php for ($i = 1; $i <= 5; $i++): ?>
                                                 <option value="<?= $i ?>" <?= ($selQty === $i) ? 'selected' : '' ?>>
                                                     <?= $i ?>
                                                 </option>
                                             <?php endfor; ?>
                                         </select>
+
+
 
                                         <button type="button" class="remove-color-qty" aria-label="Quitar">
                                             <span class="remove-icon">×</span>
@@ -724,13 +727,19 @@ $textColor       = $config['text_color']       ?? '#222222';
                                         .join('');
                                 }
 
-                                function qtyOptionsHtml(defaultQty = 1) {
-                                    return Array.from({
+                                function qtyOptionsHtml(defaultQty = '') {
+                                    const phSelected = (defaultQty === '' || defaultQty === null) ? 'selected' : '';
+                                    const ph = `<option value="" disabled ${phSelected}>Selecciona cantidad</option>`;
+
+                                    const nums = Array.from({
                                             length: 5
                                         }, (_, i) => i + 1)
-                                        .map(n => `<option value="${n}" ${n === defaultQty ? 'selected' : ''}>${n}</option>`)
+                                        .map(n => `<option value="${n}" ${Number(defaultQty) === n ? 'selected' : ''}>${n}</option>`)
                                         .join('');
+
+                                    return ph + nums;
                                 }
+
 
                                 function formatCOP(num) {
                                     try {
@@ -806,7 +815,7 @@ $textColor       = $config['text_color']       ?? '#222222';
                                             <span class="remove-text">Borrar</span>
                                             </button>
                                         `;
-                                        return row;
+                                    return row;
                                 }
 
 
