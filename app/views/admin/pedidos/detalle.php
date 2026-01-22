@@ -21,12 +21,16 @@ if (!$pedido) {
     exit;
 }
 
+// =========================
 // Estados
+// =========================
 $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'entregado', 'cancelado'];
 $estadoActual = $pedido['estado'] ?? 'nuevo';
 $estadoSafe = in_array($estadoActual, $estadosPosibles, true) ? $estadoActual : 'nuevo';
 
+// =========================
 // WhatsApp URL
+// =========================
 $telRaw    = $pedido['telefono'] ?? '';
 $telLimpio = preg_replace('/\D+/', '', $telRaw);
 $waUrl     = '';
@@ -42,34 +46,53 @@ if ($telLimpio !== '') {
     );
 }
 
-// ==== Valores numéricos seguros (compatibles con tu BD actual) ====
+// =========================
+// Cálculos (MISMA LÓGICA QUE LISTADO)
+// =========================
 $cantidadTotal = (int)($pedido['cantidad_total'] ?? 1);
 if ($cantidadTotal < 1) $cantidadTotal = 1;
 
-$precioUnit      = (float)($pedido['precio_venta'] ?? 0);        // precio unitario
-$proveedorUnit   = (float)($pedido['precio_proveedor'] ?? 0);    // costo unitario proveedor
-$utilidadUnit    = (float)($pedido['utilidad'] ?? ($precioUnit - $proveedorUnit));
+$precioUnit     = (float)($pedido['precio_venta'] ?? 0);         // precio unitario venta
+$proveedorUnit  = (float)($pedido['precio_proveedor'] ?? 0);     // costo unitario proveedor
 
-$subtotal        = $precioUnit * $cantidadTotal;
+$subtotal = $precioUnit * $cantidadTotal;
 
-$descuentoTotal  = (float)($pedido['descuento_total'] ?? 0);
+$descuentoTotal = (float)($pedido['descuento_total'] ?? 0);
+if ($descuentoTotal < 0) $descuentoTotal = 0;
 
-$precioTotal     = (float)($pedido['precio_total'] ?? 0);
-if ($precioTotal <= 0) $precioTotal = max(0, $subtotal - $descuentoTotal);
+// ✅ Total cobrado REAL
+$precioTotal = 0.0;
+if (isset($pedido['precio_total'])) {
+    $precioTotal = (float)$pedido['precio_total'];
+}
+if ($precioTotal <= 0) {
+    $precioTotal = max(0, $subtotal - $descuentoTotal);
+}
 
-// costo envío interno (fallback si no existe columna)
-$costoEnvio = (float)($pedido['costo_envio'] ?? ($pedido['costo_envio_total'] ?? 0));
+// ✅ Costo envío REAL (pedido -> producto -> compat -> 0)
+$costoEnvio = 0.0;
+if (isset($pedido['costo_envio'])) {
+    $costoEnvio = (float)$pedido['costo_envio'];
+} elseif (isset($pedido['producto_costo_envio'])) {
+    $costoEnvio = (float)$pedido['producto_costo_envio'];
+} elseif (isset($pedido['costo_envio_total'])) {
+    $costoEnvio = (float)$pedido['costo_envio_total'];
+}
 if ($costoEnvio < 0) $costoEnvio = 0;
 
 $costoProveedorTotal = $proveedorUnit * $cantidadTotal;
 
-// utilidad_total (fallback si no existe / viene en 0)
-$utilidadTotal = (float)($pedido['utilidad_total'] ?? 0);
-if ($utilidadTotal == 0.0) {
-    // Nota: solo lo calculamos como fallback visual
-    $utilidadTotal = $precioTotal - $costoProveedorTotal - $costoEnvio;
-}
+// ✅ Utilidad total REAL (igual listado)
+$utilidadTotal = $precioTotal - ($costoProveedorTotal + $costoEnvio);
+if (!is_finite($utilidadTotal)) $utilidadTotal = 0.0;
 
+// ✅ Utilidad unitaria (aprox)
+$utilidadUnit = ($cantidadTotal > 0) ? ($utilidadTotal / $cantidadTotal) : 0.0;
+if (!is_finite($utilidadUnit)) $utilidadUnit = 0.0;
+
+// =========================
+// Campos texto
+// =========================
 $municipio        = $pedido['municipio'] ?? '';
 $departamento     = $pedido['departamento'] ?? '';
 $tipoEntrega      = $pedido['tipo_entrega'] ?? '';
@@ -144,7 +167,7 @@ $color            = $pedido['color'] ?? '';
             <div class="stat-info">
                 <small>Total a cobrar</small>
                 <h3>$<?= number_format($precioTotal, 0, ',', '.') ?></h3>
-                <span class="target">Incluye descuento por cantidad</span>
+                <span class="target">Total real (con descuento si aplica)</span>
             </div>
             <i class="fas fa-dollar-sign stat-icon"></i>
         </div>
@@ -153,7 +176,7 @@ $color            = $pedido['color'] ?? '';
             <div class="stat-info">
                 <small>Utilidad total</small>
                 <h3>$<?= number_format($utilidadTotal, 0, ',', '.') ?></h3>
-                <span class="target">Ya contempla costos</span>
+                <span class="target">Incluye costo proveedor + envío</span>
             </div>
             <i class="fas fa-chart-line stat-icon"></i>
         </div>
@@ -259,6 +282,11 @@ $color            = $pedido['color'] ?? '';
                     <span class="detalle-label">Utilidad total</span>
                     <span class="detalle-value"><strong>$<?= number_format($utilidadTotal, 0, ',', '.') ?></strong></span>
                 </div>
+
+                <div class="detalle-item">
+                    <span class="detalle-label">Utilidad (unitaria aprox)</span>
+                    <span class="detalle-value">$<?= number_format($utilidadUnit, 0, ',', '.') ?></span>
+                </div>
             </div>
         </div>
 
@@ -272,7 +300,7 @@ $color            = $pedido['color'] ?? '';
                 <div class="detalle-item">
                     <span class="detalle-label">Nombre completo</span>
                     <span class="detalle-value">
-                        <?= htmlspecialchars(($pedido['nombre'] ?? '') . ' ' . ($pedido['apellidos'] ?? '')) ?>
+                        <?= htmlspecialchars(trim(($pedido['nombre'] ?? '') . ' ' . ($pedido['apellidos'] ?? ''))) ?>
                     </span>
                 </div>
 

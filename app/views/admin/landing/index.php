@@ -254,7 +254,6 @@
 
                   <div class="gallery-grid">
                     <?php
-                    // CAMBIO: Cambiamos el 3 por el 4 para que genere automáticamente el cuarto bloque
                     for ($i = 1; $i <= 4; $i++):
                       $key       = "gallery_{$i}_path";
                       $inputName = "gallery_{$i}_file";
@@ -416,7 +415,6 @@
                   </div>
                 </div>
 
-
                 <hr class="section-hr">
 
                 <!-- TESTIMONIOS WHATSAPP -->
@@ -513,7 +511,6 @@
                     Nota: Mantendremos siempre 5 testimonios para que tu JavaScript del slider no se rompa.
                   </p>
                 </div>
-
 
                 <hr class="section-hr">
 
@@ -614,31 +611,6 @@
                       </div>
                     </div>
 
-                    <?php
-                    $comboEnabled = (int)($config['combo_enabled'] ?? 0);
-                    $comboPrice2  = (int)($config['combo_price_2'] ?? 0);
-                    ?>
-
-                    <div class="form-group">
-                      <h4><i class="fas fa-boxes"></i> Modo Combo</h4>
-
-                      <label style="display:flex; gap:10px; align-items:center;">
-                        <input type="checkbox" name="combo_enabled" value="1"
-                          <?= $comboEnabled === 1 ? 'checked' : '' ?>>
-                        Activar Combo x2 en la landing
-                      </label>
-
-                      <div class="form-group" style="margin-top:10px;">
-                        <label for="combo_price_2">Precio Combo x2 (COP)</label>
-                        <input type="number" id="combo_price_2" name="combo_price_2"
-                          value="<?= htmlspecialchars((string)$comboPrice2) ?>"
-                          min="0" step="1000">
-                        <small class="help">Ej: 115000.</small>
-                      </div>
-                    </div>
-
-
-
                     <div class="mini-card">
                       <div class="mini-card-title"><i class="fas fa-shield-halved"></i> CTA FAQ</div>
                       <div class="form-grid">
@@ -661,6 +633,42 @@
                           <label for="cta_sticky_mobile_text">Texto del botón fijo inferior</label>
                           <input type="text" id="cta_sticky_mobile_text" name="cta_sticky_mobile_text"
                             value="<?= htmlspecialchars($config['cta_sticky_mobile_text'] ?? '🔥 Aprovechar oferta hoy') ?>">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="section-hr">
+
+                <!-- ✅ MODO COMBO (SECCIÓN INDEPENDIENTE + TOC) -->
+                <div class="section-block" id="sec-combo" data-toc="Modo Combo">
+                  <h2>Modo Combo</h2>
+
+                  <?php
+                  $comboEnabled = (int)($config['combo_enabled'] ?? 0);
+                  $comboPrice2  = (int)($config['combo_price_2'] ?? 0);
+                  ?>
+
+                  <div class="stack-cards">
+                    <div class="mini-card">
+                      <div class="mini-card-title"><i class="fas fa-boxes"></i> Configuración</div>
+
+                      <div class="form-grid">
+                        <div class="admin-form-group admin-form-group--full">
+                          <label style="display:flex; gap:10px; align-items:center;">
+                            <input type="checkbox" name="combo_enabled" value="1" <?= $comboEnabled === 1 ? 'checked' : '' ?>>
+                            Activar Combo x2 en la landing
+                          </label>
+                          <small class="help">Activa esta opción para mostrar el selector “x2” en la landing.</small>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label for="combo_price_2">Precio Combo x2 (COP)</label>
+                          <input type="number" id="combo_price_2" name="combo_price_2"
+                            value="<?= htmlspecialchars((string)$comboPrice2) ?>"
+                            min="0" step="1000">
+                          <small class="help">Ej: 115000.</small>
                         </div>
                       </div>
                     </div>
@@ -750,6 +758,10 @@
               <a href="#sec-wa" data-target="sec-wa">WhatsApp</a>
               <a href="#sec-faq" data-target="sec-faq">FAQ</a>
               <a href="#sec-ctas" data-target="sec-ctas">CTAs</a>
+
+              <!-- ✅ NUEVO EN EL TOC -->
+              <a href="#sec-combo" data-target="sec-combo">Modo Combo</a>
+
               <a href="#sec-colores" data-target="sec-colores">Colores</a>
               <a href="#sec-footer" data-target="sec-footer">Footer</a>
             </nav>

@@ -966,25 +966,25 @@ $textColor       = $config['text_color']       ?? '#222222';
         data-colors='<?= htmlspecialchars($colorsJson, ENT_QUOTES, "UTF-8") ?>'>
     </div>
 
-    <script src="/tienda_mvc/public/js/pricing-summary.js" defer></script>
-    <script src="/tienda_mvc/public/js/pricing-combo.js" defer></script>
-    <script src="/tienda_mvc/public/js/funcionesLandin.js" defer></script>
+   <script src="/tienda_mvc/public/js/pricing-summary.js" defer></script>
+<script src="/tienda_mvc/public/js/pricing-combo.js" defer></script>
+<script src="/tienda_mvc/public/js/funcionesLandin.js" defer></script>
 
     <?php
-    // Asegura que $colores sea array simple
-    $colores = $colores ?? [];
-    $colorsJson = json_encode(array_values($colores), JSON_UNESCAPED_UNICODE);
+  // Asegura que $colores sea array simple
+  $colores = $colores ?? [];
+  $colorsJson = json_encode(array_values($colores), JSON_UNESCAPED_UNICODE);
 
-    // Ojo: comboEnabled / comboPrice2 deben venir de $cfg / $config (como ya lo tienes arriba)
-    $comboEnabled = (int)($cfg['combo_enabled'] ?? 0);
-    $comboPrice2  = (int)($cfg['combo_price_2'] ?? 0);
-    if ($comboPrice2 <= 0) $comboPrice2 = 115000;
-    ?>
-    <div id="landingConfig"
-        data-combo-enabled="<?= $comboEnabled ?>"
-        data-combo-price2="<?= $comboPrice2 ?>"
-        data-colors='<?= htmlspecialchars($colorsJson, ENT_QUOTES, "UTF-8") ?>'>
-    </div>
+  // Ojo: comboEnabled / comboPrice2 deben venir de $cfg / $config (como ya lo tienes arriba)
+  $comboEnabled = (int)($cfg['combo_enabled'] ?? 0);
+  $comboPrice2  = (int)($cfg['combo_price_2'] ?? 0);
+  if ($comboPrice2 <= 0) $comboPrice2 = 115000;
+?>
+<div id="landingConfig"
+  data-combo-enabled="<?= $comboEnabled ?>"
+  data-combo-price2="<?= $comboPrice2 ?>"
+  data-colors='<?= htmlspecialchars($colorsJson, ENT_QUOTES, "UTF-8") ?>'>
+</div>
 
 
 </body>

@@ -343,3 +343,82 @@ document.addEventListener('DOMContentLoaded', () => {
   // Primer cálculo
   updateSummary();
 });
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.querySelector('form[action="/tienda_mvc/Landing/enviarPedido"]');
+  if (!form) return;
+
+  const pricingMode = document.getElementById('pricingMode');
+  if (!pricingMode || pricingMode.value !== 'individual') return;
+
+  const wrap = document.getElementById('colorsQtyWrap');
+  const addBtn = document.getElementById('addColorQtyBtn');
+  if (!wrap || !addBtn) return;
+
+  function recalc() {
+    if (window.LandingPricingSummary && typeof window.LandingPricingSummary.updateSummary === 'function') {
+      window.LandingPricingSummary.updateSummary();
+    }
+    document.dispatchEvent(new Event('landing:recalc'));
+  }
+
+  function getTemplateRow() {
+    return wrap.querySelector('.color-qty-row') || wrap.firstElementChild;
+  }
+
+  function cloneRow() {
+    const tpl = getTemplateRow();
+    if (!tpl) return null;
+
+    const row = tpl.cloneNode(true);
+
+    const colorSel = row.querySelector('select[name="color_item[]"]');
+    const qtySel = row.querySelector('select[name="qty_item[]"]');
+
+    if (colorSel) colorSel.value = '';
+    if (qtySel) qtySel.value = '1';
+
+    const removeBtn = row.querySelector('.remove-color-qty');
+    if (removeBtn) removeBtn.type = 'button';
+
+    return row;
+  }
+
+  addBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const row = cloneRow();
+    if (!row) return;
+    wrap.appendChild(row);
+    recalc();
+  });
+
+  wrap.addEventListener('click', (e) => {
+    const btn = e.target.closest('.remove-color-qty');
+    if (!btn) return;
+
+    const row = btn.closest('.color-qty-row');
+    if (!row) return;
+
+    const rows = wrap.querySelectorAll('.color-qty-row');
+
+    if (rows.length <= 1) {
+      const colorSel = row.querySelector('select[name="color_item[]"]');
+      const qtySel = row.querySelector('select[name="qty_item[]"]');
+      if (colorSel) colorSel.value = '';
+      if (qtySel) qtySel.value = '1';
+    } else {
+      row.remove();
+    }
+
+    recalc();
+  });
+
+  wrap.addEventListener('change', (e) => {
+    const t = e.target;
+    if (!t) return;
+    if (t.matches('select[name="color_item[]"], select[name="qty_item[]"]')) {
+      recalc();
+    }
+  });
+
+  recalc();
+});

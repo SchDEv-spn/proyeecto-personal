@@ -10,31 +10,59 @@ $estadosPosibles = ['nuevo','contactado','confirmado','enviado','entregado','can
 $estadoActual = $pedido['estado'] ?? 'nuevo';
 $estadoSafe = in_array($estadoActual, $estadosPosibles, true) ? $estadoActual : 'nuevo';
 
-// ==== Valores numéricos seguros ====
+// =========================
+// Valores numéricos seguros
+// =========================
 $cantidadTotal = (int)($pedido['cantidad_total'] ?? 1);
 if ($cantidadTotal < 1) $cantidadTotal = 1;
 
-$precioUnit      = (float)($pedido['precio_venta'] ?? 0);
-$proveedorUnit   = (float)($pedido['precio_proveedor'] ?? 0);
-$utilidadUnit    = (float)($pedido['utilidad'] ?? ($precioUnit - $proveedorUnit));
+$precioUnit     = (float)($pedido['precio_venta'] ?? 0);
+$proveedorUnit  = (float)($pedido['precio_proveedor'] ?? 0);
 
-$subtotal        = $precioUnit * $cantidadTotal;
-$descuentoTotal  = (float)($pedido['descuento_total'] ?? 0);
+// Subtotal (referencia)
+$subtotal = $precioUnit * $cantidadTotal;
 
-$precioTotal     = (float)($pedido['precio_total'] ?? 0);
-if ($precioTotal <= 0) $precioTotal = max(0, $subtotal - $descuentoTotal);
+// Descuento (si existe)
+$descuentoTotal = (float)($pedido['descuento_total'] ?? 0);
+if ($descuentoTotal < 0) $descuentoTotal = 0;
 
-$costoEnvio = (float)($pedido['costo_envio'] ?? ($pedido['costo_envio_total'] ?? 0));
-if ($costoEnvio < 0) $costoEnvio = 0;
-
-$costoProveedorTotal = $proveedorUnit * $cantidadTotal;
-
-$utilidadTotal = (float)($pedido['utilidad_total'] ?? 0);
-if ($utilidadTotal == 0.0) {
-  $utilidadTotal = $precioTotal - $costoProveedorTotal - $costoEnvio;
+// ✅ Total cobrado REAL (misma regla que la tabla)
+// prioridad: pedido.precio_total -> subtotal - descuento -> subtotal
+$precioTotal = 0.0;
+if (isset($pedido['precio_total'])) {
+  $precioTotal = (float)$pedido['precio_total'];
+}
+if ($precioTotal <= 0) {
+  $precioTotal = max(0, $subtotal - $descuentoTotal);
 }
 
+// ✅ Costo envío (misma regla que la tabla)
+// prioridad: pedido.costo_envio -> producto_costo_envio -> 0
+$costoEnvio = 0.0;
+if (isset($pedido['costo_envio'])) {
+  $costoEnvio = (float)$pedido['costo_envio'];
+} elseif (isset($pedido['producto_costo_envio'])) {
+  $costoEnvio = (float)$pedido['producto_costo_envio'];
+} elseif (isset($pedido['costo_envio_total'])) {
+  // compatibilidad por si antes lo llamabas así
+  $costoEnvio = (float)$pedido['costo_envio_total'];
+}
+if ($costoEnvio < 0) $costoEnvio = 0;
+
+// Costos proveedor total
+$costoProveedorTotal = $proveedorUnit * $cantidadTotal;
+
+// ✅ Utilidad total REAL (misma regla que la tabla)
+$utilidadTotal = $precioTotal - ($costoProveedorTotal + $costoEnvio);
+if (!is_finite($utilidadTotal)) $utilidadTotal = 0.0;
+
+// ✅ Utilidad unitaria (coherente con utilidad total)
+$utilidadUnit = ($cantidadTotal > 0) ? ($utilidadTotal / $cantidadTotal) : 0.0;
+if (!is_finite($utilidadUnit)) $utilidadUnit = 0.0;
+
+// =========================
 // WhatsApp URL
+// =========================
 $telRaw    = $pedido['telefono'] ?? '';
 $telLimpio = preg_replace('/\D+/', '', $telRaw);
 $waUrl     = '';
@@ -168,7 +196,7 @@ if ($telLimpio !== '') {
       </div>
 
       <div class="detalle-item">
-        <span class="detalle-label">Utilidad (unitaria)</span>
+        <span class="detalle-label">Utilidad (unitaria aprox)</span>
         <span class="detalle-value">$<?= number_format($utilidadUnit, 0, ',', '.') ?></span>
       </div>
     </div>
@@ -183,7 +211,7 @@ if ($telLimpio !== '') {
       <div class="detalle-item">
         <span class="detalle-label">Nombre</span>
         <span class="detalle-value">
-          <?= htmlspecialchars(($pedido['nombre'] ?? '') . ' ' . ($pedido['apellidos'] ?? '')) ?>
+          <?= htmlspecialchars(trim(($pedido['nombre'] ?? '') . ' ' . ($pedido['apellidos'] ?? ''))) ?>
         </span>
       </div>
 
