@@ -49,7 +49,7 @@ class LandingConfig extends Model
                     gallery_1_path = :gallery_1_path,
                     gallery_2_path = :gallery_2_path,
                     gallery_3_path = :gallery_3_path,
-                    gallery_4_path = :gallery_4_path, -- NUEVO: Añadido al SQL
+                    gallery_4_path = :gallery_4_path,
 
                     countdown_title = :countdown_title,
                     countdown_text  = :countdown_text,
@@ -92,7 +92,6 @@ class LandingConfig extends Model
                     cta_faq_button           = :cta_faq_button,
                     cta_sticky_mobile_text   = :cta_sticky_mobile_text,
 
-                    -- ===== WhatsApp Testimonios (editable) =====
                     wa_enabled     = :wa_enabled,
                     wa_title       = :wa_title,
                     wa_subtitle    = :wa_subtitle,
@@ -127,7 +126,10 @@ class LandingConfig extends Model
                     secondary_color         = :secondary_color,
                     accent_color            = :accent_color,
                     background_color        = :background_color,
-                    text_color              = :text_color
+                    text_color              = :text_color,
+
+                    combo_enabled           = :combo_enabled,
+                    combo_price_2           = :combo_price_2
 
                 WHERE producto_id = :producto_id";
 
@@ -151,7 +153,7 @@ class LandingConfig extends Model
             ':gallery_1_path' => $data['gallery_1_path'] ?? null,
             ':gallery_2_path' => $data['gallery_2_path'] ?? null,
             ':gallery_3_path' => $data['gallery_3_path'] ?? null,
-            ':gallery_4_path' => $data['gallery_4_path'] ?? null, // NUEVO: Pasando el valor
+            ':gallery_4_path' => $data['gallery_4_path'] ?? null,
 
             ':countdown_title' => $data['countdown_title'] ?? null,
             ':countdown_text'  => $data['countdown_text'] ?? null,
@@ -194,7 +196,6 @@ class LandingConfig extends Model
             ':cta_faq_button'          => $data['cta_faq_button'] ?? null,
             ':cta_sticky_mobile_text'  => $data['cta_sticky_mobile_text'] ?? null,
 
-            // ===== WhatsApp Testimonios (editable) =====
             ':wa_enabled'     => isset($data['wa_enabled']) ? (int)$data['wa_enabled'] : 1,
             ':wa_title'       => $data['wa_title'] ?? null,
             ':wa_subtitle'    => $data['wa_subtitle'] ?? null,
@@ -225,16 +226,19 @@ class LandingConfig extends Model
             ':wa5_text'       => $data['wa5_text'] ?? null,
             ':wa5_image_path' => $data['wa5_image_path'] ?? null,
 
-            ':primary_color'           => $data['primary_color'] ?? null,
-            ':secondary_color'         => $data['secondary_color'] ?? null,
-            ':accent_color'            => $data['accent_color'] ?? null,
-            ':background_color'        => $data['background_color'] ?? null,
-            ':text_color'              => $data['text_color'] ?? null,
+            ':primary_color'    => $data['primary_color'] ?? null,
+            ':secondary_color'  => $data['secondary_color'] ?? null,
+            ':accent_color'     => $data['accent_color'] ?? null,
+            ':background_color' => $data['background_color'] ?? null,
+            ':text_color'       => $data['text_color'] ?? null,
+
+            // ✅ NUEVO: combo
+            ':combo_enabled' => isset($data['combo_enabled']) ? (int)$data['combo_enabled'] : 0,
+            ':combo_price_2' => isset($data['combo_price_2']) ? (int)$data['combo_price_2'] : 0,
 
             ':producto_id' => $productoId,
         ]);
 
-        // Si algo falla, que reviente con mensaje claro
         if (!$ok) {
             $errorInfo = $stmt->errorInfo();
             throw new Exception("Error al guardar landing_config: " . implode(' | ', $errorInfo));

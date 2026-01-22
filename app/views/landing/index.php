@@ -16,6 +16,13 @@ $ahorro = max(0, $precio_regular - $precio_venta);
 $config = $config ?? [];
 $cfg    = $config;
 
+
+
+$comboEnabled = (int)($cfg['combo_enabled'] ?? 0);
+$comboPrice2  = (int)($cfg['combo_price_2'] ?? 0);
+if ($comboPrice2 <= 0) $comboPrice2 = 115000; // fallback
+
+
 // ===== HERO =====
 $heroTitle       = $cfg['hero_title']        ?? ($producto['nombre'] ?? 'Nombre del producto');
 $heroSubtitle    = $cfg['hero_subtitle']     ?? 'Subtítulo potente que explique el beneficio principal del producto en una frase clara.';
@@ -613,274 +620,166 @@ $textColor       = $config['text_color']       ?? '#222222';
 
                     <div class="form-group">
                         <label for="nombre">Nombre *</label>
-                        <input type="text" id="nombre" name="nombre" required
-                            value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
+                        <input type="text" id="nombre" name="nombre" required value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
                     </div>
 
                     <div class="form-group">
                         <label for="apellidos">Apellidos *</label>
-                        <input type="text" id="apellidos" name="apellidos" required
-                            value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
+                        <input type="text" id="apellidos" name="apellidos" required value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
                     </div>
 
                     <div class="form-group">
                         <label for="telefono">Número de WhatsApp *</label>
-                        <input type="text" id="telefono" name="telefono" required
-                            value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
+                        <input type="text" id="telefono" name="telefono" required value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
                     </div>
 
                     <?php
+                    // Colores disponibles
                     $colores = $colores ?? [];
 
-                    $oldColorItems = $old['color_item'] ?? [];
-                    $oldQtyItems   = $old['qty_item'] ?? [];
-                    if (!is_array($oldColorItems)) $oldColorItems = [];
-                    if (!is_array($oldQtyItems))   $oldQtyItems = [];
+                    // Precios base
+                    $precioVenta     = (float)($producto['precio_venta'] ?? 72000);
+                    $precioProveedor = (float)($producto['precio_proveedor'] ?? 0);
 
-                    $rowsCount  = max(1, count($oldColorItems), count($oldQtyItems));
+                    // Regular
+                    $precioRegular = (float)($producto['precio_regular'] ?? $precioVenta);
+                    if ($precioRegular <= 0 || $precioRegular < $precioVenta) $precioRegular = $precioVenta;
+
+                    // Descuentos % (para modo individual)
+                    $d2  = (int)($producto['descuento_2da'] ?? 15);
+                    $d3  = (int)($producto['descuento_3ra'] ?? 20);
+                    $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
+
+                    // Combo
+                    $precioCombo2 = (int)($comboPrice2 ?? 115000);
+                    if ($precioCombo2 <= 0) $precioCombo2 = 115000;
+
+                    // JSON colores para JS combo
                     $colorsJson = json_encode(array_values($colores), JSON_UNESCAPED_UNICODE);
                     ?>
 
                     <?php if (!empty($colores)): ?>
-                        <div class="form-group">
-                            <label>Colores y cantidades *</label>
 
-                            <div id="colorsQtyWrap" class="colors-qty-wrap">
-                                <?php for ($r = 0; $r < $rowsCount; $r++): ?>
-                                    <?php
-                                    $selColor = $oldColorItems[$r] ?? '';
-                                    $selQty   = (int)($oldQtyItems[$r] ?? 1);
-                                    if ($selQty < 1) $selQty = 1;
-                                    if ($selQty > 5) $selQty = 5;
-                                    ?>
-                                    <div class="color-qty-row">
-                                        <select name="color_item[]" required class="color-select">
-                                            <option value="">Selecciona un color</option>
-                                            <?php foreach ($colores as $c): ?>
-                                                <option value="<?= htmlspecialchars($c) ?>" <?= ($selColor === $c) ? 'selected' : '' ?>>
-                                                    <?= htmlspecialchars($c) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
+                        <?php if (!empty($comboEnabled) && (int)$comboEnabled === 1): ?>
+                            <!-- ✅ MODO COMBO -->
+                            <div class="form-group">
+                                <label for="pricingModeSelect"><strong>Elige tu oferta</strong></label>
+                                <select id="pricingModeSelect" class="color-select">
+                                    <option value="combo" selected>🔥 Combo x2 — $<?= number_format($precioCombo2, 0, ',', '.') ?> (Recomendado)</option>
+                                    <option value="individual">1 unidad — $<?= number_format($precioVenta, 0, ',', '.') ?></option>
+                                </select>
 
-                                        <select name="qty_item[]" required class="qty-select">
-                                            <option value="" disabled <?= ($selQty < 1) ? 'selected' : '' ?>>Selecciona cantidad</option>
-                                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                <option value="<?= $i ?>" <?= ($selQty === $i) ? 'selected' : '' ?>>
-                                                    <?= $i ?>
-                                                </option>
-                                            <?php endfor; ?>
-                                        </select>
-
-
-
-                                        <button type="button" class="remove-color-qty" aria-label="Quitar">
-                                            <span class="remove-icon">×</span>
-                                            <span class="remove-text">Borrar</span>
-                                        </button>
-
-                                    </div>
-                                <?php endfor; ?>
+                                <input type="hidden" name="pricing_mode" id="pricingMode" value="combo">
                             </div>
 
-                            <button type="button" id="addColorQtyBtn" class="btn-ghost add-color-btn">
-                                + Agregar otro color
-                            </button>
+                            <!-- COMBOS -->
+                            <div id="comboWrap" class="form-group">
+                                <label><strong>Selecciona los colores de tu combo</strong></label>
+                                <div id="combosContainer" class="colors-qty-wrap"></div>
 
-                            <input type="hidden" id="cantidad_total" name="cantidad_total"
-                                value="<?= htmlspecialchars((string)($old['cantidad_total'] ?? 1)) ?>">
+                                <button type="button" id="addComboBtn" class="btn-ghost add-color-btn">
+                                    + Agregar otro combo
+                                </button>
 
-                            <small class="help total-units-note">
-                                Total unidades: <strong id="totalUnits">1</strong>
-                            </small>
-                        </div>
+                                <small class="help total-units-note">
+                                    Total unidades: <strong id="totalUnits">2</strong> (cada combo = 2 unidades)
+                                </small>
+                            </div>
 
-                        <script>
-                            document.addEventListener('DOMContentLoaded', () => {
-                                const COLORS = <?= $colorsJson ?>;
+                            <!-- INDIVIDUAL -->
+                            <div id="individualWrap" class="form-group" style="display:none;">
+                                <label><strong>Compra individual</strong></label>
 
-                                const wrap = document.getElementById('colorsQtyWrap');
-                                const btnAdd = document.getElementById('addColorQtyBtn');
-                                const totalUnitsEl = document.getElementById('totalUnits');
-                                const totalHidden = document.getElementById('cantidad_total');
+                                <div class="color-qty-row">
+                                    <select id="indColor" class="color-select">
+                                        <option value="">Selecciona un color</option>
+                                        <?php foreach ($colores as $c): ?>
+                                            <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
 
-                                // Escapar HTML para evitar romper atributos/HTML si algún color trae caracteres raros
-                                function escHtml(s) {
-                                    return String(s)
-                                        .replace(/&/g, '&amp;')
-                                        .replace(/</g, '&lt;')
-                                        .replace(/>/g, '&gt;')
-                                        .replace(/"/g, '&quot;')
-                                        .replace(/'/g, '&#39;');
-                                }
+                                    <select id="indQty" class="qty-select">
+                                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                                            <option value="<?= $i ?>" <?= $i === 1 ? 'selected' : '' ?>><?= $i ?></option>
+                                        <?php endfor; ?>
+                                    </select>
+                                </div>
 
-                                function optionsHtml() {
-                                    return ['<option value="">Selecciona un color</option>']
-                                        .concat(COLORS.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`))
-                                        .join('');
-                                }
+                                <small class="help">Aquí sí aplican descuentos por multicantidad si están activos.</small>
+                            </div>
 
-                                function qtyOptionsHtml(defaultQty = '') {
-                                    const phSelected = (defaultQty === '' || defaultQty === null) ? 'selected' : '';
-                                    const ph = `<option value="" disabled ${phSelected}>Selecciona cantidad</option>`;
+                            <!-- Aquí generamos color_item[] y qty_item[] antes del submit -->
+                            <div id="generatedItems"></div>
 
-                                    const nums = Array.from({
-                                            length: 5
-                                        }, (_, i) => i + 1)
-                                        .map(n => `<option value="${n}" ${Number(defaultQty) === n ? 'selected' : ''}>${n}</option>`)
-                                        .join('');
+                        <?php else: ?>
+                            <!-- ✅ MODO NORMAL -->
+                            <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
 
-                                    return ph + nums;
-                                }
+                            <?php
+                            $oldColorItems = $old['color_item'] ?? [];
+                            $oldQtyItems   = $old['qty_item'] ?? [];
+                            if (!is_array($oldColorItems)) $oldColorItems = [];
+                            if (!is_array($oldQtyItems))   $oldQtyItems = [];
+                            $rowsCount  = max(1, count($oldColorItems), count($oldQtyItems));
+                            ?>
 
-                                function formatCOP(num) {
-                                    try {
-                                        return new Intl.NumberFormat('es-CO', {
-                                            style: 'currency',
-                                            currency: 'COP',
-                                            maximumFractionDigits: 0
-                                        }).format(num);
-                                    } catch (e) {
-                                        return '$' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                                    }
-                                }
+                            <div class="form-group">
+                                <label>Colores y cantidades *</label>
 
-                                // ✅ Total con descuento dinámico según producto:
-                                // - 1ra unidad: sin descuento
-                                // - 2da unidad: d2% OFF
-                                // - 3ra+ unidad: d3% OFF
-                                // Si activo=0, no aplica descuento.
-                                function totalConDescuento(units, priceUnit, d2, d3, activo) {
-                                    units = parseInt(units || '0', 10);
-                                    priceUnit = parseFloat(priceUnit || '0') || 0;
-
-                                    d2 = Math.max(0, Math.min(100, parseInt(d2 || '15', 10)));
-                                    d3 = Math.max(0, Math.min(100, parseInt(d3 || '20', 10)));
-                                    activo = parseInt(activo || '1', 10);
-
-                                    if (units <= 0) return 0;
-
-                                    if (activo !== 1) return priceUnit * units;
-                                    if (units === 1) return priceUnit;
-
-                                    let total = 0;
-                                    total += priceUnit; // 1ra sin descuento
-                                    if (units >= 2) total += priceUnit * (1 - d2 / 100); // 2da
-                                    if (units >= 3) total += (units - 2) * (priceUnit * (1 - d3 / 100)); // 3ra+
-                                    return total;
-                                }
-
-                                function updateSummary(totalUnits) {
-                                    const summary = document.getElementById('orderSummary');
-                                    if (!summary) return;
-
-                                    const priceUnit = parseFloat(summary.dataset.priceUnit || '0') || 0;
-                                    const priceRegular = parseFloat(summary.dataset.priceRegular || summary.dataset.priceUnit || '0') || 0;
-
-                                    const d2 = parseInt(summary.dataset.d2 || '15', 10);
-                                    const d3 = parseInt(summary.dataset.d3 || '20', 10);
-                                    const act = parseInt(summary.dataset.act || '1', 10);
-
-                                    const subtotal = priceUnit * totalUnits;
-                                    const totalPay = totalConDescuento(totalUnits, priceUnit, d2, d3, act);
-                                    const discount = Math.max(0, subtotal - totalPay);
-
-                                    // Ahorro total real usando precio_regular vs totalPay
-                                    const baseRegular = priceRegular * totalUnits;
-                                    const ahorroTotal = Math.max(0, baseRegular - totalPay);
-
-                                    const qtyEl = document.getElementById('summaryQty');
-                                    const qtyWordEl = document.getElementById('summaryQtyWord');
-                                    const subEl = document.getElementById('summarySubtotal');
-                                    const disEl = document.getElementById('summaryDiscount');
-                                    const totEl = document.getElementById('summaryTotal');
-                                    const savEl = document.getElementById('summarySave');
-
-                                    if (qtyEl) qtyEl.textContent = String(totalUnits);
-                                    if (qtyWordEl) qtyWordEl.textContent = totalUnits > 1 ? 'unidades' : 'unidad';
-
-                                    if (subEl) subEl.textContent = formatCOP(subtotal);
-                                    if (disEl) disEl.textContent = formatCOP(discount);
-                                    if (totEl) totEl.textContent = formatCOP(totalPay);
-                                    if (savEl) savEl.textContent = formatCOP(ahorroTotal);
-                                }
-
-                                function rowTemplate() {
-                                    const row = document.createElement('div');
-                                    row.className = 'color-qty-row';
-                                                                            row.innerHTML = `
+                                <div id="colorsQtyWrap" class="colors-qty-wrap">
+                                    <?php for ($r = 0; $r < $rowsCount; $r++): ?>
+                                        <?php
+                                        $selColor = $oldColorItems[$r] ?? '';
+                                        $selQty   = (int)($oldQtyItems[$r] ?? 1);
+                                        if ($selQty < 1) $selQty = 1;
+                                        if ($selQty > 5) $selQty = 5;
+                                        ?>
+                                        <div class="color-qty-row">
                                             <select name="color_item[]" required class="color-select">
-                                                ${optionsHtml()}
+                                                <option value="">Selecciona un color</option>
+                                                <?php foreach ($colores as $c): ?>
+                                                    <option value="<?= htmlspecialchars($c) ?>" <?= ($selColor === $c) ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($c) ?>
+                                                    </option>
+                                                <?php endforeach; ?>
                                             </select>
 
                                             <select name="qty_item[]" required class="qty-select">
-                                                ${qtyOptionsHtml(1)}
+                                                <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                    <option value="<?= $i ?>" <?= ($selQty === $i) ? 'selected' : '' ?>><?= $i ?></option>
+                                                <?php endfor; ?>
                                             </select>
 
                                             <button type="button" class="remove-color-qty" aria-label="Quitar">
                                                 <span class="remove-icon">×</span>
                                                 <span class="remove-text">Borrar</span>
                                             </button>
-                                            `;
-                                                                            return row;
-                                }
+                                        </div>
+                                    <?php endfor; ?>
+                                </div>
 
-                                function recalcTotal() {
-                                    let total = 0;
+                                <button type="button" id="addColorQtyBtn" class="btn-ghost add-color-btn">
+                                    + Agregar otro color
+                                </button>
 
-                                    wrap.querySelectorAll('select[name="qty_item[]"]').forEach(sel => {
-                                        const v = parseInt(sel.value || '0', 10);
-                                        if (!isNaN(v)) total += v;
-                                    });
+                                <small class="help total-units-note">
+                                    Total unidades: <strong id="totalUnits">1</strong>
+                                </small>
+                            </div>
 
-                                    if (total < 1) total = 1;
-
-                                    if (totalUnitsEl) totalUnitsEl.textContent = String(total);
-                                    if (totalHidden) totalHidden.value = String(total);
-
-                                    updateSummary(total);
-                                }
-
-                                // Agregar fila
-                                if (btnAdd) {
-                                    btnAdd.addEventListener('click', () => {
-                                        wrap.appendChild(rowTemplate());
-                                        recalcTotal();
-                                    });
-                                }
-
-                                // Eliminar fila (delegado)
-                                wrap.addEventListener('click', (e) => {
-                                    const btn = e.target.closest('.remove-color-qty');
-                                    if (!btn) return;
-
-                                    const row = btn.closest('.color-qty-row');
-                                    const rows = wrap.querySelectorAll('.color-qty-row');
-
-                                    if (rows.length <= 1) {
-                                        row.querySelector('select[name="color_item[]"]').value = '';
-                                        row.querySelector('select[name="qty_item[]"]').value = '1';
-                                    } else {
-                                        row.remove();
-                                    }
-                                    recalcTotal();
-                                });
-
-                                // Recalcular cuando cambia cantidad
-                                wrap.addEventListener('change', (e) => {
-                                    if (e.target && e.target.name === 'qty_item[]') recalcTotal();
-                                });
-
-                                // Inicial
-                                recalcTotal();
-                            });
-                        </script>
-
-
+                        <?php endif; ?>
 
                     <?php else: ?>
-                        <input type="hidden" name="cantidad_total" value="1">
+                        <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
                     <?php endif; ?>
+
+                    <!-- ✅ ESTE HIDDEN VA UNA SOLA VEZ (para combo y normal) -->
+                    <input type="hidden" id="cantidad_total" name="cantidad_total"
+                        value="<?= htmlspecialchars((string)($old['cantidad_total'] ?? 1)) ?>">
+
+
+                    <!-- (Aquí sigue tu resto de campos: departamento, municipio, entrega, dirección, resumen, submit...) -->
+
 
                     <div class="form-group">
                         <label for="departamento">Departamento *</label>
@@ -948,6 +847,7 @@ $textColor       = $config['text_color']       ?? '#222222';
 
                     <div class="order-summary" id="orderSummary"
                         data-price-unit="<?= htmlspecialchars((string)$precioVenta) ?>"
+                        data-price-combo2="<?= htmlspecialchars((string)$precioCombo2) ?>"
                         data-price-regular="<?= htmlspecialchars((string)$precioRegular) ?>"
                         data-price-supplier="<?= htmlspecialchars((string)$precioProveedor) ?>"
                         data-d2="<?= htmlspecialchars((string)$d2) ?>"
@@ -1057,8 +957,36 @@ $textColor       = $config['text_color']       ?? '#222222';
         });
     </script>
 
+    <?php
+    $colorsJson = json_encode(array_values($colores ?? []), JSON_UNESCAPED_UNICODE);
+    ?>
+    <div id="landingConfig"
+        data-combo-enabled="<?= (int)($cfg['combo_enabled'] ?? 0) ?>"
+        data-combo-price2="<?= (int)($cfg['combo_price_2'] ?? 0) ?>"
+        data-colors='<?= htmlspecialchars($colorsJson, ENT_QUOTES, "UTF-8") ?>'>
+    </div>
 
+    <script src="/tienda_mvc/public/js/pricing-summary.js" defer></script>
+    <script src="/tienda_mvc/public/js/pricing-combo.js" defer></script>
     <script src="/tienda_mvc/public/js/funcionesLandin.js" defer></script>
+
+    <?php
+    // Asegura que $colores sea array simple
+    $colores = $colores ?? [];
+    $colorsJson = json_encode(array_values($colores), JSON_UNESCAPED_UNICODE);
+
+    // Ojo: comboEnabled / comboPrice2 deben venir de $cfg / $config (como ya lo tienes arriba)
+    $comboEnabled = (int)($cfg['combo_enabled'] ?? 0);
+    $comboPrice2  = (int)($cfg['combo_price_2'] ?? 0);
+    if ($comboPrice2 <= 0) $comboPrice2 = 115000;
+    ?>
+    <div id="landingConfig"
+        data-combo-enabled="<?= $comboEnabled ?>"
+        data-combo-price2="<?= $comboPrice2 ?>"
+        data-colors='<?= htmlspecialchars($colorsJson, ENT_QUOTES, "UTF-8") ?>'>
+    </div>
+
+
 </body>
 
 </html>

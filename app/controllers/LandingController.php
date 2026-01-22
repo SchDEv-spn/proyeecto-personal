@@ -42,6 +42,23 @@ class LandingController extends Controller
         return $total;
     }
 
+    /**
+     * Total por COMBOS x2:
+     * - Cada 2 unidades aplica comboPrice2
+     * - Si queda 1 unidad suelta, se cobra al precio unitario (precioVenta)
+     */
+    private function totalPorCombo2(int $cantidad, float $precioVenta, int $comboPrice2): float
+    {
+        if ($cantidad <= 0) return 0.0;
+
+        $comboPrice2 = max(0, (int)$comboPrice2);
+
+        $combos = intdiv($cantidad, 2);
+        $sobra  = $cantidad % 2;
+
+        return ($combos * $comboPrice2) + ($sobra * $precioVenta);
+    }
+
     public function index()
     {
         $productoId = (int)($_GET['producto_id'] ?? ($_GET['id'] ?? 1));
@@ -104,6 +121,25 @@ class LandingController extends Controller
         $productoColorModel = new ProductoColor();
         $coloresPermitidos  = $productoColorModel->obtenerActivosPorProducto($productoId);
 
+        // ===== Config combos =====
+        $comboEnabled = (int)($config['combo_enabled'] ?? 0);
+        $comboPrice2  = (int)($config['combo_price_2'] ?? 0);
+        if ($comboPrice2 <= 0) $comboPrice2 = 115000; // fallback sano
+
+        // ===== Modo (combo / individual) =====
+        $pricingMode = trim((string)($_POST['pricing_mode'] ?? ''));
+        if ($pricingMode === '') {
+            // si no viene, default: si combo está activo => combo, si no => individual
+            $pricingMode = ($comboEnabled === 1) ? 'combo' : 'individual';
+        }
+        if (!in_array($pricingMode, ['combo', 'individual'], true)) {
+            $pricingMode = ($comboEnabled === 1) ? 'combo' : 'individual';
+        }
+        // Si el admin apagó combo, forzamos individual
+        if ($comboEnabled !== 1) {
+            $pricingMode = 'individual';
+        }
+
         // Campos base
         $nombre       = trim($_POST['nombre']       ?? '');
         $apellidos    = trim($_POST['apellidos']    ?? '');
@@ -115,7 +151,7 @@ class LandingController extends Controller
 
         $confirmPurchase = isset($_POST['confirm_purchase']) && $_POST['confirm_purchase'] == '1';
 
-        // Arrays color/cantidad
+        // Arrays color/cantidad (estos son los que tu JS genera SIEMPRE)
         $colorItems = $_POST['color_item'] ?? [];
         $qtyItems   = $_POST['qty_item']   ?? [];
         if (!is_array($colorItems)) $colorItems = [];
@@ -132,6 +168,9 @@ class LandingController extends Controller
             'confirm_purchase' => $confirmPurchase ? 1 : 0,
             'color_item'       => $colorItems,
             'qty_item'         => $qtyItems,
+            'pricing_mode'     => $pricingMode,
+            'combo_enabled'    => $comboEnabled,
+            'combo_price_2'    => $comboPrice2,
         ];
 
         // Validaciones base
@@ -222,15 +261,24 @@ class LandingController extends Controller
         $d3  = (int)($producto['descuento_3ra'] ?? 20);
         $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
 
-        $subtotal       = $precioVenta * $cantidadTotal;
-        $precioTotal    = $this->totalConDescuento($cantidadTotal, $precioVenta, $d2, $d3, $act);
+        // ===== Total a cobrar según modo =====
+        $subtotal = $precioVenta * $cantidadTotal;
+
+        if ($pricingMode === 'combo') {
+            // Combo x2 (NO usa d2/d3)
+            $precioTotal = $this->totalPorCombo2($cantidadTotal, $precioVenta, $comboPrice2);
+        } else {
+            // Individual (usa descuento multicantidad del producto)
+            $precioTotal = $this->totalConDescuento($cantidadTotal, $precioVenta, $d2, $d3, $act);
+        }
+
         $descuentoTotal = max(0, $subtotal - $precioTotal);
 
         // costos reales: proveedor * cantidad + envío (una sola vez)
-        $costoTotal    = ($precioProveedor * $cantidadTotal) + $costoEnvio;
+        $costoTotal = ($precioProveedor * $cantidadTotal) + $costoEnvio;
 
         // utilidad unitaria (sin envío, solo referencia)
-        $utilidadUnit  = $precioVenta - $precioProveedor;
+        $utilidadUnit = $precioVenta - $precioProveedor;
 
         // utilidad total real (incluye envío)
         $utilidadTotal = $precioTotal - $costoTotal;

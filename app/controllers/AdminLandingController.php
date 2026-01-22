@@ -15,9 +15,7 @@ class AdminLandingController extends Controller
         $this->requireLogin();
 
         $productoId = (int)($_GET['producto_id'] ?? 1);
-        if ($productoId <= 0) {
-            $productoId = 1;
-        }
+        if ($productoId <= 0) $productoId = 1;
 
         $configModel = new LandingConfig();
         $config = $configModel->obtenerPorProducto($productoId);
@@ -56,9 +54,12 @@ class AdminLandingController extends Controller
         }
 
         $productoId = (int)($_POST['producto_id'] ?? 1);
-        if ($productoId <= 0) {
-            $productoId = 1;
-        }
+        if ($productoId <= 0) $productoId = 1;
+
+        // ===== COMBOS (landing_config) =====
+        $comboEnabled = (isset($_POST['combo_enabled']) && (string)$_POST['combo_enabled'] === '1') ? 1 : 0;
+        $comboPrice2  = (int)($_POST['combo_price_2'] ?? 0);
+        if ($comboPrice2 < 0) $comboPrice2 = 0;
 
         // 1. Textos
         $data = [
@@ -111,12 +112,15 @@ class AdminLandingController extends Controller
             'cta_faq_button'          => trim($_POST['cta_faq_button'] ?? ''),
             'cta_sticky_mobile_text'  => trim($_POST['cta_sticky_mobile_text'] ?? ''),
 
-            // ===== WhatsApp Testimonios (editable) =====
-            // Si lo pones como checkbox, cuando no viene -> 0. Si lo pones como select 0/1, también funciona.
+            // ===== WhatsApp Testimonios =====
             'wa_enabled'     => (isset($_POST['wa_enabled']) && (string)($_POST['wa_enabled']) !== '0') ? 1 : 0,
             'wa_title'       => trim($_POST['wa_title'] ?? ''),
             'wa_subtitle'    => trim($_POST['wa_subtitle'] ?? ''),
             'wa_footer_note' => trim($_POST['wa_footer_note'] ?? ''),
+
+            // ✅ COMBOS
+            'combo_enabled' => $comboEnabled,
+            'combo_price_2' => $comboPrice2,
         ];
 
         // WhatsApp items (1..5)
@@ -134,16 +138,19 @@ class AdminLandingController extends Controller
         $data['text_color']       = $_POST['text_color']       ?: null;
 
         // 3. Paths actuales
-        $data['hero_media_path']      = $_POST['hero_media_path_actual']      ?? null;
-        $data['benefits_media_path']  = $_POST['benefits_media_path_actual']  ?? null;
+        $data['hero_media_path']     = $_POST['hero_media_path_actual']     ?? null;
+        $data['benefits_media_path'] = $_POST['benefits_media_path_actual'] ?? null;
+
         $data['gallery_1_path'] = $_POST['gallery_1_path_actual'] ?? null;
         $data['gallery_2_path'] = $_POST['gallery_2_path_actual'] ?? null;
         $data['gallery_3_path'] = $_POST['gallery_3_path_actual'] ?? null;
-        $data['gallery_4_path'] = $_POST['gallery_4_path_actual'] ?? null; // NUEVO: Cuarta imagen
-        $data['porque_media_path']    = $_POST['porque_media_path_actual']    ?? null;
-        $data['test1_photo_path']     = $_POST['test1_photo_path_actual']     ?? null;
-        $data['test2_photo_path']     = $_POST['test2_photo_path_actual']     ?? null;
-        $data['test3_photo_path']     = $_POST['test3_photo_path_actual']     ?? null;
+        $data['gallery_4_path'] = $_POST['gallery_4_path_actual'] ?? null;
+
+        $data['porque_media_path'] = $_POST['porque_media_path_actual'] ?? null;
+
+        $data['test1_photo_path'] = $_POST['test1_photo_path_actual'] ?? null;
+        $data['test2_photo_path'] = $_POST['test2_photo_path_actual'] ?? null;
+        $data['test3_photo_path'] = $_POST['test3_photo_path_actual'] ?? null;
 
         // WhatsApp images actuales (1..5)
         for ($i = 1; $i <= 5; $i++) {
@@ -164,13 +171,12 @@ class AdminLandingController extends Controller
             'gallery_1_file'       => 'gallery_1_path',
             'gallery_2_file'       => 'gallery_2_path',
             'gallery_3_file'       => 'gallery_3_path',
-            'gallery_4_file'       => 'gallery_4_path', // NUEVO: Procesar archivo de la cuarta imagen
+            'gallery_4_file'       => 'gallery_4_path',
             'porque_media_file'    => 'porque_media_path',
             'test1_photo_file'     => 'test1_photo_path',
             'test2_photo_file'     => 'test2_photo_path',
             'test3_photo_file'     => 'test3_photo_path',
 
-            // ===== WhatsApp Testimonios (editable) =====
             'wa1_image_file'       => 'wa1_image_path',
             'wa2_image_file'       => 'wa2_image_path',
             'wa3_image_file'       => 'wa3_image_path',
@@ -192,8 +198,7 @@ class AdminLandingController extends Controller
 
                 $destPath = $uploadDir . $newName;
                 if (move_uploaded_file($tmpName, $destPath)) {
-                    $webPath = '/tienda_mvc/public/uploads/landing/' . $newName;
-                    $data[$column] = $webPath;
+                    $data[$column] = '/tienda_mvc/public/uploads/landing/' . $newName;
                 }
             }
         }
@@ -202,7 +207,6 @@ class AdminLandingController extends Controller
         $configModel->guardarPorProducto($productoId, $data);
 
         $_SESSION['admin_landing_success'] = "Cambios guardados correctamente.";
-
         header("Location: /tienda_mvc/AdminLanding/index?producto_id=" . $productoId);
         exit;
     }

@@ -614,6 +614,31 @@
                       </div>
                     </div>
 
+                    <?php
+                    $comboEnabled = (int)($config['combo_enabled'] ?? 0);
+                    $comboPrice2  = (int)($config['combo_price_2'] ?? 0);
+                    ?>
+
+                    <div class="form-group">
+                      <h4><i class="fas fa-boxes"></i> Modo Combo</h4>
+
+                      <label style="display:flex; gap:10px; align-items:center;">
+                        <input type="checkbox" name="combo_enabled" value="1"
+                          <?= $comboEnabled === 1 ? 'checked' : '' ?>>
+                        Activar Combo x2 en la landing
+                      </label>
+
+                      <div class="form-group" style="margin-top:10px;">
+                        <label for="combo_price_2">Precio Combo x2 (COP)</label>
+                        <input type="number" id="combo_price_2" name="combo_price_2"
+                          value="<?= htmlspecialchars((string)$comboPrice2) ?>"
+                          min="0" step="1000">
+                        <small class="help">Ej: 115000.</small>
+                      </div>
+                    </div>
+
+
+
                     <div class="mini-card">
                       <div class="mini-card-title"><i class="fas fa-shield-halved"></i> CTA FAQ</div>
                       <div class="form-grid">
