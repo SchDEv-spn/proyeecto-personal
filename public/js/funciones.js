@@ -1022,3 +1022,110 @@
   // DOM listo
   document.addEventListener('DOMContentLoaded', initSidebar);
 })();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tabla = document.getElementById('tablaPedidos');
+  if (!tabla) return;
+
+  const input = document.getElementById('pedidosSearch');
+  const selectEstado = document.getElementById('pedidosEstado');
+  const btnClear = document.getElementById('pedidosClear');
+  const countEl = document.getElementById('pedidosCount');
+
+  const rows = Array.from(tabla.querySelectorAll('tbody tr'));
+  if (!rows.length) return;
+
+  // Normaliza: minúsculas + sin tildes (para buscar "bogota" y encontrar "Bogotá")
+  const norm = (s) =>
+    (s || '')
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+
+  // Construye un "blob" de búsqueda por fila (ID, Cliente, Ubicación, Producto, Estado)
+  const getCellText = (row, label) => {
+    const td = row.querySelector(`td[data-label="${label}"]`);
+    return td ? td.textContent : '';
+  };
+
+  const getEstado = (row) => {
+    const tag = row.querySelector('.status-tag');
+    if (!tag) return '';
+    // intenta leer del class: status-nuevo, status-confirmado, etc.
+    const cls = Array.from(tag.classList).find(c => c.startsWith('status-') && c !== 'status-tag');
+    if (cls) return cls.replace('status-', '').toLowerCase();
+    // fallback: texto visible
+    return norm(tag.textContent);
+  };
+
+  // Cachea para performance
+  const estadosSet = new Set();
+
+  rows.forEach(row => {
+    const id        = getCellText(row, 'ID');
+    const cliente   = getCellText(row, 'Cliente');
+    const ubicacion = getCellText(row, 'Ubicación');
+    const producto  = getCellText(row, 'Producto');
+    const estado    = getEstado(row);
+
+    estadosSet.add(estado);
+
+    const blob = norm([id, cliente, ubicacion, producto, estado].join(' | '));
+    row.dataset.searchBlob = blob;
+    row.dataset.estado = estado;
+  });
+
+  // Pobla el select con estados únicos (ordenados)
+  Array.from(estadosSet)
+    .filter(Boolean)
+    .sort()
+    .forEach(est => {
+      const opt = document.createElement('option');
+      opt.value = est;
+      opt.textContent = est.charAt(0).toUpperCase() + est.slice(1);
+      selectEstado.appendChild(opt);
+    });
+
+  const updateCount = () => {
+    const visibles = rows.reduce((acc, r) => acc + (!r.hidden ? 1 : 0), 0);
+    if (countEl) countEl.textContent = `${visibles} / ${rows.length}`;
+  };
+
+  const aplicarFiltro = () => {
+    const q = norm(input?.value);
+    const est = (selectEstado?.value || '').toLowerCase();
+
+    rows.forEach(row => {
+      const blob = row.dataset.searchBlob || '';
+      const matchQ = !q || blob.includes(q);
+      const matchE = !est || (row.dataset.estado === est);
+
+      row.hidden = !(matchQ && matchE);
+    });
+
+    updateCount();
+  };
+
+  // Debounce suave
+  let t = null;
+  const debounce = (fn, ms = 120) => {
+    clearTimeout(t);
+    t = setTimeout(fn, ms);
+  };
+
+  input?.addEventListener('input', () => debounce(aplicarFiltro, 120));
+  selectEstado?.addEventListener('change', aplicarFiltro);
+
+  btnClear?.addEventListener('click', () => {
+    if (input) input.value = '';
+    if (selectEstado) selectEstado.value = '';
+    aplicarFiltro();
+    input?.focus();
+  });
+
+  // Inicial
+  updateCount();
+});
+

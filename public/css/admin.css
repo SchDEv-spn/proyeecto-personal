@@ -1605,3 +1605,128 @@ body.sidebar-collapsed .sidebar-nav a:hover{
 .no-transitions *{
   transition: none !important;
 }
+/* =========================
+   Desktop: tabla normal (sin cambios)
+   Mobile: tarjetas
+   ========================= */
+
+@media (max-width: 768px) {
+
+  /* Oculta encabezado */
+  .pedidos-responsive thead {
+    display: none;
+  }
+
+  /* Permite layout tipo lista */
+  .pedidos-responsive tbody {
+    display: block;
+  }
+
+  /* Cada fila se vuelve una tarjeta */
+  .pedidos-responsive tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    padding: 14px;
+    margin: 0 0 14px 0;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.06);
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+  }
+
+  /* Cada celda deja de verse como celda */
+  .pedidos-responsive tbody tr td {
+    display: block;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  /* Labels usando tu data-label (ya está en tu HTML ✅) */
+  .pedidos-responsive tbody tr td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: .65;
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+
+  /* Secciones a ancho completo */
+  .pedidos-responsive td[data-label="Cliente"],
+  .pedidos-responsive td[data-label="Producto"],
+  .pedidos-responsive td[data-label="Estado"] {
+    grid-column: 1 / -1;
+  }
+
+  /* Contacto y Acción como barra inferior sin label */
+  .pedidos-responsive td[data-label="Contacto"],
+  .pedidos-responsive td[data-label="Acción"] {
+    grid-column: 1 / -1;
+  }
+
+  .pedidos-responsive td[data-label="Contacto"]::before,
+  .pedidos-responsive td[data-label="Acción"]::before {
+    display: none;
+    content: "";
+  }
+
+  .pedidos-responsive td[data-label="Contacto"] {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pedidos-responsive td[data-label="Acción"] {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* El form de estado no se rompe */
+  .pedidos-responsive .status-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .pedidos-responsive .status-form select {
+    max-width: 220px;
+  }
+}
+.pedidos-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  margin: 0 0 12px 0;
+}
+
+.pedidos-toolbar input[type="search"]{
+  flex: 1 1 260px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.15);
+  outline: none;
+}
+
+.pedidos-toolbar select,
+.pedidos-toolbar button{
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.15);
+  background: #fff;
+}
+
+.pedidos-toolbar button{
+  cursor:pointer;
+}
+
+.pedidos-count{
+  opacity:.7;
+  font-size: 13px;
+}

@@ -118,7 +118,24 @@
                         <h3>Pedidos Recientes</h3>
                     </div>
 
-                    <table class="material-table" id="tablaPedidos">
+                    <div class="pedidos-toolbar" id="pedidosToolbar">
+                        <input
+                            type="search"
+                            id="pedidosSearch"
+                            placeholder="Buscar por ID, cliente, ciudad, producto..."
+                            autocomplete="off" />
+
+                        <select id="pedidosEstado">
+                            <option value="">Todos los estados</option>
+                        </select>
+
+                        <button type="button" id="pedidosClear">Limpiar</button>
+
+                        <span class="pedidos-count" id="pedidosCount"></span>
+                    </div>
+
+
+                    <table class="material-table pedidos-responsive" id="tablaPedidos">
                         <thead>
                             <tr>
                                 <th>ID</th>
