@@ -745,6 +745,7 @@ $textColor       = $config['text_color']       ?? '#222222';
                                             </select>
 
                                             <select name="qty_item[]" required class="qty-select">
+                                                <option value="">Selecciona una cantidad</option>
                                                 <?php for ($i = 1; $i <= 5; $i++): ?>
                                                     <option value="<?= $i ?>" <?= ($selQty === $i) ? 'selected' : '' ?>><?= $i ?></option>
                                                 <?php endfor; ?>
