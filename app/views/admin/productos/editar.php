@@ -6,47 +6,12 @@
     <title>Admin - Editar producto</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <link rel="stylesheet" href="/tienda_mvc/public/css/dashboard.css">
     <link rel="stylesheet" href="/tienda_mvc/public/css/editarProducto.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    <!-- Estilos mínimos para el bloque de colores -->
-    <style>
-        .colors-wrap {
-            display: grid;
-            gap: 10px;
-            margin-top: 8px;
-        }
+    <!-- Estilos mínimos del bloque de colores (coherentes con tu UI) -->
 
-        .color-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .color-row input {
-            flex: 1;
-        }
-
-        .btn-remove-color {
-            border: 0;
-            background: rgba(0, 0, 0, .08);
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-remove-color:hover {
-            background: rgba(0, 0, 0, .14);
-        }
-
-        .btn-add-color {
-            margin-top: 10px;
-        }
-    </style>
 </head>
 
 <body>
@@ -55,8 +20,7 @@
     $old      = $old      ?? [];
     $producto = $producto ?? null;
 
-    // IMPORTANTE: el controlador debe enviar $colores (array) con los colores del producto.
-    // Si no viene, aquí no falla: queda en [].
+    // Colores (si no llegan, queda [])
     $colores = $colores ?? [];
 
     $usuarioNombre = $_SESSION['usuario_nombre'] ?? 'Admin';
@@ -73,265 +37,258 @@
     if (!is_array($coloresForm)) $coloresForm = [];
     $coloresForm = array_values(array_filter(array_map(fn($c) => trim((string)$c), $coloresForm), fn($c) => $c !== ''));
     if (empty($coloresForm)) $coloresForm = ['']; // al menos 1 input visible
+
+    // Preview robusto para imagen principal (nombre / ruta / URL)
+    $UPLOADS_BASE = '/tienda_mvc/public/uploads/productos/'; // ajusta si tu carpeta real es distinta
+    $imgPreview = '';
+    $tmp = trim((string)$imgActual);
+
+    if ($tmp !== '') {
+        if (preg_match('#^https?://#i', $tmp)) {
+            $imgPreview = $tmp;
+        } elseif ($tmp[0] === '/') {
+            $imgPreview = $tmp;
+        } else {
+            if (stripos($tmp, 'uploads/') !== false || stripos($tmp, 'public/') !== false) {
+                $imgPreview = '/tienda_mvc/' . ltrim($tmp, '/');
+            } else {
+                $imgPreview = $UPLOADS_BASE . $tmp;
+            }
+        }
+    }
     ?>
 
-    <aside class="material-sidebar" aria-label="Menú admin">
-        <div class="sidebar-logo">
-            <h2>FEDORA ULTIMATE</h2>
-        </div>
+    <!-- Overlay sidebar (mobile) -->
+    <div class="sidebar-overlay" aria-hidden="true"></div>
 
-        <div class="sidebar-user">
-            <img src="/tienda_mvc/public/img/admi/1.jpg?user=<?= substr($usuarioNombre, 0, 2) ?>" alt="User">
-            <div class="sidebar-user-text">
-                <h4><?= htmlspecialchars($usuarioNombre) ?></h4>
-                <small><?= htmlspecialchars($usuarioEmail) ?></small>
-            </div>
-        </div>
+    <div class="app-shell">
 
-        <nav class="sidebar-nav">
-            <a href="/tienda_mvc/AdminPedidos/index">
-                <i class="fas fa-box"></i> Pedidos
-            </a>
-            <a href="/tienda_mvc/AdminProductos/index" class="active">
-                <i class="fas fa-shopping-bag"></i> Productos
-            </a>
-            <a href="/tienda_mvc/Auth/logout">
-                <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-            </a>
-        </nav>
-    </aside>
+        <!-- Sidebar -->
+        <?php require __DIR__ . '/../partials/_sidebar.php'; ?>
 
-    <main class="material-main material-main--simple">
-        <header class="material-header">
-            <div class="header-greeting header-greeting--with-menu">
-                <button class="btn-menu" id="btnMenu" aria-label="Abrir menú">
-                    <i class="fas fa-bars"></i>
-                </button>
+        <!-- Main -->
+        <main class="material-main">
 
-                <div>
-                    <h3>Editar producto</h3>
-                    <?php if ($producto): ?>
-                        <p>Estás editando: <strong><?= htmlspecialchars($producto['nombre']) ?></strong></p>
-                    <?php else: ?>
-                        <p>Edita la información del producto</p>
-                    <?php endif; ?>
-                </div>
-            </div>
+            <?php
+            // Header (partials/_header.php)
+            $pageTitle = 'Editar producto';
 
-            <div class="header-actions">
-                <a href="/tienda_mvc/AdminProductos/index" class="btn-detail">
-                    ← Volver a productos
-                </a>
-            </div>
-        </header>
+            $pageSubtitle = $producto
+                ? 'Estás editando: ' . ($producto['nombre'] ?? '')
+                : 'Edita la información del producto';
 
-        <section class="material-content">
+            $showRangeFilter = false;
+            $showSearch      = false;
 
-            <?php if (!$producto && empty($productoId)): ?>
-                <div class="admin-alert-error">
-                    <div class="admin-alert-title">
-                        <i class="fas fa-triangle-exclamation"></i>
-                        Producto no encontrado
+            $headerCta = [
+                'href'  => '/tienda_mvc/AdminProductos/index',
+                'label' => '← Volver a productos',
+                'class' => 'btn-detail'
+            ];
+
+            require __DIR__ . '/../partials/_header.php';
+            ?>
+
+            <section class="material-content">
+
+                <?php if (!$producto && empty($productoId)): ?>
+                    <div class="admin-alert-error">
+                        <div class="admin-alert-title">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            Producto no encontrado
+                        </div>
+                        <p style="margin:0;color:var(--gray-light);">
+                            No se encontró el producto a editar. Vuelve al listado.
+                        </p>
                     </div>
-                    <p style="margin:0;color:var(--gray-light);">
-                        No se encontró el producto a editar. Vuelve al listado.
-                    </p>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
 
-            <?php if (!empty($errores)): ?>
-                <div class="admin-alert-error">
-                    <div class="admin-alert-title">
-                        <i class="fas fa-triangle-exclamation"></i>
-                        Revisa estos campos
+                <?php if (!empty($errores)): ?>
+                    <div class="admin-alert-error">
+                        <div class="admin-alert-title">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            Revisa estos campos
+                        </div>
+                        <ul>
+                            <?php foreach ($errores as $e): ?>
+                                <li><?= htmlspecialchars($e) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
                     </div>
-                    <ul>
-                        <?php foreach ($errores as $e): ?>
-                            <li><?= htmlspecialchars($e) ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
 
-            <div class="form-card">
-                <div class="form-card-header">
-                    <h3>Información del producto</h3>
-                </div>
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h3>Información del producto</h3>
+                    </div>
 
-                <div class="form-card-body">
-                    <form action="/tienda_mvc/AdminProductos/actualizar"
-                        method="POST"
-                        class="admin-form"
-                        enctype="multipart/form-data">
+                    <div class="form-card-body">
+                        <form action="/tienda_mvc/AdminProductos/actualizar"
+                            method="POST"
+                            class="admin-form"
+                            enctype="multipart/form-data">
 
-                        <input type="hidden" name="id" value="<?= htmlspecialchars($productoId) ?>">
-                        <input type="hidden" name="imagen_principal_actual" value="<?= htmlspecialchars($imgActual) ?>">
+                            <input type="hidden" name="id" value="<?= htmlspecialchars($productoId) ?>">
+                            <input type="hidden" name="imagen_principal_actual" value="<?= htmlspecialchars($imgActual) ?>">
 
-                        <div class="form-grid">
+                            <div class="form-grid">
 
-                            <div class="form-group form-group--full">
-                                <label for="nombre">Nombre del producto <span class="req">*</span></label>
-                                <input type="text" id="nombre" name="nombre"
-                                    value="<?= htmlspecialchars($nombreProd) ?>" required>
-                            </div>
-
-
-                            <div class="form-group">
-                                <label for="precio_regular">Precio regular (antes) <span class="req">*</span></label>
-                                <input type="number" id="precio_regular" name="precio_regular"
-                                    value="<?= htmlspecialchars($old['precio_regular'] ?? '') ?>"
-                                    step="100" min="0" required>
-                                <small class="help">Este es el precio tachado. Debe ser >= precio de venta.</small>
-                            </div>
-
-
-                            <div class="form-group">
-                                <label for="precio_venta">Precio de venta <span class="req">*</span></label>
-                                <input type="number" id="precio_venta" name="precio_venta"
-                                    value="<?= htmlspecialchars($old['precio_venta'] ?? ($producto['precio_venta'] ?? '')) ?>"
-                                    step="100" min="0" required>
-                                <small class="help">Ej: 199900 (sin puntos ni comas).</small>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="precio_proveedor">Precio proveedor <span class="req">*</span></label>
-                                <input type="number" id="precio_proveedor" name="precio_proveedor"
-                                    value="<?= htmlspecialchars($old['precio_proveedor'] ?? ($producto['precio_proveedor'] ?? '')) ?>"
-                                    step="100" min="0" required>
-                                <small class="help">Costo base para calcular utilidad.</small>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="costo_envio">Costo de envío (interno)</label>
-                                <input type="number" id="costo_envio" name="costo_envio"
-                                    value="<?= htmlspecialchars($old['costo_envio'] ?? ($producto['costo_envio'] ?? 0)) ?>"
-                                    step="100" min="0">
-                                <small class="help">Este valor NO lo ve el cliente. Se usa para calcular utilidad real.</small>
-                            </div>
-
-
-                            <div class="form-group">
-                                <h4>
-                                    <i class="fas fa-tags"></i> Estrategia de Descuento (Multicantidad)
-                                </h4>
+                                <div class="form-group form-group--full">
+                                    <label for="nombre">Nombre del producto <span class="req">*</span></label>
+                                    <input type="text" id="nombre" name="nombre"
+                                        value="<?= htmlspecialchars($nombreProd) ?>" required>
+                                </div>
 
                                 <div class="form-group">
-                                    <label>
-                                        <!-- ✅ importante: asegura que SIEMPRE llegue algo en POST -->
-                                        <input type="hidden" name="descuento_multicantidad_activo" value="0">
+                                    <label for="precio_regular">Precio regular (antes) <span class="req">*</span></label>
+                                    <input type="number" id="precio_regular" name="precio_regular"
+                                        value="<?= htmlspecialchars($old['precio_regular'] ?? ($producto['precio_regular'] ?? '')) ?>"
+                                        step="100" min="0" required>
+                                    <small class="help">Este es el precio tachado. Debe ser >= precio de venta.</small>
+                                </div>
 
-                                        <input type="checkbox"
-                                            name="descuento_multicantidad_activo"
-                                            value="1"
-                                            <?= ((int)($old['descuento_multicantidad_activo'] ?? 1) === 1) ? 'checked' : '' ?>>
-                                        Activar descuentos por multicantidad
-                                    </label>
+                                <div class="form-group">
+                                    <label for="precio_venta">Precio de venta <span class="req">*</span></label>
+                                    <input type="number" id="precio_venta" name="precio_venta"
+                                        value="<?= htmlspecialchars($old['precio_venta'] ?? ($producto['precio_venta'] ?? '')) ?>"
+                                        step="100" min="0" required>
+                                    <small class="help">Ej: 199900 (sin puntos ni comas).</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="precio_proveedor">Precio proveedor <span class="req">*</span></label>
+                                    <input type="number" id="precio_proveedor" name="precio_proveedor"
+                                        value="<?= htmlspecialchars($old['precio_proveedor'] ?? ($producto['precio_proveedor'] ?? '')) ?>"
+                                        step="100" min="0" required>
+                                    <small class="help">Costo base para calcular utilidad.</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="costo_envio">Costo de envío (interno)</label>
+                                    <input type="number" id="costo_envio" name="costo_envio"
+                                        value="<?= htmlspecialchars($old['costo_envio'] ?? ($producto['costo_envio'] ?? 0)) ?>"
+                                        step="100" min="0">
+                                    <small class="help">Este valor NO lo ve el cliente. Se usa para calcular utilidad real.</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <h4>
+                                        <i class="fas fa-tags"></i> Estrategia de Descuento (Multicantidad)
+                                    </h4>
+
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="hidden" name="descuento_multicantidad_activo" value="0">
+
+                                            <input type="checkbox"
+                                                name="descuento_multicantidad_activo"
+                                                value="1"
+                                                <?= ((int)($old['descuento_multicantidad_activo'] ?? ($producto['descuento_multicantidad_activo'] ?? 1)) === 1) ? 'checked' : '' ?>>
+                                            Activar descuentos por multicantidad
+                                        </label>
+
+                                        <small class="help">
+                                            Si lo desactivas, los pedidos cobrarán precio normal aunque existan porcentajes configurados.
+                                        </small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="descuento_2da">Descuento 2da unidad (%)</label>
+                                        <input type="number"
+                                            id="descuento_2da"
+                                            name="descuento_2da"
+                                            value="<?= htmlspecialchars((string)($old['descuento_2da'] ?? ($producto['descuento_2da'] ?? 15))) ?>"
+                                            min="0" max="100" step="1">
+                                        <small class="help">Ej: 40 para aplicar el 40% OFF a la segunda unidad.</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="descuento_3ra">Descuento 3ra+ unidad (%)</label>
+                                        <input type="number"
+                                            id="descuento_3ra"
+                                            name="descuento_3ra"
+                                            value="<?= htmlspecialchars((string)($old['descuento_3ra'] ?? ($producto['descuento_3ra'] ?? 20))) ?>"
+                                            min="0" max="100" step="1">
+                                        <small class="help">Ej: 50 para aplicar el 50% OFF desde la tercera unidad en adelante.</small>
+                                    </div>
+                                </div>
+
+                                <!-- COLORES -->
+                                <div class="form-group form-group--full">
+                                    <label>Colores disponibles (opcional)</label>
+
+                                    <div id="colorsWrap" class="colors-wrap">
+                                        <?php foreach ($coloresForm as $c): ?>
+                                            <div class="color-row">
+                                                <input type="text" name="colores[]" placeholder="Ej: Negro" value="<?= htmlspecialchars($c) ?>">
+                                                <button type="button" class="btn-remove-color" aria-label="Quitar color">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+
+                                    <button type="button" id="addColorBtn" class="btn-ghost btn-add-color">
+                                        <i class="fas fa-plus"></i> Agregar otro color
+                                    </button>
 
                                     <small class="help">
-                                        Si lo desactivas, los pedidos cobrarán precio normal aunque existan porcentajes configurados.
+                                        Si dejas todos los colores vacíos, la landing no mostrará selector de color.
                                     </small>
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="descuento_2da">Descuento 2da unidad (%)</label>
-                                    <input type="number"
-                                        id="descuento_2da"
-                                        name="descuento_2da"
-                                        value="<?= htmlspecialchars((string)($old['descuento_2da'] ?? 15)) ?>"
-                                        min="0"
-                                        max="100"
-                                        step="1">
-                                    <small class="help">Ej: 40 para aplicar el 40% OFF a la segunda unidad.</small>
+                                <!-- Imagen actual -->
+                                <div class="form-group form-group--full">
+                                    <label>Imagen principal actual</label>
+
+                                    <?php if (!empty($imgPreview)): ?>
+                                        <div class="img-preview">
+                                            <img src="<?= htmlspecialchars($imgPreview) ?>" alt="Imagen producto">
+                                            <div class="img-preview-meta">
+                                                <small class="help">Si subes una nueva imagen, esta será reemplazada.</small>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="img-empty">
+                                            <i class="fas fa-image"></i>
+                                            <span>Sin imagen asignada</span>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="descuento_3ra">Descuento 3ra+ unidad (%)</label>
-                                    <input type="number"
-                                        id="descuento_3ra"
-                                        name="descuento_3ra"
-                                        value="<?= htmlspecialchars((string)($old['descuento_3ra'] ?? 20)) ?>"
-                                        min="0"
-                                        max="100"
-                                        step="1">
-                                    <small class="help">Ej: 50 para aplicar el 50% OFF desde la tercera unidad en adelante.</small>
+                                <div class="form-group form-group--full">
+                                    <label for="imagen_principal_file">Subir nueva imagen (opcional)</label>
+                                    <input type="file" id="imagen_principal_file" name="imagen_principal_file" accept="image/*">
+                                    <small class="help">Recomendado: JPG/PNG, buena resolución.</small>
                                 </div>
+
+                                <div class="form-group form-group--full">
+                                    <label class="check-row">
+                                        <input type="checkbox" name="activo" value="1" <?= ((int)$activoVal === 1) ? 'checked' : '' ?>>
+                                        <span>Producto activo</span>
+                                    </label>
+                                </div>
+
                             </div>
 
-
-
-                            <!-- ✅ COLORES (NUEVO) -->
-                            <div class="form-group form-group--full">
-                                <label>Colores disponibles (opcional)</label>
-
-                                <div id="colorsWrap" class="colors-wrap">
-                                    <?php foreach ($coloresForm as $c): ?>
-                                        <div class="color-row">
-                                            <input type="text" name="colores[]" placeholder="Ej: Negro" value="<?= htmlspecialchars($c) ?>">
-                                            <button type="button" class="btn-remove-color" aria-label="Quitar color">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-
-                                <button type="button" id="addColorBtn" class="btn-ghost btn-add-color">
-                                    <i class="fas fa-plus"></i> Agregar otro color
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-save"></i> Guardar cambios
                                 </button>
 
-                                <small class="help">
-                                    Si dejas todos los colores vacíos, la landing no mostrará selector de color.
-                                </small>
+                                <a href="/tienda_mvc/AdminProductos/index" class="btn-ghost">
+                                    Cancelar
+                                </a>
                             </div>
 
-                            <div class="form-group form-group--full">
-                                <label>Imagen principal actual</label>
-
-                                <?php if (!empty($imgActual)): ?>
-                                    <div class="img-preview">
-                                        <img src="<?= htmlspecialchars($imgActual) ?>" alt="Imagen producto">
-                                        <div class="img-preview-meta">
-                                            <small class="help">Si subes una nueva imagen, esta será reemplazada.</small>
-                                        </div>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="img-empty">
-                                        <i class="fas fa-image"></i>
-                                        <span>Sin imagen asignada</span>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-
-                            <div class="form-group form-group--full">
-                                <label for="imagen_principal_file">Subir nueva imagen (opcional)</label>
-                                <input type="file" id="imagen_principal_file" name="imagen_principal_file" accept="image/*">
-                                <small class="help">Recomendado: JPG/PNG, buena resolución.</small>
-                            </div>
-
-                            <div class="form-group form-group--full">
-                                <label class="check-row">
-                                    <input type="checkbox" name="activo" value="1" <?= ($activoVal) ? 'checked' : '' ?>>
-                                    <span>Producto activo</span>
-                                </label>
-                            </div>
-
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">
-                                <i class="fas fa-save"></i> Guardar cambios
-                            </button>
-
-                            <a href="/tienda_mvc/AdminProductos/index" class="btn-ghost">
-                                Cancelar
-                            </a>
-                        </div>
-
-                    </form>
+                        </form>
+                    </div>
                 </div>
-            </div>
 
-        </section>
-    </main>
+            </section>
+        </main>
+
+    </div><!-- /app-shell -->
 
     <script src="/tienda_mvc/public/js/funciones.js"></script>
 
@@ -345,7 +302,7 @@
                 const row = document.createElement('div');
                 row.className = 'color-row';
                 row.innerHTML = `
-                    <input type="text" name="colores[]" placeholder="Ej: Azul" value="${value.replace(/"/g,'&quot;')}">
+                    <input type="text" name="colores[]" placeholder="Ej: Azul" value="${String(value).replace(/"/g,'&quot;')}">
                     <button type="button" class="btn-remove-color" aria-label="Quitar color">
                         <i class="fas fa-times"></i>
                     </button>
@@ -364,7 +321,6 @@
                 const row = btn.closest('.color-row');
                 if (!row) return;
 
-                // Si es la única fila, solo limpia el input (no la borra)
                 const rows = wrap.querySelectorAll('.color-row');
                 if (rows.length <= 1) {
                     const input = row.querySelector('input[name="colores[]"]');

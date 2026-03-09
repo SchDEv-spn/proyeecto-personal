@@ -6,9 +6,38 @@ class AdminPedidosController extends Controller
     {
         $this->requireLogin();
 
-        $pedidoModel = new Pedido();
-        $pedidos = $pedidoModel->obtenerTodos(300);
+        // ✅ Rango permitido: hoy | ayer | semana | mes
+        $rango = $_GET['rango'] ?? 'mes';
+        $permitidos = ['hoy', 'ayer', 'semana', 'mes'];
+        if (!in_array($rango, $permitidos, true)) $rango = 'mes';
 
+        // ✅ Fechas inicio/fin (America/Bogota) en formato SQL
+        list($inicioObj, $finObj) = $this->calcularRangoFechas($rango);
+        $inicioStr = $inicioObj->format('Y-m-d H:i:s');
+        $finStr    = $finObj->format('Y-m-d H:i:s');
+
+        $pedidoModel = new Pedido();
+
+        // ✅ Ideal: filtrar desde el modelo/DB
+        if (method_exists($pedidoModel, 'obtenerPorRango')) {
+            $pedidos = $pedidoModel->obtenerPorRango($inicioStr, $finStr, 300);
+        } else {
+            // ✅ Fallback: filtrar en PHP
+            $todos = $pedidoModel->obtenerTodos(2000);
+
+            $inicioTs = $inicioObj->getTimestamp();
+            $finTs    = $finObj->getTimestamp();
+
+            $pedidos = array_values(array_filter($todos, function ($p) use ($inicioTs, $finTs) {
+                $ts = strtotime($p['created_at'] ?? '');
+                if (!$ts) return false;
+                return ($ts >= $inicioTs && $ts < $finTs);
+            }));
+
+            $pedidos = array_slice($pedidos, 0, 300);
+        }
+
+        // ======= Métricas sobre el rango =======
         $totalPedidos    = count($pedidos);
         $totalUtilidad   = 0.0;
         $totalVenta      = 0.0;
@@ -24,13 +53,12 @@ class AdminPedidosController extends Controller
             $precioUnit     = (float)($p['precio_venta'] ?? 0);
             $precioProvUnit = (float)($p['precio_proveedor'] ?? 0);
 
-            // Total cobrado al cliente (si viene precio_total, úsalo; si no, fallback)
+            // Total cobrado al cliente
             $precioTotal = isset($p['precio_total'])
                 ? (float)$p['precio_total']
                 : ($precioUnit * $cantidad);
 
-            // Costo de envío: prioridad pedido -> producto -> 0
-            // (En tu DB actual no existe pedidos.costo_envio, por eso usamos producto_costo_envio)
+            // Costo envío: prioridad pedido -> producto -> 0
             $costoEnvio = 0.0;
             if (isset($p['costo_envio'])) {
                 $costoEnvio = (float)$p['costo_envio'];
@@ -39,8 +67,7 @@ class AdminPedidosController extends Controller
             }
             if ($costoEnvio < 0) $costoEnvio = 0;
 
-            // Utilidad total REAL:
-            // utilidad_total guardada > cálculo con proveedor*cantidad + envío
+            // Utilidad total
             if (isset($p['utilidad_total'])) {
                 $utilidadTotal = (float)$p['utilidad_total'];
             } else {
@@ -53,15 +80,13 @@ class AdminPedidosController extends Controller
                 $pedidosNuevos++;
             }
 
-            // Métricas: excluimos cancelados (recomendado)
+            // Métricas: excluimos cancelados
             if ($estado === 'cancelado') {
                 continue;
             }
 
             $totalVenta     += $precioTotal;
             $totalUtilidad  += $utilidadTotal;
-
-            // Proveedor total (solo proveedor*cantidad; envío no es “proveedor”)
             $totalProveedor += ($precioProvUnit * $cantidad);
         }
 
@@ -72,7 +97,40 @@ class AdminPedidosController extends Controller
             'total_venta'      => $totalVenta,
             'total_proveedor'  => $totalProveedor,
             'pedidos_nuevos'   => $pedidosNuevos,
+            'rango'            => $rango,
         ]);
+    }
+
+    // ✅ ÚNICA versión del helper (sin duplicados)
+    private function calcularRangoFechas(string $rango): array
+    {
+        $tz  = new DateTimeZone('America/Bogota');
+        $now = new DateTime('now', $tz);
+
+        switch ($rango) {
+            case 'hoy':
+                $inicio = (clone $now)->setTime(0, 0, 0);
+                $fin    = (clone $inicio)->modify('+1 day');
+                break;
+
+            case 'ayer':
+                $fin    = (clone $now)->setTime(0, 0, 0);
+                $inicio = (clone $fin)->modify('-1 day');
+                break;
+
+            case 'semana':
+                $inicio = (clone $now)->modify('monday this week')->setTime(0, 0, 0);
+                $fin    = (clone $inicio)->modify('+1 week');
+                break;
+
+            case 'mes':
+            default:
+                $inicio = (clone $now)->modify('first day of this month')->setTime(0, 0, 0);
+                $fin    = (clone $inicio)->modify('first day of next month');
+                break;
+        }
+
+        return [$inicio, $fin];
     }
 
     public function detalle()
@@ -142,8 +200,8 @@ class AdminPedidosController extends Controller
         if (!empty($_POST['ajax']) && $_POST['ajax'] == '1') {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
-                'ok' => true,
-                'id' => $id,
+                'ok'     => true,
+                'id'     => $id,
                 'estado' => $estado
             ]);
             return;

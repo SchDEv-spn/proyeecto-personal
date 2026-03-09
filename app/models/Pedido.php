@@ -125,6 +125,29 @@ class Pedido extends Model
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function obtenerPorRango(string $inicio, string $fin, int $limit = 300): array
+    {
+        $sql = "SELECT
+                p.*,
+                pr.nombre AS producto_nombre,
+                pr.costo_envio AS producto_costo_envio
+            FROM pedidos p
+            INNER JOIN productos pr ON p.producto_id = pr.id
+            WHERE p.created_at >= :inicio
+              AND p.created_at <  :fin
+            ORDER BY p.created_at DESC
+            LIMIT :limite";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':inicio', $inicio, PDO::PARAM_STR);
+        $stmt->bindValue(':fin',    $fin,    PDO::PARAM_STR);
+        $stmt->bindValue(':limite', (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
     public function obtenerPorId($id): ?array
     {
         $sql = "SELECT
