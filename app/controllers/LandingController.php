@@ -177,7 +177,14 @@ class LandingController extends Controller
         $errores = [];
         if ($nombre === '')       $errores[] = "El nombre es obligatorio.";
         if ($apellidos === '')    $errores[] = "Los apellidos son obligatorios.";
-        if ($telefono === '')     $errores[] = "El número de WhatsApp es obligatorio.";
+
+        // ── Teléfono: no vacío + formato colombiano (10 dígitos, empieza en 3) ──
+        if ($telefono === '') {
+            $errores[] = "El número de WhatsApp es obligatorio.";
+        } elseif (!preg_match('/^3\d{9}$/', $telefono)) {
+            $errores[] = "Ingresa un número de WhatsApp válido (10 dígitos, empieza en 3).";
+        }
+
         if ($departamento === '') $errores[] = "Selecciona un departamento.";
         if ($municipio === '')    $errores[] = "Selecciona un municipio.";
         if ($tipoEntrega === '')  $errores[] = "Selecciona cómo quieres recibir tu pedido.";
@@ -186,6 +193,14 @@ class LandingController extends Controller
         }
         if (!$confirmPurchase) {
             $errores[] = "Debes confirmar que quieres el producto y pagarás al recibirlo.";
+        }
+
+        // ── Guard anti-duplicados: mismo teléfono + mismo producto en últimos 15 min ──
+        if (empty($errores)) {
+            $pedidoModel = new Pedido();
+            if ($pedidoModel->existePedidoReciente($telefono, $productoId, 15)) {
+                $errores[] = "Ya registramos un pedido con este número hace menos de 15 minutos. Si tienes dudas, escríbenos por WhatsApp.";
+            }
         }
 
         // Procesar colores/cantidades si el producto tiene colores

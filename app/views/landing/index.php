@@ -216,6 +216,33 @@ $textColor       = $config['text_color']       ?? '#222222';
 
 <body>
 
+    <div class="announcement-bar" role="banner" aria-label="Información de oferta">
+        <div class="announcement-bar__track" aria-hidden="true">
+            <!-- Repetir 2 veces para efecto infinito limpio -->
+            <span class="announcement-bar__item">🔥 Quedan pocas unidades</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+            <span class="announcement-bar__item">🚚 Envío gratis a todo el país</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+            <span class="announcement-bar__item">💳 Pago contraentrega</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+            <span class="announcement-bar__item">⭐ +2.300 clientes satisfechos</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+            <span class="announcement-bar__item">📦 Empaque discreto y seguro</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+            <!-- Copia 2 (necesaria para el loop continuo) -->
+            <span class="announcement-bar__item">🔥 Quedan pocas unidades</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+            <span class="announcement-bar__item">🚚 Envío gratis a todo el país</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+            <span class="announcement-bar__item">💳 Pago contraentrega</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+            <span class="announcement-bar__item">⭐ +2.300 clientes satisfechos</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+            <span class="announcement-bar__item">📦 Empaque discreto y seguro</span>
+            <span class="announcement-bar__item"><span>·</span></span>
+        </div>
+    </div>
+
     <!-- HERO -->
     <header class="container hero">
         <div class="hero-text">
@@ -237,6 +264,9 @@ $textColor       = $config['text_color']       ?? '#222222';
                 <div class="save">
                     Te ahorras: $<?= number_format($ahorro, 0, ',', '.') ?>
                 </div>
+                <div class="recent-orders-badge" aria-live="polite">
+                    <span id="recentOrdersCount">34</span> personas pidieron esto hoy
+                </div>
 
             </div>
 
@@ -251,10 +281,14 @@ $textColor       = $config['text_color']       ?? '#222222';
                 <video src="<?= htmlspecialchars($heroMediaPath) ?>"
                     controls
                     style="max-width:100%; border-radius:10px;"></video>
+                <div class="hero-trust-badge" aria-label="Calificación de clientes">
+                    4.9 / 5 · +2.300 clientes
+                </div>
             <?php else: ?>
                 <img src="<?= htmlspecialchars($heroMediaPath) ?>"
                     alt="Imagen del producto">
             <?php endif; ?>
+
         </div>
     </header>
 
@@ -293,7 +327,7 @@ $textColor       = $config['text_color']       ?? '#222222';
 
         <!-- GALERÍA (principal + miniaturas) -->
         <section class="container">
-            <h2 class="section-title">MIRA LOS COLORES</h2>
+            <h2 class="section-title">GALERIA</h2>
 
             <?php
             // Si no hay imágenes configuradas, usa fallbacks (ahora con 4 elementos)
@@ -350,6 +384,7 @@ $textColor       = $config['text_color']       ?? '#222222';
                 </a>
             </div>
         </section>
+
         <!-- CONTADOR PROMOCIÓN -->
         <section class="container">
             <div class="countdown">
@@ -492,7 +527,6 @@ $textColor       = $config['text_color']       ?? '#222222';
                                     ?>
                                         <div class="testimonial-slide" data-index="<?= htmlspecialchars($dataIndex) ?>">
                                             <div class="whatsapp-card">
-                                                <div class="badge-verified">✅ Compra Verificada</div>
                                                 <div class="img-wrapper">
                                                     <?php if (!empty($image)): ?>
                                                         <img src="<?= htmlspecialchars($image) ?>" alt="Testimonio WhatsApp <?= htmlspecialchars($name) ?>" class="whatsapp-screenshot">
@@ -501,6 +535,7 @@ $textColor       = $config['text_color']       ?? '#222222';
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="card-content">
+                                                    <div class="badge-verified">✅ Compra Verificada</div>
                                                     <strong><?= htmlspecialchars($name) ?></strong>
                                                     <span><?= htmlspecialchars($time) ?></span>
                                                     <p>"<?= htmlspecialchars($text) ?>"</p>
@@ -594,13 +629,84 @@ $textColor       = $config['text_color']       ?? '#222222';
             </div>
         </section>
 
+        <div class="trust-strip" role="complementary" aria-label="Garantías de compra">
+            <div class="trust-strip__grid">
+                <div class="trust-strip__item">
+                    <span class="trust-strip__icon" aria-hidden="true">🚚</span>
+                    <span>Envío gratis a todo el país</span>
+                </div>
+                <div class="trust-strip__item">
+                    <span class="trust-strip__icon" aria-hidden="true">💳</span>
+                    <span>Pagas solo al recibir</span>
+                </div>
+                <div class="trust-strip__item">
+                    <span class="trust-strip__icon" aria-hidden="true">🔄</span>
+                    <span>Cambios sin problema</span>
+                </div>
+                <div class="trust-strip__item">
+                    <span class="trust-strip__icon" aria-hidden="true">📦</span>
+                    <span>Empaque seguro y discreto</span>
+                </div>
+            </div>
+        </div>
+
         <!-- FORMULARIO: REALIZA TU PEDIDO -->
         <section class="container" id="form-pedido">
             <h2 class="section-title">Realiza tu pedido ahora y paga al recibir</h2>
 
             <?php if (!empty($success)): ?>
-                <div class="success">
-                    <?= htmlspecialchars($success) ?>
+                <div class="order-success">
+                    <div class="order-success__icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                    </div>
+
+                    <p class="order-success__label">Pedido registrado</p>
+                    <h2 class="order-success__title">¡Tu pedido está en camino!</h2>
+                    <p class="order-success__subtitle">
+                        Un asesor te contactará pronto por WhatsApp para confirmar los detalles y coordinar la entrega.
+                    </p>
+
+                    <div class="order-success__steps">
+                        <p class="order-success__steps-label">¿Qué sigue?</p>
+                        <div class="order-success__step">
+                            <span class="order-success__step-num">1</span>
+                            <div>
+                                <strong>Confirmación por WhatsApp</strong>
+                                <p>Te escribimos al número que registraste para confirmar tu pedido.</p>
+                            </div>
+                        </div>
+                        <div class="order-success__step">
+                            <span class="order-success__step-num">2</span>
+                            <div>
+                                <strong>Preparación y despacho</strong>
+                                <p>Una vez confirmado, preparamos y despachamos tu pedido.</p>
+                            </div>
+                        </div>
+                        <div class="order-success__step">
+                            <span class="order-success__step-num">3</span>
+                            <div>
+                                <strong>Entrega y pago</strong>
+                                <p>Recibes tu pedido en casa y pagas al mensajero. Sin adelantos.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="https://wa.me/573023959721?text=Hola%2C%20acabo%20de%20hacer%20un%20pedido%20y%20quiero%20confirmar%20los%20detalles."
+                        class="order-success__wa-btn" target="_blank" rel="noopener">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.523 5.855L0 24l6.335-1.499A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.5-5.18-1.375l-.372-.22-3.862.914.977-3.768-.242-.388A9.953 9.953 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
+                        </svg>
+                        Escribir por WhatsApp
+                    </a>
+
+                    <p class="order-success__note">
+                        ¿Tienes dudas? Escríbenos antes de que te contactemos nosotros.
+                    </p>
                 </div>
             <?php endif; ?>
 
@@ -920,8 +1026,11 @@ $textColor       = $config['text_color']       ?? '#222222';
 
 
     <!-- CTA sticky para móviles -->
-    <a href="#form-pedido" class="cta-sticky-mobile">
-        <?= htmlspecialchars($ctaStickyMobileText) ?>
+    <a href="#form-pedido" class="cta-sticky-mobile" aria-label="Ir al formulario de pedido">
+        <span><?= htmlspecialchars($ctaStickyMobileText) ?></span>
+        <span class="sticky-price">
+            $<?= number_format($precio_venta, 0, ',', '.') ?>
+        </span>
     </a>
 
     <?php
@@ -930,32 +1039,9 @@ $textColor       = $config['text_color']       ?? '#222222';
     $nombreProducto = $producto['nombre'] ?? 'Producto';
     ?>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var successMsg = <?= json_encode($success, JSON_UNESCAPED_UNICODE) ?>;
-
-            if (successMsg) {
-                alert(successMsg);
-
-                var formSection = document.getElementById('form-pedido');
-                if (formSection) {
-                    formSection.scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                }
-
-                // Evento de conversión al crear pedido
-                if (typeof fbq === 'function') {
-                    fbq('track', 'Lead', {
-                        content_name: <?= json_encode($nombreProducto) ?>,
-                        value: <?= json_encode($precioProducto) ?>,
-                        currency: 'COP'
-                    });
-
-                    // Si prefieres trabajar con Purchase (conversión de compra directa), cambia:
-                    // fbq('track', 'Purchase', { ... });
-                }
-            }
-        });
+        window.landingSuccess = <?= json_encode($success,        JSON_UNESCAPED_UNICODE) ?>;
+        window.landingProductName = <?= json_encode($nombreProducto, JSON_UNESCAPED_UNICODE) ?>;
+        window.landingProductPrice = <?= json_encode($precioProducto) ?>;
     </script>
 
     <?php
@@ -967,25 +1053,25 @@ $textColor       = $config['text_color']       ?? '#222222';
         data-colors='<?= htmlspecialchars($colorsJson, ENT_QUOTES, "UTF-8") ?>'>
     </div>
 
-   <script src="/tienda_mvc/public/js/pricing-summary.js" defer></script>
-<script src="/tienda_mvc/public/js/pricing-combo.js" defer></script>
-<script src="/tienda_mvc/public/js/funcionesLandin.js" defer></script>
+    <script src="/tienda_mvc/public/js/pricing-summary.js" defer></script>
+    <script src="/tienda_mvc/public/js/pricing-combo.js" defer></script>
+    <script src="/tienda_mvc/public/js/funcionesLandin.js" defer></script>
 
     <?php
-  // Asegura que $colores sea array simple
-  $colores = $colores ?? [];
-  $colorsJson = json_encode(array_values($colores), JSON_UNESCAPED_UNICODE);
+    // Asegura que $colores sea array simple
+    $colores = $colores ?? [];
+    $colorsJson = json_encode(array_values($colores), JSON_UNESCAPED_UNICODE);
 
-  // Ojo: comboEnabled / comboPrice2 deben venir de $cfg / $config (como ya lo tienes arriba)
-  $comboEnabled = (int)($cfg['combo_enabled'] ?? 0);
-  $comboPrice2  = (int)($cfg['combo_price_2'] ?? 0);
-  if ($comboPrice2 <= 0) $comboPrice2 = 115000;
-?>
-<div id="landingConfig"
-  data-combo-enabled="<?= $comboEnabled ?>"
-  data-combo-price2="<?= $comboPrice2 ?>"
-  data-colors='<?= htmlspecialchars($colorsJson, ENT_QUOTES, "UTF-8") ?>'>
-</div>
+    // Ojo: comboEnabled / comboPrice2 deben venir de $cfg / $config (como ya lo tienes arriba)
+    $comboEnabled = (int)($cfg['combo_enabled'] ?? 0);
+    $comboPrice2  = (int)($cfg['combo_price_2'] ?? 0);
+    if ($comboPrice2 <= 0) $comboPrice2 = 115000;
+    ?>
+    <div id="landingConfig"
+        data-combo-enabled="<?= $comboEnabled ?>"
+        data-combo-price2="<?= $comboPrice2 ?>"
+        data-colors='<?= htmlspecialchars($colorsJson, ENT_QUOTES, "UTF-8") ?>'>
+    </div>
 
 
 </body>

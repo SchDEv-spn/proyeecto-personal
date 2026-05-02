@@ -1,109 +1,115 @@
+/**
+ * main.js — Landing Dark Luxury
+ * ─────────────────────────────────────────────────────────────
+ * Módulos:
+ *   · initTipoEntrega           — domicilio / oficina
+ *   · initDepartamentoMunicipio — selects Colombia
+ *   · initSlider                — slider genérico (legacy)
+ *   · initCountdown             — timer con persistencia sessionStorage
+ *   · initAccordion             — FAQ accordion
+ *   · initGallery               — swap suave + zoom lightbox
+ *   · initRecentOrders          — contador pseudo-dinámico
+ *   · initScrollAnimations      — fade-up con IntersectionObserver
+ *   · initStickyVisibility      — ocultar sticky al llegar al form
+ *   · initLazyImages            — marcar imágenes loaded
+ *   · initTelInput              — inputmode="tel" en WhatsApp
+ * ─────────────────────────────────────────────────────────────
+ */
+
 document.addEventListener('DOMContentLoaded', function () {
     initTipoEntrega();
     initDepartamentoMunicipio();
     initSlider();
     initCountdown();
     initAccordion();
+    initGallery();
+    initRecentOrders();
+    initScrollAnimations();
+    initStickyVisibility();
+    initLazyImages();
+    initTelInput();
 });
 
-// =====================
-// Departamento / Municipio
-// =====================
+
+/* ══════════════════════════════════════════════════════════════
+   DEPARTAMENTO / MUNICIPIO
+   ══════════════════════════════════════════════════════════════ */
 function initDepartamentoMunicipio() {
     const selectDept = document.getElementById('departamento');
     const selectMun  = document.getElementById('municipio');
 
     if (!selectDept || !selectMun) return;
 
-    // Ajusta la ruta si tu proyecto NO se llama tienda_mvc
     fetch('/tienda_mvc/public/js/colombia.json')
         .then(response => {
-            if (!response.ok) {
-                throw new Error('No se pudo cargar colombia.json');
-            }
+            if (!response.ok) throw new Error('No se pudo cargar colombia.json');
             return response.json();
         })
         .then(data => {
-            // data: [{ departamento: "Antioquia", ciudades: ["Medellín", ...] }, ...]
             const excluidos = [
-                "Amazonas",
-                "Guaviare",
-                "Vichada",
-                "San Andrés y Providencia",
-                "San Andres y Providencia",
-                "San Andrés Islas",
-                "San Andres Islas"
+                'Amazonas',
+                'Guaviare',
+                'Vichada',
+                'San Andrés y Providencia',
+                'San Andres y Providencia',
+                'San Andrés Islas',
+                'San Andres Islas'
             ];
 
             const departamentos = data.filter(d => !excluidos.includes(d.departamento));
 
             const oldDept = selectDept.dataset.old || '';
-            const oldMun  = selectMun.dataset.old || '';
+            const oldMun  = selectMun.dataset.old  || '';
 
-            // Poblar departamentos
             departamentos.forEach(dep => {
-                const opt = document.createElement('option');
-                opt.value = dep.departamento;
+                const opt       = document.createElement('option');
+                opt.value       = dep.departamento;
                 opt.textContent = dep.departamento;
                 selectDept.appendChild(opt);
             });
 
-            // Restaurar selección anterior si la hay
-            if (oldDept) {
-                selectDept.value = oldDept;
-            }
+            if (oldDept) selectDept.value = oldDept;
 
             function poblarMunicipios() {
                 const deptSeleccionado = selectDept.value;
-
-                // Limpiar municipios
                 selectMun.innerHTML = '';
 
                 if (!deptSeleccionado) {
-                    const placeholder = document.createElement('option');
-                    placeholder.value = '';
-                    placeholder.textContent = 'Selecciona primero un departamento';
-                    selectMun.appendChild(placeholder);
+                    const ph       = document.createElement('option');
+                    ph.value       = '';
+                    ph.textContent = 'Selecciona primero un departamento';
+                    selectMun.appendChild(ph);
                     return;
                 }
 
-                const placeholder = document.createElement('option');
-                placeholder.value = '';
-                placeholder.textContent = 'Selecciona un municipio';
-                selectMun.appendChild(placeholder);
+                const ph       = document.createElement('option');
+                ph.value       = '';
+                ph.textContent = 'Selecciona un municipio';
+                selectMun.appendChild(ph);
 
-                const depObj = departamentos.find(d => d.departamento === deptSeleccionado);
-                const municipios = depObj && Array.isArray(depObj.ciudades)
-                    ? depObj.ciudades
-                    : [];
+                const depObj     = departamentos.find(d => d.departamento === deptSeleccionado);
+                const municipios = depObj && Array.isArray(depObj.ciudades) ? depObj.ciudades : [];
 
                 municipios.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m;
+                    const opt       = document.createElement('option');
+                    opt.value       = m;
                     opt.textContent = m;
                     selectMun.appendChild(opt);
                 });
             }
 
-            // Evento cambio de departamento
             selectDept.addEventListener('change', poblarMunicipios);
-
-            // Poblar municipios al cargar (por si ya venía un departamento seleccionado)
             poblarMunicipios();
 
-            // Restaurar municipio anterior si aplica
-            if (oldMun) {
-                selectMun.value = oldMun;
-            }
+            if (oldMun) selectMun.value = oldMun;
         })
-        .catch(err => {
-            console.error('Error cargando departamentos/municipios:', err);
-        });
+        .catch(err => console.error('Error cargando departamentos/municipios:', err));
 }
 
-// =====================
-// Tipo de entrega (domicilio / oficina)
-// =====================
+
+/* ══════════════════════════════════════════════════════════════
+   TIPO DE ENTREGA (domicilio / oficina)
+   ══════════════════════════════════════════════════════════════ */
 function initTipoEntrega() {
     const radiosEntrega  = document.querySelectorAll('input[name="tipo_entrega"]');
     const grupoDireccion = document.getElementById('grupo-direccion');
@@ -113,9 +119,7 @@ function initTipoEntrega() {
 
     function actualizarDireccion() {
         let tipoSeleccionado = '';
-        radiosEntrega.forEach(r => {
-            if (r.checked) tipoSeleccionado = r.value;
-        });
+        radiosEntrega.forEach(r => { if (r.checked) tipoSeleccionado = r.value; });
 
         if (tipoSeleccionado === 'domicilio') {
             grupoDireccion.style.display = 'block';
@@ -127,17 +131,14 @@ function initTipoEntrega() {
         }
     }
 
-    radiosEntrega.forEach(r => {
-        r.addEventListener('change', actualizarDireccion);
-    });
-
-    // Ejecutar una vez al cargar
+    radiosEntrega.forEach(r => r.addEventListener('change', actualizarDireccion));
     actualizarDireccion();
 }
 
-// =====================
-// Slider automático
-// =====================
+
+/* ══════════════════════════════════════════════════════════════
+   SLIDER GENÉRICO (legacy)
+   ══════════════════════════════════════════════════════════════ */
 function initSlider() {
     const slider = document.getElementById('slider');
     const slides = document.getElementById('slides');
@@ -147,12 +148,11 @@ function initSlider() {
     const total = slides.children.length;
     if (!total) return;
 
-    // Ancho proporcional para que el translateX en % funcione bien
     const perSlide = 100 / total;
     slides.style.width = `${total * 100}%`;
 
     Array.from(slides.children).forEach(child => {
-        child.style.width = `${perSlide}%`;
+        child.style.width      = `${perSlide}%`;
         child.style.flexShrink = '0';
     });
 
@@ -168,73 +168,249 @@ function initSlider() {
     }, 3000);
 }
 
-// =====================
-// Countdown (1 hora)
-// =====================
+
+/* ══════════════════════════════════════════════════════════════
+   COUNTDOWN — con persistencia sessionStorage
+   El timer NO se reinicia si el usuario recarga la página.
+   ══════════════════════════════════════════════════════════════ */
 function initCountdown() {
-    const countdownEl = document.getElementById('countdown-timer');
-    if (!countdownEl) return;
+    const el = document.getElementById('countdown-timer');
+    if (!el) return;
 
-    let tiempoRestante = 60 * 60; // 1 hora en segundos
+    const DURATION   = 59 * 60 + 59; // 59:59
+    const storageKey = 'landing_countdown_end';
+    let   endTime    = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
 
-    function actualizarCountdown() {
-        const minutos = String(Math.floor(tiempoRestante / 60)).padStart(2, '0');
-        const segundos = String(tiempoRestante % 60).padStart(2, '0');
-        countdownEl.textContent = `${minutos}:${segundos}`;
+    // Si no existe o ya venció, crear uno nuevo
+    if (!endTime || endTime < Date.now()) {
+        endTime = Date.now() + DURATION * 1000;
+        sessionStorage.setItem(storageKey, endTime.toString());
+    }
 
-        if (tiempoRestante > 0) {
-            tiempoRestante--;
+    function tick() {
+        const diff = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+        const mm   = String(Math.floor(diff / 60)).padStart(2, '0');
+        const ss   = String(diff % 60).padStart(2, '0');
+        el.textContent = mm + ':' + ss;
+
+        if (diff > 0) {
+            requestAnimationFrame(tick);
+        } else {
+            el.textContent = '00:00';
         }
     }
 
-    actualizarCountdown();
-    setInterval(actualizarCountdown, 1000);
+    requestAnimationFrame(tick);
 }
 
-// =====================
-// Acordeón FAQ
-// =====================
-function initAccordion() {
-    const headers = document.querySelectorAll('.accordion-header');
-    if (!headers.length) return;
 
-    headers.forEach(header => {
+/* ══════════════════════════════════════════════════════════════
+   ACCORDION FAQ
+   Compatible con clases .open y .active del CSS nuevo
+   ══════════════════════════════════════════════════════════════ */
+function initAccordion() {
+    const items = document.querySelectorAll('.accordion-item');
+    if (!items.length) return;
+
+    items.forEach(item => {
+        const header = item.querySelector('.accordion-header');
+        const body   = item.querySelector('.accordion-body');
+        if (!header || !body) return;
+
         header.addEventListener('click', () => {
-            const body = header.nextElementSibling;
-            const isVisible = body.style.display === 'block';
+            const isOpen = item.classList.contains('open');
 
             // Cerrar todos
-            document.querySelectorAll('.accordion-body').forEach(b => {
-                b.style.display = 'none';
+            items.forEach(i => {
+                i.classList.remove('open');
+                const b = i.querySelector('.accordion-body');
+                if (b) {
+                    b.classList.remove('active');
+                    b.style.display = 'none';
+                }
             });
 
-            // Abrir el que se clickea si no estaba abierto
-            if (!isVisible) {
+            // Abrir el actual si estaba cerrado
+            if (!isOpen) {
+                item.classList.add('open');
+                body.classList.add('active');
                 body.style.display = 'block';
             }
         });
     });
 }
-document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('[data-product-gallery]').forEach(function (gallery) {
-    var main = gallery.querySelector('.product-gallery__main-img');
-    if (!main) return;
 
-    gallery.addEventListener('click', function (e) {
-      var btn = e.target.closest('.product-gallery__thumb');
-      if (!btn || !gallery.contains(btn)) return;
 
-      var thumbSrc = btn.getAttribute('data-src');
-      if (!thumbSrc) return;
+/* ══════════════════════════════════════════════════════════════
+   GALERÍA — swap suave + estado activo + zoom lightbox
+   ══════════════════════════════════════════════════════════════ */
+function initGallery() {
+    const mainFigure = document.querySelector('.product-gallery__main');
+    const mainImg    = document.querySelector('.product-gallery__main-img');
+    const thumbs     = document.querySelectorAll('.product-gallery__thumb');
 
-      // SWAP: la miniatura sube, la principal baja a esa miniatura
-      var currentMainSrc = main.getAttribute('src');
+    if (!mainImg || !thumbs.length) return;
 
-      main.setAttribute('src', thumbSrc);
-      btn.setAttribute('data-src', currentMainSrc);
+    // Estado inicial: primera miniatura activa
+    thumbs[0].classList.add('active', 'is-active');
+    const firstThumbImg = thumbs[0].querySelector('img');
+    if (firstThumbImg) firstThumbImg.style.opacity = '1';
 
-      var thumbImg = btn.querySelector('img');
-      if (thumbImg) thumbImg.setAttribute('src', currentMainSrc);
+    // Swap al hacer clic en miniatura
+    thumbs.forEach(thumb => {
+        thumb.addEventListener('click', function () {
+            // Resetear todas
+            thumbs.forEach(t => {
+                t.classList.remove('active', 'is-active');
+                const tImg = t.querySelector('img');
+                if (tImg) tImg.style.opacity = '0.7';
+            });
+
+            // Activar la seleccionada
+            this.classList.add('active', 'is-active');
+            const activeThumbImg = this.querySelector('img');
+            if (activeThumbImg) activeThumbImg.style.opacity = '1';
+
+            // Cambiar imagen principal — micro-transición 150ms
+            const newSrc = this.dataset.src || this.getAttribute('data-src');
+            if (!newSrc) return;
+
+            mainImg.style.opacity = '0.5';
+            setTimeout(() => {
+                mainImg.src = newSrc;
+                mainImg.style.opacity = '1';
+            }, 150);
+        });
     });
-  });
-});
+
+    // Zoom lightbox al tap en imagen principal
+    if (mainFigure) {
+        mainFigure.addEventListener('click', function (e) {
+            // Evitar que el tap en una miniatura también dispare el zoom
+            if (e.target.closest('.product-gallery__thumb')) return;
+            mainFigure.classList.toggle('zoomed');
+            document.body.style.overflow = mainFigure.classList.contains('zoomed')
+                ? 'hidden'
+                : '';
+        });
+    }
+
+    // Cerrar zoom con Escape
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && mainFigure && mainFigure.classList.contains('zoomed')) {
+            mainFigure.classList.remove('zoomed');
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Marcar imágenes loaded (skeleton CSS)
+    document.querySelectorAll('[data-product-gallery] img').forEach(img => {
+        if (img.complete) {
+            img.classList.add('loaded');
+        } else {
+            img.addEventListener('load', () => img.classList.add('loaded'));
+        }
+    });
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   PEDIDOS RECIENTES — número pseudo-dinámico
+   Base aleatoria por sesión · sube 1 cada 45–90 s · tope 60
+   ══════════════════════════════════════════════════════════════ */
+function initRecentOrders() {
+    const el = document.getElementById('recentOrdersCount');
+    if (!el) return;
+
+    const base     = 28;
+    const variance = Math.floor(Math.random() * 12); // 0–11
+    let   count    = base + variance;
+
+    el.textContent = count;
+
+    function bump() {
+        if (count < 60) {
+            count++;
+            el.textContent = count;
+        }
+        setTimeout(bump, 45000 + Math.random() * 45000);
+    }
+
+    setTimeout(bump, 45000 + Math.random() * 45000);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ANIMACIONES DE ENTRADA (IntersectionObserver)
+   Fade-up escalonado al hacer scroll sobre elementos clave
+   ══════════════════════════════════════════════════════════════ */
+function initScrollAnimations() {
+    if (!('IntersectionObserver' in window)) return;
+
+    const targets = document.querySelectorAll(
+        '.benefit-item, .testimonial, .trust-strip__item, .section-title, .why-list li'
+    );
+
+    if (!targets.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-fadeup');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -32px 0px' });
+
+    targets.forEach(el => {
+        el.style.opacity = '0';
+        observer.observe(el);
+    });
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CTA STICKY — se oculta automáticamente cuando el form
+   está visible en pantalla (usuario ya llegó al objetivo)
+   ══════════════════════════════════════════════════════════════ */
+function initStickyVisibility() {
+    const sticky = document.querySelector('.cta-sticky-mobile');
+    const form   = document.getElementById('form-pedido');
+
+    if (!sticky || !form) return;
+
+    sticky.style.transition = 'transform 0.35s ease, opacity 0.35s ease';
+
+    const observer = new IntersectionObserver((entries) => {
+        const visible = entries[0].isIntersecting;
+        sticky.style.transform = visible ? 'translateY(100%)' : 'translateY(0)';
+        sticky.style.opacity   = visible ? '0' : '1';
+    }, { threshold: 0.1 });
+
+    observer.observe(form);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   LAZY LOADING — quita el skeleton CSS cuando la imagen carga
+   ══════════════════════════════════════════════════════════════ */
+function initLazyImages() {
+    document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+        if (img.complete) {
+            img.classList.add('loaded');
+        } else {
+            img.addEventListener('load', () => img.classList.add('loaded'));
+        }
+    });
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   TEL INPUT — teclado numérico en campo WhatsApp (mobile)
+   ══════════════════════════════════════════════════════════════ */
+function initTelInput() {
+    const tel = document.getElementById('telefono');
+    if (!tel) return;
+    tel.setAttribute('inputmode', 'tel');
+    tel.setAttribute('autocomplete', 'tel');
+}

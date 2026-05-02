@@ -200,4 +200,25 @@ class Pedido extends Model
             ]);
         }
     }
+    /**
+     * Verifica si ya existe un pedido para el mismo teléfono + producto
+     * dentro de los últimos $minutos minutos.
+     * Úsalo en el controlador antes de guardar para evitar duplicados.
+     */
+    public function existePedidoReciente(string $telefono, int $productoId, int $minutos = 15): bool
+    {
+        $sql = "SELECT COUNT(*) FROM pedidos
+            WHERE telefono    = :telefono
+              AND producto_id = :producto_id
+              AND created_at  >= NOW() - INTERVAL :minutos MINUTE";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':telefono'    => trim($telefono),
+            ':producto_id' => $productoId,
+            ':minutos'     => $minutos,
+        ]);
+
+        return (int)$stmt->fetchColumn() > 0;
+    }
 }
