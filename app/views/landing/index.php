@@ -32,6 +32,8 @@ $heroMediaType   = $cfg['hero_media_type']   ?? 'imagen';
 $heroMediaPath   = $cfg['hero_media_path']
     ?? ($producto['imagen_principal'] ?? '/tienda_mvc/public/img/producto.png');
 
+$benefitsMediaType = $cfg['benefits_media_type'] ?? 'imagen';
+$porqueMediaType   = $cfg['porque_media_type']   ?? 'imagen';
 // ===== BENEFICIOS =====
 $benefitsTitle = $cfg['benefits_title'] ?? 'Beneficios clave para ti';
 
@@ -312,7 +314,28 @@ $textColor       = $config['text_color']       ?? '#222222';
                     <?php endif; ?>
                 </div>
                 <div class="col col-media">
-                    <img src="<?= htmlspecialchars($benefitsMediaPath) ?>" alt="Uso del producto">
+                    <?php if ($benefitsMediaType === 'video'): ?>
+                        <video
+                            src="<?= htmlspecialchars($benefitsMediaPath) ?>"
+                            autoplay
+                            muted
+                            loop
+                            playsinline
+                            style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
+                        </video>
+                    <?php elseif ($benefitsMediaType === 'gif'): ?>
+                        <img
+                            src="<?= htmlspecialchars($benefitsMediaPath) ?>"
+                            alt="Beneficios del producto"
+                            style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
+                    <?php else: ?>
+                        <img
+                            src="<?= htmlspecialchars($benefitsMediaPath) ?>"
+                            alt="Uso del producto"
+                            loading="lazy"
+                            decoding="async"
+                            style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -415,7 +438,28 @@ $textColor       = $config['text_color']       ?? '#222222';
                     </ul>
                 </div>
                 <div class="col col-media">
-                    <img src="<?= htmlspecialchars($porqueMediaPath) ?>" alt="Cliente feliz">
+                    <?php if ($porqueMediaType === 'video'): ?>
+                        <video
+                            src="<?= htmlspecialchars($porqueMediaPath) ?>"
+                            autoplay
+                            muted
+                            loop
+                            playsinline
+                            style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
+                        </video>
+                    <?php elseif ($porqueMediaType === 'gif'): ?>
+                        <img
+                            src="<?= htmlspecialchars($porqueMediaPath) ?>"
+                            alt="Por qué te encantará"
+                            style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
+                    <?php else: ?>
+                        <img
+                            src="<?= htmlspecialchars($porqueMediaPath) ?>"
+                            alt="Cliente feliz"
+                            loading="lazy"
+                            decoding="async"
+                            style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
+                    <?php endif; ?>
                 </div>
             </div>
 

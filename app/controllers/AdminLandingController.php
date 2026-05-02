@@ -70,6 +70,11 @@ class AdminLandingController extends Controller
             'hero_media_type'  => trim($_POST['hero_media_type'] ?? 'imagen'),
 
             'benefits_title' => trim($_POST['benefits_title'] ?? ''),
+            'benefits_media_type' => in_array(
+                trim($_POST['benefits_media_type'] ?? 'imagen'),
+                ['imagen', 'video', 'gif'],
+                true
+            ) ? trim($_POST['benefits_media_type']) : 'imagen',
             'benefit_1'      => trim($_POST['benefit_1'] ?? ''),
             'benefit_2'      => trim($_POST['benefit_2'] ?? ''),
             'benefit_3'      => trim($_POST['benefit_3'] ?? ''),
@@ -79,6 +84,11 @@ class AdminLandingController extends Controller
             'countdown_text'  => trim($_POST['countdown_text'] ?? ''),
 
             'porque_title'   => trim($_POST['porque_title'] ?? ''),
+            'porque_media_type' => in_array(
+                trim($_POST['porque_media_type'] ?? 'imagen'),
+                ['imagen', 'video', 'gif'],
+                true
+            ) ? trim($_POST['porque_media_type']) : 'imagen',
             'porque_text'    => trim($_POST['porque_text'] ?? ''),
             'porque_bullet1' => trim($_POST['porque_bullet1'] ?? ''),
             'porque_bullet2' => trim($_POST['porque_bullet2'] ?? ''),
