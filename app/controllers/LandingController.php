@@ -107,6 +107,7 @@ class LandingController extends Controller
         $esAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
             strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
+            
         $productoId = (int)($_POST['producto_id'] ?? 1);
         if ($productoId <= 0) $productoId = 1;
 
