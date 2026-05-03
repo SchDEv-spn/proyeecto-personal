@@ -2155,3 +2155,228 @@ img[loading="lazy"].loaded {
   color: var(--cream-muted);
   line-height: 1.5;
 }
+
+
+
+/* actualizacion v2 */
+
+/* ============================================================
+   MEJORA #1 — Hero urgencia, countdown inline, trust row
+   ============================================================ */
+
+/* Banda de urgencia */
+.hero-urgency-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 8px;
+    padding: 8px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: var(--text-color, #222);
+}
+.urgency-stock { color: #c0392b; font-weight: 500; }
+.urgency-sep   { color: var(--gold-border, #aaa); }
+.urgency-viewers { color: var(--text-color, #444); }
+
+/* Stock: animación de pulso cuando baja a ≤3 */
+.urgency-stock.critical { color: #c0392b; }
+.urgency-stock.critical #stockCount {
+    animation: stockPulse 1s ease-in-out infinite;
+}
+@keyframes stockPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+}
+
+/* Countdown inline en el price-box */
+.hero-countdown-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.06);
+    border-radius: 6px;
+    font-size: 13px;
+}
+.countdown-label { color: var(--text-color, #555); }
+.countdown-digits {
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--countdown-color, var(--primary-color, #c0392b));
+    letter-spacing: 1px;
+}
+
+/* Trust row debajo del CTA */
+.hero-trust-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 10px 0 6px;
+    font-size: 12px;
+    color: var(--text-color, #555);
+    opacity: 0.85;
+}
+
+/* Badge flotante sobre la imagen del hero */
+.hero-media { position: relative; }
+.hero-image-badge {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.72);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 999px;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+    .hero-urgency-bar { font-size: 12px; padding: 7px 12px; }
+    .countdown-digits  { font-size: 16px; }
+    .hero-trust-row    { font-size: 11px; gap: 5px 12px; }
+}
+
+/* ============================================================
+   MEJORA #2 — Stepper de 3 pasos
+   ============================================================ */
+
+/* Header de pasos */
+.stepper-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 28px;
+}
+
+.stepper-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: default;
+}
+
+.stepper-step__circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--gold-border, #ccc);
+    background: transparent;
+    color: var(--gold-border, #888);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+
+.stepper-step__label {
+    font-size: 11px;
+    color: var(--text-color, #888);
+    opacity: 0.5;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+}
+
+.stepper-step.active .stepper-step__circle {
+    background: var(--primary-color, #3c7a4a);
+    border-color: var(--primary-color, #3c7a4a);
+    color: #fff;
+}
+.stepper-step.active .stepper-step__label { opacity: 1; }
+
+.stepper-step.done .stepper-step__circle {
+    background: var(--success, #28a745);
+    border-color: var(--success, #28a745);
+    color: #fff;
+}
+.stepper-step.done .stepper-step__circle::after { content: '✓'; }
+.stepper-step.done .stepper-step__label { opacity: 0.75; }
+
+.stepper-connector {
+    flex: 1;
+    max-width: 80px;
+    height: 2px;
+    background: var(--gold-border, #ccc);
+    margin-bottom: 18px;
+    transition: background 0.3s;
+}
+.stepper-connector.done { background: var(--success, #28a745); }
+
+/* Paneles */
+.stepper-panel {
+    display: none;
+    animation: stepperFadeIn 0.25s ease;
+}
+.stepper-panel.active { display: block; }
+
+@keyframes stepperFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.stepper-panel__hint {
+    font-size: 12px;
+    color: var(--text-color, #888);
+    opacity: 0.6;
+    margin-bottom: 16px;
+}
+
+/* Navegación entre pasos */
+.stepper-nav {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+.stepper-nav .btn-ghost { flex: 0 0 auto; }
+.stepper-nav .btn-primary { flex: 1; }
+
+/* Botón submit final */
+.btn-submit-final {
+    width: 100%;
+    margin-top: 16px;
+    position: relative;
+}
+.btn-submit-final:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Caja de confirmación final */
+.order-confirm-box {
+    background: rgba(0,0,0,0.04);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+/* Errores AJAX */
+#stepperErrors {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+#stepperErrors ul { margin: 6px 0 0 16px; }
+
+/* Mobile */
+@media (max-width: 600px) {
+    .stepper-connector { max-width: 40px; }
+    .stepper-step__label { font-size: 10px; }
+    .stepper-nav { flex-direction: column-reverse; }
+    .stepper-nav .btn-ghost { width: 100%; text-align: center; }
+}

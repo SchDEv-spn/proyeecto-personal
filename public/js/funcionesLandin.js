@@ -156,3 +156,120 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+/* ============================================================
+   MEJORA #1 — Urgencia hero: countdown sesión + viewers fake
+   ============================================================ */
+
+(function () {
+
+    /* ---------- 1. COUNTDOWN PERSISTENTE POR SESIÓN ----------
+       Dura 25 minutos desde la primera visita.
+       Si el usuario recarga, retoma donde quedó.
+       Si la sesión expira (cierra pestaña y vuelve después), reinicia.
+    ---------------------------------------------------------- */
+    const DURATION_MS = 25 * 60 * 1000; // 25 minutos
+    const SESSION_KEY = 'lp_timer_end';
+
+    function initCountdown() {
+        const el = document.getElementById('heroCountdown');
+        if (!el) return;
+
+        let endTime = parseInt(sessionStorage.getItem(SESSION_KEY), 10);
+        if (!endTime || endTime <= Date.now()) {
+            endTime = Date.now() + DURATION_MS;
+            sessionStorage.setItem(SESSION_KEY, endTime);
+        }
+
+        function tick() {
+            const remaining = endTime - Date.now();
+            if (remaining <= 0) {
+                // Al expirar: reinicia silenciosamente
+                endTime = Date.now() + DURATION_MS;
+                sessionStorage.setItem(SESSION_KEY, endTime);
+            }
+            const m = Math.floor(remaining / 60000);
+            const s = Math.floor((remaining % 60000) / 1000);
+            el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        }
+
+        tick();
+        setInterval(tick, 1000);
+    }
+
+
+    /* ---------- 2. STOCK SIMULADO CON DECAIMIENTO ----------
+       Empieza en 7, puede bajar lentamente durante la visita.
+       Persiste en sessionStorage para que no "suba" al navegar.
+    ---------------------------------------------------------- */
+    const STOCK_KEY  = 'lp_stock';
+    const STOCK_BASE = 7; // ← cambia aquí si elegiste otro número
+
+    function initStock() {
+        const el = document.getElementById('stockCount');
+        if (!el) return;
+
+        let stock = parseInt(sessionStorage.getItem(STOCK_KEY), 10);
+        if (!stock || stock > STOCK_BASE) {
+            stock = STOCK_BASE;
+            sessionStorage.setItem(STOCK_KEY, stock);
+        }
+
+        el.textContent = stock;
+
+        // Marcar como crítico si quedan ≤ 3
+        const bar = el.closest('.urgency-stock');
+        if (bar && stock <= 3) bar.classList.add('critical');
+
+        // Bajar el stock 1 unidad después de 90–150 seg en página
+        const delay = (90 + Math.floor(Math.random() * 60)) * 1000;
+        setTimeout(function () {
+            if (stock > 1) {
+                stock--;
+                sessionStorage.setItem(STOCK_KEY, stock);
+                el.textContent = stock;
+                if (bar && stock <= 3) bar.classList.add('critical');
+            }
+        }, delay);
+    }
+
+
+    /* ---------- 3. VIEWERS SIMULADOS ----------
+       Número aleatorio entre 8 y 24, cambia sutilmente cada 20–40 seg.
+       Muy común en tiendas como Shopify, Amazon, etc.
+    ---------------------------------------------------------- */
+    function initViewers() {
+        const el = document.getElementById('viewersCount');
+        if (!el) return;
+
+        let current = 8 + Math.floor(Math.random() * 17); // 8–24
+        el.textContent = current;
+
+        function randomStep() {
+            // sube o baja 1-2, mantiene rango 5–28
+            const delta = Math.floor(Math.random() * 3) - 1; // -1, 0, +1
+            current = Math.min(28, Math.max(5, current + delta));
+            el.textContent = current;
+
+            // próxima actualización: 20–40 segundos
+            setTimeout(randomStep, (20 + Math.floor(Math.random() * 20)) * 1000);
+        }
+
+        // Primera actualización a los 15–25 seg
+        setTimeout(randomStep, (15 + Math.floor(Math.random() * 10)) * 1000);
+    }
+
+
+    /* ---------- INIT ---------- */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            initCountdown();
+            initStock();
+            initViewers();
+        });
+    } else {
+        initCountdown();
+        initStock();
+        initViewers();
+    }
+
+})();

@@ -286,6 +286,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
     </div>
 
     <!-- HERO -->
+    <!-- HERO -->
     <header class="container hero">
         <div class="hero-text">
             <h1><?= htmlspecialchars($heroTitle) ?></h1>
@@ -294,27 +295,47 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <?= htmlspecialchars($heroSubtitle) ?>
             </p>
 
+            <!-- ✅ NUEVO: Banda de urgencia -->
+            <div class="hero-urgency-bar">
+                <span class="urgency-stock">
+                    🔴 <strong id="stockCount">7</strong> unidades disponibles
+                </span>
+                <span class="urgency-sep">·</span>
+                <span class="urgency-viewers">
+                    👁 <strong id="viewersCount">--</strong> personas viendo esto ahora
+                </span>
+            </div>
+
             <div class="price-box">
                 <div class="price-label">Oferta de hoy</div>
                 <div class="old">
                     Antes: $<?= number_format($precio_regular, 0, ',', '.') ?>
                 </div>
-
                 <div class="new">
                     Hoy: $<?= number_format($precio_venta, 0, ',', '.') ?>
                 </div>
                 <div class="save">
                     Te ahorras: $<?= number_format($ahorro, 0, ',', '.') ?>
                 </div>
-                <div class="recent-orders-badge" aria-live="polite">
-                    <span id="recentOrdersCount">34</span> personas pidieron esto hoy
-                </div>
 
+                <!-- ✅ NUEVO: Countdown persistente por sesión (reemplaza el badge hardcodeado) -->
+                <div class="hero-countdown-inline">
+                    <span class="countdown-label">⏳ Oferta expira en:</span>
+                    <span id="heroCountdown" class="countdown-digits">--:--</span>
+                </div>
             </div>
 
-            <a href="#form-pedido" class="btn-primary">
+            <a href="#form-pedido" class="btn-primary" id="heroCta">
                 <?= htmlspecialchars($heroButtonText) ?>
             </a>
+
+            <!-- ✅ NUEVO: Trust row debajo del CTA -->
+            <div class="hero-trust-row">
+                <span>✅ Pago al recibir</span>
+                <span>🚚 Envío gratis</span>
+                <span>🔄 Cambios sin problema</span>
+            </div>
+
             <p class="hero-note"><?= htmlspecialchars($heroNote) ?></p>
         </div>
 
@@ -323,14 +344,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <video src="<?= htmlspecialchars($heroMediaPath) ?>"
                     controls
                     style="max-width:100%; border-radius:10px;"></video>
-                <div class="hero-trust-badge" aria-label="Calificación de clientes">
-                    4.9 / 5 · +2.300 clientes
-                </div>
             <?php else: ?>
                 <img src="<?= htmlspecialchars($heroMediaPath) ?>"
                     alt="Imagen del producto">
             <?php endif; ?>
 
+            <!-- ✅ NUEVO: Badge flotante sobre la imagen -->
+            <div class="hero-image-badge">
+                ⭐ 4.9 · +2.300 clientes felices
+            </div>
         </div>
     </header>
 
@@ -735,367 +757,326 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </div>
 
         <!-- FORMULARIO: REALIZA TU PEDIDO -->
+        <!-- FORMULARIO STEPPER -->
         <section class="container" id="form-pedido">
             <h2 class="section-title">Realiza tu pedido ahora y paga al recibir</h2>
 
-            <?php if (!empty($success)): ?>
-                <div class="order-success">
-                    <div class="order-success__icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                    </div>
-
-                    <p class="order-success__label">Pedido registrado</p>
-                    <h2 class="order-success__title">¡Tu pedido está en camino!</h2>
-                    <p class="order-success__subtitle">
-                        Un asesor te contactará pronto por WhatsApp para confirmar los detalles y coordinar la entrega.
-                    </p>
-
-                    <div class="order-success__steps">
-                        <p class="order-success__steps-label">¿Qué sigue?</p>
-                        <div class="order-success__step">
-                            <span class="order-success__step-num">1</span>
-                            <div>
-                                <strong>Confirmación por WhatsApp</strong>
-                                <p>Te escribimos al número que registraste para confirmar tu pedido.</p>
-                            </div>
-                        </div>
-                        <div class="order-success__step">
-                            <span class="order-success__step-num">2</span>
-                            <div>
-                                <strong>Preparación y despacho</strong>
-                                <p>Una vez confirmado, preparamos y despachamos tu pedido.</p>
-                            </div>
-                        </div>
-                        <div class="order-success__step">
-                            <span class="order-success__step-num">3</span>
-                            <div>
-                                <strong>Entrega y pago</strong>
-                                <p>Recibes tu pedido en casa y pagas al mensajero. Sin adelantos.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <a href="https://wa.me/573023959721?text=Hola%2C%20acabo%20de%20hacer%20un%20pedido%20y%20quiero%20confirmar%20los%20detalles."
-                        class="order-success__wa-btn" target="_blank" rel="noopener">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.523 5.855L0 24l6.335-1.499A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.5-5.18-1.375l-.372-.22-3.862.914.977-3.768-.242-.388A9.953 9.953 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
-                        </svg>
-                        Escribir por WhatsApp
-                    </a>
-
-                    <p class="order-success__note">
-                        ¿Tienes dudas? Escríbenos antes de que te contactemos nosotros.
-                    </p>
+            <!-- Indicador de pasos -->
+            <div class="stepper-header">
+                <div class="stepper-step active" data-step="1">
+                    <div class="stepper-step__circle">1</div>
+                    <span class="stepper-step__label">Tus datos</span>
                 </div>
-            <?php endif; ?>
-
-            <?php if (!empty($errores)): ?>
-                <div class="error">
-                    <ul>
-                        <?php foreach ($errores as $e): ?>
-                            <li><?= htmlspecialchars($e) ?></li>
-                        <?php endforeach; ?>
-                    </ul>
+                <div class="stepper-connector"></div>
+                <div class="stepper-step" data-step="2">
+                    <div class="stepper-step__circle">2</div>
+                    <span class="stepper-step__label">Tu pedido</span>
                 </div>
-            <?php endif; ?>
+                <div class="stepper-connector"></div>
+                <div class="stepper-step" data-step="3">
+                    <div class="stepper-step__circle">3</div>
+                    <span class="stepper-step__label">Confirmar</span>
+                </div>
+            </div>
+
+            <!-- Mensajes de error AJAX -->
+            <div id="stepperErrors" class="error" style="display:none;"></div>
 
             <div class="form-box">
-                <form action="/tienda_mvc/Landing/enviarPedido" method="POST">
+                <form id="formPedido" action="/tienda_mvc/Landing/enviarPedido" method="POST" novalidate>
                     <input type="hidden" name="producto_id" value="<?= htmlspecialchars($producto['id'] ?? 1) ?>">
 
-                    <div class="form-group">
-                        <label for="nombre">Nombre *</label>
-                        <input type="text" id="nombre" name="nombre" required value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
+                    <!-- ══════════════ PASO 1: DATOS PERSONALES ══════════════ -->
+                    <div class="stepper-panel active" data-panel="1">
+                        <p class="stepper-panel__hint">Paso 1 de 3 — ¿Cómo te llamamos?</p>
+
+                        <div class="form-group">
+                            <label for="nombre">Nombre *</label>
+                            <input type="text" id="nombre" name="nombre" required
+                                placeholder="Ej: María"
+                                value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="apellidos">Apellidos *</label>
+                            <input type="text" id="apellidos" name="apellidos" required
+                                placeholder="Ej: González"
+                                value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="telefono">Número de WhatsApp *</label>
+                            <input type="tel" id="telefono" name="telefono" required
+                                placeholder="Ej: 3001234567"
+                                maxlength="10"
+                                value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
+                            <small class="help">10 dígitos, empieza en 3. Te contactamos aquí para confirmar.</small>
+                        </div>
+
+                        <button type="button" class="btn-primary btn-full stepper-next" data-next="2">
+                            Continuar →
+                        </button>
                     </div>
 
-                    <div class="form-group">
-                        <label for="apellidos">Apellidos *</label>
-                        <input type="text" id="apellidos" name="apellidos" required value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
-                    </div>
+                    <!-- ══════════════ PASO 2: PRODUCTO ══════════════ -->
+                    <div class="stepper-panel" data-panel="2">
+                        <p class="stepper-panel__hint">Paso 2 de 3 — ¿Qué quieres pedir?</p>
 
-                    <div class="form-group">
-                        <label for="telefono">Número de WhatsApp *</label>
-                        <input type="text" id="telefono" name="telefono" required value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
-                    </div>
+                        <?php
+                        $colores         = $colores ?? [];
+                        $precioVenta     = (float)($producto['precio_venta'] ?? 72000);
+                        $precioProveedor = (float)($producto['precio_proveedor'] ?? 0);
+                        $precioRegular   = (float)($producto['precio_regular'] ?? $precioVenta);
+                        if ($precioRegular <= 0 || $precioRegular < $precioVenta) $precioRegular = $precioVenta;
+                        $d2  = (int)($producto['descuento_2da'] ?? 15);
+                        $d3  = (int)($producto['descuento_3ra'] ?? 20);
+                        $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
+                        $precioCombo2 = (int)($comboPrice2 ?? 115000);
+                        if ($precioCombo2 <= 0) $precioCombo2 = 115000;
+                        $colorsJson = json_encode(array_values($colores), JSON_UNESCAPED_UNICODE);
+                        ?>
 
-                    <?php
-                    // Colores disponibles
-                    $colores = $colores ?? [];
-
-                    // Precios base
-                    $precioVenta     = (float)($producto['precio_venta'] ?? 72000);
-                    $precioProveedor = (float)($producto['precio_proveedor'] ?? 0);
-
-                    // Regular
-                    $precioRegular = (float)($producto['precio_regular'] ?? $precioVenta);
-                    if ($precioRegular <= 0 || $precioRegular < $precioVenta) $precioRegular = $precioVenta;
-
-                    // Descuentos % (para modo individual)
-                    $d2  = (int)($producto['descuento_2da'] ?? 15);
-                    $d3  = (int)($producto['descuento_3ra'] ?? 20);
-                    $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
-
-                    // Combo
-                    $precioCombo2 = (int)($comboPrice2 ?? 115000);
-                    if ($precioCombo2 <= 0) $precioCombo2 = 115000;
-
-                    // JSON colores para JS combo
-                    $colorsJson = json_encode(array_values($colores), JSON_UNESCAPED_UNICODE);
-                    ?>
-
-                    <?php if (!empty($colores)): ?>
-
-                        <?php if (!empty($comboEnabled) && (int)$comboEnabled === 1): ?>
-                            <!-- ✅ MODO COMBO -->
-                            <div class="form-group">
-                                <label for="pricingModeSelect"><strong>Elige tu oferta</strong></label>
-                                <select id="pricingModeSelect" class="color-select">
-                                    <option value="combo" selected>🔥 Combo x2 — $<?= number_format($precioCombo2, 0, ',', '.') ?> (Recomendado)</option>
-                                    <option value="individual">1 unidad — $<?= number_format($precioVenta, 0, ',', '.') ?></option>
-                                </select>
-
-                                <input type="hidden" name="pricing_mode" id="pricingMode" value="combo">
-                            </div>
-
-                            <!-- COMBOS -->
-                            <div id="comboWrap" class="form-group">
-                                <label><strong>Selecciona los colores de tu combo</strong></label>
-                                <div id="combosContainer" class="colors-qty-wrap"></div>
-
-                                <button type="button" id="addComboBtn" class="btn-ghost add-color-btn">
-                                    + Agregar otro combo
-                                </button>
-
-                                <small class="help total-units-note">
-                                    Total unidades: <strong id="totalUnits">2</strong> (cada combo = 2 unidades)
-                                </small>
-                            </div>
-
-                            <!-- INDIVIDUAL -->
-                            <div id="individualWrap" class="form-group" style="display:none;">
-                                <label><strong>Compra individual</strong></label>
-
-                                <div class="color-qty-row">
-                                    <select id="indColor" class="color-select">
-                                        <option value="">Selecciona un color</option>
-                                        <?php foreach ($colores as $c): ?>
-                                            <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
-                                        <?php endforeach; ?>
+                        <?php if (!empty($colores)): ?>
+                            <?php if (!empty($comboEnabled) && (int)$comboEnabled === 1): ?>
+                                <!-- MODO COMBO -->
+                                <div class="form-group">
+                                    <label for="pricingModeSelect"><strong>Elige tu oferta</strong></label>
+                                    <select id="pricingModeSelect" class="color-select">
+                                        <option value="combo" selected>🔥 Combo x2 — $<?= number_format($precioCombo2, 0, ',', '.') ?> (Recomendado)</option>
+                                        <option value="individual">1 unidad — $<?= number_format($precioVenta, 0, ',', '.') ?></option>
                                     </select>
+                                    <input type="hidden" name="pricing_mode" id="pricingMode" value="combo">
+                                </div>
 
-                                    <select id="indQty" class="qty-select">
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <option value="<?= $i ?>" <?= $i === 1 ? 'selected' : '' ?>><?= $i ?></option>
+                                <div id="comboWrap" class="form-group">
+                                    <label><strong>Selecciona los colores de tu combo</strong></label>
+                                    <div id="combosContainer" class="colors-qty-wrap"></div>
+                                    <button type="button" id="addComboBtn" class="btn-ghost add-color-btn">+ Agregar otro combo</button>
+                                    <small class="help total-units-note">Total unidades: <strong id="totalUnits">2</strong></small>
+                                </div>
+
+                                <div id="individualWrap" class="form-group" style="display:none;">
+                                    <label><strong>Compra individual</strong></label>
+                                    <div class="color-qty-row">
+                                        <select id="indColor" class="color-select">
+                                            <option value="">Selecciona un color</option>
+                                            <?php foreach ($colores as $c): ?>
+                                                <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <select id="indQty" class="qty-select">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <option value="<?= $i ?>"><?= $i ?></option>
+                                            <?php endfor; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div id="generatedItems"></div>
+
+                            <?php else: ?>
+                                <!-- MODO NORMAL -->
+                                <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
+                                <?php
+                                $oldColorItems = $old['color_item'] ?? [];
+                                $oldQtyItems   = $old['qty_item'] ?? [];
+                                if (!is_array($oldColorItems)) $oldColorItems = [];
+                                if (!is_array($oldQtyItems))   $oldQtyItems = [];
+                                $rowsCount = max(1, count($oldColorItems), count($oldQtyItems));
+                                ?>
+                                <div class="form-group">
+                                    <label>Colores y cantidades *</label>
+                                    <div id="colorsQtyWrap" class="colors-qty-wrap">
+                                        <?php for ($r = 0; $r < $rowsCount; $r++): ?>
+                                            <?php
+                                            $selColor = $oldColorItems[$r] ?? '';
+                                            $selQty   = (int)($oldQtyItems[$r] ?? 1);
+                                            if ($selQty < 1) $selQty = 1;
+                                            ?>
+                                            <div class="color-qty-row">
+                                                <select name="color_item[]" required class="color-select">
+                                                    <option value="">Selecciona un color</option>
+                                                    <?php foreach ($colores as $c): ?>
+                                                        <option value="<?= htmlspecialchars($c) ?>" <?= ($selColor === $c) ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($c) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <select name="qty_item[]" required class="qty-select">
+                                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                        <option value="<?= $i ?>" <?= ($selQty === $i) ? 'selected' : '' ?>><?= $i ?></option>
+                                                    <?php endfor; ?>
+                                                </select>
+                                                <button type="button" class="remove-color-qty" aria-label="Quitar">
+                                                    <span class="remove-icon">×</span>
+                                                    <span class="remove-text">Borrar</span>
+                                                </button>
+                                            </div>
                                         <?php endfor; ?>
-                                    </select>
+                                    </div>
+                                    <button type="button" id="addColorQtyBtn" class="btn-ghost add-color-btn">+ Agregar otro color</button>
+                                    <small class="help total-units-note">Total unidades: <strong id="totalUnits">1</strong></small>
                                 </div>
-
-                                <small class="help">Aquí sí aplican descuentos por multicantidad si están activos.</small>
-                            </div>
-
-                            <!-- Aquí generamos color_item[] y qty_item[] antes del submit -->
-                            <div id="generatedItems"></div>
-
+                            <?php endif; ?>
                         <?php else: ?>
-                            <!-- ✅ MODO NORMAL -->
                             <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
-
-                            <?php
-                            $oldColorItems = $old['color_item'] ?? [];
-                            $oldQtyItems   = $old['qty_item'] ?? [];
-                            if (!is_array($oldColorItems)) $oldColorItems = [];
-                            if (!is_array($oldQtyItems))   $oldQtyItems = [];
-                            $rowsCount  = max(1, count($oldColorItems), count($oldQtyItems));
-                            ?>
-
-                            <div class="form-group">
-                                <label>Colores y cantidades *</label>
-
-                                <div id="colorsQtyWrap" class="colors-qty-wrap">
-                                    <?php for ($r = 0; $r < $rowsCount; $r++): ?>
-                                        <?php
-                                        $selColor = $oldColorItems[$r] ?? '';
-                                        $selQty   = (int)($oldQtyItems[$r] ?? 1);
-                                        if ($selQty < 1) $selQty = 1;
-                                        if ($selQty > 5) $selQty = 5;
-                                        ?>
-                                        <div class="color-qty-row">
-                                            <select name="color_item[]" required class="color-select">
-                                                <option value="">Selecciona un color</option>
-                                                <?php foreach ($colores as $c): ?>
-                                                    <option value="<?= htmlspecialchars($c) ?>" <?= ($selColor === $c) ? 'selected' : '' ?>>
-                                                        <?= htmlspecialchars($c) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
-
-                                            <select name="qty_item[]" required class="qty-select">
-                                                <option value="">Selecciona una cantidad</option>
-                                                <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                    <option value="<?= $i ?>" <?= ($selQty === $i) ? 'selected' : '' ?>><?= $i ?></option>
-                                                <?php endfor; ?>
-                                            </select>
-
-                                            <button type="button" class="remove-color-qty" aria-label="Quitar">
-                                                <span class="remove-icon">×</span>
-                                                <span class="remove-text">Borrar</span>
-                                            </button>
-                                        </div>
-                                    <?php endfor; ?>
-                                </div>
-
-                                <button type="button" id="addColorQtyBtn" class="btn-ghost add-color-btn">
-                                    + Agregar otro color
-                                </button>
-
-                                <small class="help total-units-note">
-                                    Total unidades: <strong id="totalUnits">1</strong>
-                                </small>
-                            </div>
-
                         <?php endif; ?>
 
-                    <?php else: ?>
-                        <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
-                    <?php endif; ?>
+                        <input type="hidden" id="cantidad_total" name="cantidad_total"
+                            value="<?= htmlspecialchars((string)($old['cantidad_total'] ?? 1)) ?>">
 
-                    <!-- ✅ ESTE HIDDEN VA UNA SOLA VEZ (para combo y normal) -->
-                    <input type="hidden" id="cantidad_total" name="cantidad_total"
-                        value="<?= htmlspecialchars((string)($old['cantidad_total'] ?? 1)) ?>">
-
-
-                    <!-- (Aquí sigue tu resto de campos: departamento, municipio, entrega, dirección, resumen, submit...) -->
-
-
-                    <div class="form-group">
-                        <label for="departamento">Departamento *</label>
-                        <select id="departamento"
-                            name="departamento"
-                            required
-                            data-old="<?= htmlspecialchars($old['departamento'] ?? '') ?>">
-                            <option value="">Selecciona un departamento</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="municipio">Municipio *</label>
-                        <select id="municipio"
-                            name="municipio"
-                            required
-                            data-old="<?= htmlspecialchars($old['municipio'] ?? '') ?>">
-                            <option value="">Selecciona primero un departamento</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <span>¿Cómo quieres recibir tu pedido? *</span>
-                        <div class="radio-group">
-                            <label>
-                                <input type="radio" name="tipo_entrega" value="domicilio"
-                                    <?= (isset($old['tipo_entrega']) && $old['tipo_entrega'] === 'domicilio') ? 'checked' : '' ?>>
-                                Envío a domicilio
-                            </label>
-                            <label>
-                                <input type="radio" name="tipo_entrega" value="oficina"
-                                    <?= (isset($old['tipo_entrega']) && $old['tipo_entrega'] === 'oficina') ? 'checked' : '' ?>>
-                                Recoger en oficina de Interrapidísimo
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="grupo-direccion" style="display:none;">
-                        <label for="direccion">Dirección completa *</label>
-                        <input type="text" id="direccion" name="direccion"
-                            value="<?= htmlspecialchars($old['direccion'] ?? '') ?>">
-                    </div>
-
-                    <?php
-                    $precioUnit = (float)($producto['precio_venta'] ?? 0);
-                    ?>
-                    <?php
-                    $precioVenta      = (float)($producto['precio_venta'] ?? 0);
-                    $precioProveedor  = (float)($producto['precio_proveedor'] ?? 0);
-                    ?>
-                    <?php
-                    $precioVenta   = (float)($producto['precio_venta'] ?? 0);
-                    $precioProveedor = (float)($producto['precio_proveedor'] ?? 0);
-
-                    $precioRegular = (float)($producto['precio_regular'] ?? $precioVenta);
-                    if ($precioRegular <= 0 || $precioRegular < $precioVenta) {
-                        $precioRegular = $precioVenta;
-                    }
-
-                    // Descuentos del producto (defaults)
-                    $d2  = (int)($producto['descuento_2da'] ?? 15);
-                    $d3  = (int)($producto['descuento_3ra'] ?? 20);
-                    $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
-                    ?>
-
-                    <div class="order-summary" id="orderSummary"
-                        data-price-unit="<?= htmlspecialchars((string)$precioVenta) ?>"
-                        data-price-combo2="<?= htmlspecialchars((string)$precioCombo2) ?>"
-                        data-price-regular="<?= htmlspecialchars((string)$precioRegular) ?>"
-                        data-price-supplier="<?= htmlspecialchars((string)$precioProveedor) ?>"
-                        data-d2="<?= htmlspecialchars((string)$d2) ?>"
-                        data-d3="<?= htmlspecialchars((string)$d3) ?>"
-                        data-act="<?= htmlspecialchars((string)$act) ?>">
-                        <h3 class="order-summary__title">Resumen de tu compra</h3>
-
-                        <div class="order-summary__rows">
-                            <div class="order-summary__row">
-                                <span>
-                                    Subtotal (<strong id="summaryQty">1</strong> <span id="summaryQtyWord">unidad</span>)
-                                </span>
-                                <strong id="summarySubtotal">$0</strong>
-                            </div>
-
-                            <div class="order-summary__row">
-                                <span>Descuento por cantidad</span>
-                                <strong id="summaryDiscount">$0</strong>
-                            </div>
-
-                            <div class="order-summary__row">
-                                <span>Envío</span>
-                                <strong class="summary-free">GRATIS</strong>
-                            </div>
-
-                            <div class="order-summary__row">
-                                <span>Ahorro total</span>
-                                <strong class="summary-save" id="summarySave">$0</strong>
-                            </div>
-
-                            <div class="order-summary__row order-summary__row--total">
-                                <span>Total a pagar al recibir</span>
-                                <strong id="summaryTotal">$0</strong>
+                        <!-- Resumen de compra -->
+                        <div class="order-summary" id="orderSummary"
+                            data-price-unit="<?= htmlspecialchars((string)$precioVenta) ?>"
+                            data-price-combo2="<?= htmlspecialchars((string)$precioCombo2) ?>"
+                            data-price-regular="<?= htmlspecialchars((string)$precioRegular) ?>"
+                            data-price-supplier="<?= htmlspecialchars((string)$precioProveedor) ?>"
+                            data-d2="<?= htmlspecialchars((string)$d2) ?>"
+                            data-d3="<?= htmlspecialchars((string)$d3) ?>"
+                            data-act="<?= htmlspecialchars((string)$act) ?>">
+                            <h3 class="order-summary__title">Resumen de tu compra</h3>
+                            <div class="order-summary__rows">
+                                <div class="order-summary__row">
+                                    <span>Subtotal (<strong id="summaryQty">1</strong> <span id="summaryQtyWord">unidad</span>)</span>
+                                    <strong id="summarySubtotal">$0</strong>
+                                </div>
+                                <div class="order-summary__row">
+                                    <span>Descuento por cantidad</span>
+                                    <strong id="summaryDiscount">$0</strong>
+                                </div>
+                                <div class="order-summary__row">
+                                    <span>Envío</span>
+                                    <strong class="summary-free">GRATIS</strong>
+                                </div>
+                                <div class="order-summary__row">
+                                    <span>Ahorro total</span>
+                                    <strong class="summary-save" id="summarySave">$0</strong>
+                                </div>
+                                <div class="order-summary__row order-summary__row--total">
+                                    <span>Total a pagar al recibir</span>
+                                    <strong id="summaryTotal">$0</strong>
+                                </div>
                             </div>
                         </div>
 
-                        <p class="order-summary__question">¿Estás 100% seguro de tu compra?</p>
-
-                        <label class="order-summary__confirm">
-                            <input type="checkbox" id="confirmPurchase" name="confirm_purchase" value="1" required
-                                <?= !empty($old['confirm_purchase']) ? 'checked' : '' ?>>
-                            Sí, quiero el producto y pagaré al recibirlo.
-                        </label>
-
-                        <small class="order-summary__note">
-                            Al confirmar, aceptas que un asesor te contacte para validar tu pedido.
-                        </small>
+                        <div class="stepper-nav">
+                            <button type="button" class="btn-ghost stepper-prev" data-prev="1">← Volver</button>
+                            <button type="button" class="btn-primary stepper-next" data-next="3">Continuar →</button>
+                        </div>
                     </div>
 
+                    <!-- ══════════════ PASO 3: ENTREGA Y CONFIRMAR ══════════════ -->
+                    <div class="stepper-panel" data-panel="3">
+                        <p class="stepper-panel__hint">Paso 3 de 3 — ¿Dónde te lo enviamos?</p>
 
+                        <div class="form-group">
+                            <label for="departamento">Departamento *</label>
+                            <select id="departamento" name="departamento" required
+                                data-old="<?= htmlspecialchars($old['departamento'] ?? '') ?>">
+                                <option value="">Selecciona un departamento</option>
+                            </select>
+                        </div>
 
+                        <div class="form-group">
+                            <label for="municipio">Municipio *</label>
+                            <select id="municipio" name="municipio" required
+                                data-old="<?= htmlspecialchars($old['municipio'] ?? '') ?>">
+                                <option value="">Selecciona primero un departamento</option>
+                            </select>
+                        </div>
 
-                    <button type="submit" class="btn-primary btn-full">Confirmar mi pedido</button>
-                    <p class="form-note">
-                        Uno de nuestros asesores te contactará por WhatsApp para confirmar los datos.
-                    </p>
+                        <div class="form-group">
+                            <span>¿Cómo quieres recibir tu pedido? *</span>
+                            <div class="radio-group">
+                                <label>
+                                    <input type="radio" name="tipo_entrega" value="domicilio"
+                                        <?= (isset($old['tipo_entrega']) && $old['tipo_entrega'] === 'domicilio') ? 'checked' : '' ?>>
+                                    Envío a domicilio
+                                </label>
+                                <label>
+                                    <input type="radio" name="tipo_entrega" value="oficina"
+                                        <?= (isset($old['tipo_entrega']) && $old['tipo_entrega'] === 'oficina') ? 'checked' : '' ?>>
+                                    Recoger en oficina de Interrapidísimo
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="grupo-direccion" style="display:none;">
+                            <label for="direccion">Dirección completa *</label>
+                            <input type="text" id="direccion" name="direccion"
+                                placeholder="Ej: Calle 45 # 23-10, Apto 301"
+                                value="<?= htmlspecialchars($old['direccion'] ?? '') ?>">
+                        </div>
+
+                        <!-- Confirmación final -->
+                        <div class="order-confirm-box">
+                            <p class="order-summary__question">¿Estás 100% seguro de tu compra?</p>
+                            <label class="order-summary__confirm">
+                                <input type="checkbox" id="confirmPurchase" name="confirm_purchase" value="1" required
+                                    <?= !empty($old['confirm_purchase']) ? 'checked' : '' ?>>
+                                Sí, quiero el producto y pagaré al recibirlo.
+                            </label>
+                            <small class="order-summary__note">
+                                Al confirmar, aceptas que un asesor te contacte para validar tu pedido.
+                            </small>
+                        </div>
+
+                        <div class="stepper-nav">
+                            <button type="button" class="btn-ghost stepper-prev" data-prev="2">← Volver</button>
+                            <button type="submit" id="btnSubmit" class="btn-primary btn-submit-final">
+                                <span id="btnSubmitText">Confirmar mi pedido</span>
+                                <span id="btnSubmitSpinner" style="display:none;">Enviando...</span>
+                            </button>
+                        </div>
+
+                        <p class="form-note">
+                            Un asesor te contactará por WhatsApp para confirmar los datos.
+                        </p>
+                    </div>
+
                 </form>
+
+                <!-- ══════════════ PANTALLA DE ÉXITO (oculta hasta confirmar) ══════════════ -->
+                <div id="stepperSuccess" style="display:none;">
+                    <div class="order-success">
+                        <div class="order-success__icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                        </div>
+                        <p class="order-success__label">Pedido registrado</p>
+                        <h2 class="order-success__title">¡Tu pedido está en camino!</h2>
+                        <p class="order-success__subtitle">
+                            Un asesor te contactará pronto por WhatsApp para confirmar los detalles.
+                        </p>
+                        <div class="order-success__steps">
+                            <p class="order-success__steps-label">¿Qué sigue?</p>
+                            <div class="order-success__step">
+                                <span class="order-success__step-num">1</span>
+                                <div><strong>Confirmación por WhatsApp</strong>
+                                    <p>Te escribimos al número que registraste para confirmar tu pedido.</p>
+                                </div>
+                            </div>
+                            <div class="order-success__step">
+                                <span class="order-success__step-num">2</span>
+                                <div><strong>Preparación y despacho</strong>
+                                    <p>Una vez confirmado, preparamos y despachamos tu pedido.</p>
+                                </div>
+                            </div>
+                            <div class="order-success__step">
+                                <span class="order-success__step-num">3</span>
+                                <div><strong>Entrega y pago</strong>
+                                    <p>Recibes tu pedido en casa y pagas al mensajero. Sin adelantos.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="https://wa.me/573023959721?text=Hola%2C%20acabo%20de%20hacer%20un%20pedido%20y%20quiero%20confirmar%20los%20detalles."
+                            class="order-success__wa-btn" target="_blank" rel="noopener">
+                            Escribir por WhatsApp
+                        </a>
+                    </div>
+                </div>
             </div>
         </section>
 

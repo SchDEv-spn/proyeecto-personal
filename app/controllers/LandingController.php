@@ -103,6 +103,10 @@ class LandingController extends Controller
             exit;
         }
 
+        // ✅ Detectar AJAX — debe ir AQUÍ, antes de cualquier uso
+        $esAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
         $productoId = (int)($_POST['producto_id'] ?? 1);
         if ($productoId <= 0) $productoId = 1;
 
@@ -254,6 +258,11 @@ class LandingController extends Controller
         }
 
         if (!empty($errores)) {
+            if ($esAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['ok' => false, 'errores' => array_values($errores)]);
+                exit;
+            }
             $this->view('landing/index', [
                 'producto' => $producto,
                 'colores'  => $coloresPermitidos,
@@ -339,7 +348,17 @@ class LandingController extends Controller
             $pedidoColorModel->sync($pedidoId, $items);
         }
 
-        $_SESSION['success'] = "Tu pedido se ha registrado correctamente. En breve un asesor te contactará por WhatsApp.";
+        if ($esAjax) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'ok'        => true,
+                'pedido_id' => $pedidoId,
+                'mensaje'   => 'Tu pedido se ha registrado correctamente. En breve un asesor te contactará por WhatsApp.',
+            ]);
+            exit;
+        }
+
+        $_SESSION['success'] = "Tu pedido se ha registrado correctamente.";
         header("Location: /tienda_mvc/Landing/index?producto_id=" . $productoId);
         exit;
     }
