@@ -1,9 +1,4 @@
-/* ============================================================
-   LANDING DARK LUXURY — style.css
-   Mobile-first · Moda/Belleza · Conversión alta
-   Tipografía: Cormorant Garamond (display) + DM Sans (body)
-   Paleta: #0a0a0a base · #c9a84c dorado · #f0ebe0 crema
-   ============================================================ */
+
 
 /* ── GOOGLE FONTS ─────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -17,61 +12,518 @@
 
 /* ── TOKENS DE DISEÑO ─────────────────────────────────────── */
 :root {
-  /* Colores base (overrideable desde PHP) */
+  /* ── Vars configurables desde el admin (con fallback dark luxury) ── */
   --primary-color:    #c9a84c;
   --secondary-color:  #007bff;
-  --accent-color:     #e8c96a;
+  --accent-color:     #c9a84c;
   --background-color: #0a0a0a;
   --text-color:       #f0ebe0;
 
-  /* Dark luxury palette */
-  --bg-base:      #0a0a0a;
-  --bg-layer1:    #111111;
-  --bg-layer2:    #1a1a1a;
-  --bg-layer3:    #222222;
-  --bg-card:      rgba(255,255,255,0.04);
-  --bg-card-hover:rgba(255,255,255,0.07);
+  /* ── Paleta dark luxury anclada a las vars configurables ── */
+  --bg-base:    var(--background-color);
+  --gold:       var(--primary-color);
+  --gold-light: var(--accent-color);
+  --cream:      var(--text-color);
 
-  --gold:         #c9a84c;
-  --gold-light:   #e8c96a;
-  --gold-dim:     rgba(201,168,76,0.15);
-  --gold-border:  rgba(201,168,76,0.3);
+  /* ── El resto se deriva del gold y del bg ── */
+  --bg-layer1:     color-mix(in srgb, var(--background-color) 85%, white);
+  --bg-layer2:     color-mix(in srgb, var(--background-color) 70%, white);
+  --bg-layer3:     color-mix(in srgb, var(--background-color) 55%, white);
+  --bg-card:       rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.07);
 
-  --cream:        #f0ebe0;
-  --cream-dim:    rgba(240,235,224,0.6);
-  --cream-muted:  rgba(240,235,224,0.35);
+  --gold-dim:    color-mix(in srgb, var(--primary-color) 15%, transparent);
+  --gold-border: color-mix(in srgb, var(--primary-color) 30%, transparent);
+  --cream-dim:   color-mix(in srgb, var(--text-color) 60%, transparent);
+  --cream-muted: color-mix(in srgb, var(--text-color) 35%, transparent);
 
-  --white:        #ffffff;
-  --error:        #e05c5c;
-  --success:      #4caf7d;
+  /* ── Resto de tokens (no cambian con el admin) ── */
+  --white:   #ffffff;
+  --error:   #e05c5c;
+  --success: #4caf7d;
 
-  /* Tipografía */
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body:    'DM Sans', system-ui, sans-serif;
 
-  /* Espaciado base (mobile) */
-  --space-xs:   4px;
-  --space-sm:   8px;
-  --space-md:   16px;
-  --space-lg:   24px;
-  --space-xl:   40px;
-  --space-2xl:  64px;
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  40px;
+  --space-2xl: 64px;
 
-  /* Radio */
   --radius-sm:  6px;
   --radius-md:  12px;
   --radius-lg:  20px;
   --radius-pill:100px;
 
-  /* Sombras */
-  --shadow-gold: 0 0 24px rgba(201,168,76,0.2);
+  --shadow-gold: 0 0 24px color-mix(in srgb, var(--primary-color) 20%, transparent);
   --shadow-card: 0 8px 32px rgba(0,0,0,0.5);
   --shadow-deep: 0 20px 60px rgba(0,0,0,0.7);
 
-  /* Transiciones */
-  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition:      0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-fast: 0.15s ease;
 }
+
+/* ============================================================
+   SISTEMA DE TEMAS — agregar justo después del bloque :root
+   Cada tema sobreescribe las vars estructurales.
+   Las vars de personalización del admin se aplican encima
+   via el <style> inline en el <head> del template.
+   ============================================================ */
+
+
+/* ── TEMA 1: DARK LUXURY (default) ───────────────────────── */
+/* Ya definido en :root — este bloque existe solo como          */
+/* referencia explícita y para el selector data-theme          */
+[data-theme="dark-luxury"] {
+  --primary-color:    #c9a84c;
+  --secondary-color:  #5c4a1e;
+  --accent-color:     #e8c96a;
+  --background-color: #0a0a0a;
+  --text-color:       #f0ebe0;
+
+  --bg-base:       #0a0a0a;
+  --bg-layer1:     #111111;
+  --bg-layer2:     #1a1a1a;
+  --bg-layer3:     #222222;
+  --bg-card:       rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.07);
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      color-mix(in srgb, var(--primary-color) 15%, transparent);
+  --gold-border:   color-mix(in srgb, var(--primary-color) 30%, transparent);
+
+  --cream:         var(--text-color);
+  --cream-dim:     color-mix(in srgb, var(--text-color) 60%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 35%, transparent);
+
+  --success:       #4caf7d;
+  --error:         #e05c5c;
+  --countdown-color: var(--gold-light);
+
+  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 20%, transparent);
+  --shadow-card:   0 8px 32px rgba(0,0,0,0.5);
+  --shadow-deep:   0 20px 60px rgba(0,0,0,0.7);
+
+  --announcement-bg: linear-gradient(90deg, #0a0a0a 0%, #1a1408 50%, #0a0a0a 100%);
+  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 70%);
+  --input-bg:        #222222;
+  --input-border:    rgba(255,255,255,0.1);
+  --form-bg:         #1a1a1a;
+  --price-box-bg:    #1a1a1a;
+}
+
+
+/* ── TEMA 2: LIGHT LUXURY ─────────────────────────────────── */
+[data-theme="light-luxury"] {
+  --primary-color:    #b8860b;
+  --secondary-color:  #5c4a1e;
+  --accent-color:     #d4a017;
+  --background-color: #fafaf8;
+  --text-color:       #1a1a1a;
+
+  --bg-base:       #fafaf8;
+  --bg-layer1:     #f3f0ea;
+  --bg-layer2:     #ede9e0;
+  --bg-layer3:     #e5e0d5;
+  --bg-card:       rgba(0,0,0,0.03);
+  --bg-card-hover: rgba(0,0,0,0.06);
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      color-mix(in srgb, var(--primary-color) 12%, transparent);
+  --gold-border:   color-mix(in srgb, var(--primary-color) 25%, transparent);
+
+  --cream:         var(--text-color);
+  --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 40%, transparent);
+
+  --success:       #2e7d32;
+  --error:         #c62828;
+  --countdown-color: var(--primary-color);
+
+  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 15%, transparent);
+  --shadow-card:   0 4px 20px rgba(0,0,0,0.08);
+  --shadow-deep:   0 12px 40px rgba(0,0,0,0.12);
+
+  --announcement-bg: linear-gradient(90deg, #f3f0ea 0%, #ede3cc 50%, #f3f0ea 100%);
+  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(184,134,11,0.05) 0%, transparent 70%);
+  --input-bg:        #ffffff;
+  --input-border:    rgba(0,0,0,0.12);
+  --form-bg:         #f3f0ea;
+  --price-box-bg:    #ffffff;
+}
+
+/* Ajustes específicos light-luxury que no se pueden cubrir con vars */
+[data-theme="light-luxury"] body {
+  color: var(--text-color);
+  background-color: var(--bg-base);
+}
+
+[data-theme="light-luxury"] .testimonial,
+[data-theme="light-luxury"] .whatsapp-card,
+[data-theme="light-luxury"] .accordion-item,
+[data-theme="light-luxury"] .order-summary,
+[data-theme="light-luxury"] .countdown,
+[data-theme="light-luxury"] .form-box {
+  border-color: var(--gold-border);
+  background: var(--bg-card);
+}
+
+[data-theme="light-luxury"] input[type="text"],
+[data-theme="light-luxury"] input[type="tel"],
+[data-theme="light-luxury"] input[type="email"],
+[data-theme="light-luxury"] select,
+[data-theme="light-luxury"] textarea {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-color);
+}
+
+[data-theme="light-luxury"] .accordion-header {
+  color: var(--text-color);
+}
+
+[data-theme="light-luxury"] .hero-trust-badge {
+  background: rgba(255,255,255,0.9);
+  color: var(--primary-color);
+}
+
+[data-theme="light-luxury"] .price-box {
+  background: var(--price-box-bg);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="light-luxury"] #countdown-timer {
+  color: var(--primary-color);
+  text-shadow: none;
+}
+
+[data-theme="light-luxury"] .benefit-item {
+  background: rgba(255,255,255,0.7);
+  border-color: var(--gold-border);
+  color: var(--cream-dim);
+}
+
+[data-theme="light-luxury"] .section-title {
+  color: var(--text-color);
+}
+
+[data-theme="light-luxury"] .dot {
+  background: var(--bg-layer3);
+}
+
+[data-theme="light-luxury"] .slider-btn {
+  background: rgba(255,255,255,0.9);
+}
+
+[data-theme="light-luxury"] .radio-group label {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--cream-dim);
+}
+
+[data-theme="light-luxury"] .announcement-bar {
+  background: var(--announcement-bg);
+  border-bottom-color: var(--gold-border);
+}
+
+
+/* ── TEMA 3: BOLD CONVERSION ──────────────────────────────── */
+[data-theme="bold-conversion"] {
+  --primary-color:    #e63946;
+  --secondary-color:  #1d3557;
+  --accent-color:     #ff6b6b;
+  --background-color: #ffffff;
+  --text-color:       #212529;
+
+  --bg-base:       #ffffff;
+  --bg-layer1:     #f8f9fa;
+  --bg-layer2:     #f1f3f5;
+  --bg-layer3:     #e9ecef;
+  --bg-card:       rgba(0,0,0,0.02);
+  --bg-card-hover: rgba(0,0,0,0.05);
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      color-mix(in srgb, var(--primary-color) 10%, transparent);
+  --gold-border:   color-mix(in srgb, var(--primary-color) 25%, transparent);
+
+  --cream:         var(--text-color);
+  --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 40%, transparent);
+
+  --success:       #2d6a4f;
+  --error:         #c62828;
+  --countdown-color: var(--primary-color);
+
+  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 20%, transparent);
+  --shadow-card:   0 4px 16px rgba(0,0,0,0.08);
+  --shadow-deep:   0 12px 40px rgba(0,0,0,0.12);
+
+  --announcement-bg: linear-gradient(90deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, #000) 100%);
+  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--primary-color) 8%, transparent) 0%, transparent 70%);
+  --input-bg:        #ffffff;
+  --input-border:    rgba(0,0,0,0.15);
+  --form-bg:         #f8f9fa;
+  --price-box-bg:    #fff5f5;
+}
+
+[data-theme="bold-conversion"] body {
+  color: var(--text-color);
+  background-color: var(--bg-base);
+}
+
+[data-theme="bold-conversion"] .announcement-bar__item {
+  color: rgba(255,255,255,0.95);
+}
+
+[data-theme="bold-conversion"] input[type="text"],
+[data-theme="bold-conversion"] input[type="tel"],
+[data-theme="bold-conversion"] input[type="email"],
+[data-theme="bold-conversion"] select,
+[data-theme="bold-conversion"] textarea {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-color);
+}
+
+[data-theme="bold-conversion"] .accordion-header,
+[data-theme="bold-conversion"] .section-title {
+  color: var(--text-color);
+}
+
+[data-theme="bold-conversion"] #countdown-timer {
+  color: var(--primary-color);
+  text-shadow: none;
+}
+
+[data-theme="bold-conversion"] .benefit-item {
+  background: rgba(255,255,255,0.8);
+  color: var(--cream-dim);
+}
+
+[data-theme="bold-conversion"] .hero-trust-badge {
+  background: rgba(255,255,255,0.95);
+  color: var(--primary-color);
+}
+
+[data-theme="bold-conversion"] .price-box {
+  background: var(--price-box-bg);
+}
+
+[data-theme="bold-conversion"] .radio-group label {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--cream-dim);
+}
+
+[data-theme="bold-conversion"] .testimonial {
+  background: var(--bg-card);
+  border-color: var(--gold-border);
+}
+
+[data-theme="bold-conversion"] .slider-btn {
+  background: rgba(255,255,255,0.95);
+}
+
+[data-theme="bold-conversion"] .announcement-bar {
+  background: var(--announcement-bg);
+  border-bottom: none;
+}
+
+
+/* ── TEMA 4: MINIMAL CLEAN ────────────────────────────────── */
+[data-theme="minimal-clean"] {
+  --primary-color:    #000000;
+  --secondary-color:  #555555;
+  --accent-color:     #333333;
+  --background-color: #ffffff;
+  --text-color:       #111111;
+
+  --bg-base:       #ffffff;
+  --bg-layer1:     #fafafa;
+  --bg-layer2:     #f5f5f5;
+  --bg-layer3:     #eeeeee;
+  --bg-card:       rgba(0,0,0,0.02);
+  --bg-card-hover: rgba(0,0,0,0.05);
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      rgba(0,0,0,0.06);
+  --gold-border:   rgba(0,0,0,0.12);
+
+  --cream:         var(--text-color);
+  --cream-dim:     rgba(17,17,17,0.65);
+  --cream-muted:   rgba(17,17,17,0.40);
+
+  --success:       #1b5e20;
+  --error:         #b71c1c;
+  --countdown-color: #111111;
+
+  --shadow-gold:   0 0 0 1px rgba(0,0,0,0.08);
+  --shadow-card:   0 2px 12px rgba(0,0,0,0.06);
+  --shadow-deep:   0 8px 32px rgba(0,0,0,0.1);
+
+  --announcement-bg: #111111;
+  --hero-radial:     none;
+  --input-bg:        #ffffff;
+  --input-border:    rgba(0,0,0,0.15);
+  --form-bg:         #fafafa;
+  --price-box-bg:    #fafafa;
+
+  --font-display: 'DM Sans', system-ui, sans-serif;
+}
+
+[data-theme="minimal-clean"] body {
+  color: var(--text-color);
+  background-color: var(--bg-base);
+}
+
+[data-theme="minimal-clean"] .announcement-bar {
+  background: var(--announcement-bg);
+  border-bottom: none;
+}
+
+[data-theme="minimal-clean"] .announcement-bar__item {
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.12em;
+}
+
+[data-theme="minimal-clean"] h1,
+[data-theme="minimal-clean"] h2,
+[data-theme="minimal-clean"] h3,
+[data-theme="minimal-clean"] .section-title {
+  font-family: var(--font-display);
+  color: var(--text-color);
+  letter-spacing: -0.03em;
+}
+
+[data-theme="minimal-clean"] .btn-primary {
+  background: #111111;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+[data-theme="minimal-clean"] .btn-primary:hover::before {
+  background: rgba(255,255,255,0.1);
+}
+
+[data-theme="minimal-clean"] input[type="text"],
+[data-theme="minimal-clean"] input[type="tel"],
+[data-theme="minimal-clean"] input[type="email"],
+[data-theme="minimal-clean"] select,
+[data-theme="minimal-clean"] textarea {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-color);
+}
+
+[data-theme="minimal-clean"] .accordion-header {
+  color: var(--text-color);
+}
+
+[data-theme="minimal-clean"] #countdown-timer {
+  color: var(--countdown-color);
+  text-shadow: none;
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+}
+
+[data-theme="minimal-clean"] .benefit-item {
+  background: rgba(0,0,0,0.02);
+  border-color: rgba(0,0,0,0.08);
+  color: var(--cream-dim);
+}
+
+[data-theme="minimal-clean"] .benefit-item::before {
+  content: '—';
+  color: var(--text-color);
+}
+
+[data-theme="minimal-clean"] .why-list li::before {
+  content: '—';
+  color: var(--text-color);
+}
+
+[data-theme="minimal-clean"] .hero-trust-badge {
+  background: rgba(255,255,255,0.95);
+  border-color: rgba(0,0,0,0.15);
+  color: #111111;
+}
+
+[data-theme="minimal-clean"] .price-box {
+  background: var(--price-box-bg);
+  border-color: rgba(0,0,0,0.12);
+}
+
+[data-theme="minimal-clean"] .price-box .new {
+  color: var(--text-color);
+}
+
+[data-theme="minimal-clean"] .price-box .save {
+  background: #111111;
+  color: #ffffff;
+}
+
+[data-theme="minimal-clean"] .testimonial {
+  background: var(--bg-card);
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="minimal-clean"] .slider-btn {
+  background: rgba(255,255,255,0.95);
+  border-color: rgba(0,0,0,0.12);
+  color: #111111;
+}
+
+[data-theme="minimal-clean"] .radio-group label {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--cream-dim);
+}
+
+[data-theme="minimal-clean"] .cta-sticky-mobile {
+  background: #111111;
+  color: #ffffff;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.15);
+}
+
+[data-theme="minimal-clean"] .dot {
+  border-color: rgba(0,0,0,0.2);
+}
+
+[data-theme="minimal-clean"] .dot.active {
+  background: #111111;
+  border-color: #111111;
+}
+
+
+/* ============================================================
+   CAPA DE PERSONALIZACIÓN DEL ADMIN
+   Estas vars se sobreescriben desde el <style> inline del
+   <head> cuando el admin configura colores específicos.
+   El orden de cascada garantiza que ganen sobre el tema base.
+
+   En el template PHP, el <style> inline debe incluir
+   SOLO las vars que el admin haya configurado (no nulas):
+
+   [data-theme] {
+     --primary-color:  <?= $colorGold ?? 'inherit' ?>;
+     --accent-color:   <?= $colorGoldLight ?? 'inherit' ?>;
+     --success:        <?= $colorSuccess ?? 'inherit' ?>;
+     --countdown-color:<?= $colorCountdown ?? 'inherit' ?>;
+     --bg-card:        <?= $colorBgCard ?? 'inherit' ?>;
+     --gold-border:    <?= $colorBorder ?? 'inherit' ?>;
+   }
+   ============================================================ */
+
+
+
 
 /* ── BASE ─────────────────────────────────────────────────── */
 html {

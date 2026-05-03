@@ -138,40 +138,81 @@ $ctaFaqButton          = $cfg['cta_faq_button'] ?? 'Sí, quiero pedirlo ahora';
 
 $ctaStickyMobileText   = $cfg['cta_sticky_mobile_text'] ?? '🔥 Aprovechar oferta hoy';
 
+
+
 // Colores con fallback
 $primaryColor    = $config['primary_color']    ?? '#3c7a4a';
 $secondaryColor  = $config['secondary_color']  ?? '#007bff';
 $accentColor     = $config['accent_color']     ?? '#730dad';
 $backgroundColor = $config['background_color'] ?? '#f5f5f5';
 $textColor       = $config['text_color']       ?? '#222222';
+
+// Tema
+$theme = in_array($cfg['theme'] ?? '', [
+    'dark-luxury',
+    'light-luxury',
+    'bold-conversion',
+    'minimal-clean'
+], true) ? $cfg['theme'] : 'dark-luxury';
+
+// Colores base (5 existentes)
+$primaryColor    = $cfg['primary_color']    ?? null;
+$secondaryColor  = $cfg['secondary_color']  ?? null;
+$accentColor     = $cfg['accent_color']     ?? null;
+$backgroundColor = $cfg['background_color'] ?? null;
+$textColor       = $cfg['text_color']       ?? null;
+
+// Colores extendidos (6 nuevos)
+$colorGold       = $cfg['color_gold']       ?? null;
+$colorGoldLight  = $cfg['color_gold_light'] ?? null;
+$colorSuccess    = $cfg['color_success']    ?? null;
+$colorCountdown  = $cfg['color_countdown']  ?? null;
+$colorBgCard     = $cfg['color_bg_card']    ?? null;
+$colorBorder     = $cfg['color_border']     ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="es">
 
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="<?= htmlspecialchars($theme) ?>">
 
 <head>
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($heroTitle) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- CSS base de la landing -->
     <link rel="stylesheet" href="/tienda_mvc/public/css/style.css">
 
-    <!-- Variables de color específicas de ESTA landing -->
-    <style>
-        :root {
-            --primary-color: <?= htmlspecialchars($primaryColor) ?>;
-            --secondary-color: <?= htmlspecialchars($secondaryColor) ?>;
-            --accent-color: <?= htmlspecialchars($accentColor) ?>;
-            --background-color: <?= htmlspecialchars($backgroundColor) ?>;
-            --text-color: <?= htmlspecialchars($textColor) ?>;
-        }
-    </style>
+    <?php
+    // Solo emitir vars que el admin haya configurado explícitamente.
+    // Si una var es null, el tema base la maneja — no sobreescribir.
+    $customVars = array_filter([
+        '--primary-color'    => $primaryColor,
+        '--secondary-color'  => $secondaryColor,
+        '--accent-color'     => $accentColor,
+        '--background-color' => $backgroundColor,
+        '--text-color'       => $textColor,
+        '--gold'             => $colorGold,
+        '--gold-light'       => $colorGoldLight,
+        '--success'          => $colorSuccess,
+        '--countdown-color'  => $colorCountdown,
+        '--bg-card'          => $colorBgCard,
+        '--gold-border'      => $colorBorder,
+    ], fn($v) => $v !== null && $v !== '');
+
+    if (!empty($customVars)):
+    ?>
+        <style>
+            [data-theme] {
+                <?php foreach ($customVars as $var => $value): ?><?= $var ?>: <?= htmlspecialchars($value) ?>;
+                <?php endforeach; ?>
+            }
+        </style>
+    <?php endif; ?>
 
     <script src="/tienda_mvc/public/js/main.js" defer></script>
 
+    <!-- Facebook Pixel -->
     <script>
         ! function(f, b, e, v, n, t, s) {
             if (f.fbq) return;
@@ -189,15 +230,15 @@ $textColor       = $config['text_color']       ?? '#222222';
             t.src = v;
             s = b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t, s)
-        }(window, document, 'script',
-            'https://connect.facebook.net/en_US/fbevents.js');
+        }
+        (window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
         fbq('init', '1248724310406936');
         fbq('track', 'PageView');
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-            src="https://www.facebook.com/tr?id=1248724310406936&ev=PageView&noscript=1" />
+    <noscript>
+        <img height="1" width="1" style="display:none"
+            src="https://www.facebook.com/tr?id=1248724310406936&ev=PageView&noscript=1">
     </noscript>
-
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -212,7 +253,6 @@ $textColor       = $config['text_color']       ?? '#222222';
             }
         });
     </script>
-
 </head>
 
 

@@ -147,6 +147,28 @@ class AdminLandingController extends Controller
         $data['background_color'] = $_POST['background_color'] ?: null;
         $data['text_color']       = $_POST['text_color']       ?: null;
 
+        // Tema
+        $data['theme'] = in_array(
+            trim($_POST['theme'] ?? ''),
+            ['dark-luxury', 'light-luxury', 'bold-conversion', 'minimal-clean'],
+            true
+        ) ? trim($_POST['theme']) : 'dark-luxury';
+
+        // Colores extendidos — solo guardar si son hex válidos
+        $extendedColors = [
+            'color_gold',
+            'color_gold_light',
+            'color_success',
+            'color_countdown',
+            'color_bg_card',
+            'color_border',
+        ];
+
+        foreach ($extendedColors as $key) {
+            $val = trim($_POST[$key] ?? '');
+            $data[$key] = preg_match('/^#[0-9A-Fa-f]{6}$/', $val) ? $val : null;
+        }
+
         // 3. Paths actuales
         $data['hero_media_path']     = $_POST['hero_media_path_actual']     ?? null;
         $data['benefits_media_path'] = $_POST['benefits_media_path_actual'] ?? null;
@@ -194,6 +216,8 @@ class AdminLandingController extends Controller
             'wa5_image_file'       => 'wa5_image_path',
         ];
 
+        $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'webm'];
+
         foreach ($fileMap as $inputName => $column) {
             if (
                 isset($_FILES[$inputName]) &&
@@ -202,11 +226,16 @@ class AdminLandingController extends Controller
             ) {
                 $tmpName  = $_FILES[$inputName]['tmp_name'];
                 $origName = $_FILES[$inputName]['name'];
+                $ext      = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
 
-                $ext     = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-                $newName = $inputName . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
+                // Validar extensión permitida
+                if (!in_array($ext, $allowedExts, true)) {
+                    continue; // saltar archivos no permitidos silenciosamente
+                }
 
+                $newName  = $inputName . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
                 $destPath = $uploadDir . $newName;
+
                 if (move_uploaded_file($tmpName, $destPath)) {
                     $data[$column] = '/tienda_mvc/public/uploads/landing/' . $newName;
                 }

@@ -208,19 +208,60 @@
                         <input type="text" name="benefit_4" value="<?= htmlspecialchars($config['benefit_4'] ?? '') ?>">
                       </div>
 
+                      <!-- ── TIPO DE MEDIO ─────────────────────────────────── -->
                       <div class="admin-form-group">
-                        <label for="benefits_media_file">Subir nueva imagen</label>
-                        <input type="file" id="benefits_media_file" name="benefits_media_file" accept="image/*">
+                        <label for="benefits_media_type">Tipo de medio</label>
+                        <select name="benefits_media_type" id="benefits_media_type"
+                          onchange="toggleMediaInput('benefits', this.value)">
+                          <option value="imagen"
+                            <?= ($config['benefits_media_type'] ?? 'imagen') === 'imagen' ? 'selected' : '' ?>>
+                            Imagen (JPG, PNG, WEBP)
+                          </option>
+                          <option value="gif"
+                            <?= ($config['benefits_media_type'] ?? '') === 'gif' ? 'selected' : '' ?>>
+                            GIF animado
+                          </option>
+                          <option value="video"
+                            <?= ($config['benefits_media_type'] ?? '') === 'video' ? 'selected' : '' ?>>
+                            Video (MP4, MOV, WEBM)
+                          </option>
+                        </select>
                       </div>
 
+                      <!-- ── SUBIR ARCHIVO ─────────────────────────────────── -->
+                      <div class="admin-form-group">
+                        <label for="benefits_media_file">Subir nuevo archivo</label>
+                        <input type="file"
+                          id="benefits_media_file"
+                          name="benefits_media_file"
+                          accept="<?= ($config['benefits_media_type'] ?? 'imagen') === 'video'
+                                    ? 'video/mp4,video/quicktime,video/webm'
+                                    : (($config['benefits_media_type'] ?? 'imagen') === 'gif'
+                                      ? 'image/gif'
+                                      : 'image/jpeg,image/png,image/webp') ?>">
+                        <small>Máx. recomendado: imágenes 2MB · videos 10MB</small>
+                      </div>
+
+                      <!-- ── PREVIEW ACTUAL ────────────────────────────────── -->
                       <div class="admin-form-group admin-form-group--full">
-                        <label>Imagen actual</label>
-                        <div class="media-preview">
+                        <label>Media actual</label>
+                        <div class="media-preview" id="benefits_preview">
                           <?php if (!empty($config['benefits_media_path'])): ?>
-                            <img src="<?= htmlspecialchars($config['benefits_media_path']) ?>" alt="Beneficios">
+                            <?php
+                            $ext = strtolower(pathinfo($config['benefits_media_path'], PATHINFO_EXTENSION));
+                            $isVideo = in_array($ext, ['mp4', 'mov', 'webm']);
+                            ?>
+                            <?php if ($isVideo): ?>
+                              <video src="<?= htmlspecialchars($config['benefits_media_path']) ?>"
+                                muted loop controls
+                                style="max-width:100%; border-radius:6px;"></video>
+                            <?php else: ?>
+                              <img src="<?= htmlspecialchars($config['benefits_media_path']) ?>"
+                                alt="Beneficios">
+                            <?php endif; ?>
                           <?php else: ?>
                             <div class="media-empty">
-                              <i class="fas fa-image"></i>
+                              <i class="fas fa-photo-video"></i>
                               <span>No hay media configurada.</span>
                             </div>
                           <?php endif; ?>
@@ -321,20 +362,61 @@
                         <input type="text" name="porque_bullet3" value="<?= htmlspecialchars($config['porque_bullet3'] ?? '') ?>">
                       </div>
 
+                      <!-- ── TIPO DE MEDIO ─────────────────────────────────── -->
                       <div class="admin-form-group">
-                        <label for="porque_media_file">Subir nueva imagen</label>
-                        <input type="file" id="porque_media_file" name="porque_media_file" accept="image/*">
+                        <label for="porque_media_type">Tipo de medio</label>
+                        <select name="porque_media_type" id="porque_media_type"
+                          onchange="toggleMediaInput('porque', this.value)">
+                          <option value="imagen"
+                            <?= ($config['porque_media_type'] ?? 'imagen') === 'imagen' ? 'selected' : '' ?>>
+                            Imagen (JPG, PNG, WEBP)
+                          </option>
+                          <option value="gif"
+                            <?= ($config['porque_media_type'] ?? '') === 'gif' ? 'selected' : '' ?>>
+                            GIF animado
+                          </option>
+                          <option value="video"
+                            <?= ($config['porque_media_type'] ?? '') === 'video' ? 'selected' : '' ?>>
+                            Video (MP4, MOV, WEBM)
+                          </option>
+                        </select>
                       </div>
 
+                      <!-- ── SUBIR ARCHIVO ─────────────────────────────────── -->
+                      <div class="admin-form-group">
+                        <label for="porque_media_file">Subir nuevo archivo</label>
+                        <input type="file"
+                          id="porque_media_file"
+                          name="porque_media_file"
+                          accept="<?= ($config['porque_media_type'] ?? 'imagen') === 'video'
+                                    ? 'video/mp4,video/quicktime,video/webm'
+                                    : (($config['porque_media_type'] ?? 'imagen') === 'gif'
+                                      ? 'image/gif'
+                                      : 'image/jpeg,image/png,image/webp') ?>">
+                        <small>Máx. recomendado: imágenes 2MB · videos 10MB</small>
+                      </div>
+
+                      <!-- ── PREVIEW ACTUAL ────────────────────────────────── -->
                       <div class="admin-form-group admin-form-group--full">
-                        <label>Imagen actual</label>
-                        <div class="media-preview">
+                        <label>Media actual</label>
+                        <div class="media-preview" id="porque_preview">
                           <?php if (!empty($config['porque_media_path'])): ?>
-                            <img src="<?= htmlspecialchars($config['porque_media_path']) ?>" alt="Por qué">
+                            <?php
+                            $ext     = strtolower(pathinfo($config['porque_media_path'], PATHINFO_EXTENSION));
+                            $isVideo = in_array($ext, ['mp4', 'mov', 'webm']);
+                            ?>
+                            <?php if ($isVideo): ?>
+                              <video src="<?= htmlspecialchars($config['porque_media_path']) ?>"
+                                muted loop controls
+                                style="max-width:100%; border-radius:6px;"></video>
+                            <?php else: ?>
+                              <img src="<?= htmlspecialchars($config['porque_media_path']) ?>"
+                                alt="Por qué te encantará">
+                            <?php endif; ?>
                           <?php else: ?>
                             <div class="media-empty">
-                              <i class="fas fa-image"></i>
-                              <span>Sin imagen</span>
+                              <i class="fas fa-photo-video"></i>
+                              <span>Sin media configurada.</span>
                             </div>
                           <?php endif; ?>
                         </div>
@@ -663,40 +745,245 @@
 
                   <!-- COLORES -->
                   <div class="section-block" id="sec-colores" data-toc="Colores">
-                    <h2>Colores de la landing</h2>
+                    <h2>Apariencia de la landing</h2>
 
-                    <div class="colors-grid">
-                      <div class="admin-form-group">
-                        <label for="primary_color">Color principal</label>
-                        <input type="color" id="primary_color" name="primary_color"
-                          value="<?= htmlspecialchars($config['primary_color'] ?? '#28a745') ?>">
-                      </div>
+                    <!-- ── SELECTOR DE TEMA ─────────────────────────────────── -->
+                    <div class="theme-selector">
+                      <p class="theme-selector__label">Elige una base visual</p>
+                      <div class="theme-selector__grid">
 
-                      <div class="admin-form-group">
-                        <label for="secondary_color">Color secundario</label>
-                        <input type="color" id="secondary_color" name="secondary_color"
-                          value="<?= htmlspecialchars($config['secondary_color'] ?? '#007bff') ?>">
-                      </div>
+                        <label class="theme-card <?= ($config['theme'] ?? 'dark-luxury') === 'dark-luxury' ? 'theme-card--active' : '' ?>">
+                          <input type="radio" name="theme" value="dark-luxury"
+                            <?= ($config['theme'] ?? 'dark-luxury') === 'dark-luxury' ? 'checked' : '' ?>
+                            onchange="applyThemePreview('dark-luxury')">
+                          <div class="theme-card__preview theme-card__preview--dark-luxury">
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                          </div>
+                          <div class="theme-card__info">
+                            <strong>Dark Luxury</strong>
+                            <small>Negro · Dorado · Premium</small>
+                          </div>
+                        </label>
 
-                      <div class="admin-form-group">
-                        <label for="accent_color">Color acento</label>
-                        <input type="color" id="accent_color" name="accent_color"
-                          value="<?= htmlspecialchars($config['accent_color'] ?? '#ffc107') ?>">
-                      </div>
+                        <label class="theme-card <?= ($config['theme'] ?? '') === 'light-luxury' ? 'theme-card--active' : '' ?>">
+                          <input type="radio" name="theme" value="light-luxury"
+                            <?= ($config['theme'] ?? '') === 'light-luxury' ? 'checked' : '' ?>
+                            onchange="applyThemePreview('light-luxury')">
+                          <div class="theme-card__preview theme-card__preview--light-luxury">
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                          </div>
+                          <div class="theme-card__info">
+                            <strong>Light Luxury</strong>
+                            <small>Crema · Dorado oscuro · Editorial</small>
+                          </div>
+                        </label>
 
-                      <div class="admin-form-group">
-                        <label for="background_color">Fondo</label>
-                        <input type="color" id="background_color" name="background_color"
-                          value="<?= htmlspecialchars($config['background_color'] ?? '#f5f5f5') ?>">
-                      </div>
+                        <label class="theme-card <?= ($config['theme'] ?? '') === 'bold-conversion' ? 'theme-card--active' : '' ?>">
+                          <input type="radio" name="theme" value="bold-conversion"
+                            <?= ($config['theme'] ?? '') === 'bold-conversion' ? 'checked' : '' ?>
+                            onchange="applyThemePreview('bold-conversion')">
+                          <div class="theme-card__preview theme-card__preview--bold-conversion">
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                          </div>
+                          <div class="theme-card__info">
+                            <strong>Bold Conversion</strong>
+                            <small>Blanco · Rojo · Alta energía</small>
+                          </div>
+                        </label>
 
-                      <div class="admin-form-group">
-                        <label for="text_color">Texto</label>
-                        <input type="color" id="text_color" name="text_color"
-                          value="<?= htmlspecialchars($config['text_color'] ?? '#222222') ?>">
+                        <label class="theme-card <?= ($config['theme'] ?? '') === 'minimal-clean' ? 'theme-card--active' : '' ?>">
+                          <input type="radio" name="theme" value="minimal-clean"
+                            <?= ($config['theme'] ?? '') === 'minimal-clean' ? 'checked' : '' ?>
+                            onchange="applyThemePreview('minimal-clean')">
+                          <div class="theme-card__preview theme-card__preview--minimal-clean">
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                          </div>
+                          <div class="theme-card__info">
+                            <strong>Minimal Clean</strong>
+                            <small>Blanco · Negro · Minimalismo</small>
+                          </div>
+                        </label>
+
                       </div>
                     </div>
+
+                    <!-- ── PALETA BASE (5 vars existentes) ──────────────────── -->
+                    <div class="colors-section">
+                      <p class="colors-section__label">
+                        Colores base
+                        <small>Sobreescriben el tema seleccionado</small>
+                      </p>
+                      <div class="colors-grid">
+
+                        <div class="admin-form-group">
+                          <label>Fondo</label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="background_color" name="background_color"
+                              value="<?= htmlspecialchars($config['background_color'] ?? '#0a0a0a') ?>"
+                              oninput="syncHex(this, 'background_color_hex'); updatePreviewBar()">
+                            <input type="text" id="background_color_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['background_color'] ?? '#0a0a0a') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'background_color'); updatePreviewBar()">
+                          </div>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label>Texto</label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="text_color" name="text_color"
+                              value="<?= htmlspecialchars($config['text_color'] ?? '#f0ebe0') ?>"
+                              oninput="syncHex(this, 'text_color_hex'); updatePreviewBar()">
+                            <input type="text" id="text_color_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['text_color'] ?? '#f0ebe0') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'text_color'); updatePreviewBar()">
+                          </div>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label>Principal <small>Botones · CTAs</small></label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="primary_color" name="primary_color"
+                              value="<?= htmlspecialchars($config['primary_color'] ?? '#c9a84c') ?>"
+                              oninput="syncHex(this, 'primary_color_hex'); updatePreviewBar()">
+                            <input type="text" id="primary_color_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['primary_color'] ?? '#c9a84c') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'primary_color'); updatePreviewBar()">
+                          </div>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label>Acento <small>Hover · Detalles</small></label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="accent_color" name="accent_color"
+                              value="<?= htmlspecialchars($config['accent_color'] ?? '#e8c96a') ?>"
+                              oninput="syncHex(this, 'accent_color_hex'); updatePreviewBar()">
+                            <input type="text" id="accent_color_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['accent_color'] ?? '#e8c96a') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'accent_color'); updatePreviewBar()">
+                          </div>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label>Secundario <small>Soporte · Bordes</small></label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="secondary_color" name="secondary_color"
+                              value="<?= htmlspecialchars($config['secondary_color'] ?? '#5c4a1e') ?>"
+                              oninput="syncHex(this, 'secondary_color_hex'); updatePreviewBar()">
+                            <input type="text" id="secondary_color_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['secondary_color'] ?? '#5c4a1e') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'secondary_color'); updatePreviewBar()">
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    <!-- ── PALETA EXTENDIDA (6 vars nuevas) ─────────────────── -->
+                    <div class="colors-section">
+                      <p class="colors-section__label">
+                        Colores extendidos
+                        <small>Control fino sobre elementos específicos</small>
+                      </p>
+                      <div class="colors-grid">
+
+                        <div class="admin-form-group">
+                          <label>Dorado principal <small>Precios · Títulos dorados</small></label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="color_gold" name="color_gold"
+                              value="<?= htmlspecialchars($config['color_gold'] ?? '#c9a84c') ?>"
+                              oninput="syncHex(this, 'color_gold_hex')">
+                            <input type="text" id="color_gold_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['color_gold'] ?? '#c9a84c') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'color_gold')">
+                          </div>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label>Dorado claro <small>Hover · Precio actual</small></label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="color_gold_light" name="color_gold_light"
+                              value="<?= htmlspecialchars($config['color_gold_light'] ?? '#e8c96a') ?>"
+                              oninput="syncHex(this, 'color_gold_light_hex')">
+                            <input type="text" id="color_gold_light_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['color_gold_light'] ?? '#e8c96a') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'color_gold_light')">
+                          </div>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label>Éxito <small>Envío gratis · Ahorro · Badges</small></label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="color_success" name="color_success"
+                              value="<?= htmlspecialchars($config['color_success'] ?? '#4caf7d') ?>"
+                              oninput="syncHex(this, 'color_success_hex')">
+                            <input type="text" id="color_success_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['color_success'] ?? '#4caf7d') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'color_success')">
+                          </div>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label>Countdown <small>Timer de urgencia</small></label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="color_countdown" name="color_countdown"
+                              value="<?= htmlspecialchars($config['color_countdown'] ?? '#e8c96a') ?>"
+                              oninput="syncHex(this, 'color_countdown_hex')">
+                            <input type="text" id="color_countdown_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['color_countdown'] ?? '#e8c96a') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'color_countdown')">
+                          </div>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label>Fondo cards <small>Testimonios · Beneficios</small></label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="color_bg_card" name="color_bg_card"
+                              value="<?= htmlspecialchars($config['color_bg_card'] ?? '#1a1a1a') ?>"
+                              oninput="syncHex(this, 'color_bg_card_hex')">
+                            <input type="text" id="color_bg_card_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['color_bg_card'] ?? '#1a1a1a') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'color_bg_card')">
+                          </div>
+                        </div>
+
+                        <div class="admin-form-group">
+                          <label>Bordes <small>Cards · Inputs · Separadores</small></label>
+                          <div class="color-picker-wrap">
+                            <input type="color" id="color_border" name="color_border"
+                              value="<?= htmlspecialchars($config['color_border'] ?? '#c9a84c') ?>"
+                              oninput="syncHex(this, 'color_border_hex')">
+                            <input type="text" id="color_border_hex" class="color-hex-input"
+                              value="<?= htmlspecialchars($config['color_border'] ?? '#c9a84c') ?>"
+                              maxlength="7" oninput="syncPicker(this, 'color_border')">
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    <!-- ── PREVIEW BAR ───────────────────────────────────────── -->
+                    <div class="color-preview-bar" id="colorPreviewBar">
+                      <span id="prev_background_color" style="background:<?= htmlspecialchars($config['background_color'] ?? '#0a0a0a') ?>"></span>
+                      <span id="prev_text_color" style="background:<?= htmlspecialchars($config['text_color']       ?? '#f0ebe0') ?>"></span>
+                      <span id="prev_primary_color" style="background:<?= htmlspecialchars($config['primary_color']    ?? '#c9a84c') ?>"></span>
+                      <span id="prev_accent_color" style="background:<?= htmlspecialchars($config['accent_color']     ?? '#e8c96a') ?>"></span>
+                      <span id="prev_secondary_color" style="background:<?= htmlspecialchars($config['secondary_color']  ?? '#5c4a1e') ?>"></span>
+                      <span id="prev_color_gold" style="background:<?= htmlspecialchars($config['color_gold']       ?? '#c9a84c') ?>"></span>
+                      <span id="prev_color_success" style="background:<?= htmlspecialchars($config['color_success']    ?? '#4caf7d') ?>"></span>
+                      <span id="prev_color_countdown" style="background:<?= htmlspecialchars($config['color_countdown']  ?? '#e8c96a') ?>"></span>
+                    </div>
+                    <p class="color-preview-label">Vista previa de la paleta completa</p>
+
                   </div>
+
 
                   <hr class="section-hr">
 
@@ -758,6 +1045,159 @@
       </section>
     </main>
   </div><!-- /app-shell -->
+
+  <script>
+    function toggleMediaPreview(section, type) {
+      // Cuando cambia el tipo, actualiza el atributo accept del input
+      const input = document.getElementById(section + '_media_file');
+      if (!input) return;
+
+      if (type === 'video') {
+        input.setAttribute('accept', 'video/mp4,video/quicktime,video/webm');
+      } else if (type === 'gif') {
+        input.setAttribute('accept', 'image/gif');
+      } else {
+        input.setAttribute('accept', 'image/jpeg,image/png,image/webp,image/gif');
+      }
+    }
+
+    // Preview en tiempo real al seleccionar archivo nuevo
+    ['benefits', 'porque'].forEach(function(section) {
+      const input = document.getElementById(section + '_media_file');
+      if (!input) return;
+
+      input.addEventListener('change', function() {
+        const file = this.files[0];
+        const preview = document.getElementById(section + '_preview');
+        if (!file || !preview) return;
+
+        const url = URL.createObjectURL(file);
+        const type = file.type;
+
+        if (type.startsWith('video/')) {
+          preview.innerHTML = '<video src="' + url + '" muted loop controls ' +
+            'style="max-width:200px; border-radius:6px;"></video>';
+        } else {
+          preview.innerHTML = '<img src="' + url + '" ' +
+            'style="max-width:200px; border-radius:6px;" alt="Preview">';
+        }
+      });
+    });
+  </script>
+
+  <script>
+    // Sincroniza picker → hex
+    function syncHex(picker, hexId) {
+      const el = document.getElementById(hexId);
+      if (el) el.value = picker.value.toUpperCase();
+    }
+
+    // Sincroniza hex → picker
+    function syncPicker(hexInput, pickerId) {
+      const val = hexInput.value.trim();
+      if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        const picker = document.getElementById(pickerId);
+        if (picker) picker.value = val;
+      }
+    }
+
+    // Actualiza preview bar con los 8 colores principales
+    function updatePreviewBar() {
+      const ids = [
+        'background_color', 'text_color', 'primary_color',
+        'accent_color', 'secondary_color', 'color_gold',
+        'color_success', 'color_countdown'
+      ];
+      ids.forEach(function(id) {
+        const picker = document.getElementById(id);
+        const preview = document.getElementById('prev_' + id);
+        if (picker && preview) {
+          preview.style.background = picker.value;
+        }
+      });
+    }
+
+    // Aplica colores del tema al editor sin guardar
+    function applyThemePreview(theme) {
+      const themes = {
+        'dark-luxury': {
+          background_color: '#0a0a0a',
+          text_color: '#f0ebe0',
+          primary_color: '#c9a84c',
+          accent_color: '#e8c96a',
+          secondary_color: '#5c4a1e',
+          color_gold: '#c9a84c',
+          color_gold_light: '#e8c96a',
+          color_success: '#4caf7d',
+          color_countdown: '#e8c96a',
+          color_bg_card: '#1a1a1a',
+          color_border: '#c9a84c'
+        },
+        'light-luxury': {
+          background_color: '#fafaf8',
+          text_color: '#1a1a1a',
+          primary_color: '#b8860b',
+          accent_color: '#d4a017',
+          secondary_color: '#5c4a1e',
+          color_gold: '#b8860b',
+          color_gold_light: '#d4a017',
+          color_success: '#2e7d32',
+          color_countdown: '#b8860b',
+          color_bg_card: '#f3f0ea',
+          color_border: '#b8860b'
+        },
+        'bold-conversion': {
+          background_color: '#ffffff',
+          text_color: '#212529',
+          primary_color: '#e63946',
+          accent_color: '#ff6b6b',
+          secondary_color: '#1d3557',
+          color_gold: '#e63946',
+          color_gold_light: '#ff6b6b',
+          color_success: '#2d6a4f',
+          color_countdown: '#e63946',
+          color_bg_card: '#f8f9fa',
+          color_border: '#e63946'
+        },
+        'minimal-clean': {
+          background_color: '#ffffff',
+          text_color: '#111111',
+          primary_color: '#000000',
+          accent_color: '#333333',
+          secondary_color: '#555555',
+          color_gold: '#111111',
+          color_gold_light: '#333333',
+          color_success: '#1b5e20',
+          color_countdown: '#111111',
+          color_bg_card: '#fafafa',
+          color_border: '#000000'
+        },
+      };
+
+      const palette = themes[theme];
+      if (!palette) return;
+
+      Object.keys(palette).forEach(function(key) {
+        const picker = document.getElementById(key);
+        const hex = document.getElementById(key + '_hex');
+        const val = palette[key];
+        if (picker) picker.value = val;
+        if (hex) hex.value = val.toUpperCase();
+      });
+
+      // Marcar tarjeta activa
+      document.querySelectorAll('.theme-card').forEach(function(card) {
+        card.classList.remove('theme-card--active');
+      });
+      const radio = document.querySelector('input[name="theme"][value="' + theme + '"]');
+      if (radio && radio.closest('.theme-card')) {
+        radio.closest('.theme-card').classList.add('theme-card--active');
+      }
+
+      updatePreviewBar();
+    }
+  </script>
+
 
   <!-- JS global del admin (menú) -->
   <script src="/tienda_mvc/public/js/funciones.js"></script>
