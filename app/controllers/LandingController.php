@@ -384,7 +384,11 @@ class LandingController extends Controller
     {
         $token  = getenv('TELEGRAM_BOT_TOKEN');
         $chatId = getenv('TELEGRAM_CHAT_ID');
-        if (!$token || !$chatId) return;
+
+        if (!$token || !$chatId) {
+            error_log('[Telegram] Token o chat_id no encontrados en .env');
+            return;
+        }
 
         $entrega = $d['tipo_entrega'] === 'domicilio'
             ? "Domicilio: " . ($d['direccion'] ?: '—')
@@ -410,14 +414,31 @@ class LandingController extends Controller
         $url  = "https://api.telegram.org/bot{$token}/sendMessage";
         $body = json_encode(['chat_id' => $chatId, 'text' => $texto, 'parse_mode' => 'Markdown']);
 
-        @file_get_contents($url, false, stream_context_create([
-            'http' => [
-                'method'  => 'POST',
-                'header'  => "Content-Type: application/json\r\n",
-                'content' => $body,
-                'timeout' => 5,
-            ],
-        ]));
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => $body,
+                CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 5,
+                CURLOPT_SSL_VERIFYPEER => false,
+            ]);
+            $resp = curl_exec($ch);
+            $err  = curl_error($ch);
+            curl_close($ch);
+
+            if ($err) {
+                error_log('[Telegram] cURL error: ' . $err);
+            } else {
+                $decoded = json_decode($resp, true);
+                if (empty($decoded['ok'])) {
+                    error_log('[Telegram] API error: ' . $resp);
+                }
+            }
+        } else {
+            error_log('[Telegram] cURL no disponible en este servidor');
+        }
     }
 
     public function verPorSlug($slug)
