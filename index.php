@@ -1,6 +1,18 @@
 <?php
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Cargar variables del .env
+$_envFile = __DIR__ . '/.env';
+if (file_exists($_envFile)) {
+    foreach (file($_envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $_line) {
+        if (str_starts_with(trim($_line), '#') || !str_contains($_line, '=')) continue;
+        [$_k, $_v] = explode('=', $_line, 2);
+        putenv(trim($_k) . '=' . trim($_v));
+    }
+}
+unset($_envFile, $_line, $_k, $_v);
 
 session_start();
 

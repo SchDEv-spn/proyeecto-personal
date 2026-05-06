@@ -349,12 +349,28 @@ class LandingController extends Controller
             $pedidoColorModel->sync($pedidoId, $items);
         }
 
+        // Notificación Telegram
+        $this->notificarTelegram([
+            'pedido_id'   => $pedidoId,
+            'nombre'      => $nombre . ' ' . $apellidos,
+            'telefono'    => $telefono,
+            'municipio'   => $municipio,
+            'departamento'=> $departamento,
+            'color'       => $colorResumen,
+            'cantidad'    => $cantidadTotal,
+            'precio_total'=> $precioTotal,
+            'tipo_entrega'=> $tipoEntrega,
+            'direccion'   => $direccion,
+            'producto'    => $producto['nombre'] ?? '',
+        ]);
+
         if ($esAjax) {
             header('Content-Type: application/json');
             echo json_encode([
-                'ok'        => true,
-                'pedido_id' => $pedidoId,
-                'mensaje'   => 'Tu pedido se ha registrado correctamente. En breve un asesor te contactará por WhatsApp.',
+                'ok'          => true,
+                'pedido_id'   => $pedidoId,
+                'precio_total'=> $precioTotal,
+                'mensaje'     => 'Tu pedido se ha registrado correctamente. En breve un asesor te contactará por WhatsApp.',
             ]);
             exit;
         }
@@ -362,6 +378,46 @@ class LandingController extends Controller
         $_SESSION['success'] = "Tu pedido se ha registrado correctamente.";
         header("Location: /tienda_mvc/Landing/index?producto_id=" . $productoId);
         exit;
+    }
+
+    private function notificarTelegram(array $d): void
+    {
+        $token  = getenv('TELEGRAM_BOT_TOKEN');
+        $chatId = getenv('TELEGRAM_CHAT_ID');
+        if (!$token || !$chatId) return;
+
+        $entrega = $d['tipo_entrega'] === 'domicilio'
+            ? "Domicilio: " . ($d['direccion'] ?: '—')
+            : "Recoge en oficina";
+
+        $precio = '$' . number_format((float)$d['precio_total'], 0, ',', '.');
+
+        $texto = implode("\n", [
+            "🛒 *Nuevo Pedido #" . $d['pedido_id'] . "*",
+            "",
+            "👤 " . $d['nombre'],
+            "📱 " . $d['telefono'],
+            "📍 " . $d['municipio'] . ", " . $d['departamento'],
+            "",
+            "🛍️ " . $d['producto'],
+            "🎨 " . ($d['color'] ?: "Sin color"),
+            "📦 Unidades: " . $d['cantidad'],
+            "💰 Total: " . $precio,
+            "",
+            "🚚 " . $entrega,
+        ]);
+
+        $url  = "https://api.telegram.org/bot{$token}/sendMessage";
+        $body = json_encode(['chat_id' => $chatId, 'text' => $texto, 'parse_mode' => 'Markdown']);
+
+        @file_get_contents($url, false, stream_context_create([
+            'http' => [
+                'method'  => 'POST',
+                'header'  => "Content-Type: application/json\r\n",
+                'content' => $body,
+                'timeout' => 5,
+            ],
+        ]));
     }
 
     public function verPorSlug($slug)

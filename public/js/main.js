@@ -569,7 +569,14 @@ function initPixelEvents() {
                     successBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
                 if (typeof fbq === 'function') {
-                    fbq('track', 'Purchase', { value: window.landingProductPrice || 0, currency: 'COP' });
+                    fbq('track', 'Purchase', {
+                        value:    res.precio_total || window.landingProductPrice || 0,
+                        currency: 'COP',
+                        content_name: window.landingProductName || '',
+                        content_ids:  [String(res.pedido_id || '')],
+                        content_type: 'product',
+                        num_items:    1,
+                    });
                 }
             } else {
                 mostrarErrores(res.errores || ['Ocurrió un error. Inténtalo de nuevo.']);
