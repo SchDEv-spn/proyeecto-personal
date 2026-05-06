@@ -1,0 +1,40 @@
+# === Configuración sensible ===
+.env
+.env.local
+.env.*.local
+config/database.php
+app/config/config.php
+
+# === Dependencias ===
+/vendor/
+/node_modules/
+composer.lock
+package-lock.json
+
+# === Archivos generados / cache ===
+/cache/
+/tmp/
+*.log
+*.cache
+public/uploads/*
+!public/uploads/.gitkeep
+
+# === Editores e IDEs ===
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.claude/
+
+# === Sistema operativo ===
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+*~
+
+# === Bases de datos locales ===
+*.sql
+*.sqlite
+*.db
+
