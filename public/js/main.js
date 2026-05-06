@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function () {
     initTipoEntrega();
     initDepartamentoMunicipio();
     initSlider();
-    initCountdown();
     initAccordion();
     initGallery();
     initRecentOrders();
@@ -28,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initStickyVisibility();
     initLazyImages();
     initTelInput();
+    initPixelEvents();
 });
 
 
@@ -101,9 +101,57 @@ function initDepartamentoMunicipio() {
             selectDept.addEventListener('change', poblarMunicipios);
             poblarMunicipios();
 
-            if (oldMun) selectMun.value = oldMun;
+            if (oldMun) {
+                selectMun.value = oldMun;
+                mostrarETA(selectDept.value, oldMun);
+            }
+
+            selectMun.addEventListener('change', function () {
+                mostrarETA(selectDept.value, this.value);
+            });
         })
         .catch(err => console.error('Error cargando departamentos/municipios:', err));
+}
+
+function calcDeliveryDays(dept, city) {
+    const express = new Set([
+        'Bogotá D.C.', 'Medellín', 'Cali', 'Barranquilla', 'Bucaramanga',
+        'Pereira', 'Manizales', 'Ibagué', 'Cúcuta', 'Villavicencio',
+        'Cartagena', 'Santa Marta', 'Neiva', 'Armenia', 'Pasto',
+        'Montería', 'Valledupar', 'Sincelejo', 'Popayán', 'Tunja',
+    ]);
+    const slow = new Set(['Amazonas', 'Chocó', 'Guainía', 'Vaupés', 'Vichada', 'Putumayo', 'Caquetá']);
+
+    if (express.has(city))  return 2;
+    if (slow.has(dept))     return 5;
+    return 3;
+}
+
+function addBusinessDays(days) {
+    const date = new Date();
+    let added = 0;
+    while (added < days) {
+        date.setDate(date.getDate() + 1);
+        const dow = date.getDay();
+        if (dow !== 0 && dow !== 6) added++;
+    }
+    return date;
+}
+
+function mostrarETA(dept, city) {
+    const etaWrap = document.getElementById('deliveryETA');
+    const etaDate = document.getElementById('deliveryETADate');
+    if (!etaWrap || !etaDate || !city) {
+        if (etaWrap) etaWrap.style.display = 'none';
+        return;
+    }
+    const days = calcDeliveryDays(dept, city);
+    const date = addBusinessDays(days);
+    const days_es = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const months  = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                     'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    etaDate.textContent = days_es[date.getDay()] + ' ' + date.getDate() + ' de ' + months[date.getMonth()];
+    etaWrap.style.display = 'block';
 }
 
 
@@ -166,41 +214,6 @@ function initSlider() {
         index = (index + 1) % total;
         goToSlide(index);
     }, 3000);
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   COUNTDOWN — con persistencia sessionStorage
-   El timer NO se reinicia si el usuario recarga la página.
-   ══════════════════════════════════════════════════════════════ */
-function initCountdown() {
-    const el = document.getElementById('countdown-timer');
-    if (!el) return;
-
-    const DURATION   = 59 * 60 + 59; // 59:59
-    const storageKey = 'landing_countdown_end';
-    let   endTime    = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
-
-    // Si no existe o ya venció, crear uno nuevo
-    if (!endTime || endTime < Date.now()) {
-        endTime = Date.now() + DURATION * 1000;
-        sessionStorage.setItem(storageKey, endTime.toString());
-    }
-
-    function tick() {
-        const diff = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
-        const mm   = String(Math.floor(diff / 60)).padStart(2, '0');
-        const ss   = String(diff % 60).padStart(2, '0');
-        el.textContent = mm + ':' + ss;
-
-        if (diff > 0) {
-            requestAnimationFrame(tick);
-        } else {
-            el.textContent = '00:00';
-        }
-    }
-
-    requestAnimationFrame(tick);
 }
 
 
@@ -415,105 +428,103 @@ function initTelInput() {
     tel.setAttribute('autocomplete', 'tel');
 }
 
+/* ══════════════════════════════════════════════════════════════
+   FACEBOOK PIXEL EVENTS — embudos de conversión
+   ══════════════════════════════════════════════════════════════ */
+function initPixelEvents() {
+    if (typeof fbq !== 'function') return;
+
+    var addToCartFired    = false;
+    var initiateCheckoutFired = false;
+
+    // AddToCart: primera vez que el usuario toca cualquier campo del form
+    var form = document.getElementById('formPedido');
+    if (form) {
+        var firstInputs = form.querySelectorAll('input, select, textarea');
+        firstInputs.forEach(function (el) {
+            el.addEventListener('focus', function onFirstFocus() {
+                if (addToCartFired) return;
+                addToCartFired = true;
+                fbq('track', 'AddToCart', {
+                    value:    window.landingProductPrice || 0,
+                    currency: 'COP',
+                    content_name: window.landingProductName || '',
+                });
+                firstInputs.forEach(function (inp) {
+                    inp.removeEventListener('focus', onFirstFocus);
+                });
+            }, { once: true });
+        });
+    }
+
+    // InitiateCheckout: sección del form entra en viewport
+    var formSection = document.getElementById('form-pedido');
+    if (formSection && 'IntersectionObserver' in window) {
+        var checkoutObserver = new IntersectionObserver(function (entries) {
+            if (entries[0].isIntersecting && !initiateCheckoutFired) {
+                initiateCheckoutFired = true;
+                fbq('track', 'InitiateCheckout', {
+                    value:    window.landingProductPrice || 0,
+                    currency: 'COP',
+                    content_name: window.landingProductName || '',
+                });
+                checkoutObserver.disconnect();
+            }
+        }, { threshold: 0.3 });
+        checkoutObserver.observe(formSection);
+    }
+}
+
 /* ============================================================
-   MEJORA #2 — Stepper + submit AJAX
+   FORMULARIO — validación única + submit AJAX
    ============================================================ */
-
 (function () {
-
     const form       = document.getElementById('formPedido');
     const errorsBox  = document.getElementById('stepperErrors');
     const successBox = document.getElementById('stepperSuccess');
     if (!form) return;
 
-    /* ---------- PASOS ---------- */
-    const panels     = Array.from(form.querySelectorAll('.stepper-panel'));
-    const steps      = Array.from(document.querySelectorAll('.stepper-step'));
-    const connectors = Array.from(document.querySelectorAll('.stepper-connector'));
-
-    let currentStep = 1;
-
-    function goToStep(n) {
-        panels.forEach(p => p.classList.remove('active'));
-        const target = form.querySelector(`.stepper-panel[data-panel="${n}"]`);
-        if (target) target.classList.add('active');
-
-        steps.forEach((s, i) => {
-            const num = i + 1;
-            s.classList.remove('active', 'done');
-            if (num === n)  s.classList.add('active');
-            if (num < n)    s.classList.add('done');
-        });
-
-        connectors.forEach((c, i) => {
-            c.classList.toggle('done', i + 1 < n);
-        });
-
-        currentStep = n;
-
-        // Scroll suave al inicio del formulario
-        const formTop = document.getElementById('form-pedido');
-        if (formTop) formTop.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    /* ---------- VALIDACIÓN POR PASO ---------- */
-    function validarPaso(n) {
+    function validar() {
         const errors = [];
 
-        if (n === 1) {
-            const nombre    = form.querySelector('#nombre');
-            const apellidos = form.querySelector('#apellidos');
-            const telefono  = form.querySelector('#telefono');
+        const nombre    = form.querySelector('#nombre');
+        const apellidos = form.querySelector('#apellidos');
+        const telefono  = form.querySelector('#telefono');
+        const depto     = form.querySelector('#departamento');
+        const muni      = form.querySelector('#municipio');
+        const entrega   = form.querySelector('input[name="tipo_entrega"]:checked');
+        const dir       = form.querySelector('#direccion');
 
-            if (!nombre?.value.trim())    errors.push('El nombre es obligatorio.');
-            if (!apellidos?.value.trim()) errors.push('Los apellidos son obligatorios.');
+        if (!nombre?.value.trim())    errors.push('El nombre es obligatorio.');
+        if (!apellidos?.value.trim()) errors.push('Los apellidos son obligatorios.');
 
-            const tel = telefono?.value.trim() ?? '';
-            if (!tel)                        errors.push('El número de WhatsApp es obligatorio.');
-            else if (!/^3\d{9}$/.test(tel))  errors.push('Ingresa un número válido (10 dígitos, empieza en 3).');
-        }
+        const tel = telefono?.value.trim() ?? '';
+        if (!tel)                       errors.push('El número de WhatsApp es obligatorio.');
+        else if (!/^3\d{9}$/.test(tel)) errors.push('Número inválido (10 dígitos, empieza en 3).');
 
-        if (n === 2) {
-            const mode = form.querySelector('#pricingMode')?.value ?? 'individual';
-
-            if (mode === 'combo') {
-                const blocks = form.querySelectorAll('.combo-block');
-                if (!blocks.length) {
-                    errors.push('Debes tener al menos 1 combo.');
-                } else {
-                    blocks.forEach((b, idx) => {
-                        const selects = b.querySelectorAll('select.combo-color');
-                        selects.forEach(s => {
-                            if (!s.value) errors.push(`Selecciona el color del combo ${idx + 1}.`);
-                        });
-                    });
-                }
-            } else {
-                // modo normal: al menos 1 fila con color seleccionado
-                const colorSelects = form.querySelectorAll('select[name="color_item[]"]');
-                if (colorSelects.length) {
-                    let alguno = false;
-                    colorSelects.forEach(s => { if (s.value) alguno = true; });
-                    if (!alguno) errors.push('Selecciona al menos un color.');
-                }
+        const mode = form.querySelector('#pricingMode')?.value ?? 'individual';
+        if (mode === 'combo') {
+            const blocks = form.querySelectorAll('.combo-block');
+            if (!blocks.length) errors.push('Debes tener al menos 1 combo.');
+            else blocks.forEach((b, idx) => {
+                b.querySelectorAll('select.combo-color').forEach(s => {
+                    if (!s.value) errors.push(`Selecciona el color del combo ${idx + 1}.`);
+                });
+            });
+        } else {
+            const colorSelects = form.querySelectorAll('select[name="color_item[]"]');
+            if (colorSelects.length) {
+                let alguno = false;
+                colorSelects.forEach(s => { if (s.value) alguno = true; });
+                if (!alguno) errors.push('Selecciona al menos un color.');
             }
         }
 
-        if (n === 3) {
-            const depto   = form.querySelector('#departamento');
-            const muni    = form.querySelector('#municipio');
-            const entrega = form.querySelector('input[name="tipo_entrega"]:checked');
-            const dir     = form.querySelector('#direccion');
-            const confirm = form.querySelector('#confirmPurchase');
-
-            if (!depto?.value)    errors.push('Selecciona un departamento.');
-            if (!muni?.value)     errors.push('Selecciona un municipio.');
-            if (!entrega)         errors.push('Selecciona cómo quieres recibir tu pedido.');
-            if (entrega?.value === 'domicilio' && !dir?.value.trim()) {
-                errors.push('La dirección es obligatoria para envío a domicilio.');
-            }
-            if (!confirm?.checked) errors.push('Debes confirmar que quieres el producto.');
-        }
+        if (!depto?.value)  errors.push('Selecciona un departamento.');
+        if (!muni?.value)   errors.push('Selecciona un municipio.');
+        if (!entrega)       errors.push('Selecciona cómo quieres recibir tu pedido.');
+        if (entrega?.value === 'domicilio' && !dir?.value.trim())
+            errors.push('La dirección es obligatoria para envío a domicilio.');
 
         return errors;
     }
@@ -521,64 +532,29 @@ function initTelInput() {
     function mostrarErrores(errors) {
         if (!errorsBox) return;
         if (!errors.length) { errorsBox.style.display = 'none'; return; }
-
         errorsBox.innerHTML = '<ul>' + errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
         errorsBox.style.display = 'block';
         errorsBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    /* ---------- NAVEGACIÓN ---------- */
-    document.addEventListener('click', function (e) {
-        // Siguiente
-        const nextBtn = e.target.closest('.stepper-next');
-        if (nextBtn && form.contains(nextBtn)) {
-            const nextStep = parseInt(nextBtn.dataset.next, 10);
-            const errors   = validarPaso(currentStep);
-            if (errors.length) { mostrarErrores(errors); return; }
-            mostrarErrores([]);
-            goToStep(nextStep);
-            return;
-        }
-
-        // Anterior
-        const prevBtn = e.target.closest('.stepper-prev');
-        if (prevBtn && form.contains(prevBtn)) {
-            const prevStep = parseInt(prevBtn.dataset.prev, 10);
-            mostrarErrores([]);
-            goToStep(prevStep);
-        }
-    });
-
-    /* ---------- SUBMIT AJAX ---------- */
     form.addEventListener('submit', function (e) {
         e.preventDefault();
-
-        // Validar paso 3 antes de enviar
-        const errors = validarPaso(3);
+        const errors = validar();
         if (errors.length) { mostrarErrores(errors); return; }
         mostrarErrores([]);
-
-        // Disparar el evento submit nativo para que pricing-combo.js
-        // genere los color_item[] / qty_item[] ocultos
-        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-        // El submit de pricing-combo llama e.preventDefault() si hay error,
-        // así que lo dejamos correr primero con un flag
-        form._ajaxSubmit = true;
 
         const btnText    = document.getElementById('btnSubmitText');
         const btnSpinner = document.getElementById('btnSubmitSpinner');
         const btnSubmit  = document.getElementById('btnSubmit');
 
-        btnSubmit.disabled   = true;
+        btnSubmit.disabled = true;
         if (btnText)    btnText.style.display    = 'none';
         if (btnSpinner) btnSpinner.style.display = 'inline';
-
-        const data = new FormData(form);
 
         fetch(form.action, {
             method: 'POST',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            body: data,
+            body: new FormData(form),
         })
         .then(r => r.json())
         .then(function (res) {
@@ -587,23 +563,16 @@ function initTelInput() {
             if (btnSpinner) btnSpinner.style.display = 'none';
 
             if (res.ok) {
-                // Ocultar form, mostrar éxito
-                form.style.display      = 'none';
-                document.querySelector('.stepper-header').style.display = 'none';
-                if (successBox) successBox.style.display = 'block';
-                successBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-                // Pixel: Purchase
+                form.style.display = 'none';
+                if (successBox) {
+                    successBox.style.display = 'block';
+                    successBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
                 if (typeof fbq === 'function') {
-                    fbq('track', 'Purchase', {
-                        value:    window.landingProductPrice || 0,
-                        currency: 'COP',
-                    });
+                    fbq('track', 'Purchase', { value: window.landingProductPrice || 0, currency: 'COP' });
                 }
             } else {
-                // Errores del backend
                 mostrarErrores(res.errores || ['Ocurrió un error. Inténtalo de nuevo.']);
-                goToStep(1); // Volver al paso 1 si hay error de validación del servidor
             }
         })
         .catch(function () {
@@ -613,8 +582,4 @@ function initTelInput() {
             mostrarErrores(['Error de conexión. Verifica tu internet e inténtalo de nuevo.']);
         });
     });
-
-    /* ---------- INIT ---------- */
-    goToStep(1);
-
 })();

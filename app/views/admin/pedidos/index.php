@@ -23,8 +23,19 @@
     $total_venta     = $total_venta     ?? 0;
     $pedidos_nuevos  = $pedidos_nuevos  ?? 0;
     $pedidos         = $pedidos         ?? [];
+    $rango           = $rango           ?? 'mes';
+    $tendencias      = $tendencias      ?? [];
     $usuarioNombre   = $_SESSION['usuario_nombre'] ?? 'Admin';
     $usuarioEmail    = $_SESSION['usuario_email'] ?? 'admin@tuempresa.com';
+
+    $renderTrend = function(array $t): string {
+        if (!isset($t['dir']) || $t['dir'] === 'flat') {
+            return '<span class="kpi-trend flat">—</span>';
+        }
+        $icon = $t['dir'] === 'up' ? '↑' : '↓';
+        return '<span class="kpi-trend ' . htmlspecialchars($t['dir']) . '">'
+            . $icon . ' ' . htmlspecialchars($t['label'] ?? '') . '</span>';
+    };
     ?>
 
     <!-- Overlay sidebar (mobile) -->
@@ -84,7 +95,7 @@
                         <div class="stat-info">
                             <small>Pedidos Totales</small>
                             <h3 id="kpiPedidos"><?= number_format($total_pedidos, 0, ',', '.') ?></h3>
-                            <span class="target">100% objetivo alcanzado</span>
+                            <span class="target"><?= ($renderTrend)($tendencias['pedidos'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
                         </div>
                         <i class="fas fa-clipboard-list stat-icon"></i>
                     </div>
@@ -92,7 +103,7 @@
                     <div class="stat-card glow-red">
                         <div class="stat-info">
                             <small>Pedidos Nuevos</small>
-                           <h3 id="kpiNuevos"><?= number_format($pedidos_nuevos, 0, ',', '.') ?></h3>
+                            <h3 id="kpiNuevos"><?= number_format($pedidos_nuevos, 0, ',', '.') ?></h3>
                             <span class="target pending">Pendientes de contacto</span>
                         </div>
                         <i class="fas fa-bell stat-icon"></i>
@@ -101,8 +112,8 @@
                     <div class="stat-card glow-purple">
                         <div class="stat-info">
                             <small>Ventas Totales</small>
-                           <h3 id="kpiVentas">$<?= number_format((float)$total_venta, 0, ',', '.') ?></h3>
-                            <span class="target">87% objetivo alcanzado</span>
+                            <h3 id="kpiVentas">$<?= number_format((float)$total_venta, 0, ',', '.') ?></h3>
+                            <span class="target"><?= ($renderTrend)($tendencias['ventas'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
                         </div>
                         <i class="fas fa-dollar-sign stat-icon"></i>
                     </div>
@@ -110,8 +121,8 @@
                     <div class="stat-card glow-blue">
                         <div class="stat-info">
                             <small>Utilidad Acumulada</small>
-                           <h3 id="kpiUtilidad">$<?= number_format((float)$total_utilidad, 0, ',', '.') ?></h3>
-                            <span class="target">Margen bruto excelente</span>
+                            <h3 id="kpiUtilidad">$<?= number_format((float)$total_utilidad, 0, ',', '.') ?></h3>
+                            <span class="target"><?= ($renderTrend)($tendencias['utilidad'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
                         </div>
                         <i class="fas fa-chart-line stat-icon"></i>
                     </div>
@@ -120,6 +131,21 @@
                 <!-- =========================
                      PEDIDOS
                      ========================= -->
+                <!-- Embudo de conversión -->
+                <div class="funnel-wrap">
+                    <div class="panel">
+                        <div class="panel__head">
+                            <h4>Embudo de conversión</h4>
+                            <span class="chip">Pipeline</span>
+                        </div>
+                        <div class="panel__body">
+                            <div id="funnelBars" class="funnel-bars">
+                                <p style="color:var(--muted);text-align:center;font-size:13px;padding:4px 0;">Calculando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <?php if (empty($pedidos)): ?>
                     <div class="empty-state">
                         <p>No hay pedidos registrados todavía.</p>
@@ -128,6 +154,21 @@
                     <div class="table-container">
                         <div class="table-header">
                             <h3>Pedidos Recientes</h3>
+                            <div class="table-header-actions">
+                                <a href="/tienda_mvc/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?>"
+                                   class="btn-csv" title="Exportar a CSV">
+                                    <i class="fas fa-file-csv"></i> CSV
+                                </a>
+                            </div>
+                        </div>
+                        <div class="state-filter" id="stateFilter">
+                            <button class="state-chip is-active" data-estado="">Todos</button>
+                            <button class="state-chip" data-estado="nuevo">Nuevo</button>
+                            <button class="state-chip" data-estado="contactado">Contactado</button>
+                            <button class="state-chip" data-estado="confirmado">Confirmado</button>
+                            <button class="state-chip" data-estado="enviado">Enviado</button>
+                            <button class="state-chip" data-estado="entregado">Entregado</button>
+                            <button class="state-chip" data-estado="cancelado">Cancelado</button>
                         </div>
 
                         <div class="cards-container" id="contenedorPedidos">
@@ -169,16 +210,35 @@
                                 if (!is_finite($utilidadTotal)) $utilidadTotal = 0.0;
                                 ?>
 
-                                <div class="order-card" data-pedido-id="<?= htmlspecialchars($p['id'] ?? '') ?>">
+                                <?php
+                                $tsRef = strtotime($p['updated_at'] ?? '') ?: strtotime($p['created_at'] ?? '');
+                                $timeBadge = '';
+                                if ($tsRef) {
+                                    $diff = time() - $tsRef;
+                                    if ($diff < 60)        $timeBadge = '<1 min';
+                                    elseif ($diff < 3600)  $timeBadge = round($diff/60)    . ' min';
+                                    elseif ($diff < 86400) $timeBadge = round($diff/3600)  . 'h';
+                                    else                   $timeBadge = round($diff/86400) . 'd';
+                                }
+                                ?>
+                                <div class="order-card"
+                                     data-pedido-id="<?= htmlspecialchars($p['id'] ?? '') ?>"
+                                     data-estado="<?= htmlspecialchars($estadoActual) ?>"
+                                     data-ts="<?= htmlspecialchars($p['updated_at'] ?? ($p['created_at'] ?? '')) ?>">
 
                                     <div class="card-header">
                                         <div>
                                             <span class="card-label">ID Pedido</span>
                                             <strong>#<?= htmlspecialchars($p['id'] ?? '') ?></strong>
                                         </div>
-                                        <span class="status-tag status-<?= htmlspecialchars($estadoActual) ?>">
-                                            <?= ucfirst(htmlspecialchars($estadoActual)) ?>
-                                        </span>
+                                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                                            <span class="status-tag status-<?= htmlspecialchars($estadoActual) ?>">
+                                                <?= ucfirst(htmlspecialchars($estadoActual)) ?>
+                                            </span>
+                                            <?php if ($timeBadge): ?>
+                                                <span class="time-badge"><i class="fas fa-clock"></i> <?= htmlspecialchars($timeBadge) ?></span>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
 
                                     <div class="card-section">

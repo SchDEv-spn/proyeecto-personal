@@ -449,6 +449,9 @@
     // ✅ NUEVO: también filtra las cards con el mismo rango
     filterCardsByRange(w);
 
+    // Embudo de conversión
+    if (typeof renderFunnel === 'function') renderFunnel(w);
+
     setPanelTitleByCanvas('chartPedidos14', w.titleA);
     setPanelTitleByCanvas('chartVentas14', w.titleB);
 
@@ -530,6 +533,49 @@
         plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10 } } }
       }
     });
+  };
+
+  // -------- Embudo de conversión
+  const renderFunnel = ({ start, end }) => {
+    const funnelEl = document.getElementById('funnelBars');
+    if (!funnelEl) return;
+
+    const counts = { nuevo: 0, contactado: 0, confirmado: 0, enviado: 0, entregado: 0, cancelado: 0 };
+    pedidos.forEach((p) => {
+      const d = parseDateFlexible(p);
+      if (!d || d < start || d >= end) return;
+      const e = String(p.estado || 'nuevo').toLowerCase();
+      if (e in counts) counts[e]++;
+    });
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    if (total === 0) {
+      funnelEl.innerHTML = '<p style="color:var(--muted);text-align:center;font-size:13px;padding:8px 0;">Sin pedidos en este período.</p>';
+      return;
+    }
+
+    const steps = [
+      { key: 'nuevo',      label: 'Nuevo',      cls: 'f-nuevo' },
+      { key: 'contactado', label: 'Contactado', cls: 'f-contactado' },
+      { key: 'confirmado', label: 'Confirmado', cls: 'f-confirmado' },
+      { key: 'enviado',    label: 'Enviado',    cls: 'f-enviado' },
+      { key: 'entregado',  label: 'Entregado',  cls: 'f-entregado' },
+      { key: 'cancelado',  label: 'Cancelado',  cls: 'f-cancelado' },
+    ];
+
+    funnelEl.innerHTML = steps.map((s) => {
+      const count = counts[s.key] || 0;
+      const pct = Math.round(count / total * 100);
+      return `
+        <div class="funnel-row">
+          <span class="funnel-label">${s.label}</span>
+          <div class="funnel-bar-track">
+            <div class="funnel-bar-fill ${s.cls}" style="width:${pct}%"></div>
+          </div>
+          <span class="funnel-pct">${pct}%</span>
+          <span class="funnel-count">${count}</span>
+        </div>`;
+    }).join('');
   };
 
   // Render inicial
@@ -1101,4 +1147,125 @@
     },
     true
   );
+})();
+
+// =========================
+// PEDIDOS: Filtro por estado
+// =========================
+(() => {
+  const stateFilter = document.getElementById('stateFilter');
+  const container   = document.getElementById('contenedorPedidos');
+  if (!stateFilter || !container) return;
+
+  const cards = Array.from(container.querySelectorAll('.order-card'));
+
+  const updateEmptyState = () => {
+    const emptyEl = container.querySelector('.cards-empty');
+    if (!emptyEl) return;
+    const visible = cards.filter(c =>
+      !c.classList.contains('is-hidden-by-state') &&
+      !c.classList.contains('is-hidden-by-range') &&
+      !c.classList.contains('is-hidden-by-search')
+    ).length;
+    emptyEl.style.display = visible === 0 ? '' : 'none';
+  };
+
+  stateFilter.addEventListener('click', (e) => {
+    const chip = e.target.closest('.state-chip');
+    if (!chip) return;
+
+    stateFilter.querySelectorAll('.state-chip').forEach(c => c.classList.remove('is-active'));
+    chip.classList.add('is-active');
+
+    const estado = chip.dataset.estado || '';
+
+    cards.forEach(card => {
+      const hide = estado !== '' && card.dataset.estado !== estado;
+      card.classList.toggle('is-hidden-by-state', hide);
+    });
+
+    updateEmptyState();
+  });
+})();
+
+// =========================
+// MODAL: Editar teléfono inline
+// =========================
+(() => {
+  document.addEventListener('click', (e) => {
+    // Abrir modo edición
+    const editBtn = e.target.closest('.btn-edit-field');
+    if (editBtn) {
+      const wrap = editBtn.closest('.phone-edit-wrap');
+      if (!wrap) return;
+      wrap.querySelector('.phone-display').style.display = 'none';
+      editBtn.style.display = 'none';
+      const form = wrap.querySelector('.phone-edit-form');
+      form.style.display = 'flex';
+      form.querySelector('.phone-edit-input')?.focus();
+      return;
+    }
+
+    // Cancelar edición
+    const cancelBtn = e.target.closest('.btn-cancel-inline');
+    if (cancelBtn) {
+      const form = cancelBtn.closest('.phone-edit-form');
+      const wrap = form?.closest('.phone-edit-wrap');
+      if (!wrap) return;
+      form.style.display = 'none';
+      wrap.querySelector('.phone-display').style.display = '';
+      wrap.querySelector('.btn-edit-field').style.display = '';
+    }
+  });
+
+  document.addEventListener('submit', async (e) => {
+    const form = e.target.closest('.phone-edit-form');
+    if (!form) return;
+    e.preventDefault();
+
+    const id       = form.querySelector('input[name="id"]')?.value || '';
+    const telefono = form.querySelector('input[name="telefono"]')?.value?.trim() || '';
+    const wrap     = form.closest('.phone-edit-wrap');
+    const display  = wrap?.querySelector('.phone-display');
+    const saveBtn  = form.querySelector('.btn-save-inline');
+
+    if (!id || !telefono) return;
+
+    const oldText = saveBtn?.textContent;
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '...'; }
+
+    try {
+      const fd = new FormData();
+      fd.append('id', id);
+      fd.append('telefono', telefono);
+
+      const res  = await fetch('/tienda_mvc/AdminPedidos/actualizarTelefono', {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Requested-With': 'fetch' },
+      });
+
+      const json = await res.json();
+
+      if (json.ok) {
+        if (display) display.textContent = json.telefono;
+        form.style.display = 'none';
+        if (display) display.style.display = '';
+        const btn = wrap?.querySelector('.btn-edit-field');
+        if (btn) btn.style.display = '';
+
+        // Actualizar __PEDIDOS__ en memoria
+        if (Array.isArray(window.__PEDIDOS__) && id) {
+          const p = window.__PEDIDOS__.find(x => String(x.id ?? '') === String(id));
+          if (p) p.telefono = json.telefono;
+        }
+      } else {
+        alert('Error: ' + (json.error || 'No se pudo guardar'));
+      }
+    } catch {
+      alert('Error de conexión al guardar el teléfono.');
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = oldText || 'Guardar'; }
+    }
+  }, true);
 })();

@@ -80,6 +80,12 @@ class LandingConfig extends Model
                 faq2_a = :faq2_a,
                 faq3_q = :faq3_q,
                 faq3_a = :faq3_a,
+                faq4_q = :faq4_q,
+                faq4_a = :faq4_a,
+                faq5_q = :faq5_q,
+                faq5_a = :faq5_a,
+                faq6_q = :faq6_q,
+                faq6_a = :faq6_a,
 
                 footer_text = :footer_text,
 
@@ -139,7 +145,98 @@ class LandingConfig extends Model
                 color_border     = :color_border,
 
                 combo_enabled = :combo_enabled,
-                combo_price_2 = :combo_price_2
+                combo_price_2 = :combo_price_2,
+
+                antes_path          = :antes_path,
+                despues_path        = :despues_path,
+                antes_label         = :antes_label,
+                despues_label       = :despues_label,
+                antes_despues_title = :antes_despues_title,
+
+                para_quien_si_1 = :para_quien_si_1,
+                para_quien_si_2 = :para_quien_si_2,
+                para_quien_si_3 = :para_quien_si_3,
+                para_quien_si_4 = :para_quien_si_4,
+                para_quien_no_1 = :para_quien_no_1,
+                para_quien_no_2 = :para_quien_no_2,
+                para_quien_no_3 = :para_quien_no_3,
+
+                wa_phone           = :wa_phone,
+                hero_badge_stars   = :hero_badge_stars,
+                hero_badge_customers = :hero_badge_customers,
+                urgency_stock      = :urgency_stock,
+                countdown_minutes  = :countdown_minutes,
+
+                comparison_title       = :comparison_title,
+                comparison_1_without   = :comparison_1_without,
+                comparison_1_with      = :comparison_1_with,
+                comparison_2_without   = :comparison_2_without,
+                comparison_2_with      = :comparison_2_with,
+                comparison_3_without   = :comparison_3_without,
+                comparison_3_with      = :comparison_3_with,
+                comparison_4_without   = :comparison_4_without,
+                comparison_4_with      = :comparison_4_with,
+                comparison_5_without   = :comparison_5_without,
+                comparison_5_with      = :comparison_5_with,
+
+                authority_enabled    = :authority_enabled,
+                authority_title      = :authority_title,
+                authority_years      = :authority_years,
+                authority_deliveries = :authority_deliveries,
+                authority_rating     = :authority_rating,
+                authority_guarantee  = :authority_guarantee,
+
+                show_benefits      = :show_benefits,
+                show_gallery       = :show_gallery,
+                show_antes_despues = :show_antes_despues,
+                show_como_funciona = :show_como_funciona,
+                show_countdown     = :show_countdown,
+                show_porque        = :show_porque,
+                show_para_quien    = :show_para_quien,
+                show_testimonios   = :show_testimonios,
+                show_faqs          = :show_faqs,
+
+                section_order      = :section_order,
+
+                gallery_title     = :gallery_title,
+                testimonios_title = :testimonios_title,
+                para_quien_title  = :para_quien_title,
+                faq_title         = :faq_title,
+
+                announcement_item_1 = :announcement_item_1,
+                announcement_item_2 = :announcement_item_2,
+                announcement_item_3 = :announcement_item_3,
+                announcement_item_4 = :announcement_item_4,
+                announcement_item_5 = :announcement_item_5,
+                announcement_item_6 = :announcement_item_6,
+
+                hero_trust_1 = :hero_trust_1,
+                hero_trust_2 = :hero_trust_2,
+                hero_trust_3 = :hero_trust_3,
+
+                cf_title       = :cf_title,
+                cf_step1_icon  = :cf_step1_icon,
+                cf_step1_title = :cf_step1_title,
+                cf_step1_desc  = :cf_step1_desc,
+                cf_step2_icon  = :cf_step2_icon,
+                cf_step2_title = :cf_step2_title,
+                cf_step2_desc  = :cf_step2_desc,
+                cf_step3_icon  = :cf_step3_icon,
+                cf_step3_title = :cf_step3_title,
+                cf_step3_desc  = :cf_step3_desc,
+
+                show_garantia  = :show_garantia,
+                garantia_title = :garantia_title,
+                garantia_desc  = :garantia_desc,
+                garantia_item1 = :garantia_item1,
+                garantia_item2 = :garantia_item2,
+                garantia_item3 = :garantia_item3,
+                garantia_item4 = :garantia_item4,
+
+                show_trust_strip = :show_trust_strip,
+
+                form_title    = :form_title,
+                form_subtitle = :form_subtitle
 
             WHERE producto_id = :producto_id";
 
@@ -200,6 +297,12 @@ class LandingConfig extends Model
             ':faq2_a' => $data['faq2_a'] ?? null,
             ':faq3_q' => $data['faq3_q'] ?? null,
             ':faq3_a' => $data['faq3_a'] ?? null,
+            ':faq4_q' => $data['faq4_q'] ?? null,
+            ':faq4_a' => $data['faq4_a'] ?? null,
+            ':faq5_q' => $data['faq5_q'] ?? null,
+            ':faq5_a' => $data['faq5_a'] ?? null,
+            ':faq6_q' => $data['faq6_q'] ?? null,
+            ':faq6_a' => $data['faq6_a'] ?? null,
 
             ':footer_text' => $data['footer_text'] ?? null,
 
@@ -256,6 +359,97 @@ class LandingConfig extends Model
 
             ':combo_enabled' => isset($data['combo_enabled']) ? (int)$data['combo_enabled'] : 0,
             ':combo_price_2' => isset($data['combo_price_2']) ? (int)$data['combo_price_2'] : 0,
+
+            ':antes_path'          => $data['antes_path']          ?? null,
+            ':despues_path'        => $data['despues_path']        ?? null,
+            ':antes_label'         => $data['antes_label']         ?? null,
+            ':despues_label'       => $data['despues_label']       ?? null,
+            ':antes_despues_title' => $data['antes_despues_title'] ?? null,
+
+            ':para_quien_si_1' => $data['para_quien_si_1'] ?? null,
+            ':para_quien_si_2' => $data['para_quien_si_2'] ?? null,
+            ':para_quien_si_3' => $data['para_quien_si_3'] ?? null,
+            ':para_quien_si_4' => $data['para_quien_si_4'] ?? null,
+            ':para_quien_no_1' => $data['para_quien_no_1'] ?? null,
+            ':para_quien_no_2' => $data['para_quien_no_2'] ?? null,
+            ':para_quien_no_3' => $data['para_quien_no_3'] ?? null,
+
+            ':wa_phone'            => $data['wa_phone']            ?? null,
+            ':hero_badge_stars'    => $data['hero_badge_stars']    ?? null,
+            ':hero_badge_customers'=> $data['hero_badge_customers']?? null,
+            ':urgency_stock'       => isset($data['urgency_stock'])      ? (int)$data['urgency_stock']      : 12,
+            ':countdown_minutes'   => isset($data['countdown_minutes'])  ? (int)$data['countdown_minutes']  : 25,
+
+            ':comparison_title'     => $data['comparison_title']     ?? null,
+            ':comparison_1_without' => $data['comparison_1_without'] ?? null,
+            ':comparison_1_with'    => $data['comparison_1_with']    ?? null,
+            ':comparison_2_without' => $data['comparison_2_without'] ?? null,
+            ':comparison_2_with'    => $data['comparison_2_with']    ?? null,
+            ':comparison_3_without' => $data['comparison_3_without'] ?? null,
+            ':comparison_3_with'    => $data['comparison_3_with']    ?? null,
+            ':comparison_4_without' => $data['comparison_4_without'] ?? null,
+            ':comparison_4_with'    => $data['comparison_4_with']    ?? null,
+            ':comparison_5_without' => $data['comparison_5_without'] ?? null,
+            ':comparison_5_with'    => $data['comparison_5_with']    ?? null,
+
+            ':authority_enabled'    => isset($data['authority_enabled']) ? (int)$data['authority_enabled'] : 0,
+            ':authority_title'      => $data['authority_title']      ?? null,
+            ':authority_years'      => $data['authority_years']      ?? null,
+            ':authority_deliveries' => $data['authority_deliveries'] ?? null,
+            ':authority_rating'     => $data['authority_rating']     ?? null,
+            ':authority_guarantee'  => $data['authority_guarantee']  ?? null,
+
+            ':show_benefits'      => isset($data['show_benefits'])      ? (int)$data['show_benefits']      : 1,
+            ':show_gallery'       => isset($data['show_gallery'])       ? (int)$data['show_gallery']       : 1,
+            ':show_antes_despues' => isset($data['show_antes_despues']) ? (int)$data['show_antes_despues'] : 1,
+            ':show_como_funciona' => isset($data['show_como_funciona']) ? (int)$data['show_como_funciona'] : 1,
+            ':show_countdown'     => isset($data['show_countdown'])     ? (int)$data['show_countdown']     : 1,
+            ':show_porque'        => isset($data['show_porque'])        ? (int)$data['show_porque']        : 1,
+            ':show_para_quien'    => isset($data['show_para_quien'])    ? (int)$data['show_para_quien']    : 1,
+            ':show_testimonios'   => isset($data['show_testimonios'])   ? (int)$data['show_testimonios']   : 1,
+            ':show_faqs'          => isset($data['show_faqs'])          ? (int)$data['show_faqs']          : 1,
+
+            ':section_order' => $data['section_order'] ?? null,
+
+            ':gallery_title'     => $data['gallery_title']     ?? null,
+            ':testimonios_title' => $data['testimonios_title'] ?? null,
+            ':para_quien_title'  => $data['para_quien_title']  ?? null,
+            ':faq_title'         => $data['faq_title']         ?? null,
+
+            ':announcement_item_1' => $data['announcement_item_1'] ?? null,
+            ':announcement_item_2' => $data['announcement_item_2'] ?? null,
+            ':announcement_item_3' => $data['announcement_item_3'] ?? null,
+            ':announcement_item_4' => $data['announcement_item_4'] ?? null,
+            ':announcement_item_5' => $data['announcement_item_5'] ?? null,
+            ':announcement_item_6' => $data['announcement_item_6'] ?? null,
+
+            ':hero_trust_1' => $data['hero_trust_1'] ?? null,
+            ':hero_trust_2' => $data['hero_trust_2'] ?? null,
+            ':hero_trust_3' => $data['hero_trust_3'] ?? null,
+
+            ':cf_title'       => $data['cf_title']       ?? null,
+            ':cf_step1_icon'  => $data['cf_step1_icon']  ?? null,
+            ':cf_step1_title' => $data['cf_step1_title'] ?? null,
+            ':cf_step1_desc'  => $data['cf_step1_desc']  ?? null,
+            ':cf_step2_icon'  => $data['cf_step2_icon']  ?? null,
+            ':cf_step2_title' => $data['cf_step2_title'] ?? null,
+            ':cf_step2_desc'  => $data['cf_step2_desc']  ?? null,
+            ':cf_step3_icon'  => $data['cf_step3_icon']  ?? null,
+            ':cf_step3_title' => $data['cf_step3_title'] ?? null,
+            ':cf_step3_desc'  => $data['cf_step3_desc']  ?? null,
+
+            ':show_garantia'  => isset($data['show_garantia'])  ? (int)$data['show_garantia']  : 1,
+            ':garantia_title' => $data['garantia_title'] ?? null,
+            ':garantia_desc'  => $data['garantia_desc']  ?? null,
+            ':garantia_item1' => $data['garantia_item1'] ?? null,
+            ':garantia_item2' => $data['garantia_item2'] ?? null,
+            ':garantia_item3' => $data['garantia_item3'] ?? null,
+            ':garantia_item4' => $data['garantia_item4'] ?? null,
+
+            ':show_trust_strip' => isset($data['show_trust_strip']) ? (int)$data['show_trust_strip'] : 1,
+
+            ':form_title'    => $data['form_title']    ?? null,
+            ':form_subtitle' => $data['form_subtitle'] ?? null,
 
             ':producto_id' => $productoId,
         ]);

@@ -1,161 +1,77 @@
 
 
 
+/* ============================================================
+   CARRUSEL DE TESTIMONIOS — CSS Scroll Snap nativo
+   El navegador maneja el deslizamiento; el JS solo sincroniza
+   los dots y maneja los clicks en cards/flechas.
+   ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  const track = document.getElementById('sliderTrack');
-  const slides = Array.from(document.querySelectorAll('.testimonial-slide'));
-  const nextBtn = document.querySelector('.next-btn');
-  const prevBtn = document.querySelector('.prev-btn');
-  const dots = Array.from(document.querySelectorAll('.dot'));
+  const container = document.querySelector('.testimonials-slider-container');
+  if (!container) return;
 
-  if (!track || slides.length < 3 || !nextBtn || !prevBtn) return;
+  const slides = Array.from(container.querySelectorAll('.testimonial-slide'));
+  const dots   = Array.from(document.querySelectorAll('.dot'));
+  if (!slides.length) return;
 
-  const REAL_SLIDES = 5;
-  let counter = 1; // 0 = clone último, 1..5 reales, 6 = clone primero
+  let current = 0;
 
-  // ===== Helpers =====
-  function translateToCounter(withTransition = true) {
-    const current = slides[counter];
-    if (!current) return;
-
-    // OJO: usamos offsetLeft real, evita “descuadres” por widths/padding/subpixel
-    const x = current.offsetLeft;
-
-    track.style.transition = withTransition ? 'transform 0.4s ease-in-out' : 'none';
-    track.style.transform = `translate3d(${-x}px, 0, 0)`;
+  // ── Scroll centrado en un slide ──────────────────────────
+  function goTo(i, smooth = true) {
+    const slide = slides[i];
+    if (!slide) return;
+    const cRect = container.getBoundingClientRect();
+    const sRect = slide.getBoundingClientRect();
+    const target = container.scrollLeft
+                 + (sRect.left - cRect.left)
+                 - (cRect.width - sRect.width) / 2;
+    container.scrollTo({ left: Math.max(0, target), behavior: smooth ? 'smooth' : 'instant' });
   }
 
-  function normalizeToRealIndex() {
-    const raw = slides[counter]?.dataset?.index ?? '';
-    const real = parseInt(raw, 10);
-    if (Number.isFinite(real)) return real;
-
-    if (counter === 0) return REAL_SLIDES - 1;            // clone inicial (último)
-    if (counter === slides.length - 1) return 0;          // clone final (primero)
-    return 0;
+  // ── Sincronización visual ────────────────────────────────
+  function activate(i) {
+    current = i;
+    slides.forEach((s, idx) => s.classList.toggle('is-active', idx === i));
+    dots.forEach(d => d.classList.toggle('active', d.dataset.dot === String(i)));
   }
 
-  function updateDots() {
-    const active = normalizeToRealIndex();
-    dots.forEach(d => d.classList.remove('active'));
-    const dot = dots.find(d => d.dataset.dot === String(active));
-    if (dot) dot.classList.add('active');
-  }
-
-  function goNext() {
-    if (counter >= slides.length - 1) return;
-    counter++;
-    translateToCounter(true);
-    updateDots();
-  }
-
-  function goPrev() {
-    if (counter <= 0) return;
-    counter--;
-    translateToCounter(true);
-    updateDots();
-  }
-
-  // ===== Init =====
-  translateToCounter(false);
-  updateDots();
-
-  // ===== Eventos =====
-  nextBtn.addEventListener('click', goNext);
-  prevBtn.addEventListener('click', goPrev);
-
-  dots.forEach(dot => {
-    dot.addEventListener('click', () => {
-      const idx = parseInt(dot.dataset.dot, 10);
-      if (!Number.isFinite(idx)) return;
-      counter = idx + 1; // porque 0 es clone inicial
-      translateToCounter(true);
-      updateDots();
-    });
-  });
-
-  // Loop infinito con clones
-  track.addEventListener('transitionend', () => {
-    const di = slides[counter]?.dataset?.index;
-
-    if (di === '5-clone') {
-      counter = REAL_SLIDES;       // saltar al último real
-      translateToCounter(false);
-      updateDots();
-    }
-
-    if (di === '1-clone') {
-      counter = 1;                 // saltar al primero real
-      translateToCounter(false);
-      updateDots();
-    }
-  });
-
-  // Recalcular al resize (por tus breakpoints 100% / 50% / 33.33%)
-  window.addEventListener('resize', () => {
-    translateToCounter(false);
-  });
-
-  // Swipe simple móvil (opcional)
-  const sliderViewport = track.closest('.testimonials-slider-container');
-  let startX = 0;
-  let isDown = false;
-
-  if (sliderViewport) {
-    sliderViewport.addEventListener('pointerdown', (e) => {
-      isDown = true;
-      startX = e.clientX;
-    });
-
-    sliderViewport.addEventListener('pointerup', (e) => {
-      if (!isDown) return;
-      isDown = false;
-
-      const dx = e.clientX - startX;
-      if (Math.abs(dx) > 40) {
-        if (dx < 0) goNext();
-        else goPrev();
+  // ── IntersectionObserver: detecta qué slide está centrado ─
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+        const i = slides.indexOf(entry.target);
+        if (i >= 0 && i !== current) activate(i);
       }
     });
+  }, { root: container, threshold: 0.6 });
 
-    sliderViewport.addEventListener('pointercancel', () => {
-      isDown = false;
+  slides.forEach(s => io.observe(s));
+
+  // ── Init ─────────────────────────────────────────────────
+  activate(0);
+  goTo(0, false);
+
+  // ── Dots ─────────────────────────────────────────────────
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const i = parseInt(dot.dataset.dot, 10);
+      if (Number.isFinite(i)) goTo(i);
     });
-  }
-});
-document.addEventListener('DOMContentLoaded', () => {
-    const accordionItems = document.querySelectorAll('.accordion-item');
+  });
 
-    accordionItems.forEach(item => {
-        const header = item.querySelector('.accordion-header');
-        const body = item.querySelector('.accordion-body');
+  // ── Flechas (desktop) ────────────────────────────────────
+  const outer = container.closest('.testimonials-slider-outer');
+  outer?.querySelector('.slider-arrow--prev')?.addEventListener('click', () => goTo(Math.max(0, current - 1)));
+  outer?.querySelector('.slider-arrow--next')?.addEventListener('click', () => goTo(Math.min(slides.length - 1, current + 1)));
 
-        header.addEventListener('click', () => {
-            const isOpen = item.classList.contains('active');
-
-            // 1. Opcional: Cerrar todos los demás acordeones antes de abrir el nuevo
-            // Si prefieres que puedan estar varios abiertos, borra este bloque forEach
-            accordionItems.forEach(otherItem => {
-                if (otherItem !== item) {
-                    otherItem.classList.remove('active');
-                    otherItem.querySelector('.accordion-body').style.maxHeight = null;
-                }
-            });
-
-            // 2. Alternar la clase activa en el item actual
-            item.classList.toggle('active');
-
-            // 3. Controlar la altura máxima para la animación fluida
-            if (!isOpen) {
-                // Si lo estamos abriendo, calculamos el scrollHeight del contenido
-                body.style.maxHeight = body.scrollHeight + "px";
-            } else {
-                // Si lo estamos cerrando, reseteamos a null
-                body.style.maxHeight = null;
-            }
-        });
+  // ── Tocar card no activo (peek) navega a él ──────────────
+  slides.forEach((slide, i) => {
+    slide.addEventListener('click', () => {
+      if (i !== current) goTo(i);
     });
+  });
 });
+
 /* ============================================================
    MEJORA #1 — Urgencia hero: countdown sesión + viewers fake
    ============================================================ */
@@ -167,12 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
        Si el usuario recarga, retoma donde quedó.
        Si la sesión expira (cierra pestaña y vuelve después), reinicia.
     ---------------------------------------------------------- */
-    const DURATION_MS = 25 * 60 * 1000; // 25 minutos
     const SESSION_KEY = 'lp_timer_end';
 
     function initCountdown() {
-        const el = document.getElementById('heroCountdown');
-        if (!el) return;
+        // Lee data-minutes del primer elemento countdown disponible
+        const sourceEl      = document.getElementById('heroCountdown')
+                           || document.getElementById('countdown-timer');
+        const configMinutes = sourceEl ? (parseInt(sourceEl.dataset.minutes, 10) || 25) : 25;
+        const DURATION_MS   = configMinutes * 60 * 1000;
 
         let endTime = parseInt(sessionStorage.getItem(SESSION_KEY), 10);
         if (!endTime || endTime <= Date.now()) {
@@ -180,16 +98,23 @@ document.addEventListener('DOMContentLoaded', () => {
             sessionStorage.setItem(SESSION_KEY, endTime);
         }
 
+        // Un solo interval actualiza TODOS los displays de countdown
+        const displayIds = ['heroCountdown', 'countdown-timer', 'formCountdown'];
+
         function tick() {
-            const remaining = endTime - Date.now();
+            let remaining = endTime - Date.now();
             if (remaining <= 0) {
-                // Al expirar: reinicia silenciosamente
                 endTime = Date.now() + DURATION_MS;
                 sessionStorage.setItem(SESSION_KEY, endTime);
+                remaining = DURATION_MS;
             }
-            const m = Math.floor(remaining / 60000);
-            const s = Math.floor((remaining % 60000) / 1000);
-            el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            const m    = Math.floor(remaining / 60000);
+            const s    = Math.floor((remaining % 60000) / 1000);
+            const text = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            displayIds.forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
         }
 
         tick();
@@ -202,11 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
        Persiste en sessionStorage para que no "suba" al navegar.
     ---------------------------------------------------------- */
     const STOCK_KEY  = 'lp_stock';
-    const STOCK_BASE = 7; // ← cambia aquí si elegiste otro número
 
     function initStock() {
         const el = document.getElementById('stockCount');
         if (!el) return;
+
+        const STOCK_BASE = parseInt(el.dataset.stock, 10) || 12;
 
         let stock = parseInt(sessionStorage.getItem(STOCK_KEY), 10);
         if (!stock || stock > STOCK_BASE) {
@@ -272,4 +198,374 @@ document.addEventListener('DOMContentLoaded', () => {
         initViewers();
     }
 
+})();
+
+/* ============================================================
+   MEJORA #3 — FOMO Notifications + Social Proof counter
+   ============================================================ */
+
+(function () {
+
+    /* ---------- 1. FOMO TOASTS ----------
+       Muestra notificaciones bottom-left con compras recientes simuladas.
+       Primera aparece entre 8-15 seg, luego cada 18-30 seg.
+    ---------------------------------------------------------- */
+    const FOMO_NAMES = [
+        'María G.', 'Carlos R.', 'Ana M.', 'Pedro L.', 'Laura S.',
+        'Jorge R.', 'Daniela T.', 'Andrés G.', 'Valentina R.', 'Sebastián V.',
+        'Carolina D.', 'Camila O.', 'Felipe H.', 'Natalia C.', 'Diego B.',
+        'Paola F.', 'Santiago M.', 'Juliana A.', 'Esteban N.', 'Verónica P.'
+    ];
+
+    const FOMO_CITIES = [
+        'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Bucaramanga',
+        'Cartagena', 'Pereira', 'Manizales', 'Ibagué', 'Villavicencio',
+        'Cúcuta', 'Santa Marta', 'Pasto', 'Neiva', 'Armenia'
+    ];
+
+    const FOMO_ACTIONS = [
+        'acaba de hacer su pedido',
+        'acaba de confirmar su compra',
+        'acaba de realizar su pedido',
+        'acaba de pedir uno',
+    ];
+
+    const FOMO_TIMES = [
+        'hace un momento', 'hace 2 min', 'hace 3 min', 'hace 5 min',
+        'hace 7 min', 'hace 10 min', 'hace 12 min', 'hace 15 min'
+    ];
+
+    function rand(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function showFomoToast() {
+        const container = document.getElementById('fomoContainer');
+        if (!container) return;
+
+        const name   = rand(FOMO_NAMES);
+        const city   = rand(FOMO_CITIES);
+        const action = rand(FOMO_ACTIONS);
+        const time   = rand(FOMO_TIMES);
+
+        const toast = document.createElement('div');
+        toast.className = 'fomo-toast';
+        toast.innerHTML =
+            '<div class="fomo-toast__icon" aria-hidden="true">🛒</div>' +
+            '<div class="fomo-toast__text">' +
+            '  <strong>' + name + '</strong> de ' + city + '<br>' +
+            '  ' + action +
+            '  <span class="fomo-toast__time">' + time + '</span>' +
+            '</div>';
+
+        container.innerHTML = '';
+        container.appendChild(toast);
+
+        // Ocultar después de 5 segundos
+        setTimeout(function () {
+            toast.classList.add('hiding');
+            setTimeout(function () {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 450);
+        }, 5000);
+
+        // Siguiente notificación en 18-30 seg
+        var next = (18 + Math.floor(Math.random() * 12)) * 1000;
+        setTimeout(showFomoToast, next);
+    }
+
+    /* ---------- 2. SOCIAL PROOF COUNTER ----------
+       Muestra un contador de pedidos cerca del formulario.
+       Empieza en un número base y sube 1 cada 2-4 minutos.
+    ---------------------------------------------------------- */
+    function initFormOrderCount() {
+        var el = document.getElementById('formOrderCount');
+        if (!el) return;
+
+        // Lee el conteo real del servidor (data-base); mínimo 12
+        var base  = parseInt(el.dataset.base, 10) || 12;
+        var count = base;
+        el.textContent = count;
+
+        function increment() {
+            count++;
+            el.textContent = count;
+            var delay = (90 + Math.floor(Math.random() * 90)) * 1000;
+            setTimeout(increment, delay);
+        }
+
+        // Primera subida: 90-180 segundos después
+        var first = (90 + Math.floor(Math.random() * 90)) * 1000;
+        setTimeout(increment, first);
+    }
+
+    /* ---------- INIT ---------- */
+    function init() {
+        // FOMO: primera notificación entre 8-15 seg
+        var firstFomo = (8 + Math.floor(Math.random() * 7)) * 1000;
+        setTimeout(showFomoToast, firstFomo);
+
+        initFormOrderCount();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+})();
+
+/* ============================================================
+   MEJORA #4 — Sticky Price Bar
+   ============================================================ */
+(function () {
+    function init() {
+        var bar  = document.getElementById('stickyPriceBar');
+        var hero = document.querySelector('.hero');
+        if (!bar || !hero) return;
+
+        // Posicionar debajo del announcement bar
+        var announcementBar = document.querySelector('.announcement-bar');
+        if (announcementBar) {
+            bar.style.top = announcementBar.offsetHeight + 'px';
+        }
+
+        var observer = new IntersectionObserver(function (entries) {
+            var heroVisible = entries[0].isIntersecting;
+            bar.classList.toggle('is-visible', !heroVisible);
+            bar.setAttribute('aria-hidden', heroVisible ? 'true' : 'false');
+        }, { threshold: 0.1 });
+
+        observer.observe(hero);
+
+        // Cerrar al click en CTA
+        var cta = bar.querySelector('.sticky-price-bar__cta');
+        if (cta) {
+            cta.addEventListener('click', function () {
+                bar.classList.remove('is-visible');
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+
+/* ============================================================
+   MEJORA #4 — Exit Intent Popup
+   ============================================================ */
+(function () {
+    var SESSION_KEY_SHOWN = 'lp_exit_shown';
+    var POPUP_DURATION_MS = 3 * 60 * 1000; // 3 minutos
+    var popupShown = false;
+
+    function init() {
+        var popup   = document.getElementById('exitPopup');
+        var backdrop= document.getElementById('exitPopupBackdrop');
+        var closeBtn= document.getElementById('exitPopupClose');
+        var dismiss = document.getElementById('exitPopupDismiss');
+        var cta     = document.getElementById('exitPopupCta');
+        var timerEl = document.getElementById('exitCountdown');
+
+        if (!popup) return;
+
+        // No mostrar si ya se mostró en esta sesión
+        if (sessionStorage.getItem(SESSION_KEY_SHOWN)) return;
+
+        function showPopup() {
+            if (popupShown) return;
+            popupShown = true;
+            sessionStorage.setItem(SESSION_KEY_SHOWN, '1');
+            popup.removeAttribute('hidden');
+            document.body.style.overflow = 'hidden';
+            startExitCountdown();
+        }
+
+        function hidePopup() {
+            popup.setAttribute('hidden', '');
+            document.body.style.overflow = '';
+        }
+
+        function startExitCountdown() {
+            if (!timerEl) return;
+            var endTime = Date.now() + POPUP_DURATION_MS;
+
+            function tick() {
+                var rem = endTime - Date.now();
+                if (rem <= 0) {
+                    timerEl.textContent = '00:00';
+                    return;
+                }
+                var m = Math.floor(rem / 60000);
+                var s = Math.floor((rem % 60000) / 1000);
+                timerEl.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                setTimeout(tick, 1000);
+            }
+            tick();
+        }
+
+        // ── DESKTOP: cursor sale por arriba ──────────────────
+        document.addEventListener('mouseleave', function (e) {
+            if (e.clientY < 5) showPopup();
+        });
+
+        // ── MOBILE: inactividad 120 segundos ────────────────
+        var mobileTimer = null;
+        var isMobile = window.matchMedia('(max-width: 900px)').matches;
+
+        function resetMobileTimer() {
+            clearTimeout(mobileTimer);
+            mobileTimer = setTimeout(showPopup, 120000);
+        }
+
+        if (isMobile) {
+            ['touchstart', 'scroll'].forEach(function (ev) {
+                document.addEventListener(ev, resetMobileTimer, { passive: true });
+            });
+            resetMobileTimer();
+        }
+
+        // ── Cerrar ──────────────────────────────────────────
+        if (backdrop) backdrop.addEventListener('click', hidePopup);
+        if (closeBtn) closeBtn.addEventListener('click', hidePopup);
+        if (dismiss)  dismiss.addEventListener('click', hidePopup);
+        if (cta) {
+            cta.addEventListener('click', function () {
+                hidePopup();
+                // Pequeño delay para que el scroll sea suave
+                setTimeout(function () {
+                    var form = document.getElementById('form-pedido');
+                    if (form) form.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            });
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') hidePopup();
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+
+/* ============================================================
+   MEJORA #4 — Antes / Después overlay reveal slider
+   Usa clip-path en lugar de width para que ambas imágenes
+   siempre ocupen el frame completo sin distorsión.
+   ============================================================ */
+(function () {
+    function init() {
+        var slider    = document.getElementById('adSlider');
+        var divider   = document.getElementById('adDivider');
+        var despuesEl = document.querySelector('.despues-img');
+        if (!slider || !divider || !despuesEl) return;
+
+        function update(val) {
+            var right = (100 - val) + '%';
+            despuesEl.style.clipPath = 'inset(0 ' + right + ' 0 0)';
+            divider.style.left       = val + '%';
+        }
+
+        slider.addEventListener('input', function () {
+            update(parseFloat(this.value));
+        });
+
+        update(50);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+
+/* ============================================================
+   MEJORA #6A — Sticky mobile CTA: ocultar en hero y en form
+   ============================================================ */
+(function () {
+    var bar = document.querySelector('.cta-sticky-mobile');
+    if (!bar) return;
+
+    var heroVisible = true;
+    var formVisible = false;
+
+    function update() {
+        const shouldHide = heroVisible || formVisible;
+        bar.classList.toggle('is-hidden', shouldHide);
+        document.body.classList.toggle('sticky-cta-visible', !shouldHide);
+    }
+
+    var hero = document.querySelector('.hero');
+    var form = document.getElementById('form-pedido');
+
+    if (hero) {
+        new IntersectionObserver(function (entries) {
+            heroVisible = entries[0].isIntersecting;
+            update();
+        }, { threshold: 0.05 }).observe(hero);
+    }
+
+    if (form) {
+        new IntersectionObserver(function (entries) {
+            formVisible = entries[0].isIntersecting;
+            update();
+        }, { threshold: 0.05 }).observe(form);
+    }
+
+    update();
+})();
+
+/* ============================================================
+   MEJORA #6C — Scroll reveal: fade+slide al entrar en viewport
+   Las clases se añaden por JS para que sin JS todo sea visible.
+   ============================================================ */
+(function () {
+    if (!('IntersectionObserver' in window)) return;
+
+    function addReveal(selector, stagger) {
+        document.querySelectorAll(selector).forEach(function (el, i) {
+            el.classList.add('reveal');
+            if (stagger && i > 0 && i <= 4) el.dataset.delay = i;
+        });
+    }
+
+    // Secciones completas
+    addReveal([
+        'section.container',
+        '.garantia-banner',
+        '.trust-strip',
+        '.comparison-section',
+        '.authority-section',
+        '.como-funciona-section',
+        '.para-quien-section',
+        '.antes-despues-section'
+    ].join(','), false);
+
+    // Cards con entrada escalonada
+    addReveal('.steps-grid .step-card',            true);
+    addReveal('.para-quien-grid .para-quien-card', true);
+    addReveal('.authority-grid .authority-stat',   true);
+    addReveal('.testimonial-card',                 true);
+
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(function (el) {
+        observer.observe(el);
+    });
 })();

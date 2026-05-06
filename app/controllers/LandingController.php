@@ -86,13 +86,17 @@ class LandingController extends Controller
         $productoColorModel = new ProductoColor();
         $colores = $productoColorModel->obtenerActivosPorProducto((int)$producto['id']);
 
+        $pedidoModel      = new Pedido();
+        $pedidosRecientes = $pedidoModel->contarPedidosRecientes($productoId, 30);
+
         $this->view('landing/index', [
-            'producto' => $producto,
-            'colores'  => $colores,
-            'errores'  => [],
-            'old'      => [],
-            'success'  => $success,
-            'config'   => $config,
+            'producto'          => $producto,
+            'colores'           => $colores,
+            'errores'           => [],
+            'old'               => [],
+            'success'           => $success,
+            'config'            => $config,
+            'pedidos_recientes' => $pedidosRecientes,
         ]);
     }
 
@@ -196,10 +200,6 @@ class LandingController extends Controller
         if ($tipoEntrega === 'domicilio' && $direccion === '') {
             $errores[] = "La dirección es obligatoria para envío a domicilio.";
         }
-        if (!$confirmPurchase) {
-            $errores[] = "Debes confirmar que quieres el producto y pagarás al recibirlo.";
-        }
-
         // ── Guard anti-duplicados: mismo teléfono + mismo producto en últimos 15 min ──
         if (empty($errores)) {
             $pedidoModel = new Pedido();
@@ -392,13 +392,17 @@ class LandingController extends Controller
         $productoColorModel = new ProductoColor();
         $colores = $productoColorModel->obtenerActivosPorProducto($productoId);
 
+        $pedidoModel      = new Pedido();
+        $pedidosRecientes = $pedidoModel->contarPedidosRecientes($productoId, 30);
+
         $this->view('landing/index', [
-            'producto' => $producto,
-            'colores'  => $colores,
-            'config'   => $config,
-            'success'  => $success,
-            'errores'  => [],
-            'old'      => [],
+            'producto'          => $producto,
+            'colores'           => $colores,
+            'config'            => $config,
+            'success'           => $success,
+            'errores'           => [],
+            'old'               => [],
+            'pedidos_recientes' => $pedidosRecientes,
         ]);
     }
 }

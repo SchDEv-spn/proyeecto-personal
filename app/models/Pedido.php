@@ -175,6 +175,16 @@ class Pedido extends Model
         ]);
     }
 
+    public function actualizarTelefono(int $id, string $telefono): bool
+    {
+        $sql = "UPDATE pedidos SET telefono = :telefono WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':telefono' => $telefono,
+            ':id'       => $id,
+        ]);
+    }
+
     public function syncColoresPedido(int $pedidoId, array $items): void
     {
         if ($pedidoId <= 0) return;
@@ -220,5 +230,20 @@ class Pedido extends Model
         ]);
 
         return (int)$stmt->fetchColumn() > 0;
+    }
+
+    public function contarPedidosRecientes(int $productoId, int $dias = 30): int
+    {
+        $sql = "SELECT COUNT(*) FROM pedidos
+                WHERE producto_id = :producto_id
+                  AND created_at >= NOW() - INTERVAL :dias DAY";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':producto_id' => $productoId,
+            ':dias'        => $dias,
+        ]);
+
+        return (int)$stmt->fetchColumn();
     }
 }

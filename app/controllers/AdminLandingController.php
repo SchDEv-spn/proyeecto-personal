@@ -107,6 +107,12 @@ class AdminLandingController extends Controller
             'faq2_a' => trim($_POST['faq2_a'] ?? ''),
             'faq3_q' => trim($_POST['faq3_q'] ?? ''),
             'faq3_a' => trim($_POST['faq3_a'] ?? ''),
+            'faq4_q' => trim($_POST['faq4_q'] ?? ''),
+            'faq4_a' => trim($_POST['faq4_a'] ?? ''),
+            'faq5_q' => trim($_POST['faq5_q'] ?? ''),
+            'faq5_a' => trim($_POST['faq5_a'] ?? ''),
+            'faq6_q' => trim($_POST['faq6_q'] ?? ''),
+            'faq6_a' => trim($_POST['faq6_a'] ?? ''),
 
             'footer_text' => trim($_POST['footer_text'] ?? ''),
 
@@ -128,9 +134,106 @@ class AdminLandingController extends Controller
             'wa_subtitle'    => trim($_POST['wa_subtitle'] ?? ''),
             'wa_footer_note' => trim($_POST['wa_footer_note'] ?? ''),
 
+            // ===== Antes y Después =====
+            'antes_label'         => trim($_POST['antes_label']         ?? 'Antes'),
+            'despues_label'       => trim($_POST['despues_label']       ?? 'Después'),
+            'antes_despues_title' => trim($_POST['antes_despues_title'] ?? 'Mira la diferencia'),
+
+            // ===== Para quién es =====
+            'para_quien_si_1' => trim($_POST['para_quien_si_1'] ?? ''),
+            'para_quien_si_2' => trim($_POST['para_quien_si_2'] ?? ''),
+            'para_quien_si_3' => trim($_POST['para_quien_si_3'] ?? ''),
+            'para_quien_si_4' => trim($_POST['para_quien_si_4'] ?? ''),
+            'para_quien_no_1' => trim($_POST['para_quien_no_1'] ?? ''),
+            'para_quien_no_2' => trim($_POST['para_quien_no_2'] ?? ''),
+            'para_quien_no_3' => trim($_POST['para_quien_no_3'] ?? ''),
+
+            // ===== WhatsApp flotante =====
+            'wa_phone' => preg_replace('/\D/', '', trim($_POST['wa_phone'] ?? '573023959721')),
+
+            // ===== Hero badge =====
+            'hero_badge_stars'    => trim($_POST['hero_badge_stars']    ?? '4.9'),
+            'hero_badge_customers'=> trim($_POST['hero_badge_customers']?? '+3.200 clientes felices'),
+
+            // ===== Urgencia =====
+            'urgency_stock'     => max(1, (int)($_POST['urgency_stock']     ?? 12)),
+            'countdown_minutes' => max(1, (int)($_POST['countdown_minutes'] ?? 25)),
+
+            // ===== Tabla comparativa =====
+            'comparison_title'     => trim($_POST['comparison_title']     ?? ''),
+            'comparison_1_without' => trim($_POST['comparison_1_without'] ?? ''),
+            'comparison_1_with'    => trim($_POST['comparison_1_with']    ?? ''),
+            'comparison_2_without' => trim($_POST['comparison_2_without'] ?? ''),
+            'comparison_2_with'    => trim($_POST['comparison_2_with']    ?? ''),
+            'comparison_3_without' => trim($_POST['comparison_3_without'] ?? ''),
+            'comparison_3_with'    => trim($_POST['comparison_3_with']    ?? ''),
+            'comparison_4_without' => trim($_POST['comparison_4_without'] ?? ''),
+            'comparison_4_with'    => trim($_POST['comparison_4_with']    ?? ''),
+            'comparison_5_without' => trim($_POST['comparison_5_without'] ?? ''),
+            'comparison_5_with'    => trim($_POST['comparison_5_with']    ?? ''),
+
+            // ===== Autoridad =====
+            'authority_enabled'    => isset($_POST['authority_enabled']) ? 1 : 0,
+            'authority_title'      => trim($_POST['authority_title']      ?? ''),
+            'authority_years'      => trim($_POST['authority_years']      ?? ''),
+            'authority_deliveries' => trim($_POST['authority_deliveries'] ?? ''),
+            'authority_rating'     => trim($_POST['authority_rating']     ?? ''),
+            'authority_guarantee'  => trim($_POST['authority_guarantee']  ?? ''),
+
             // ✅ COMBOS
             'combo_enabled' => $comboEnabled,
             'combo_price_2' => $comboPrice2,
+
+            // ===== Secciones visibles + orden =====
+            'section_order'      => trim($_POST['section_order'] ?? ''),
+            'show_benefits'      => (int)($_POST['show_benefits']      ?? 1),
+            'show_gallery'       => (int)($_POST['show_gallery']       ?? 1),
+            'show_antes_despues' => (int)($_POST['show_antes_despues'] ?? 1),
+            'show_como_funciona' => (int)($_POST['show_como_funciona'] ?? 1),
+            'show_countdown'     => (int)($_POST['show_countdown']     ?? 1),
+            'show_porque'        => (int)($_POST['show_porque']        ?? 1),
+            'show_para_quien'    => (int)($_POST['show_para_quien']    ?? 1),
+            'show_testimonios'   => (int)($_POST['show_testimonios']   ?? 1),
+            'show_faqs'          => (int)($_POST['show_faqs']          ?? 1),
+
+            // ===== Section titles =====
+            'gallery_title'     => trim($_POST['gallery_title']     ?? ''),
+            'testimonios_title' => trim($_POST['testimonios_title'] ?? ''),
+            'para_quien_title'  => trim($_POST['para_quien_title']  ?? ''),
+            'faq_title'         => trim($_POST['faq_title']         ?? ''),
+
+            // ===== Hero trust row =====
+            'hero_trust_1' => trim($_POST['hero_trust_1'] ?? ''),
+            'hero_trust_2' => trim($_POST['hero_trust_2'] ?? ''),
+            'hero_trust_3' => trim($_POST['hero_trust_3'] ?? ''),
+
+            // ===== Cómo funciona steps =====
+            'cf_title'       => trim($_POST['cf_title']       ?? ''),
+            'cf_step1_icon'  => trim($_POST['cf_step1_icon']  ?? ''),
+            'cf_step1_title' => trim($_POST['cf_step1_title'] ?? ''),
+            'cf_step1_desc'  => trim($_POST['cf_step1_desc']  ?? ''),
+            'cf_step2_icon'  => trim($_POST['cf_step2_icon']  ?? ''),
+            'cf_step2_title' => trim($_POST['cf_step2_title'] ?? ''),
+            'cf_step2_desc'  => trim($_POST['cf_step2_desc']  ?? ''),
+            'cf_step3_icon'  => trim($_POST['cf_step3_icon']  ?? ''),
+            'cf_step3_title' => trim($_POST['cf_step3_title'] ?? ''),
+            'cf_step3_desc'  => trim($_POST['cf_step3_desc']  ?? ''),
+
+            // ===== Garantía =====
+            'show_garantia'  => (int)($_POST['show_garantia']  ?? 1),
+            'garantia_title' => trim($_POST['garantia_title']  ?? ''),
+            'garantia_desc'  => trim($_POST['garantia_desc']   ?? ''),
+            'garantia_item1' => trim($_POST['garantia_item1']  ?? ''),
+            'garantia_item2' => trim($_POST['garantia_item2']  ?? ''),
+            'garantia_item3' => trim($_POST['garantia_item3']  ?? ''),
+            'garantia_item4' => trim($_POST['garantia_item4']  ?? ''),
+
+            // ===== Transportadoras =====
+            'show_trust_strip' => (int)($_POST['show_trust_strip'] ?? 1),
+
+            // ===== Form header =====
+            'form_title'    => trim($_POST['form_title']    ?? ''),
+            'form_subtitle' => trim($_POST['form_subtitle'] ?? ''),
         ];
 
         // WhatsApp items (1..5)
@@ -138,6 +241,11 @@ class AdminLandingController extends Controller
             $data["wa{$i}_name"] = trim($_POST["wa{$i}_name"] ?? '');
             $data["wa{$i}_time"] = trim($_POST["wa{$i}_time"] ?? '');
             $data["wa{$i}_text"] = trim($_POST["wa{$i}_text"] ?? '');
+        }
+
+        // Announcement bar items (1..6)
+        for ($i = 1; $i <= 6; $i++) {
+            $data["announcement_item_{$i}"] = trim($_POST["announcement_item_{$i}"] ?? '');
         }
 
         // 2. Colores
@@ -150,7 +258,7 @@ class AdminLandingController extends Controller
         // Tema
         $data['theme'] = in_array(
             trim($_POST['theme'] ?? ''),
-            ['dark-luxury', 'light-luxury', 'bold-conversion', 'minimal-clean'],
+            ['dark-luxury', 'light-luxury', 'bold-conversion', 'minimal-clean', 'femme-rose', 'natural-sage'],
             true
         ) ? trim($_POST['theme']) : 'dark-luxury';
 
@@ -189,6 +297,10 @@ class AdminLandingController extends Controller
             $data["wa{$i}_image_path"] = $_POST["wa{$i}_image_path_actual"] ?? null;
         }
 
+        // Antes/Después paths actuales
+        $data['antes_path']   = $_POST['antes_path_actual']   ?? null;
+        $data['despues_path'] = $_POST['despues_path_actual'] ?? null;
+
         // 4. Manejo de archivos
         $basePath  = dirname(__DIR__, 2);
         $uploadDir = $basePath . '/public/uploads/landing/';
@@ -214,6 +326,9 @@ class AdminLandingController extends Controller
             'wa3_image_file'       => 'wa3_image_path',
             'wa4_image_file'       => 'wa4_image_path',
             'wa5_image_file'       => 'wa5_image_path',
+
+            'antes_file'   => 'antes_path',
+            'despues_file' => 'despues_path',
         ];
 
         $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'webm'];

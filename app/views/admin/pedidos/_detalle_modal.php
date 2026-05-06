@@ -171,7 +171,21 @@ if ($telLimpio !== '') {
 
         <div class="detalle-item">
           <span class="detalle-label">Teléfono</span>
-          <span class="detalle-value"><?= htmlspecialchars($pedido['telefono'] ?? '-') ?></span>
+          <div class="detalle-value phone-edit-wrap">
+            <span class="phone-display"><?= htmlspecialchars($pedido['telefono'] ?? '-') ?></span>
+            <button type="button" class="btn-edit-field" title="Editar teléfono">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+            <form class="phone-edit-form" style="display:none">
+              <input type="hidden" name="id" value="<?= (int)($pedido['id'] ?? 0) ?>">
+              <input type="tel" name="telefono"
+                     value="<?= htmlspecialchars($pedido['telefono'] ?? '') ?>"
+                     class="phone-edit-input"
+                     placeholder="Ej: 3001234567">
+              <button type="submit" class="btn-save-inline">Guardar</button>
+              <button type="button" class="btn-cancel-inline">×</button>
+            </form>
+          </div>
         </div>
 
         <div class="detalle-item">

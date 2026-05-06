@@ -90,6 +90,42 @@ class AdminPedidosController extends Controller
             $totalProveedor += ($precioProvUnit * $cantidad);
         }
 
+        // ======= Período previo para tendencias =======
+        list($prevInicioObj, $prevFinObj) = $this->calcularRangoPrevio($rango, $inicioObj);
+
+        $pedidosPrev = [];
+        if (method_exists($pedidoModel, 'obtenerPorRango')) {
+            $pedidosPrev = $pedidoModel->obtenerPorRango(
+                $prevInicioObj->format('Y-m-d H:i:s'),
+                $prevFinObj->format('Y-m-d H:i:s'),
+                300
+            );
+        }
+
+        $prevPedidos  = count($pedidosPrev);
+        $prevVenta    = 0.0;
+        $prevUtilidad = 0.0;
+
+        foreach ($pedidosPrev as $pp) {
+            if (($pp['estado'] ?? '') === 'cancelado') continue;
+            $cant2        = max(1, (int)($pp['cantidad_total'] ?? 1));
+            $punit2       = (float)($pp['precio_venta']     ?? 0);
+            $pprov2       = (float)($pp['precio_proveedor'] ?? 0);
+            $ptotal2      = isset($pp['precio_total']) ? (float)$pp['precio_total'] : ($punit2 * $cant2);
+            $envio2       = 0.0;
+            if (isset($pp['costo_envio']))          $envio2 = (float)$pp['costo_envio'];
+            elseif (isset($pp['producto_costo_envio'])) $envio2 = (float)$pp['producto_costo_envio'];
+            if ($envio2 < 0) $envio2 = 0;
+            $prevVenta    += $ptotal2;
+            $prevUtilidad += $ptotal2 - ($pprov2 * $cant2) - $envio2;
+        }
+
+        $tendencias = [
+            'pedidos'  => $this->calcTrendPct((float)$totalPedidos, (float)$prevPedidos),
+            'ventas'   => $this->calcTrendPct($totalVenta,    $prevVenta),
+            'utilidad' => $this->calcTrendPct($totalUtilidad, $prevUtilidad),
+        ];
+
         $this->view('admin/pedidos/index', [
             'pedidos'          => $pedidos,
             'total_pedidos'    => $totalPedidos,
@@ -98,7 +134,38 @@ class AdminPedidosController extends Controller
             'total_proveedor'  => $totalProveedor,
             'pedidos_nuevos'   => $pedidosNuevos,
             'rango'            => $rango,
+            'tendencias'       => $tendencias,
         ]);
+    }
+
+    private function calcularRangoPrevio(string $rango, DateTime $inicio): array
+    {
+        $fin    = clone $inicio;
+        switch ($rango) {
+            case 'hoy':
+            case 'ayer':
+                $inicio = (clone $fin)->modify('-1 day');
+                break;
+            case 'semana':
+                $inicio = (clone $fin)->modify('-1 week');
+                break;
+            case 'mes':
+            default:
+                $inicio = (clone $fin)->modify('-1 month');
+                break;
+        }
+        return [$inicio, $fin];
+    }
+
+    private function calcTrendPct(float $current, float $prev): array
+    {
+        if ($prev == 0.0) {
+            return ['pct' => null, 'dir' => 'flat', 'label' => '—'];
+        }
+        $pct = (int)round(($current - $prev) / $prev * 100);
+        $dir = $pct > 0 ? 'up' : ($pct < 0 ? 'down' : 'flat');
+        $lbl = ($pct > 0 ? '+' : '') . $pct . '%';
+        return ['pct' => $pct, 'dir' => $dir, 'label' => $lbl];
     }
 
     // ✅ ÚNICA versión del helper (sin duplicados)
@@ -131,6 +198,113 @@ class AdminPedidosController extends Controller
         }
 
         return [$inicio, $fin];
+    }
+
+    public function exportarCsv()
+    {
+        $this->requireLogin();
+
+        $rango      = $_GET['rango'] ?? 'mes';
+        $permitidos = ['hoy', 'ayer', 'semana', 'mes'];
+        if (!in_array($rango, $permitidos, true)) $rango = 'mes';
+
+        list($inicioObj, $finObj) = $this->calcularRangoFechas($rango);
+        $pedidoModel = new Pedido();
+
+        if (method_exists($pedidoModel, 'obtenerPorRango')) {
+            $pedidos = $pedidoModel->obtenerPorRango(
+                $inicioObj->format('Y-m-d H:i:s'),
+                $finObj->format('Y-m-d H:i:s'),
+                2000
+            );
+        } else {
+            $pedidos = $pedidoModel->obtenerTodos(2000);
+        }
+
+        $filename = 'pedidos_' . $rango . '_' . date('Ymd_His') . '.csv';
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM para Excel
+
+        fputcsv($out, [
+            'ID', 'Fecha', 'Estado',
+            'Nombre', 'Apellidos', 'Teléfono',
+            'Municipio', 'Departamento',
+            'Producto', 'Cantidad',
+            'Precio Total', 'Costo Proveedor', 'Costo Envío', 'Utilidad',
+            'Tipo Entrega', 'Dirección',
+        ]);
+
+        foreach ($pedidos as $p) {
+            $cant        = max(1, (int)($p['cantidad_total'] ?? 1));
+            $punit       = (float)($p['precio_venta']      ?? 0);
+            $ptotal      = isset($p['precio_total']) ? (float)$p['precio_total'] : ($punit * $cant);
+            $pprov       = (float)($p['precio_proveedor']  ?? 0);
+            $cenvio      = isset($p['costo_envio'])
+                ? (float)$p['costo_envio']
+                : (float)($p['producto_costo_envio'] ?? 0);
+            $utilidad    = $ptotal - ($pprov * $cant) - $cenvio;
+
+            fputcsv($out, [
+                $p['id']              ?? '',
+                $p['created_at']      ?? '',
+                $p['estado']          ?? '',
+                $p['nombre']          ?? '',
+                $p['apellidos']       ?? '',
+                $p['telefono']        ?? '',
+                $p['municipio']       ?? '',
+                $p['departamento']    ?? '',
+                $p['producto_nombre'] ?? '',
+                $cant,
+                number_format($ptotal,   2, '.', ''),
+                number_format($pprov * $cant, 2, '.', ''),
+                number_format($cenvio,   2, '.', ''),
+                number_format($utilidad, 2, '.', ''),
+                $p['tipo_entrega']    ?? '',
+                $p['direccion']       ?? '',
+            ]);
+        }
+
+        fclose($out);
+        exit;
+    }
+
+    public function actualizarTelefono()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            exit;
+        }
+
+        $id       = (int)(  $_POST['id']       ?? 0);
+        $telefono = trim((string)($_POST['telefono'] ?? ''));
+
+        if ($id <= 0 || $telefono === '') {
+            echo json_encode(['ok' => false, 'error' => 'Datos inválidos']);
+            exit;
+        }
+
+        if (!preg_match('/^[\d\s\+\-\(\)]{6,20}$/', $telefono)) {
+            echo json_encode(['ok' => false, 'error' => 'Formato de teléfono no válido']);
+            exit;
+        }
+
+        $pedidoModel = new Pedido();
+        $ok = $pedidoModel->actualizarTelefono($id, $telefono);
+
+        echo json_encode($ok
+            ? ['ok' => true, 'telefono' => $telefono]
+            : ['ok' => false, 'error' => 'No se pudo guardar']
+        );
+        exit;
     }
 
     public function detalle()
