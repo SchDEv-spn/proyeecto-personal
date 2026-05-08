@@ -609,6 +609,9 @@ body.sidebar-open .material-sidebar { transform: translateX(0); }
 .status-entregado { border-color: rgba(16,185,129,.24); background: rgba(16,185,129,.12); color: #6ee7b7; }
 .status-entregado::before { background: #10b981; }
 
+.status-en_oficina { border-color: rgba(245,158,11,.26); background: rgba(245,158,11,.12); color: #fcd34d; }
+.status-en_oficina::before { background: #f59e0b; }
+
 .status-cancelado { border-color: rgba(248,113,113,.24); background: rgba(248,113,113,.10); color: #fca5a5; }
 .status-cancelado::before { background: #f87171; }
 

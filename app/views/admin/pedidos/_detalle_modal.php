@@ -6,7 +6,7 @@ if (!$pedido) {
   return;
 }
 
-$estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'entregado', 'cancelado'];
+$estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
 $estadoActual = $pedido['estado'] ?? 'nuevo';
 $estadoSafe = in_array($estadoActual, $estadosPosibles, true) ? $estadoActual : 'nuevo';
 
@@ -98,10 +98,20 @@ if ($telLimpio !== '') {
         Siguiente <i class="fas fa-chevron-right"></i>
       </button>
 
-      <?php if ($waUrl): ?>
-        <a href="<?= htmlspecialchars($waUrl) ?>" target="_blank" rel="noopener" class="btn-whatsapp">
+      <?php if ($telLimpio !== ''): ?>
+        <button type="button" class="btn-whatsapp js-wa-open"
+                data-telefono="<?= htmlspecialchars($telRaw) ?>"
+                data-nombre="<?= htmlspecialchars($pedido['nombre'] ?? '') ?>"
+                data-apellidos="<?= htmlspecialchars($pedido['apellidos'] ?? '') ?>"
+                data-producto="<?= htmlspecialchars($pedido['producto_nombre'] ?? '') ?>"
+                data-cantidad="<?= htmlspecialchars((string)$cantidadTotal) ?>"
+                data-precio="<?= htmlspecialchars('$' . number_format($precioTotal, 0, ',', '.')) ?>"
+                data-municipio="<?= htmlspecialchars($pedido['municipio'] ?? '') ?>"
+                data-departamento="<?= htmlspecialchars($pedido['departamento'] ?? '') ?>"
+                data-estado="<?= htmlspecialchars($estadoSafe) ?>"
+                data-tipo-entrega="<?= htmlspecialchars($pedido['tipo_entrega'] ?? '') ?>">
           <i class="fab fa-whatsapp"></i> WhatsApp
-        </a>
+        </button>
       <?php endif; ?>
     </div>
   </div>
@@ -123,6 +133,7 @@ if ($telLimpio !== '') {
           </span>
 
           <form action="/tienda_mvc/AdminPedidos/cambiarEstado" method="POST" class="status-form js-estado-form" style="margin-top:.75rem;">
+            <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= htmlspecialchars($pedido['id'] ?? '') ?>">
             <input type="hidden" name="ajax" value="1">
             <select name="estado">
@@ -177,6 +188,7 @@ if ($telLimpio !== '') {
               <i class="fas fa-pencil-alt"></i>
             </button>
             <form class="phone-edit-form" style="display:none">
+              <?= csrf_field() ?>
               <input type="hidden" name="id" value="<?= (int)($pedido['id'] ?? 0) ?>">
               <input type="tel" name="telefono"
                      value="<?= htmlspecialchars($pedido['telefono'] ?? '') ?>"

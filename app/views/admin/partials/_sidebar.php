@@ -11,6 +11,8 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
     $activeNav = 'productos';
 } elseif (strpos($currentPath, '/AdminPedidos/') !== false) {
     $activeNav = 'pedidos';
+} elseif (strpos($currentPath, '/AdminPlantillasWa/') !== false) {
+    $activeNav = 'plantillas';
 } else {
     $activeNav = '';
 }
@@ -36,6 +38,10 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
 
         <a href="/tienda_mvc/AdminProductos/index" class="<?= $activeNav === 'productos' ? 'active' : '' ?>">
             <i class="fas fa-shopping-bag"></i> Productos
+        </a>
+
+        <a href="/tienda_mvc/AdminPlantillasWa/index" class="<?= $activeNav === 'plantillas' ? 'active' : '' ?>">
+            <i class="fab fa-whatsapp"></i> Plantillas WA
         </a>
 
         <a href="/tienda_mvc/Auth/logout">

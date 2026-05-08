@@ -1238,6 +1238,7 @@
       const fd = new FormData();
       fd.append('id', id);
       fd.append('telefono', telefono);
+      fd.append('csrf_token', window.__CSRF__ || '');
 
       const res  = await fetch('/tienda_mvc/AdminPedidos/actualizarTelefono', {
         method: 'POST',
@@ -1268,4 +1269,428 @@
       if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = oldText || 'Guardar'; }
     }
   }, true);
+})();
+
+// =========================
+// WHATSAPP: Picker de plantillas
+// =========================
+(() => {
+  const ESTADOS = ['nuevo','contactado','confirmado','enviado','en_oficina','entregado','cancelado'];
+  const LABEL   = { nuevo:'Nuevo', contactado:'Contactado', confirmado:'Confirmado',
+                    enviado:'Enviado', en_oficina:'En oficina', entregado:'Entregado', cancelado:'Cancelado' };
+
+  const buildWaUrl = (telefono, mensaje) => {
+    let tel = telefono.replace(/\D/g, '');
+    if (tel.startsWith('00')) tel = tel.slice(2);
+    if (!tel.startsWith('57')) {
+      if (tel.length === 11 && tel[0] === '0') tel = tel.slice(1);
+      tel = '57' + tel;
+    }
+    return `https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`;
+  };
+
+  const getTransportadora = (tipoEntrega) =>
+    (tipoEntrega || '').toLowerCase() === 'domicilio' ? 'Envia' : 'Interrapidísimo';
+
+  const getRastreoUrl = (tipoEntrega) =>
+    (tipoEntrega || '').toLowerCase() === 'domicilio'
+      ? 'https://envia.com/rastreo/'
+      : 'https://www.interrapidisimo.com/rastreo/';
+
+  const resolveMsg = (template, data) =>
+    template
+      .replace(/{nombre}/g,         data.nombre                        || '')
+      .replace(/{apellidos}/g,       data.apellidos                     || '')
+      .replace(/{producto}/g,        data.producto                      || '')
+      .replace(/{cantidad}/g,        data.cantidad                      || '1')
+      .replace(/{precio}/g,          data.precio                        || '')
+      .replace(/{municipio}/g,       data.municipio                     || '')
+      .replace(/{departamento}/g,    data.departamento                  || '')
+      .replace(/{transportadora}/g,  getTransportadora(data.tipoEntrega))
+      .replace(/{rastreo}/g,         getRastreoUrl(data.tipoEntrega));
+      // {guia} NO se reemplaza — el admin lo completa manualmente
+
+  const getTemplate = (estado) => {
+    const plantillas = window.__PLANTILLAS__ || {};
+    return plantillas[estado]?.mensaje || '';
+  };
+
+  let pickerEl = null;
+
+  const closePicker = () => {
+    pickerEl?.remove();
+    pickerEl = null;
+  };
+
+  const openPicker = (data) => {
+    closePicker();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'wa-picker-overlay';
+
+    const tabsHtml = ESTADOS.map(e => `
+      <button class="wa-tab${e === data.estado ? ' is-active' : ''}" data-e="${e}" type="button">
+        ${LABEL[e]}
+      </button>`).join('');
+
+    const initialMsg = resolveMsg(getTemplate(data.estado), data);
+
+    overlay.innerHTML = `
+      <div class="wa-picker-card" role="dialog" aria-modal="true" aria-label="Mensaje WhatsApp">
+        <div class="wa-picker-head">
+          <strong>📱 Mensaje por WhatsApp</strong>
+          <button class="wa-picker-close" type="button" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="wa-picker-tabs">${tabsHtml}</div>
+        <div class="wa-picker-body">
+          <label>Mensaje (editable)</label>
+          <textarea id="waMsgTA">${initialMsg}</textarea>
+        </div>
+        <div class="wa-picker-foot">
+          <a class="btn-wa-send" id="waSendBtn" href="#" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> Abrir WhatsApp
+          </a>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    pickerEl = overlay;
+
+    const ta      = overlay.querySelector('#waMsgTA');
+    const sendBtn = overlay.querySelector('#waSendBtn');
+
+    const updateSendUrl = () => {
+      sendBtn.href = buildWaUrl(data.telefono, ta.value);
+    };
+
+    updateSendUrl();
+    ta.addEventListener('input', updateSendUrl);
+
+    // Tabs
+    overlay.querySelectorAll('.wa-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        overlay.querySelectorAll('.wa-tab').forEach(t => t.classList.remove('is-active'));
+        tab.classList.add('is-active');
+        ta.value = resolveMsg(getTemplate(tab.dataset.e), data);
+        updateSendUrl();
+      });
+    });
+
+    // Cerrar
+    overlay.querySelector('.wa-picker-close').addEventListener('click', closePicker);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closePicker(); });
+
+    // Cerrar con ESC
+    const onKey = e => { if (e.key === 'Escape') { closePicker(); window.removeEventListener('keydown', onKey); } };
+    window.addEventListener('keydown', onKey);
+
+    // Foco: si hay {guia} seleccionarlo para que el admin lo reemplace de inmediato
+    setTimeout(() => {
+      const guiaIdx = ta.value.indexOf('{guia}');
+      if (guiaIdx !== -1) {
+        ta.focus();
+        ta.setSelectionRange(guiaIdx, guiaIdx + 6);
+      } else {
+        ta.focus();
+      }
+    }, 60);
+  };
+
+  // Interceptar todos los botones .js-wa-open
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.js-wa-open');
+    if (!btn) return;
+    e.preventDefault();
+
+    openPicker({
+      telefono:     btn.dataset.telefono     || '',
+      nombre:       btn.dataset.nombre       || '',
+      apellidos:    btn.dataset.apellidos    || '',
+      producto:     btn.dataset.producto     || '',
+      cantidad:     btn.dataset.cantidad     || '1',
+      precio:       btn.dataset.precio       || '',
+      municipio:    btn.dataset.municipio    || '',
+      departamento: btn.dataset.departamento || '',
+      estado:       btn.dataset.estado       || 'nuevo',
+      tipoEntrega:  btn.dataset.tipoEntrega  || '',
+    });
+  });
+})();
+
+// =========================
+// PEDIDOS: Campana de notificaciones (estilo Facebook)
+// =========================
+(() => {
+  const POLL_MS      = 30_000;
+  const ENDPOINT     = '/tienda_mvc/AdminPedidos/contadores';
+  const PEDIDOS_URL  = '/tienda_mvc/AdminPedidos/index';
+
+  // ---- Elementos del DOM
+  const bellBtn  = document.getElementById('notifBell');
+  const badge    = document.getElementById('notifBadge');
+  const dropdown = document.getElementById('notifDropdown');
+  const list     = document.getElementById('notifList');
+  const clearBtn = document.getElementById('notifClear');
+
+  if (!bellBtn || !badge || !dropdown || !list) return;
+
+  // ---- Estado
+  const isOnPedidosPage = !!document.getElementById('contenedorPedidos');
+
+  // -1 = aún no inicializado. El primer poll establece la base sin disparar alertas.
+  let lastKnownCount = -1;
+
+  let notifications = [];   // { id, name, product, location, time, cardEl }
+  let panelOpen     = false;
+  let unreadCount   = 0;    // notifs added since panel was last opened
+
+  // IDs marcados como vistos — persiste en localStorage para no re-aparecer
+  const SEEN_KEY   = 'tienda_notif_seen';
+  const getSeenIds = () => {
+    try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); }
+    catch { return new Set(); }
+  };
+  const markSeen = (...ids) => {
+    const s = getSeenIds();
+    ids.forEach(id => s.add(String(id)));
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...s].slice(-500))); } catch {}
+  };
+
+  // ---- Badge (solo cuenta los no vistos desde la última apertura del panel)
+  const updateBadge = () => {
+    badge.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
+    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+  };
+
+  // ---- Extrae datos legibles de una tarjeta DOM
+  const extractData = (card) => {
+    const secs    = card.querySelectorAll('.card-section');
+    const client  = secs[0];
+    const product = secs[1];
+    return {
+      id:       String(card.dataset.pedidoId || ''),
+      name:     client?.querySelector('strong')?.textContent?.trim()          || 'Cliente',
+      location: client?.querySelector('small')?.textContent?.trim()           || '',
+      product:  product?.querySelector('.card-value')?.childNodes[0]?.textContent?.trim() || '',
+      time:     card.querySelector('.time-badge')?.textContent?.replace(/\s+/g,' ').trim() || 'ahora',
+    };
+  };
+
+  // ---- Renderiza la lista del panel
+  const renderList = () => {
+    if (!notifications.length) {
+      list.innerHTML = '<li class="notif-item-empty">Sin notificaciones nuevas.</li>';
+      return;
+    }
+    list.innerHTML = '';
+    notifications.forEach(notif => {
+      const li = document.createElement('li');
+      li.className = 'notif-item';
+      li.dataset.nid = notif.id;
+      li.innerHTML = `
+        <div class="notif-item-icon"><i class="fas fa-shopping-bag"></i></div>
+        <div class="notif-item-body">
+          <strong class="notif-item-name">${notif.name}</strong>
+          <span class="notif-item-product">${notif.product || 'Pedido nuevo'}</span>
+          <span class="notif-item-meta">${notif.location}${notif.time ? ' · ' + notif.time : ''}</span>
+        </div>
+        <div class="notif-item-dot"></div>
+      `;
+      li.addEventListener('click', () => handleItemClick(notif));
+      list.appendChild(li);
+    });
+  };
+
+  // ---- Panel open / close
+  const openPanel = () => {
+    panelOpen = true;
+    dropdown.hidden = false;
+    dropdown.setAttribute('aria-hidden', 'false');
+    bellBtn.setAttribute('aria-expanded', 'true');
+    // Marcar todos como vistos al abrir: badge → 0, persiste en localStorage
+    markSeen(...notifications.map(n => n.id));
+    unreadCount = 0;
+    updateBadge();
+    renderList();
+  };
+
+  const closePanel = () => {
+    panelOpen = false;
+    dropdown.hidden = true;
+    dropdown.setAttribute('aria-hidden', 'true');
+    bellBtn.setAttribute('aria-expanded', 'false');
+  };
+
+  bellBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (panelOpen) closePanel(); else openPanel();
+  });
+
+  document.addEventListener('click', e => {
+    if (!panelOpen) return;
+    if (!document.getElementById('notifWrap')?.contains(e.target)) closePanel();
+  });
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && panelOpen) closePanel();
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    markSeen(...notifications.map(n => n.id));
+    notifications = [];
+    unreadCount   = 0;
+    updateBadge();
+    renderList();
+    closePanel();
+  });
+
+  // ---- Inyectar / resaltar tarjeta en el listado
+  const injectCard = (card) => {
+    const container = document.getElementById('contenedorPedidos');
+    if (!container) return;
+    card.classList.add('is-new-arrival');
+    const emptyEl = container.querySelector('.cards-empty');
+    if (emptyEl) emptyEl.style.display = 'none';
+    container.prepend(card);
+    markSeen(card.dataset.pedidoId);   // evitar que el mismo ID vuelva a disparar
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+  };
+
+  const highlightCard = (card) => {
+    card.classList.remove('is-new-arrival');
+    void card.offsetWidth;
+    card.classList.add('is-new-arrival');
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+  };
+
+  // ---- Click en un item del panel
+  const handleItemClick = (notif) => {
+    closePanel();
+
+    if (!isOnPedidosPage) {
+      window.location.href = PEDIDOS_URL;
+      return;
+    }
+
+    const existing = document.querySelector(
+      `.order-card[data-pedido-id="${CSS.escape(notif.id)}"]`
+    );
+    if (existing) {
+      highlightCard(existing);
+    } else if (notif.cardEl) {
+      injectCard(notif.cardEl);
+    } else {
+      document.getElementById('contenedorPedidos')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    markSeen(notif.id);
+    notifications = notifications.filter(n => n.id !== notif.id);
+    unreadCount = Math.max(0, unreadCount - 1);
+    updateBadge();
+  };
+
+  // ---- Fetch nuevas tarjetas desde el servidor
+  // Devuelve tarjetas cuyo ID NO está en seenIds (pedidos genuinamente nuevos)
+  const fetchNewCards = async () => {
+    try {
+      const res = await fetch(PEDIDOS_URL, { cache: 'no-store' });
+      if (!res.ok) return [];
+      const doc     = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const seenIds = getSeenIds();
+      return Array.from(doc.querySelectorAll('.order-card[data-pedido-id]'))
+        .filter(c => !seenIds.has(String(c.dataset.pedidoId)));
+    } catch { return []; }
+  };
+
+  // ---- Notificación del navegador
+  document.addEventListener('click', () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, { once: true });
+
+  const sendBrowserNotif = (diff) => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const n = new Notification('Tienda — Nuevo pedido', {
+      body: diff === 1 ? 'Se recibió 1 nuevo pedido.' : `Se recibieron ${diff} nuevos pedidos.`,
+      icon: '/tienda_mvc/public/img/logo.png',
+    });
+    n.onclick = () => { window.focus(); openPanel(); };
+  };
+
+  // ---- Animación de la campana
+  const ringBell = () => {
+    bellBtn.classList.remove('notif-bell--ring');
+    void bellBtn.offsetWidth;
+    bellBtn.classList.add('notif-bell--ring');
+    bellBtn.addEventListener('animationend', () => bellBtn.classList.remove('notif-bell--ring'),
+      { once: true });
+  };
+
+  // ---- Poll
+  const poll = async () => {
+    try {
+      const res = await fetch(ENDPOINT, {
+        headers: { 'X-Requested-With': 'fetch', Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+
+      const current = Number((await res.json()).pedidos_nuevos ?? 0);
+
+      if (lastKnownCount === -1) {
+        lastKnownCount = current;
+        // Marcar como "ya vistos" todos los pedidos que existen AHORA,
+        // para que solo los que lleguen DESPUÉS se cuenten como nuevos.
+        if (current > 0) {
+          const baseCards = await fetchNewCards();   // seenIds aún vacío → devuelve todos
+          markSeen(...baseCards.map(c => c.dataset.pedidoId));
+        }
+        return;
+      }
+
+      if (current > lastKnownCount) {
+        const diff  = current - lastKnownCount;
+        const cards = await fetchNewCards();   // ya filtrado por seenIds internamente
+        let added   = 0;
+
+        // Agregar a la lista (ignorar duplicados)
+        cards.forEach(card => {
+          const data = extractData(card);
+          if (!notifications.find(n => n.id === data.id)) {
+            notifications.push({ ...data, cardEl: card });
+            added++;
+          }
+        });
+
+        // Si el count subió pero no hay cartas en el rango visible, agregar genérico
+        if (cards.length === 0) {
+          for (let i = 0; i < diff; i++) {
+            notifications.push({
+              id: `g-${Date.now()}-${i}`, name: 'Nuevo pedido',
+              product: '', location: '', time: 'ahora', cardEl: null,
+            });
+            added++;
+          }
+        }
+
+        if (added > 0) {
+          unreadCount += added;
+          updateBadge();
+          if (panelOpen) renderList();
+          ringBell();
+          sendBrowserNotif(added);
+        }
+      }
+
+      lastKnownCount = current;
+    } catch { /* red no disponible */ }
+  };
+
+  updateBadge();
+  // Primer poll rápido (1s) para fijar la base. Luego cada 30s.
+  setTimeout(poll, 1_000);
+  setInterval(poll, POLL_MS);
 })();

@@ -25,6 +25,7 @@
     $pedidos         = $pedidos         ?? [];
     $rango           = $rango           ?? 'mes';
     $tendencias      = $tendencias      ?? [];
+    $plantillas_wa   = $plantillas_wa   ?? [];
     $usuarioNombre   = $_SESSION['usuario_nombre'] ?? 'Admin';
     $usuarioEmail    = $_SESSION['usuario_email'] ?? 'admin@tuempresa.com';
 
@@ -167,6 +168,7 @@
                             <button class="state-chip" data-estado="contactado">Contactado</button>
                             <button class="state-chip" data-estado="confirmado">Confirmado</button>
                             <button class="state-chip" data-estado="enviado">Enviado</button>
+                            <button class="state-chip" data-estado="en_oficina">En oficina</button>
                             <button class="state-chip" data-estado="entregado">Entregado</button>
                             <button class="state-chip" data-estado="cancelado">Cancelado</button>
                         </div>
@@ -191,7 +193,7 @@
                                 }
 
                                 $estadoActual = $p['estado'] ?? 'nuevo';
-                                $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'entregado', 'cancelado'];
+                                $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
                                 $cantidadTotal = (int)($p['cantidad_total'] ?? 1);
                                 if ($cantidadTotal < 1) $cantidadTotal = 1;
 
@@ -273,6 +275,7 @@
 
                                     <div class="card-footer">
                                         <form action="/tienda_mvc/AdminPedidos/cambiarEstado" method="POST" class="status-form">
+                                            <?= csrf_field() ?>
                                             <input type="hidden" name="id" value="<?= htmlspecialchars($p['id'] ?? '') ?>">
                                             <select name="estado" class="form-select-sm">
                                                 <?php foreach ($estadosPosibles as $estado): ?>
@@ -285,10 +288,20 @@
                                         </form>
 
                                         <div class="card-actions">
-                                            <?php if ($waUrl): ?>
-                                                <a href="<?= htmlspecialchars($waUrl) ?>" target="_blank" class="btn-whatsapp">
+                                            <?php if ($telLimpio !== ''): ?>
+                                                <button type="button" class="btn-whatsapp js-wa-open"
+                                                        data-telefono="<?= htmlspecialchars($telRaw) ?>"
+                                                        data-nombre="<?= htmlspecialchars($p['nombre'] ?? '') ?>"
+                                                        data-apellidos="<?= htmlspecialchars($p['apellidos'] ?? '') ?>"
+                                                        data-producto="<?= htmlspecialchars($p['producto_nombre'] ?? '') ?>"
+                                                        data-cantidad="<?= htmlspecialchars((string)$cantidadTotal) ?>"
+                                                        data-precio="<?= htmlspecialchars('$' . number_format($precioTotal, 0, ',', '.')) ?>"
+                                                        data-municipio="<?= htmlspecialchars($p['municipio'] ?? '') ?>"
+                                                        data-departamento="<?= htmlspecialchars($p['departamento'] ?? '') ?>"
+                                                        data-estado="<?= htmlspecialchars($estadoActual) ?>"
+                                                        data-tipo-entrega="<?= htmlspecialchars($p['tipo_entrega'] ?? '') ?>">
                                                     <i class="fab fa-whatsapp"></i> WhatsApp
-                                                </a>
+                                                </button>
                                             <?php endif; ?>
 
                                             <a href="/tienda_mvc/AdminPedidos/detalle?id=<?= htmlspecialchars($p['id'] ?? '') ?>"
@@ -331,9 +344,10 @@
 
     </div><!-- /app-shell -->
 
-    <!-- Pasar pedidos a JS (sin backend) -->
+    <!-- Datos para JS -->
     <script>
-        window.__PEDIDOS__ = <?= json_encode($pedidos, JSON_UNESCAPED_UNICODE) ?>;
+        window.__PEDIDOS__     = <?= json_encode($pedidos,      JSON_UNESCAPED_UNICODE) ?>;
+        window.__PLANTILLAS__  = <?= json_encode($plantillas_wa, JSON_UNESCAPED_UNICODE) ?>;
     </script>
 
     <!-- Librerías -->

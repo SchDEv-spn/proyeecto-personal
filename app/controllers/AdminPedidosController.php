@@ -126,6 +126,8 @@ class AdminPedidosController extends Controller
             'utilidad' => $this->calcTrendPct($totalUtilidad, $prevUtilidad),
         ];
 
+        $plantillasWa = (new PlantillaWa())->keyedByEstado();
+
         $this->view('admin/pedidos/index', [
             'pedidos'          => $pedidos,
             'total_pedidos'    => $totalPedidos,
@@ -135,6 +137,7 @@ class AdminPedidosController extends Controller
             'pedidos_nuevos'   => $pedidosNuevos,
             'rango'            => $rango,
             'tendencias'       => $tendencias,
+            'plantillas_wa'    => $plantillasWa,
         ]);
     }
 
@@ -277,6 +280,7 @@ class AdminPedidosController extends Controller
     public function actualizarTelefono()
     {
         $this->requireLogin();
+        $this->requireCsrf();
         header('Content-Type: application/json; charset=utf-8');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -338,6 +342,7 @@ class AdminPedidosController extends Controller
     public function cambiarEstado()
     {
         $this->requireLogin();
+        $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header("Location: /tienda_mvc/AdminPedidos/index");
@@ -357,7 +362,7 @@ class AdminPedidosController extends Controller
             exit;
         }
 
-        $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'entregado', 'cancelado'];
+        $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
         if (!in_array($estado, $estadosPosibles, true)) {
             if (!empty($_POST['ajax']) && $_POST['ajax'] == '1') {
                 header('Content-Type: application/json; charset=utf-8');
@@ -389,17 +394,10 @@ class AdminPedidosController extends Controller
     {
         $this->requireLogin();
 
-        $pedidoModel = new Pedido();
-        $pedidos = $pedidoModel->obtenerTodos(1000);
+        $pedidoModel   = new Pedido();
+        $pedidosNuevos = $pedidoModel->contarNuevos();
 
-        $pedidosNuevos = 0;
-        foreach ($pedidos as $p) {
-            if (($p['estado'] ?? '') === 'nuevo') {
-                $pedidosNuevos++;
-            }
-        }
-
-        header('Content-Type: application/json');
+        header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['pedidos_nuevos' => $pedidosNuevos]);
         exit();
     }

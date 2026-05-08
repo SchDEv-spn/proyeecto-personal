@@ -215,6 +215,12 @@ class Pedido extends Model
      * dentro de los últimos $minutos minutos.
      * Úsalo en el controlador antes de guardar para evitar duplicados.
      */
+    public function contarNuevos(): int {
+        return (int)$this->db
+            ->query("SELECT COUNT(*) FROM pedidos WHERE estado = 'nuevo'")
+            ->fetchColumn();
+    }
+
     public function existePedidoReciente(string $telefono, int $productoId, int $minutos = 15): bool
     {
         $sql = "SELECT COUNT(*) FROM pedidos
