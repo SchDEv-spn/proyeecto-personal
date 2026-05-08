@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
    ══════════════════════════════════════════════════════════════ */
 function initDepartamentoMunicipio() {
     const selectDept = document.getElementById('departamento');
-    const selectMun  = document.getElementById('municipio');
+    const selectMun = document.getElementById('municipio');
 
     if (!selectDept || !selectMun) return;
 
@@ -59,11 +59,11 @@ function initDepartamentoMunicipio() {
             const departamentos = data.filter(d => !excluidos.includes(d.departamento));
 
             const oldDept = selectDept.dataset.old || '';
-            const oldMun  = selectMun.dataset.old  || '';
+            const oldMun = selectMun.dataset.old || '';
 
             departamentos.forEach(dep => {
-                const opt       = document.createElement('option');
-                opt.value       = dep.departamento;
+                const opt = document.createElement('option');
+                opt.value = dep.departamento;
                 opt.textContent = dep.departamento;
                 selectDept.appendChild(opt);
             });
@@ -75,24 +75,24 @@ function initDepartamentoMunicipio() {
                 selectMun.innerHTML = '';
 
                 if (!deptSeleccionado) {
-                    const ph       = document.createElement('option');
-                    ph.value       = '';
+                    const ph = document.createElement('option');
+                    ph.value = '';
                     ph.textContent = 'Selecciona primero un departamento';
                     selectMun.appendChild(ph);
                     return;
                 }
 
-                const ph       = document.createElement('option');
-                ph.value       = '';
+                const ph = document.createElement('option');
+                ph.value = '';
                 ph.textContent = 'Selecciona un municipio';
                 selectMun.appendChild(ph);
 
-                const depObj     = departamentos.find(d => d.departamento === deptSeleccionado);
+                const depObj = departamentos.find(d => d.departamento === deptSeleccionado);
                 const municipios = depObj && Array.isArray(depObj.ciudades) ? depObj.ciudades : [];
 
                 municipios.forEach(m => {
-                    const opt       = document.createElement('option');
-                    opt.value       = m;
+                    const opt = document.createElement('option');
+                    opt.value = m;
                     opt.textContent = m;
                     selectMun.appendChild(opt);
                 });
@@ -122,8 +122,8 @@ function calcDeliveryDays(dept, city) {
     ]);
     const slow = new Set(['Amazonas', 'Chocó', 'Guainía', 'Vaupés', 'Vichada', 'Putumayo', 'Caquetá']);
 
-    if (express.has(city))  return 2;
-    if (slow.has(dept))     return 5;
+    if (express.has(city)) return 2;
+    if (slow.has(dept)) return 5;
     return 3;
 }
 
@@ -148,8 +148,8 @@ function mostrarETA(dept, city) {
     const days = calcDeliveryDays(dept, city);
     const date = addBusinessDays(days);
     const days_es = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const months  = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-                     'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
     etaDate.textContent = days_es[date.getDay()] + ' ' + date.getDate() + ' de ' + months[date.getMonth()];
     etaWrap.style.display = 'block';
 }
@@ -159,7 +159,7 @@ function mostrarETA(dept, city) {
    TIPO DE ENTREGA (domicilio / oficina)
    ══════════════════════════════════════════════════════════════ */
 function initTipoEntrega() {
-    const radiosEntrega  = document.querySelectorAll('input[name="tipo_entrega"]');
+    const radiosEntrega = document.querySelectorAll('input[name="tipo_entrega"]');
     const grupoDireccion = document.getElementById('grupo-direccion');
     const inputDireccion = document.getElementById('direccion');
 
@@ -200,7 +200,7 @@ function initSlider() {
     slides.style.width = `${total * 100}%`;
 
     Array.from(slides.children).forEach(child => {
-        child.style.width      = `${perSlide}%`;
+        child.style.width = `${perSlide}%`;
         child.style.flexShrink = '0';
     });
 
@@ -227,7 +227,7 @@ function initAccordion() {
 
     items.forEach(item => {
         const header = item.querySelector('.accordion-header');
-        const body   = item.querySelector('.accordion-body');
+        const body = item.querySelector('.accordion-body');
         if (!header || !body) return;
 
         header.addEventListener('click', () => {
@@ -259,8 +259,8 @@ function initAccordion() {
    ══════════════════════════════════════════════════════════════ */
 function initGallery() {
     const mainFigure = document.querySelector('.product-gallery__main');
-    const mainImg    = document.querySelector('.product-gallery__main-img');
-    const thumbs     = document.querySelectorAll('.product-gallery__thumb');
+    const mainImg = document.querySelector('.product-gallery__main-img');
+    const thumbs = document.querySelectorAll('.product-gallery__thumb');
 
     if (!mainImg || !thumbs.length) return;
 
@@ -335,9 +335,9 @@ function initRecentOrders() {
     const el = document.getElementById('recentOrdersCount');
     if (!el) return;
 
-    const base     = 28;
+    const base = 28;
     const variance = Math.floor(Math.random() * 12); // 0–11
-    let   count    = base + variance;
+    let count = base + variance;
 
     el.textContent = count;
 
@@ -388,7 +388,7 @@ function initScrollAnimations() {
    ══════════════════════════════════════════════════════════════ */
 function initStickyVisibility() {
     const sticky = document.querySelector('.cta-sticky-mobile');
-    const form   = document.getElementById('form-pedido');
+    const form = document.getElementById('form-pedido');
 
     if (!sticky || !form) return;
 
@@ -397,7 +397,7 @@ function initStickyVisibility() {
     const observer = new IntersectionObserver((entries) => {
         const visible = entries[0].isIntersecting;
         sticky.style.transform = visible ? 'translateY(100%)' : 'translateY(0)';
-        sticky.style.opacity   = visible ? '0' : '1';
+        sticky.style.opacity = visible ? '0' : '1';
     }, { threshold: 0.1 });
 
     observer.observe(form);
@@ -434,7 +434,7 @@ function initTelInput() {
 function initPixelEvents() {
     if (typeof fbq !== 'function') return;
 
-    var addToCartFired    = false;
+    var addToCartFired = false;
     var initiateCheckoutFired = false;
 
     // AddToCart: primera vez que el usuario toca cualquier campo del form
@@ -446,7 +446,7 @@ function initPixelEvents() {
                 if (addToCartFired) return;
                 addToCartFired = true;
                 fbq('track', 'AddToCart', {
-                    value:    window.landingProductPrice || 0,
+                    value: window.landingProductPrice || 0,
                     currency: 'COP',
                     content_name: window.landingProductName || '',
                 });
@@ -464,7 +464,7 @@ function initPixelEvents() {
             if (entries[0].isIntersecting && !initiateCheckoutFired) {
                 initiateCheckoutFired = true;
                 fbq('track', 'InitiateCheckout', {
-                    value:    window.landingProductPrice || 0,
+                    value: window.landingProductPrice || 0,
                     currency: 'COP',
                     content_name: window.landingProductName || '',
                 });
@@ -479,27 +479,27 @@ function initPixelEvents() {
    FORMULARIO — validación única + submit AJAX
    ============================================================ */
 (function () {
-    const form       = document.getElementById('formPedido');
-    const errorsBox  = document.getElementById('stepperErrors');
+    const form = document.getElementById('formPedido');
+    const errorsBox = document.getElementById('stepperErrors');
     const successBox = document.getElementById('stepperSuccess');
     if (!form) return;
 
     function validar() {
         const errors = [];
 
-        const nombre    = form.querySelector('#nombre');
+        const nombre = form.querySelector('#nombre');
         const apellidos = form.querySelector('#apellidos');
-        const telefono  = form.querySelector('#telefono');
-        const depto     = form.querySelector('#departamento');
-        const muni      = form.querySelector('#municipio');
-        const entrega   = form.querySelector('input[name="tipo_entrega"]:checked');
-        const dir       = form.querySelector('#direccion');
+        const telefono = form.querySelector('#telefono');
+        const depto = form.querySelector('#departamento');
+        const muni = form.querySelector('#municipio');
+        const entrega = form.querySelector('input[name="tipo_entrega"]:checked');
+        const dir = form.querySelector('#direccion');
 
-        if (!nombre?.value.trim())    errors.push('El nombre es obligatorio.');
+        if (!nombre?.value.trim()) errors.push('El nombre es obligatorio.');
         if (!apellidos?.value.trim()) errors.push('Los apellidos son obligatorios.');
 
         const tel = telefono?.value.trim() ?? '';
-        if (!tel)                       errors.push('El número de WhatsApp es obligatorio.');
+        if (!tel) errors.push('El número de WhatsApp es obligatorio.');
         else if (!/^3\d{9}$/.test(tel)) errors.push('Número inválido (10 dígitos, empieza en 3).');
 
         const mode = form.querySelector('#pricingMode')?.value ?? 'individual';
@@ -520,9 +520,9 @@ function initPixelEvents() {
             }
         }
 
-        if (!depto?.value)  errors.push('Selecciona un departamento.');
-        if (!muni?.value)   errors.push('Selecciona un municipio.');
-        if (!entrega)       errors.push('Selecciona cómo quieres recibir tu pedido.');
+        if (!depto?.value) errors.push('Selecciona un departamento.');
+        if (!muni?.value) errors.push('Selecciona un municipio.');
+        if (!entrega) errors.push('Selecciona cómo quieres recibir tu pedido.');
         if (entrega?.value === 'domicilio' && !dir?.value.trim())
             errors.push('La dirección es obligatoria para envío a domicilio.');
 
@@ -543,12 +543,12 @@ function initPixelEvents() {
         if (errors.length) { mostrarErrores(errors); return; }
         mostrarErrores([]);
 
-        const btnText    = document.getElementById('btnSubmitText');
+        const btnText = document.getElementById('btnSubmitText');
         const btnSpinner = document.getElementById('btnSubmitSpinner');
-        const btnSubmit  = document.getElementById('btnSubmit');
+        const btnSubmit = document.getElementById('btnSubmit');
 
         btnSubmit.disabled = true;
-        if (btnText)    btnText.style.display    = 'none';
+        if (btnText) btnText.style.display = 'none';
         if (btnSpinner) btnSpinner.style.display = 'inline';
 
         fetch(form.action, {
@@ -556,37 +556,42 @@ function initPixelEvents() {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: new FormData(form),
         })
-        .then(r => r.json())
-        .then(function (res) {
-            btnSubmit.disabled = false;
-            if (btnText)    btnText.style.display    = 'inline';
-            if (btnSpinner) btnSpinner.style.display = 'none';
+            .then(r => r.json())
+            .then(function (res) {
+                btnSubmit.disabled = false;
+                if (btnText) btnText.style.display = 'inline';
+                if (btnSpinner) btnSpinner.style.display = 'none';
 
-            if (res.ok) {
-                form.style.display = 'none';
-                if (successBox) {
-                    successBox.style.display = 'block';
-                    successBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (res.ok) {
+                    form.style.display = 'none';
+                    if (successBox) {
+                        successBox.style.display = 'block';
+                        successBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                    if (typeof fbq === 'function') {
+                        // ✅ Lead — cliente potencial (pedido contraentrega registrado)
+                        fbq('track', 'Lead', {
+                            value: res.precio_total || window.landingProductPrice || 0,
+                            currency: 'COP',
+                            content_name: window.landingProductName || '',
+                        });
+                        // ✅ Purchase — conversión de venta
+                        fbq('track', 'Purchase', {
+                            value: res.precio_total || window.landingProductPrice || 0,
+                            currency: 'COP',
+                            content_name: window.landingProductName || '',
+                            content_ids: [String(res.pedido_id || '')],
+                            content_type: 'product',
+                            num_items: 1,
+                        });
+                    }
                 }
-                if (typeof fbq === 'function') {
-                    fbq('track', 'Purchase', {
-                        value:    res.precio_total || window.landingProductPrice || 0,
-                        currency: 'COP',
-                        content_name: window.landingProductName || '',
-                        content_ids:  [String(res.pedido_id || '')],
-                        content_type: 'product',
-                        num_items:    1,
-                    });
-                }
-            } else {
-                mostrarErrores(res.errores || ['Ocurrió un error. Inténtalo de nuevo.']);
-            }
-        })
-        .catch(function () {
-            btnSubmit.disabled = false;
-            if (btnText)    btnText.style.display    = 'inline';
-            if (btnSpinner) btnSpinner.style.display = 'none';
-            mostrarErrores(['Error de conexión. Verifica tu internet e inténtalo de nuevo.']);
-        });
+            })
+            .catch(function () {
+                btnSubmit.disabled = false;
+                if (btnText) btnText.style.display = 'inline';
+                if (btnSpinner) btnSpinner.style.display = 'none';
+                mostrarErrores(['Error de conexión. Verifica tu internet e inténtalo de nuevo.']);
+            });
     });
 })();
