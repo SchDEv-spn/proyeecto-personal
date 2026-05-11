@@ -267,9 +267,9 @@
       const s = addDays(today, -6); // 7 días incl.
       return { start: s, end: addDays(today, 1), mode: 'days', titleA: 'Pedidos (7 días)', titleB: 'Ventas (7 días)' };
     }
-    // month (default): últimos 14 (se ve bien en móvil, no se satura)
-    const s14 = addDays(today, -13);
-    return { start: s14, end: addDays(today, 1), mode: 'days', titleA: 'Pedidos (14 días)', titleB: 'Ventas (14 días)' };
+    // month (default): últimos 30 días
+    const s30 = addDays(today, -29);
+    return { start: s30, end: addDays(today, 1), mode: 'days', titleA: 'Pedidos (30 días)', titleB: 'Ventas (30 días)' };
   };
 
   const setPanelTitleByCanvas = (canvasId, title) => {

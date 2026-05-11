@@ -43,6 +43,7 @@ class AdminPedidosController extends Controller
         $totalVenta      = 0.0;
         $totalProveedor  = 0.0;
         $pedidosNuevos   = 0;
+        $pedidosActivos  = 0;
 
         foreach ($pedidos as $p) {
             $estado = $p['estado'] ?? '';
@@ -85,10 +86,13 @@ class AdminPedidosController extends Controller
                 continue;
             }
 
+            $pedidosActivos++;
             $totalVenta     += $precioTotal;
             $totalUtilidad  += $utilidadTotal;
             $totalProveedor += ($precioProvUnit * $cantidad);
         }
+
+        $ticketPromedio = $pedidosActivos > 0 ? round($totalVenta / $pedidosActivos) : 0;
 
         // ======= Período previo para tendencias =======
         list($prevInicioObj, $prevFinObj) = $this->calcularRangoPrevio($rango, $inicioObj);
@@ -135,6 +139,7 @@ class AdminPedidosController extends Controller
             'total_venta'      => $totalVenta,
             'total_proveedor'  => $totalProveedor,
             'pedidos_nuevos'   => $pedidosNuevos,
+            'ticket_promedio'  => $ticketPromedio,
             'rango'            => $rango,
             'tendencias'       => $tendencias,
             'plantillas_wa'    => $plantillasWa,

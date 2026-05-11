@@ -56,7 +56,7 @@
                 <section class="dash-grid" aria-label="Dashboard">
                     <article class="panel panel--kpi kpi-purple">
                         <div class="panel__head">
-                            <h4>Pedidos últimos 14 días</h4>
+                            <h4>Pedidos últimos 30 días</h4>
                             <span class="chip">Actividad</span>
                         </div>
                         <div class="panel__body">
@@ -66,7 +66,7 @@
 
                     <article class="panel panel--kpi kpi-cyan">
                         <div class="panel__head">
-                            <h4>Ventas últimos 14 días</h4>
+                            <h4>Ventas últimos 30 días</h4>
                             <span class="chip">COP</span>
                         </div>
                         <div class="panel__body">
@@ -123,6 +123,15 @@
                             <span class="target"><?= ($renderTrend)($tendencias['utilidad'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
                         </div>
                         <i class="fas fa-chart-line stat-icon"></i>
+                    </div>
+
+                    <div class="stat-card glow-gold">
+                        <div class="stat-info">
+                            <small>Ticket Promedio</small>
+                            <h3 id="kpiTicket">$<?= number_format($ticket_promedio ?? 0, 0, ',', '.') ?></h3>
+                            <span class="target">Por pedido (excl. cancelados)</span>
+                        </div>
+                        <i class="fas fa-receipt stat-icon"></i>
                     </div>
                 </div>
 
