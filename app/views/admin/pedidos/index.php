@@ -6,10 +6,7 @@
     <title>Admin - Pedidos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- CSS base -->
-    <link rel="stylesheet" href="/tienda_mvc/public/css/dashboard.css">
-
-    <!-- Icons -->
+    <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <!-- DataTables (lo dejas si más adelante lo usas) -->

@@ -316,6 +316,35 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($heroTitle) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="<?= htmlspecialchars(mb_substr($heroSubtitle, 0, 155)) ?>">
+
+    <?php
+    $ogImage = !empty($heroMediaPath) ? 'https://' . $_SERVER['HTTP_HOST'] . $heroMediaPath : '';
+    $ogUrl   = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+    $ogDesc  = mb_substr(strip_tags($heroSubtitle), 0, 200);
+    ?>
+    <!-- Open Graph — Facebook retargeting y previews -->
+    <meta property="og:type"        content="product">
+    <meta property="og:title"       content="<?= htmlspecialchars($heroTitle) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($ogDesc) ?>">
+    <meta property="og:url"         content="<?= htmlspecialchars($ogUrl) ?>">
+    <?php if ($ogImage): ?>
+    <meta property="og:image"       content="<?= htmlspecialchars($ogImage) ?>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <?php endif; ?>
+    <meta property="og:locale"      content="es_CO">
+    <meta property="product:price:amount"   content="<?= (int)$precio_venta ?>">
+    <meta property="product:price:currency" content="COP">
+
+    <!-- Preconnect a dominios externos para reducir latencia DNS+TLS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://connect.facebook.net">
+    <link rel="dns-prefetch" href="https://www.clarity.ms">
+
+    <!-- Fuentes: cargadas como link (no @import) para no bloquear el CSS principal -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap">
 
     <link rel="stylesheet" href="/tienda_mvc/public/css/style.css">
 
@@ -349,62 +378,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <?php endif; ?>
 
     <script src="/tienda_mvc/public/js/main.js" defer></script>
-
-    <!-- Facebook Pixel -->
-    <script>
-        ! function(f, b, e, v, n, t, s) {
-            if (f.fbq) return;
-            n = f.fbq = function() {
-                n.callMethod ?
-                    n.callMethod.apply(n, arguments) : n.queue.push(arguments)
-            };
-            if (!f._fbq) f._fbq = n;
-            n.push = n;
-            n.loaded = !0;
-            n.version = '2.0';
-            n.queue = [];
-            t = b.createElement(e);
-            t.async = !0;
-            t.src = v;
-            s = b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t, s)
-        }
-        (window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init', '1248724310406936');
-        fbq('track', 'PageView');
-    </script>
-    <noscript>
-        <img height="1" width="1" style="display:none"
-            src="https://www.facebook.com/tr?id=1248724310406936&ev=PageView&noscript=1">
-    </noscript>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof fbq === 'function') {
-                fbq('track', 'ViewContent', {
-                    content_name: <?= json_encode($producto['nombre'] ?? 'Producto') ?>,
-                    content_ids: [<?= json_encode((string)($producto['id'] ?? '')) ?>],
-                    content_type: 'product',
-                    value: <?= json_encode((float)($producto['precio_venta'] ?? 0)) ?>,
-                    currency: 'COP'
-                });
-            }
-        });
-    </script>
-
-    <!-- Microsoft Clarity — heatmaps y grabaciones de sesión
-         1. Ve a https://clarity.microsoft.com y crea un proyecto
-         2. Copia tu Project ID y reemplaza CLARITY_ID_AQUI abajo -->
-    <?php $clarityId = 'wm68pleap5'; ?>
-    <?php if ($clarityId !== ''): ?>
-    <script type="text/javascript">
-        (function(c,l,a,r,i,t,y){
-            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-        })(window,document,"clarity","script","<?= htmlspecialchars($clarityId) ?>");
-    </script>
-    <?php endif; ?>
 </head>
 
 
@@ -491,11 +464,14 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <div class="hero-media">
             <?php if ($heroMediaType === 'video'): ?>
                 <video src="<?= htmlspecialchars($heroMediaPath) ?>"
-                    controls
+                    autoplay muted loop playsinline controls
+                    preload="metadata"
                     style="max-width:100%; border-radius:10px;"></video>
             <?php else: ?>
                 <img src="<?= htmlspecialchars($heroMediaPath) ?>"
-                    alt="Imagen del producto">
+                    alt="Imagen del producto"
+                    fetchpriority="high"
+                    decoding="async">
             <?php endif; ?>
 
             <!-- ✅ NUEVO: Badge flotante sobre la imagen -->
@@ -873,7 +849,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <div class="testimonials">
                 <article class="testimonial">
                     <div class="testimonial-photo">
-                        <img src="<?= htmlspecialchars($test1Photo) ?>" alt="Cliente 1">
+                        <img src="<?= htmlspecialchars($test1Photo) ?>" alt="Cliente 1" width="52" height="52" loading="lazy" decoding="async">
                     </div>
                     <div class="testimonial-content">
                         <div class="testimonial-stars" aria-label="5 estrellas">★★★★★</div>
@@ -885,7 +861,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                 <article class="testimonial">
                     <div class="testimonial-photo">
-                        <img src="<?= htmlspecialchars($test2Photo) ?>" alt="Cliente 2">
+                        <img src="<?= htmlspecialchars($test2Photo) ?>" alt="Cliente 2" width="52" height="52" loading="lazy" decoding="async">
                     </div>
                     <div class="testimonial-content">
                         <div class="testimonial-stars" aria-label="5 estrellas">★★★★★</div>
@@ -897,7 +873,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                 <article class="testimonial">
                     <div class="testimonial-photo">
-                        <img src="<?= htmlspecialchars($test3Photo) ?>" alt="Cliente 3">
+                        <img src="<?= htmlspecialchars($test3Photo) ?>" alt="Cliente 3" width="52" height="52" loading="lazy" decoding="async">
                     </div>
                     <div class="testimonial-content">
                         <div class="testimonial-stars" aria-label="5 estrellas">★★★★★</div>
@@ -958,9 +934,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                             <div class="whatsapp-card">
                                                 <div class="img-wrapper">
                                                     <?php if (!empty($image)): ?>
-                                                        <img src="<?= htmlspecialchars($image) ?>" alt="Testimonio WhatsApp <?= htmlspecialchars($name) ?>" class="whatsapp-screenshot">
+                                                        <img src="<?= htmlspecialchars($image) ?>" alt="Testimonio WhatsApp <?= htmlspecialchars($name) ?>" class="whatsapp-screenshot" loading="lazy" decoding="async">
                                                     <?php else: ?>
-                                                        <img src="/tienda_mvc/public/img/testimonios/1.jpeg" alt="Testimonio WhatsApp" class="whatsapp-screenshot">
+                                                        <img src="/tienda_mvc/public/img/testimonios/1.jpeg" alt="Testimonio WhatsApp" class="whatsapp-screenshot" loading="lazy" decoding="async">
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="card-content">
@@ -1146,11 +1122,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <p class="trust-strip__carriers-label">Enviamos a toda Colombia con:</p>
             <div class="trust-strip__carriers">
                 <img src="/tienda_mvc/public/img/transportadoras/interrapidisimo.png"
-                     alt="Interrapidísimo" class="carrier-logo" loading="lazy">
+                     alt="Interrapidísimo" class="carrier-logo" width="120" height="32" loading="lazy" decoding="async">
                 <img src="/tienda_mvc/public/img/transportadoras/envia.png"
-                     alt="Envía" class="carrier-logo" loading="lazy">
+                     alt="Envía" class="carrier-logo" width="80" height="32" loading="lazy" decoding="async">
                 <img src="/tienda_mvc/public/img/transportadoras/coordinadora.png"
-                     alt="Coordinadora" class="carrier-logo" loading="lazy">
+                     alt="Coordinadora" class="carrier-logo" width="100" height="32" loading="lazy" decoding="async">
             </div>
         </div>
         <?php endif; ?>
@@ -1254,12 +1230,14 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                 <label for="nombre">Nombre *</label>
                                 <input type="text" id="nombre" name="nombre" required
                                     placeholder="Ej: María"
+                                    autocomplete="given-name"
                                     value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
                             </div>
                             <div class="form-group">
                                 <label for="apellidos">Apellidos *</label>
                                 <input type="text" id="apellidos" name="apellidos" required
                                     placeholder="Ej: González"
+                                    autocomplete="family-name"
                                     value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
                             </div>
                         </div>
@@ -1267,6 +1245,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <label for="telefono">📱 WhatsApp *</label>
                             <input type="tel" id="telefono" name="telefono" required
                                 placeholder="3001234567" maxlength="10"
+                                autocomplete="tel-national"
+                                inputmode="numeric"
                                 value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
                             <small class="help">10 dígitos · empieza en 3 · confirmamos tu pedido aquí</small>
                         </div>
@@ -1485,7 +1465,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <label for="direccion">Dirección completa *</label>
                             <input type="text" id="direccion" name="direccion"
                                 placeholder="Ej: Calle 45 # 23-10, Apto 301"
+                                autocomplete="street-address"
                                 value="<?= htmlspecialchars($old['direccion'] ?? '') ?>">
+                        </div>
+
+                        <div class="form-group" id="grupo-nota-entrega" style="display:none;">
+                            <label for="nota_entrega">
+                                Nota para el mensajero
+                                <span style="font-weight:400;color:var(--cream-muted);font-size:12px;"> — opcional</span>
+                            </label>
+                            <textarea id="nota_entrega" name="nota_entrega" rows="2"
+                                placeholder="Ej: Conjunto cerrado, timbrar en portería · Horario: después de las 3 pm"
+                                style="resize:vertical;"><?= htmlspecialchars($old['nota_entrega'] ?? '') ?></textarea>
                         </div>
 
                         <div class="form-step__nav">
@@ -1813,6 +1804,43 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </button>
         </div>
     </div>
+
+    <!-- ── Analytics al final del body para no bloquear el render ────── -->
+    <!-- Facebook Pixel -->
+    <script>
+        !function(f,b,e,v,n,t,s){
+            if(f.fbq)return;
+            n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];
+            t=b.createElement(e);t.async=!0;t.src=v;
+            s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)
+        }(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init','1248724310406936');
+        fbq('track','PageView');
+        fbq('track','ViewContent',{
+            content_name: <?= json_encode($producto['nombre'] ?? 'Producto') ?>,
+            content_ids:  [<?= json_encode((string)($producto['id'] ?? '')) ?>],
+            content_type: 'product',
+            value:        <?= json_encode((float)($producto['precio_venta'] ?? 0)) ?>,
+            currency:     'COP'
+        });
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+             src="https://www.facebook.com/tr?id=1248724310406936&ev=PageView&noscript=1">
+    </noscript>
+
+    <!-- Microsoft Clarity -->
+    <?php $clarityId = 'wm68pleap5'; ?>
+    <?php if ($clarityId !== ''): ?>
+    <script>
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window,document,"clarity","script","<?= htmlspecialchars($clarityId) ?>");
+    </script>
+    <?php endif; ?>
 
 </body>
 

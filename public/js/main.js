@@ -159,9 +159,10 @@ function mostrarETA(dept, city) {
    TIPO DE ENTREGA (domicilio / oficina)
    ══════════════════════════════════════════════════════════════ */
 function initTipoEntrega() {
-    const radiosEntrega = document.querySelectorAll('input[name="tipo_entrega"]');
+    const radiosEntrega  = document.querySelectorAll('input[name="tipo_entrega"]');
     const grupoDireccion = document.getElementById('grupo-direccion');
     const inputDireccion = document.getElementById('direccion');
+    const grupoNota      = document.getElementById('grupo-nota-entrega');
 
     if (!radiosEntrega.length || !grupoDireccion || !inputDireccion) return;
 
@@ -169,14 +170,13 @@ function initTipoEntrega() {
         let tipoSeleccionado = '';
         radiosEntrega.forEach(r => { if (r.checked) tipoSeleccionado = r.value; });
 
-        if (tipoSeleccionado === 'domicilio') {
-            grupoDireccion.style.display = 'block';
-            inputDireccion.setAttribute('required', 'required');
-        } else {
-            grupoDireccion.style.display = 'none';
-            inputDireccion.removeAttribute('required');
-            inputDireccion.value = '';
-        }
+        const esDomicilio = tipoSeleccionado === 'domicilio';
+
+        grupoDireccion.style.display = esDomicilio ? 'block' : 'none';
+        if (esDomicilio) { inputDireccion.setAttribute('required', 'required'); } else { inputDireccion.removeAttribute('required'); }
+        if (!esDomicilio) inputDireccion.value = '';
+
+        if (grupoNota) grupoNota.style.display = esDomicilio ? 'block' : 'none';
     }
 
     radiosEntrega.forEach(r => r.addEventListener('change', actualizarDireccion));
@@ -436,6 +436,32 @@ function initPixelEvents() {
 
     var addToCartFired = false;
     var initiateCheckoutFired = false;
+
+    // Scroll depth: 25 / 50 / 75% — señal de audiencia para el algoritmo de Facebook
+    var depthsFired = {};
+    [25, 50, 75].forEach(function (pct) { depthsFired[pct] = false; });
+
+    function onScroll() {
+        var scrolled = window.scrollY + window.innerHeight;
+        var total    = document.documentElement.scrollHeight;
+        var pctReached = Math.floor((scrolled / total) * 100);
+
+        [25, 50, 75].forEach(function (pct) {
+            if (!depthsFired[pct] && pctReached >= pct) {
+                depthsFired[pct] = true;
+                fbq('trackCustom', 'ScrollDepth', {
+                    depth:        pct,
+                    content_name: window.landingProductName || '',
+                    value:        window.landingProductPrice || 0,
+                    currency:     'COP'
+                });
+                if (pct === 75) {
+                    window.removeEventListener('scroll', onScroll);
+                }
+            }
+        });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
 
     // AddToCart: primera vez que el usuario toca cualquier campo del form
     var form = document.getElementById('formPedido');

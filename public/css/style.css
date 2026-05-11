@@ -1,7 +1,7 @@
 
 
 /* ── GOOGLE FONTS ─────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
+/* Fuentes cargadas como <link> en el HTML para no bloquear este CSS */
 
 /* ── RESET & BOX MODEL ────────────────────────────────────── */
 *, *::before, *::after {
@@ -43,8 +43,8 @@
   --success: #4caf7d;
   --btn-text: #0a0a0a;
 
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body:    'DM Sans', system-ui, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
 
   --space-xs:  4px;
   --space-sm:  8px;
@@ -841,17 +841,20 @@ h1, h2, h3 {
 h1 {
   font-size: clamp(2rem, 8vw, 3.5rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  line-height: 1.12;
 }
 
 h2 {
   font-size: clamp(1.5rem, 5vw, 2.4rem);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
+  line-height: 1.2;
 }
 
 h3 {
   font-size: clamp(1.1rem, 3.5vw, 1.4rem);
   font-weight: 600;
+  letter-spacing: 0;
 }
 
 .section-title {
@@ -950,6 +953,25 @@ h3 {
   min-height: 56px;
 }
 
+/* Pulso del hero CTA — llama la atención en los primeros segundos */
+@keyframes heroPulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px var(--gold-border), 0 1px 0 rgba(255,255,255,0.15) inset;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 6px 36px rgba(201,168,76,.55), 0 0 0 6px rgba(201,168,76,.12), 0 1px 0 rgba(255,255,255,0.15) inset;
+    transform: scale(1.025);
+  }
+}
+#heroCta {
+  animation: heroPulse 2.8s ease-in-out 1.5s 3;
+}
+#heroCta:hover,
+#heroCta:focus-visible {
+  animation: none;
+}
+
 .btn-ghost {
   display: inline-flex;
   align-items: center;
@@ -983,11 +1005,11 @@ h3 {
   gap: var(--space-xl);
 }
 
-/* Media primero en mobile */
-.hero .hero-media { order: 1; }
-.hero .hero-text  { order: 2; }
+/* Texto primero en mobile: H1 + CTA visible sin scroll */
+.hero .hero-text  { order: 1; }
+.hero .hero-media { order: 2; }
 
-/* Imagen/video hero — aspect ratio 8.5/11 */
+/* Imagen/video hero */
 .hero-media {
   width: 100%;
   position: relative;
@@ -1001,6 +1023,18 @@ h3 {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-deep);
   border: 1px solid var(--gold-border);
+}
+
+/* En mobile la imagen en portrait llenaría toda la pantalla —
+   la limitamos para que el usuario vea texto+CTA sin scroll */
+@media (max-width: 767px) {
+  .hero-media img,
+  .hero-media video {
+    aspect-ratio: 16 / 9;   /* reserva espacio antes de cargar → evita CLS */
+    max-height: 55vw;
+    min-height: 180px;
+    object-position: center top;
+  }
 }
 
 /* Badge de confianza sobre la imagen */
@@ -1041,9 +1075,10 @@ h3 {
 
 .hero-subtitle {
   font-size: 16px;
-  font-weight: 300;
+  font-weight: 400;
   color: var(--cream-dim);
-  line-height: 1.6;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
   animation: fadeUp 0.8s ease 0.2s both;
 }
 
@@ -2732,7 +2767,15 @@ img[loading="lazy"].loaded {
 .btn-submit-hero:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .btn-submit-hero:hover::before { background: rgba(255,255,255,0.06); }
 .btn-submit-hero:active { transform: translateY(0); filter: brightness(0.97); }
-.btn-submit-hero:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+.btn-submit-hero:disabled { opacity: 0.65; cursor: not-allowed; transform: none; animation: none; }
+
+@keyframes submitPulse {
+  0%, 100% { box-shadow: 0 4px 24px rgba(76,175,125,.35); }
+  50%       { box-shadow: 0 6px 40px rgba(76,175,125,.65), 0 0 0 5px rgba(76,175,125,.12); }
+}
+.btn-submit-hero--step:not(:disabled) {
+  animation: submitPulse 2.4s ease-in-out infinite;
+}
 
 /* Trust row debajo del botón */
 .form-trust-row {
@@ -4721,4 +4764,100 @@ img[loading="lazy"].loaded {
     background: transparent;
     padding: 0 8px;
     line-height: 44px;
+}
+
+/* ============================================================
+   FASE 2 — CONVERSIÓN MOBILE: CTA ABOVE THE FOLD
+   Objetivo: en un teléfono estándar (390×844px) el H1,
+   precio y botón CTA sean visibles sin hacer scroll.
+   ============================================================ */
+@media (max-width: 767px) {
+
+  /* Announcement bar más compacto — no roba espacio vital */
+  .announcement-bar {
+    padding: 6px var(--space-md);
+  }
+  .announcement-bar__item {
+    font-size: 10.5px;
+  }
+
+  /* Hero: menos padding vertical, elementos más juntos */
+  .hero {
+    padding-top: 16px !important;
+    padding-bottom: 20px !important;
+    gap: 16px !important;
+  }
+
+  /* Texto del hero: gaps reducidos para compactar */
+  .hero-text {
+    gap: 10px !important;
+  }
+
+  /* H1 más compacto — Playfair a 8.5vw ≈ 33px en 390px */
+  .hero-text h1 {
+    font-size: clamp(1.65rem, 8.5vw, 2.4rem) !important;
+    line-height: 1.13 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  /* Subtítulo: Inter 400 muy legible incluso en 14px */
+  .hero-subtitle {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  /* Urgency bar: compacto */
+  .hero-urgency-bar {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* Price box: reducir padding interno */
+  .price-box {
+    padding: 10px 14px !important;
+    gap: 4px !important;
+  }
+  .price-box .new {
+    font-size: clamp(2rem, 9vw, 2.6rem) !important;
+  }
+  .price-box .old,
+  .price-box .save {
+    font-size: 12px !important;
+  }
+
+  /* Countdown inline: compacto */
+  .hero-countdown-inline {
+    padding: 7px 12px !important;
+    font-size: 13px !important;
+  }
+  .countdown-digits {
+    font-size: 17px !important;
+  }
+
+  /* Trust row debajo del CTA — menos padding */
+  .hero-trust-row {
+    padding: 7px 10px !important;
+    font-size: 11px !important;
+    gap: 5px 12px !important;
+  }
+
+  /* Imagen hero en mobile: muestra solo la parte superior del creativo
+     para que quepa en pantalla y haga de "teaser" visual */
+  .hero-media img,
+  .hero-media video {
+    max-height: 52vw !important;
+    min-height: 180px !important;
+    object-position: center 15% !important;
+  }
+}
+
+/* Phones muy pequeños (≤360px): recortar aún más */
+@media (max-width: 360px) {
+  .hero-text h1 {
+    font-size: 1.5rem !important;
+  }
+  .announcement-bar {
+    display: none; /* En pantallas de 360px el espacio es demasiado crítico */
+  }
 }

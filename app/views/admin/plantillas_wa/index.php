@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Plantillas WhatsApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/tienda_mvc/public/css/dashboard.css">
+    <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         .plantillas-grid {
@@ -15,16 +15,19 @@
         }
 
         .plantilla-card {
-            background: var(--surface, #fff);
+            background: var(--bg-elevated);
             border-radius: 16px;
-            border: 1px solid rgba(93,104,255,.13);
+            border: 1px solid var(--bd-subtle);
             padding: 1.25rem 1.4rem 1.4rem;
             display: flex;
             flex-direction: column;
             gap: .9rem;
-            transition: box-shadow .2s;
+            transition: border-color .2s, box-shadow .2s;
         }
-        .plantilla-card:hover { box-shadow: 0 6px 24px rgba(93,104,255,.1); }
+        .plantilla-card:hover {
+            border-color: var(--bd-default);
+            box-shadow: 0 6px 24px rgba(0,0,0,.45);
+        }
 
         .plantilla-card-head {
             display: flex;
@@ -33,51 +36,51 @@
         }
 
         .plantilla-estado-badge {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
-            letter-spacing: .05em;
+            letter-spacing: .06em;
             padding: 3px 10px;
             border-radius: 20px;
             text-transform: uppercase;
         }
 
-        .p-badge-nuevo      { background:rgba(93,104,255,.14); color:#5d68ff; }
-        .p-badge-contactado { background:rgba(34,211,238,.14); color:#0891b2; }
-        .p-badge-confirmado { background:rgba(34,197,94,.14);  color:#16a34a; }
-        .p-badge-enviado    { background:rgba(245,158,11,.14); color:#d97706; }
-        .p-badge-en_oficina { background:rgba(245,158,11,.22); color:#b45309; }
-        .p-badge-entregado  { background:rgba(16,185,129,.14); color:#059669; }
-        .p-badge-cancelado  { background:rgba(255,59,48,.14);  color:#dc2626; }
+        .p-badge-nuevo      { background: var(--info-bg);  color: var(--info);  border: 1px solid var(--info-bd); }
+        .p-badge-contactado { background: rgba(168,139,250,.10); color: #a78bfa; border: 1px solid rgba(168,139,250,.24); }
+        .p-badge-confirmado { background: var(--ok-bg);    color: var(--ok);    border: 1px solid var(--ok-bd); }
+        .p-badge-enviado    { background: var(--warn-bg);  color: var(--warn);  border: 1px solid var(--warn-bd); }
+        .p-badge-en_oficina { background: var(--warn-bg);  color: var(--warn);  border: 1px solid var(--warn-bd); }
+        .p-badge-entregado  { background: var(--ok-bg);    color: var(--ok);    border: 1px solid var(--ok-bd); }
+        .p-badge-cancelado  { background: var(--err-bg);   color: var(--err);   border: 1px solid var(--err-bd); }
 
         .plantilla-field label {
             display: block;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            letter-spacing: .04em;
+            letter-spacing: .08em;
             text-transform: uppercase;
-            color: var(--muted, #9ca3af);
+            color: var(--tx-muted);
             margin-bottom: 5px;
         }
 
         .plantilla-field input,
         .plantilla-field textarea {
             width: 100%;
-            background: rgba(18,24,40,.04);
-            border: 1px solid rgba(18,24,40,.1);
+            background: var(--bg-overlay);
+            border: 1px solid var(--bd-default);
             border-radius: 10px;
             padding: 9px 12px;
-            font-size: 13.5px;
-            font-family: inherit;
-            color: inherit;
+            font-size: 13px;
+            font-family: var(--font-body);
+            color: var(--tx-primary);
             resize: vertical;
             transition: border-color .15s, box-shadow .15s;
             box-sizing: border-box;
+            outline: none;
         }
         .plantilla-field input:focus,
         .plantilla-field textarea:focus {
-            outline: none;
-            border-color: #5d68ff;
-            box-shadow: 0 0 0 3px rgba(93,104,255,.12);
+            border-color: var(--gold-dim);
+            box-shadow: 0 0 0 3px rgba(201,168,76,.10);
         }
 
         .vars-strip {
@@ -88,23 +91,23 @@
         }
 
         .var-chip {
-            background: rgba(93,104,255,.1);
-            color: #5d68ff;
-            border: 1px solid rgba(93,104,255,.2);
+            background: var(--gold-ghost);
+            color: var(--gold);
+            border: 1px solid rgba(201,168,76,.22);
             border-radius: 6px;
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 700;
-            font-family: monospace;
+            font-family: ui-monospace, "SF Mono", monospace;
             padding: 2px 8px;
             cursor: pointer;
             transition: background .15s;
             user-select: none;
         }
-        .var-chip:hover { background: rgba(93,104,255,.2); }
+        .var-chip:hover { background: rgba(201,168,76,.14); }
 
         .vars-hint {
             font-size: 11px;
-            color: var(--muted, #9ca3af);
+            color: var(--tx-muted);
             margin-bottom: 5px;
         }
 
@@ -114,31 +117,33 @@
             gap: 1rem;
             margin-top: 2rem;
             padding-top: 1.25rem;
-            border-top: 1px solid rgba(18,24,40,.07);
+            border-top: 1px solid var(--bd-subtle);
         }
 
         .btn-guardar-plantillas {
-            background: linear-gradient(135deg,#5d68ff,#7c3aed);
-            color: #fff;
+            background: var(--gold);
+            color: var(--tx-inverse);
             border: none;
             border-radius: 12px;
             padding: 11px 28px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
+            font-family: var(--font-body);
             cursor: pointer;
-            transition: opacity .2s, transform .15s;
+            box-shadow: 0 6px 18px rgba(201,168,76,.30);
+            transition: filter .15s, transform .15s;
         }
-        .btn-guardar-plantillas:hover   { opacity: .9; }
-        .btn-guardar-plantillas:active  { transform: scale(.97); }
-        .btn-guardar-plantillas:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-guardar-plantillas:hover   { filter: brightness(1.10); transform: translateY(-1px); }
+        .btn-guardar-plantillas:active  { transform: scale(.97); filter: none; }
+        .btn-guardar-plantillas:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
 
         .saved-banner {
             display: flex;
             align-items: center;
             gap: .6rem;
-            background: rgba(34,197,94,.12);
-            color: #16a34a;
-            border: 1px solid rgba(34,197,94,.25);
+            background: var(--ok-bg);
+            color: var(--ok);
+            border: 1px solid var(--ok-bd);
             border-radius: 10px;
             padding: 9px 14px;
             font-size: 13px;
@@ -146,14 +151,15 @@
         }
 
         .preview-box {
-            background: rgba(18,24,40,.03);
-            border: 1px dashed rgba(18,24,40,.12);
+            background: var(--bg-overlay);
+            border: 1px dashed var(--bd-default);
             border-radius: 10px;
             padding: 10px 12px;
             font-size: 13px;
-            color: var(--muted, #6b7280);
+            color: var(--tx-secondary);
             white-space: pre-wrap;
             min-height: 48px;
+            line-height: 1.5;
         }
 
         @media (max-width: 600px) {
@@ -224,17 +230,17 @@ $resolvePreview = fn(string $msg): string => str_replace(
             <div class="panel" style="padding:1rem 1.25rem 1rem;margin-bottom:1rem;">
                 <h4 style="font-size:13px;font-weight:700;margin-bottom:.75rem;">Flujo recomendado de mensajes</h4>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
-                    <div style="background:rgba(93,104,255,.06);border-radius:12px;padding:.85rem 1rem;border-left:3px solid #5d68ff;">
-                        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#5d68ff;margin-bottom:.5rem;">📦 Envío a domicilio (Envia)</p>
-                        <div style="font-size:12.5px;line-height:2;color:#374151;">
+                    <div style="background:var(--gold-ghost);border-radius:12px;padding:.85rem 1rem;border-left:3px solid var(--gold);">
+                        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:.5rem;">📦 Envío a domicilio (Envia)</p>
+                        <div style="font-size:12.5px;line-height:2;color:var(--tx-secondary);">
                             <span class="plantilla-estado-badge p-badge-nuevo" style="font-size:10px;">Nuevo</span> Recibimos tu pedido<br>
                             <span class="plantilla-estado-badge p-badge-enviado" style="font-size:10px;">Enviado</span> Guía + link Envia<br>
                             <span class="plantilla-estado-badge p-badge-entregado" style="font-size:10px;">Entregado</span> ¿Cómo llegó? + foto
                         </div>
                     </div>
-                    <div style="background:rgba(245,158,11,.06);border-radius:12px;padding:.85rem 1rem;border-left:3px solid #f59e0b;">
-                        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#b45309;margin-bottom:.5rem;">🏢 Retiro en oficina (Interrapidísimo)</p>
-                        <div style="font-size:12.5px;line-height:2;color:#374151;">
+                    <div style="background:var(--warn-bg);border-radius:12px;padding:.85rem 1rem;border-left:3px solid var(--warn);">
+                        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--warn);margin-bottom:.5rem;">🏢 Retiro en oficina (Interrapidísimo)</p>
+                        <div style="font-size:12.5px;line-height:2;color:var(--tx-secondary);">
                             <span class="plantilla-estado-badge p-badge-nuevo" style="font-size:10px;">Nuevo</span> Recibimos tu pedido<br>
                             <span class="plantilla-estado-badge p-badge-enviado" style="font-size:10px;">Enviado</span> Despachado con guía<br>
                             <span class="plantilla-estado-badge p-badge-en_oficina" style="font-size:10px;">En oficina</span> Listo para recoger<br>

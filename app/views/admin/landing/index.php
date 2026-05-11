@@ -6,9 +6,7 @@
   <title>Admin - Editar landing</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet" href="/tienda_mvc/public/css/dashboard.css">
-  <link rel="stylesheet" href="/tienda_mvc/public/css/editarLanding.css">
-  <link rel="stylesheet" href="/tienda_mvc/public/css/ux-improvements.css">
+  <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
@@ -696,7 +694,7 @@
                     <div class="stack-cards">
                       <div class="mini-card">
                         <div class="mini-card-title">
-                          <i class="fas fa-circle-check" style="color:#4caf7d"></i> Sí es para ti si…
+                          <i class="fas fa-circle-check" style="color:var(--ok)"></i> Sí es para ti si…
                         </div>
                         <div class="form-grid">
                           <div class="admin-form-group">
@@ -724,7 +722,7 @@
 
                       <div class="mini-card">
                         <div class="mini-card-title">
-                          <i class="fas fa-circle-xmark" style="color:#e63946"></i> No es para ti si…
+                          <i class="fas fa-circle-xmark" style="color:var(--err)"></i> No es para ti si…
                         </div>
                         <div class="form-grid">
                           <div class="admin-form-group">
@@ -1021,7 +1019,7 @@
                       </div>
 
                       <div class="mini-card">
-                        <div class="mini-card-title"><i class="fab fa-whatsapp" style="color:#25D366"></i> Botón flotante de WhatsApp</div>
+                        <div class="mini-card-title"><i class="fab fa-whatsapp" style="color:#25D366;"></i> Botón flotante de WhatsApp</div>
                         <div class="form-grid">
                           <div class="admin-form-group admin-form-group--full">
                             <label for="wa_phone">Número de WhatsApp (solo dígitos, con código de país)</label>
@@ -1749,13 +1747,33 @@
 
         const url = URL.createObjectURL(file);
         if (isVideo) {
-          preview.innerHTML = '<video src="' + url + '" muted loop controls ' +
-            'style="max-width:200px;border-radius:6px;"></video>';
+          preview.innerHTML = '<video src="' + url + '" muted loop controls></video>';
         } else {
-          preview.innerHTML = '<img src="' + url + '" alt="Preview" ' +
-            'style="max-width:200px;border-radius:6px;">';
+          const dim = '<span class="media-preview-dim js-dim" style="position:absolute;bottom:6px;right:8px;font-size:10px;font-weight:700;color:var(--tx-muted);background:var(--bg-elevated);padding:2px 7px;border-radius:6px;letter-spacing:.04em;"></span>';
+          preview.innerHTML = '<img src="' + url + '" alt="Preview">' + dim;
+          const img = preview.querySelector('img');
+          img.onload = function() {
+            const d = preview.querySelector('.js-dim');
+            if (d) d.textContent = img.naturalWidth + ' × ' + img.naturalHeight + ' px';
+          };
         }
       });
+    });
+
+    // Etiqueta de dimensiones en imágenes ya cargadas
+    document.querySelectorAll('.media-preview img').forEach(function(img) {
+      function addDim() {
+        if (!img.naturalWidth) return;
+        const wrap = img.closest('.media-preview');
+        if (!wrap || wrap.querySelector('.js-dim')) return;
+        wrap.style.position = 'relative';
+        const d = document.createElement('span');
+        d.className = 'js-dim';
+        d.style.cssText = 'position:absolute;bottom:6px;right:8px;font-size:10px;font-weight:700;color:var(--tx-muted);background:var(--bg-elevated);padding:2px 7px;border-radius:6px;letter-spacing:.04em;';
+        d.textContent = img.naturalWidth + ' × ' + img.naturalHeight + ' px';
+        wrap.appendChild(d);
+      }
+      if (img.complete) addDim(); else img.addEventListener('load', addDim);
     });
 
     // Aviso de cambios sin guardar al salir

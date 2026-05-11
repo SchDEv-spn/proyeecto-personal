@@ -71,11 +71,14 @@ class Pedido extends Model
             $color = mb_substr($color, 0, 50);
         }
 
+        $notaEntrega = isset($data['nota_entrega']) ? trim((string)$data['nota_entrega']) : null;
+        if ($notaEntrega === '') $notaEntrega = null;
+
         $sql = "INSERT INTO pedidos
-            (nombre, apellidos, telefono, color, cantidad_total, departamento, municipio, tipo_entrega, direccion,
+            (nombre, apellidos, telefono, color, cantidad_total, departamento, municipio, tipo_entrega, direccion, nota_entrega,
              producto_id, precio_venta, precio_proveedor, utilidad, descuento_total, precio_total, utilidad_total, estado)
             VALUES
-            (:nombre, :apellidos, :telefono, :color, :cantidad_total, :departamento, :municipio, :tipo_entrega, :direccion,
+            (:nombre, :apellidos, :telefono, :color, :cantidad_total, :departamento, :municipio, :tipo_entrega, :direccion, :nota_entrega,
              :producto_id, :precio_venta, :precio_proveedor, :utilidad, :descuento_total, :precio_total, :utilidad_total, :estado)";
 
         $stmt = $this->db->prepare($sql);
@@ -90,6 +93,7 @@ class Pedido extends Model
             ':municipio'        => $municipio,
             ':tipo_entrega'     => $tipoEntrega,
             ':direccion'        => $direccion,
+            ':nota_entrega'     => $notaEntrega,
             ':producto_id'      => $productoId,
             ':precio_venta'     => $precioVenta,
             ':precio_proveedor' => $precioProveedor,

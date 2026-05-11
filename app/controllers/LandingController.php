@@ -157,6 +157,7 @@ class LandingController extends Controller
         $municipio    = trim($_POST['municipio']    ?? '');
         $tipoEntrega  = trim($_POST['tipo_entrega'] ?? '');
         $direccion    = trim($_POST['direccion']    ?? '');
+        $notaEntrega  = trim($_POST['nota_entrega'] ?? '');
 
         $confirmPurchase = isset($_POST['confirm_purchase']) && $_POST['confirm_purchase'] == '1';
 
@@ -174,6 +175,7 @@ class LandingController extends Controller
             'municipio'        => $municipio,
             'tipo_entrega'     => $tipoEntrega,
             'direccion'        => $direccion,
+            'nota_entrega'     => $notaEntrega,
             'confirm_purchase' => $confirmPurchase ? 1 : 0,
             'color_item'       => $colorItems,
             'qty_item'         => $qtyItems,
@@ -322,6 +324,7 @@ class LandingController extends Controller
             'municipio'        => $municipio,
             'tipo_entrega'     => $tipoEntrega,
             'direccion'        => ($tipoEntrega === 'domicilio') ? $direccion : null,
+            'nota_entrega'     => $notaEntrega ?: null,
 
             // unitarios
             'precio_venta'     => $precioVenta,
@@ -361,6 +364,7 @@ class LandingController extends Controller
             'precio_total'=> $precioTotal,
             'tipo_entrega'=> $tipoEntrega,
             'direccion'   => $direccion,
+            'nota_entrega'=> $notaEntrega,
             'producto'    => $producto['nombre'] ?? '',
         ]);
 
@@ -396,7 +400,7 @@ class LandingController extends Controller
 
         $precio = '$' . number_format((float)$d['precio_total'], 0, ',', '.');
 
-        $texto = implode("\n", [
+        $lineas = [
             "🛒 *Nuevo Pedido #" . $d['pedido_id'] . "*",
             "",
             "👤 " . $d['nombre'],
@@ -409,7 +413,11 @@ class LandingController extends Controller
             "💰 Total: " . $precio,
             "",
             "🚚 " . $entrega,
-        ]);
+        ];
+        if (!empty($d['nota_entrega'])) {
+            $lineas[] = "📝 Nota: " . $d['nota_entrega'];
+        }
+        $texto = implode("\n", $lineas);
 
         $url  = "https://api.telegram.org/bot{$token}/sendMessage";
         $body = json_encode(['chat_id' => $chatId, 'text' => $texto, 'parse_mode' => 'Markdown']);

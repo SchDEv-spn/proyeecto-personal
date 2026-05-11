@@ -413,13 +413,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.clientY < 5) showPopup();
         });
 
-        // ── MOBILE: inactividad 120 segundos ────────────────
+        // ── MOBILE: inactividad 40 segundos (Clarity muestra salidas antes de 60s) ──
         var mobileTimer = null;
         var isMobile = window.matchMedia('(max-width: 900px)').matches;
 
         function resetMobileTimer() {
             clearTimeout(mobileTimer);
-            mobileTimer = setTimeout(showPopup, 120000);
+            mobileTimer = setTimeout(showPopup, 40000);
         }
 
         if (isMobile) {
