@@ -4,8 +4,6 @@
 .env.*.local
 config/database.php
 app/config/config.php
-app/core/Database.php
-app/core/database.php
 
 # === Dependencias ===
 /vendor/
