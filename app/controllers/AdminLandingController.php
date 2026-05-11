@@ -352,7 +352,11 @@ class AdminLandingController extends Controller
             'comparison_img_with_file'    => 'comparison_img_with',
         ];
 
-        $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'webm'];
+        $allowedExts  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'webm'];
+        $allowedMimes = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'video/mp4', 'video/quicktime', 'video/webm',
+        ];
 
         foreach ($fileMap as $inputName => $column) {
             if (
@@ -364,9 +368,15 @@ class AdminLandingController extends Controller
                 $origName = $_FILES[$inputName]['name'];
                 $ext      = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
 
-                // Validar extensión permitida
                 if (!in_array($ext, $allowedExts, true)) {
-                    continue; // saltar archivos no permitidos silenciosamente
+                    continue;
+                }
+
+                // Validar MIME real del contenido del archivo
+                $finfo    = new finfo(FILEINFO_MIME_TYPE);
+                $mimeReal = $finfo->file($tmpName);
+                if (!in_array($mimeReal, $allowedMimes, true)) {
+                    continue;
                 }
 
                 $newName  = $inputName . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;

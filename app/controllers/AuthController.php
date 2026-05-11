@@ -28,6 +28,8 @@ class AuthController extends Controller
             exit;
         }
 
+        $this->requireCsrf();
+
         $email    = trim($_POST['email']    ?? '');
         $password = trim($_POST['password'] ?? '');
 
@@ -61,10 +63,12 @@ class AuthController extends Controller
             exit;
         }
 
-        // Login OK: guardamos datos mínimos en sesión
-        $_SESSION['usuario_id']    = $usuario['id'];
+        // Login OK: regenerar ID de sesión previene session fixation
+        session_regenerate_id(true);
+
+        $_SESSION['usuario_id']     = $usuario['id'];
         $_SESSION['usuario_nombre'] = $usuario['nombre'];
-        $_SESSION['usuario_email'] = $usuario['email'];
+        $_SESSION['usuario_email']  = $usuario['email'];
 
         header("Location: /tienda_mvc/AdminPedidos/index");
         exit;

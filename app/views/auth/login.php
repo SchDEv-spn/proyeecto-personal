@@ -40,6 +40,7 @@ $old     = $old     ?? [];
     <?php endif; ?>
 
     <form action="/tienda_mvc/Auth/procesar" method="POST" class="login-form" autocomplete="on">
+      <?= csrf_field() ?>
 
       <div class="admin-form-group">
         <label for="email">Correo electrónico</label>
