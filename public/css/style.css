@@ -1005,9 +1005,9 @@ h3 {
   gap: var(--space-xl);
 }
 
-/* Texto primero en mobile: H1 + CTA visible sin scroll */
-.hero .hero-text  { order: 1; }
-.hero .hero-media { order: 2; }
+/* Creativo primero en mobile: el cliente ve el producto antes del precio */
+.hero .hero-text  { order: 2; }
+.hero .hero-media { order: 1; }
 
 /* Imagen/video hero */
 .hero-media {
