@@ -259,6 +259,18 @@
                         <input type="file" id="hero_media_file" name="hero_media_file" accept="image/*,video/*">
                       </div>
 
+                      <div class="admin-form-group" id="hero-poster-group" style="<?= ($config['hero_media_type'] ?? 'imagen') !== 'video' ? 'display:none' : '' ?>">
+                        <label for="hero_poster_file">Thumbnail del video (portada)</label>
+                        <input type="file" id="hero_poster_file" name="hero_poster_file" accept="image/*">
+                        <?php if (!empty($config['hero_poster_path'])): ?>
+                          <div class="media-preview" style="margin-top:.5rem">
+                            <img src="<?= htmlspecialchars($config['hero_poster_path']) ?>" alt="Thumbnail actual">
+                          </div>
+                        <?php endif; ?>
+                        <input type="hidden" name="hero_poster_path_actual"
+                          value="<?= htmlspecialchars($config['hero_poster_path'] ?? '') ?>">
+                      </div>
+
                       <div class="admin-form-group admin-form-group--full">
                         <label>Media actual</label>
                         <div class="media-preview">
@@ -1682,7 +1694,6 @@
 
   <script>
     function toggleMediaPreview(section, type) {
-      // Cuando cambia el tipo, actualiza el atributo accept del input
       const input = document.getElementById(section + '_media_file');
       if (!input) return;
 
@@ -1692,6 +1703,11 @@
         input.setAttribute('accept', 'image/gif');
       } else {
         input.setAttribute('accept', 'image/jpeg,image/png,image/webp,image/gif');
+      }
+
+      if (section === 'hero') {
+        const posterGroup = document.getElementById('hero-poster-group');
+        if (posterGroup) posterGroup.style.display = type === 'video' ? '' : 'none';
       }
     }
 

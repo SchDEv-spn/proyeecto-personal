@@ -478,6 +478,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <div class="hero-media">
             <?php if ($heroMediaType === 'video'): ?>
                 <video src="<?= htmlspecialchars($heroMediaPath) ?>"
+                    <?php if (!empty($cfg['hero_poster_path'])): ?>poster="<?= htmlspecialchars($cfg['hero_poster_path']) ?>"<?php endif; ?>
                     loop playsinline controls
                     preload="metadata"
                     style="max-width:100%; border-radius:10px;"></video>

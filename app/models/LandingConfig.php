@@ -39,6 +39,7 @@ class LandingConfig extends Model
                 hero_button_text   = :hero_button_text,
                 hero_media_type    = :hero_media_type,
                 hero_media_path    = :hero_media_path,
+                hero_poster_path   = :hero_poster_path,
 
                 benefits_title      = :benefits_title,
                 benefit_1           = :benefit_1,
@@ -270,6 +271,7 @@ class LandingConfig extends Model
             ':hero_button_text'   => $data['hero_button_text'] ?? null,
             ':hero_media_type'    => $data['hero_media_type']  ?? null,
             ':hero_media_path'    => $data['hero_media_path']  ?? null,
+            ':hero_poster_path'   => $data['hero_poster_path'] ?? null,
 
             ':benefits_title'      => $data['benefits_title']      ?? null,
             ':benefit_1'           => $data['benefit_1']           ?? null,

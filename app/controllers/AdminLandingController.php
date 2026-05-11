@@ -289,6 +289,7 @@ class AdminLandingController extends Controller
 
         // 3. Paths actuales
         $data['hero_media_path']     = $_POST['hero_media_path_actual']     ?? null;
+        $data['hero_poster_path']    = $_POST['hero_poster_path_actual']    ?? null;
         $data['benefits_media_path'] = $_POST['benefits_media_path_actual'] ?? null;
 
         $data['gallery_1_path'] = $_POST['gallery_1_path_actual'] ?? null;
@@ -325,6 +326,7 @@ class AdminLandingController extends Controller
 
         $fileMap = [
             'hero_media_file'      => 'hero_media_path',
+            'hero_poster_file'     => 'hero_poster_path',
             'benefits_media_file'  => 'benefits_media_path',
             'gallery_1_file'       => 'gallery_1_path',
             'gallery_2_file'       => 'gallery_2_path',
