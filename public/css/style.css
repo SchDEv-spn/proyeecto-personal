@@ -3699,14 +3699,16 @@ img[loading="lazy"].loaded {
 .comparison-table {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    grid-template-rows: auto auto 1fr; /* header | imagen | lista */
+    column-gap: 14px;
     border: none;
     margin: 32px 0 28px;
 }
 
 .comparison-col {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: subgrid; /* hereda las 3 filas del padre */
+    grid-row: 1 / 4;             /* abarca las 3 filas */
     border-radius: var(--radius-lg, 14px);
     overflow: hidden;
     border: 1px solid rgba(255,255,255,.07);
