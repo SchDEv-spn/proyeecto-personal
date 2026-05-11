@@ -478,7 +478,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <div class="hero-media">
             <?php if ($heroMediaType === 'video'): ?>
                 <video src="<?= htmlspecialchars($heroMediaPath) ?>"
-                    autoplay muted loop playsinline controls
+                    loop playsinline controls
                     preload="metadata"
                     style="max-width:100%; border-radius:10px;"></video>
             <?php else: ?>
