@@ -133,7 +133,8 @@
                         'show_porque'        => ['icon' => '💡', 'label' => 'Por qué encantará'],
                         'show_para_quien'    => ['icon' => '👥', 'label' => '¿Para quién es?'],
                         'show_testimonios'   => ['icon' => '⭐', 'label' => 'Testimonios'],
-                        'show_faqs'          => ['icon' => '❓', 'label' => 'Preguntas frecuentes'],
+                        'show_faqs'             => ['icon' => '❓', 'label' => 'Preguntas frecuentes'],
+                        'show_wa_testimonios' => ['icon' => '📱', 'label' => 'Testimonios WhatsApp'],
                       ];
 
                       // Render toggles in saved order
@@ -808,17 +809,7 @@
                   <div class="section-block" id="sec-wa" data-toc="WhatsApp">
                     <h2>Testimonios Reales de WhatsApp</h2>
 
-                    <?php $waEnabled = isset($config['wa_enabled']) ? (int)$config['wa_enabled'] : 1; ?>
-
                     <div class="form-grid">
-                      <div class="admin-form-group">
-                        <label for="wa_enabled">Mostrar sección</label>
-                        <select id="wa_enabled" name="wa_enabled">
-                          <option value="1" <?= $waEnabled === 1 ? 'selected' : '' ?>>Sí</option>
-                          <option value="0" <?= $waEnabled === 0 ? 'selected' : '' ?>>No</option>
-                        </select>
-                      </div>
-
                       <div class="admin-form-group admin-form-group--full">
                         <label for="wa_title">Título</label>
                         <input type="text" id="wa_title" name="wa_title"

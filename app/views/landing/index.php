@@ -214,7 +214,8 @@ $showComoFunciona = (int)($cfg['show_como_funciona'] ?? 1);
 $showCountdown    = (int)($cfg['show_countdown']     ?? 1);
 $showPorque       = (int)($cfg['show_porque']        ?? 1);
 $showParaQuien    = (int)($cfg['show_para_quien']    ?? 1);
-$showTestimonios  = (int)($cfg['show_testimonios']   ?? 1);
+$showTestimonios    = (int)($cfg['show_testimonios']    ?? 1);
+$showWaTestimonios  = (int)($cfg['show_wa_testimonios'] ?? (int)($cfg['wa_enabled'] ?? 1));
 $showFaqs         = (int)($cfg['show_faqs']          ?? 1);
 
 // ===== URGENCIA / WA / BADGE =====
@@ -519,7 +520,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
     <?php
     // Orden de secciones dinámico
-    $defaultSectionOrder = ['benefits','gallery','antes_despues','como_funciona','countdown','porque','para_quien','testimonios','faqs'];
+    $defaultSectionOrder = ['benefits','gallery','antes_despues','como_funciona','countdown','porque','para_quien','testimonios','wa_testimonios','faqs'];
     $savedOrder = array_filter(array_map('trim', explode(',', $cfg['section_order'] ?? '')));
     $validSaved = array_values(array_filter(array_map(function($k) use ($defaultSectionOrder) {
         return in_array($k, $defaultSectionOrder, true) ? $k : null;
@@ -909,103 +910,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </article>
             </div>
 
-            <!-- Galería de clientes satisfechos (por ahora estática) -->
-            <?php if ($waEnabled === 1): ?>
-                <section class="testimonials-section">
-                    <div class="container">
-                        <div class="section-header">
-                            <h2 class="section-title"><?= htmlspecialchars($waTitle) ?></h2>
-                            <p class="subtitle"><?= htmlspecialchars($waSubtitle) ?></p>
-                        </div>
-
-                        <div class="testimonials-slider-outer">
-
-                            <button class="slider-arrow slider-arrow--prev" aria-label="Anterior">&#8249;</button>
-                            <button class="slider-arrow slider-arrow--next" aria-label="Siguiente">&#8250;</button>
-
-                            <div class="testimonials-slider-container">
-                                <div class="slider-track" id="sliderTrack">
-
-                                    <?php
-                                    // Para mantener el JS estable: siempre 5 items.
-                                    // Si alguno viene vacío, ponemos fallbacks mínimos.
-                                    $defaults = [
-                                        1 => ['name' => 'María González',   'time' => '• Hace 24 horas', 'text' => '¡Llegó antes de lo esperado! La calidad superó mis expectativas completamente.'],
-                                        2 => ['name' => 'Carlos Rodríguez', 'time' => '• Hace 3 días',    'text' => 'Ya le recomendé a 3 amigos. El servicio post-venta es excelente.'],
-                                        3 => ['name' => 'Ana Martínez',     'time' => '• Hace 1 semana',  'text' => 'Segunda compra y vuelvo a quedar encantada. Definitivamente mi tienda de confianza.'],
-                                        4 => ['name' => 'Pedro López',      'time' => '• Hace 2 días',    'text' => 'Envío express en 24h. ¡Increíble! Justo lo que necesitaba con urgencia.'],
-                                        5 => ['name' => 'Laura Sánchez',    'time' => '• Hace 4 días',    'text' => 'Viralicé en mis stories. Todos preguntan dónde compré. ¡Éxito total!'],
-                                    ];
-
-                                    // Normaliza los 5 items con defaults si faltan campos
-                                    $items = [];
-                                    for ($i = 1; $i <= 5; $i++) {
-                                        $it = $waItems[$i - 1] ?? [];
-                                        $items[$i] = [
-                                            'name'  => trim($it['name']  ?? '') !== '' ? $it['name']  : $defaults[$i]['name'],
-                                            'time'  => trim($it['time']  ?? '') !== '' ? $it['time']  : $defaults[$i]['time'],
-                                            'text'  => trim($it['text']  ?? '') !== '' ? $it['text']  : $defaults[$i]['text'],
-                                            'image' => trim($it['image'] ?? ''),
-                                        ];
-                                    }
-
-                                    $renderSlide = function ($idx, $data) {
-                                        $name  = $data['name'] ?? '';
-                                        $time  = $data['time'] ?? '';
-                                        $text  = $data['text'] ?? '';
-                                        $image = $data['image'] ?? '';
-                                    ?>
-                                        <div class="testimonial-slide" data-index="<?= $idx - 1 ?>">
-                                            <div class="whatsapp-card">
-                                                <div class="img-wrapper">
-                                                    <?php if (!empty($image)): ?>
-                                                        <img src="<?= htmlspecialchars($image) ?>" alt="Testimonio WhatsApp <?= htmlspecialchars($name) ?>" class="whatsapp-screenshot" loading="lazy" decoding="async">
-                                                    <?php else: ?>
-                                                        <img src="/tienda_mvc/public/img/testimonios/1.jpeg" alt="Testimonio WhatsApp" class="whatsapp-screenshot" loading="lazy" decoding="async">
-                                                    <?php endif; ?>
-                                                </div>
-                                                <div class="card-content">
-                                                    <div class="card-stars" aria-label="5 estrellas">★★★★★</div>
-                                                    <strong><?= htmlspecialchars($name) ?></strong>
-                                                    <span class="card-meta">
-                                                        <?= htmlspecialchars($time) ?>
-                                                        <span class="card-check">&#10003; verificado</span>
-                                                    </span>
-                                                    <p>"<?= htmlspecialchars($text) ?>"</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php
-                                    };
-
-                                    for ($i = 1; $i <= 5; $i++) {
-                                        $renderSlide($i, $items[$i]);
-                                    }
-
-                                    ?>
-
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="slider-pagination">
-                            <span class="dot active" data-dot="0"></span>
-                            <span class="dot" data-dot="1"></span>
-                            <span class="dot" data-dot="2"></span>
-                            <span class="dot" data-dot="3"></span>
-                            <span class="dot" data-dot="4"></span>
-                        </div>
-
-                        <div class="slider-footer-note">
-                            <p><?= htmlspecialchars($waFooterNote) ?></p>
-                        </div>
-                    </div>
-                </section>
-            <?php endif; ?>
-
-
-
-
             <!-- CTA de sección -->
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaTestimonialsText) ?></p>
@@ -1015,6 +919,84 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </div>
         </section>
         <?php endif; $sections['testimonios'] = ob_get_clean(); ?>
+
+        <?php ob_start(); if ($showWaTestimonios): ?>
+        <!-- TESTIMONIOS WHATSAPP -->
+        <section class="testimonials-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title"><?= htmlspecialchars($waTitle) ?></h2>
+                    <p class="subtitle"><?= htmlspecialchars($waSubtitle) ?></p>
+                </div>
+                <div class="testimonials-slider-outer">
+                    <button class="slider-arrow slider-arrow--prev" aria-label="Anterior">&#8249;</button>
+                    <button class="slider-arrow slider-arrow--next" aria-label="Siguiente">&#8250;</button>
+                    <div class="testimonials-slider-container">
+                        <div class="slider-track" id="sliderTrack">
+                            <?php
+                            $defaults = [
+                                1 => ['name' => 'María González',   'time' => '• Hace 24 horas', 'text' => '¡Llegó antes de lo esperado! La calidad superó mis expectativas completamente.'],
+                                2 => ['name' => 'Carlos Rodríguez', 'time' => '• Hace 3 días',    'text' => 'Ya le recomendé a 3 amigos. El servicio post-venta es excelente.'],
+                                3 => ['name' => 'Ana Martínez',     'time' => '• Hace 1 semana',  'text' => 'Segunda compra y vuelvo a quedar encantada. Definitivamente mi tienda de confianza.'],
+                                4 => ['name' => 'Pedro López',      'time' => '• Hace 2 días',    'text' => 'Envío express en 24h. ¡Increíble! Justo lo que necesitaba con urgencia.'],
+                                5 => ['name' => 'Laura Sánchez',    'time' => '• Hace 4 días',    'text' => 'Viralicé en mis stories. Todos preguntan dónde compré. ¡Éxito total!'],
+                            ];
+                            $items = [];
+                            for ($i = 1; $i <= 5; $i++) {
+                                $it = $waItems[$i - 1] ?? [];
+                                $items[$i] = [
+                                    'name'  => trim($it['name']  ?? '') !== '' ? $it['name']  : $defaults[$i]['name'],
+                                    'time'  => trim($it['time']  ?? '') !== '' ? $it['time']  : $defaults[$i]['time'],
+                                    'text'  => trim($it['text']  ?? '') !== '' ? $it['text']  : $defaults[$i]['text'],
+                                    'image' => trim($it['image'] ?? ''),
+                                ];
+                            }
+                            $renderSlide = function ($idx, $data) {
+                                $name  = $data['name']  ?? '';
+                                $time  = $data['time']  ?? '';
+                                $text  = $data['text']  ?? '';
+                                $image = $data['image'] ?? '';
+                            ?>
+                                <div class="testimonial-slide" data-index="<?= $idx - 1 ?>">
+                                    <div class="whatsapp-card">
+                                        <div class="img-wrapper">
+                                            <?php if (!empty($image)): ?>
+                                                <img src="<?= htmlspecialchars($image) ?>" alt="Testimonio WhatsApp <?= htmlspecialchars($name) ?>" class="whatsapp-screenshot" loading="lazy" decoding="async">
+                                            <?php else: ?>
+                                                <img src="/tienda_mvc/public/img/testimonios/1.jpeg" alt="Testimonio WhatsApp" class="whatsapp-screenshot" loading="lazy" decoding="async">
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="card-stars" aria-label="5 estrellas">★★★★★</div>
+                                            <strong><?= htmlspecialchars($name) ?></strong>
+                                            <span class="card-meta">
+                                                <?= htmlspecialchars($time) ?>
+                                                <span class="card-check">&#10003; verificado</span>
+                                            </span>
+                                            <p>"<?= htmlspecialchars($text) ?>"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php
+                            };
+                            for ($i = 1; $i <= 5; $i++) { $renderSlide($i, $items[$i]); }
+                            ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="slider-pagination">
+                    <span class="dot active" data-dot="0"></span>
+                    <span class="dot" data-dot="1"></span>
+                    <span class="dot" data-dot="2"></span>
+                    <span class="dot" data-dot="3"></span>
+                    <span class="dot" data-dot="4"></span>
+                </div>
+                <div class="slider-footer-note">
+                    <p><?= htmlspecialchars($waFooterNote) ?></p>
+                </div>
+            </div>
+        </section>
+        <?php endif; $sections['wa_testimonios'] = ob_get_clean(); ?>
 
         <?php ob_start(); if ($showFaqs): ?>
         <!-- PREGUNTAS FRECUENTES -->

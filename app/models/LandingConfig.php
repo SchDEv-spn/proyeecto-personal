@@ -189,6 +189,8 @@ class LandingConfig extends Model
                 authority_rating     = :authority_rating,
                 authority_guarantee  = :authority_guarantee,
 
+                show_wa_testimonios = :show_wa_testimonios,
+
                 show_benefits      = :show_benefits,
                 show_gallery       = :show_gallery,
                 show_antes_despues = :show_antes_despues,
@@ -413,6 +415,8 @@ class LandingConfig extends Model
             ':authority_deliveries' => $data['authority_deliveries'] ?? null,
             ':authority_rating'     => $data['authority_rating']     ?? null,
             ':authority_guarantee'  => $data['authority_guarantee']  ?? null,
+
+            ':show_wa_testimonios' => isset($data['show_wa_testimonios']) ? (int)$data['show_wa_testimonios'] : 1,
 
             ':show_benefits'      => isset($data['show_benefits'])      ? (int)$data['show_benefits']      : 1,
             ':show_gallery'       => isset($data['show_gallery'])       ? (int)$data['show_gallery']       : 1,
