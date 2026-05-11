@@ -2605,9 +2605,57 @@ body.modal-open { overflow: hidden; }
   .form-actions .btn-ghost { width: 100%; justify-content: center; }
   .material-header { padding: 0 14px; gap: 10px; }
   .material-content { padding: 14px; }
+
+  /* Ocultar subtítulo del header en mobile — ahorra espacio vertical */
+  .header-greeting p { display: none; }
+
+  /* KPI: fuente más pequeña en tarjetas angostas */
+  .stat-info h3 { font-size: 22px; }
+
+  /* Paneles: permitir que chip/badge baje si el título es largo */
+  .panel__head  { flex-wrap: wrap; row-gap: 6px; }
+  .table-header { flex-wrap: wrap; row-gap: 6px; }
+  .table-header-actions { flex-wrap: wrap; gap: 6px; }
+
+  /* Range filter: mostrar solo ícono de calendario en mobile */
+  .range-btn__label { display: none; }
+  .range-btn__chev  { display: none; }
+  .range-btn        { padding: 0 11px; gap: 0; }
 }
 
 @media (min-width: 768px) {
   .material-header { padding: 0 24px; }
   .material-content { padding-left: 24px; padding-right: 24px; padding-bottom: 24px; }
+}
+
+/* ============================================================
+   RESPONSIVE — Stats grid & KPI
+   ============================================================ */
+
+/* Header greeting: nunca desborda empujando las acciones */
+.header-greeting { flex-shrink: 1; min-width: 0; }
+.header-greeting > div { min-width: 0; }
+.header-greeting h3 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+/* Stats grid: 2 → 3 → 5 columnas */
+@media (min-width: 640px)  { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1100px) { .stats-grid { grid-template-columns: repeat(5, 1fr); } }
+
+/* KPI h3 escala con el viewport en desktop */
+@media (min-width: 768px)  { .stat-info h3 { font-size: clamp(22px, 2.2vw, 30px); } }
+
+/* State filter: ocultar scrollbar nativa en touch */
+.state-filter { scrollbar-width: none; }
+.state-filter::-webkit-scrollbar { display: none; }
+
+/* Cards de pedidos: ajuste fino en pantallas muy pequeñas */
+@media (max-width: 479px) {
+  .cards-container { padding: 10px; gap: 10px; }
+  .card-actions { flex-wrap: wrap; }
+  .card-footer  { gap: 6px; }
 }
