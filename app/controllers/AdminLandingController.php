@@ -231,6 +231,16 @@ class AdminLandingController extends Controller
             // ===== Transportadoras =====
             'show_trust_strip' => (int)($_POST['show_trust_strip'] ?? 1),
 
+            // ===== Elementos fijos =====
+            'show_sticky_bar'       => (int)($_POST['show_sticky_bar']       ?? 1),
+            'show_announcement_bar' => (int)($_POST['show_announcement_bar'] ?? 1),
+            'show_comparison'       => (int)($_POST['show_comparison']       ?? 1),
+            'show_resumen_oferta'   => (int)($_POST['show_resumen_oferta']   ?? 1),
+            'show_cta_sticky'       => (int)($_POST['show_cta_sticky']       ?? 1),
+            'show_whatsapp_btn'     => (int)($_POST['show_whatsapp_btn']     ?? 1),
+            'show_fomo'             => (int)($_POST['show_fomo']             ?? 1),
+            'show_exit_popup'       => (int)($_POST['show_exit_popup']       ?? 1),
+
             // ===== Form header =====
             'form_title'    => trim($_POST['form_title']    ?? ''),
             'form_subtitle' => trim($_POST['form_subtitle'] ?? ''),
