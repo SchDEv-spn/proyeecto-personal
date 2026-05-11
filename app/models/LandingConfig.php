@@ -167,6 +167,9 @@ class LandingConfig extends Model
                 urgency_stock      = :urgency_stock,
                 countdown_minutes  = :countdown_minutes,
 
+                comparison_img_without = :comparison_img_without,
+                comparison_img_with    = :comparison_img_with,
+
                 comparison_title       = :comparison_title,
                 comparison_1_without   = :comparison_1_without,
                 comparison_1_with      = :comparison_1_with,
@@ -388,6 +391,9 @@ class LandingConfig extends Model
             ':hero_badge_customers'=> $data['hero_badge_customers']?? null,
             ':urgency_stock'       => isset($data['urgency_stock'])      ? (int)$data['urgency_stock']      : 12,
             ':countdown_minutes'   => isset($data['countdown_minutes'])  ? (int)$data['countdown_minutes']  : 25,
+
+            ':comparison_img_without' => $data['comparison_img_without'] ?? null,
+            ':comparison_img_with'    => $data['comparison_img_with']    ?? null,
 
             ':comparison_title'     => $data['comparison_title']     ?? null,
             ':comparison_1_without' => $data['comparison_1_without'] ?? null,

@@ -3707,6 +3707,14 @@ img[loading="lazy"].loaded {
 
 .comparison-col { display: flex; flex-direction: column; }
 
+.comparison-col__img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    margin: 12px 0 4px;
+}
+
 .comparison-header {
     display: flex;
     align-items: center;

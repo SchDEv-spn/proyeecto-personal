@@ -301,6 +301,10 @@ class AdminLandingController extends Controller
         $data['antes_path']   = $_POST['antes_path_actual']   ?? null;
         $data['despues_path'] = $_POST['despues_path_actual'] ?? null;
 
+        // Comparativa imágenes actuales
+        $data['comparison_img_without'] = $_POST['comparison_img_without_path_actual'] ?? null;
+        $data['comparison_img_with']    = $_POST['comparison_img_with_path_actual']    ?? null;
+
         // 4. Manejo de archivos
         $basePath  = dirname(__DIR__, 2);
         $uploadDir = $basePath . '/public/uploads/landing/';
@@ -329,6 +333,9 @@ class AdminLandingController extends Controller
 
             'antes_file'   => 'antes_path',
             'despues_file' => 'despues_path',
+
+            'comparison_img_without_file' => 'comparison_img_without',
+            'comparison_img_with_file'    => 'comparison_img_with',
         ];
 
         $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'webm'];

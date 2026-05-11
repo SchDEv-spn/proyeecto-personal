@@ -123,7 +123,9 @@ $faq6_q = $cfg['faq6_q'] ?? '';
 $faq6_a = $cfg['faq6_a'] ?? '';
 
 // ===== TABLA COMPARATIVA =====
-$comparisonTitle = $cfg['comparison_title'] ?? 'La diferencia que hace este producto';
+$comparisonTitle    = $cfg['comparison_title']        ?? 'La diferencia que hace este producto';
+$comparisonImgWith  = $cfg['comparison_img_with']    ?? '';
+$comparisonImgWithout = $cfg['comparison_img_without'] ?? '';
 $comparisonRows  = [];
 for ($i = 1; $i <= 5; $i++) {
     $without = trim($cfg["comparison_{$i}_without"] ?? '');
@@ -132,7 +134,7 @@ for ($i = 1; $i <= 5; $i++) {
         $comparisonRows[] = ['without' => $without, 'with' => $with];
     }
 }
-$_comparisonHasData = !empty($comparisonRows);
+$_comparisonHasData = !empty($comparisonRows) || !empty($comparisonImgWithout) || !empty($comparisonImgWith);
 
 // ===== AUTORIDAD / CREDIBILIDAD =====
 $authorityEnabled    = (int)($cfg['authority_enabled']    ?? 0);
@@ -793,6 +795,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <span aria-hidden="true">❌</span>
                         <strong>Sin el producto</strong>
                     </div>
+                    <?php if (!empty($comparisonImgWithout)): ?>
+                    <img src="<?= htmlspecialchars($comparisonImgWithout) ?>"
+                         alt="Sin el producto"
+                         class="comparison-col__img"
+                         loading="lazy" decoding="async">
+                    <?php endif; ?>
                     <ul class="comparison-list">
                         <?php foreach ($comparisonRows as $row): ?>
                             <?php if ($row['without'] !== ''): ?>
@@ -806,6 +814,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <span aria-hidden="true">✅</span>
                         <strong>Con <?= htmlspecialchars($heroTitle) ?></strong>
                     </div>
+                    <?php if (!empty($comparisonImgWith)): ?>
+                    <img src="<?= htmlspecialchars($comparisonImgWith) ?>"
+                         alt="Con el producto"
+                         class="comparison-col__img"
+                         loading="lazy" decoding="async">
+                    <?php endif; ?>
                     <ul class="comparison-list">
                         <?php foreach ($comparisonRows as $row): ?>
                             <?php if ($row['with'] !== ''): ?>

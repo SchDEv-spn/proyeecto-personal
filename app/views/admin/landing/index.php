@@ -631,6 +631,32 @@
                       </div>
                     </div>
 
+                    <!-- Imágenes por columna -->
+                    <div class="form-grid" style="margin-top:16px;">
+                      <div class="admin-form-group">
+                        <label>🖼 Imagen columna "Sin el producto"</label>
+                        <?php if (!empty($config['comparison_img_without'])): ?>
+                          <img src="<?= htmlspecialchars($config['comparison_img_without']) ?>"
+                               style="width:100%; max-height:180px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
+                        <?php endif; ?>
+                        <input type="file" name="comparison_img_without_file"
+                               accept="image/*,video/mp4,video/webm">
+                        <input type="hidden" name="comparison_img_without_path_actual"
+                               value="<?= htmlspecialchars($config['comparison_img_without'] ?? '') ?>">
+                      </div>
+                      <div class="admin-form-group">
+                        <label>🖼 Imagen columna "Con el producto"</label>
+                        <?php if (!empty($config['comparison_img_with'])): ?>
+                          <img src="<?= htmlspecialchars($config['comparison_img_with']) ?>"
+                               style="width:100%; max-height:180px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
+                        <?php endif; ?>
+                        <input type="file" name="comparison_img_with_file"
+                               accept="image/*,video/mp4,video/webm">
+                        <input type="hidden" name="comparison_img_with_path_actual"
+                               value="<?= htmlspecialchars($config['comparison_img_with'] ?? '') ?>">
+                      </div>
+                    </div>
+
                     <div class="stack-cards" style="margin-top:16px;">
                       <?php for ($i = 1; $i <= 5; $i++):
                         $withoutKey = "comparison_{$i}_without";
