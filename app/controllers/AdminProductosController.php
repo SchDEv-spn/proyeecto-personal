@@ -124,6 +124,7 @@ class AdminProductosController extends Controller
     public function guardarNuevo()
     {
         $this->requireLogin();
+        $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header("Location: /tienda_mvc/AdminProductos/index");
@@ -318,6 +319,7 @@ class AdminProductosController extends Controller
     public function actualizar()
     {
         $this->requireLogin();
+        $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header("Location: /tienda_mvc/AdminProductos/index");

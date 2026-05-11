@@ -126,6 +126,7 @@
                             method="POST"
                             class="admin-form"
                             enctype="multipart/form-data">
+                            <?= csrf_field() ?>
 
                             <input type="hidden" name="id" value="<?= htmlspecialchars($productoId) ?>">
                             <input type="hidden" name="imagen_principal_actual" value="<?= htmlspecialchars($imgActual) ?>">

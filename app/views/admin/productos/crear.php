@@ -82,6 +82,7 @@
                           method="POST"
                           class="admin-form"
                           enctype="multipart/form-data">
+                        <?= csrf_field() ?>
 
                         <div class="form-grid">
 

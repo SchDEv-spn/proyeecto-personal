@@ -47,6 +47,7 @@ class AdminLandingController extends Controller
     public function guardar()
     {
         $this->requireLogin();
+        $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header("Location: /tienda_mvc/AdminLanding/index");
@@ -229,7 +230,8 @@ class AdminLandingController extends Controller
             'garantia_item4' => trim($_POST['garantia_item4']  ?? ''),
 
             // ===== Transportadoras =====
-            'show_trust_strip' => (int)($_POST['show_trust_strip'] ?? 1),
+            'show_trust_strip'     => (int)($_POST['show_trust_strip']     ?? 1),
+            'show_wa_testimonios'  => (int)($_POST['show_wa_testimonios']  ?? 1),
 
             // ===== Elementos fijos =====
             'show_sticky_bar'       => (int)($_POST['show_sticky_bar']       ?? 1),

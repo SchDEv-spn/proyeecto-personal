@@ -14,7 +14,8 @@ class Database {
             );
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
-            die("Error de conexión: " . $e->getMessage());
+            error_log("DB connection error: " . $e->getMessage());
+            die("Error interno del servidor. Por favor intenta más tarde.");
         }
     }
 }

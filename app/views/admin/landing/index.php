@@ -110,6 +110,7 @@
 
               <div class="form-card-body">
                 <form action="/tienda_mvc/AdminLanding/guardar" method="POST" class="admin-form" enctype="multipart/form-data">
+                  <?= csrf_field() ?>
                   <input type="hidden" name="producto_id" value="<?= htmlspecialchars($producto_id) ?>">
 
                   <!-- SECCIONES VISIBLES -->
