@@ -296,7 +296,7 @@ $initials = strtoupper(substr($usuarioNombre, 0, 1) . (strpos($usuarioNombre, ' 
     </main>
 </div>
 
-<script src="/tienda_mvc/public/js/main.js"></script>
+<script src="/tienda_mvc/public/js/funciones.js"></script>
 <script>
     // Confirm password match before submit
     document.getElementById('btnCambiarPass').closest('form').addEventListener('submit', function(e) {

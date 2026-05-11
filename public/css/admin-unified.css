@@ -2617,10 +2617,6 @@ body.modal-open { overflow: hidden; }
   .table-header { flex-wrap: wrap; row-gap: 6px; }
   .table-header-actions { flex-wrap: wrap; gap: 6px; }
 
-  /* Range filter: mostrar solo ícono de calendario en mobile */
-  .range-btn__label { display: none; }
-  .range-btn__chev  { display: none; }
-  .range-btn        { padding: 0 11px; gap: 0; }
 }
 
 @media (min-width: 768px) {
@@ -2628,18 +2624,48 @@ body.modal-open { overflow: hidden; }
   .material-content { padding-left: 24px; padding-right: 24px; padding-bottom: 24px; }
 }
 
+/* Range filter: icon-only en todo dispositivo < desktop (cubre phones Y tablets) */
+@media (max-width: 991px) {
+  .range-btn__label { display: none; }
+  .range-btn__chev  { display: none; }
+  .range-btn        { padding: 0 11px; gap: 0; }
+}
+
 /* ============================================================
    RESPONSIVE — Stats grid & KPI
    ============================================================ */
 
-/* Header greeting: nunca desborda empujando las acciones */
-.header-greeting { flex-shrink: 1; min-width: 0; }
-.header-greeting > div { min-width: 0; }
-.header-greeting h3 {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 260px;
+/* Header greeting: no wrap global */
+.header-greeting h3 { white-space: nowrap; }
+
+/* Mobile: overflow:hidden va en h3 (NO en el flex-item div).
+   Razón: overflow:hidden en un flex item fuerza min-size=0 por spec CSS,
+   colapsando el contenedor. Con width fijo en h3, el div padre hereda ese
+   tamaño natural y flex-shrink:0 lo mantiene fijo. */
+@media (max-width: 767px) {
+  .header-greeting > div { flex-shrink: 0; }
+  .header-greeting h3 {
+    width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 360px) {
+  .header-greeting h3 { width: 100px; }
+}
+
+/* Header CTAs: icon-only en mobile para liberar espacio */
+@media (max-width: 640px) {
+  .header-actions .btn-primary {
+    width: 38px;
+    padding: 0;
+    font-size: 0;
+    gap: 0;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .header-actions .btn-primary i { font-size: 16px; }
 }
 
 /* Stats grid: 2 → 3 → 5 columnas */
