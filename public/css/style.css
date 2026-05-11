@@ -1028,12 +1028,18 @@ h3 {
 /* En mobile la imagen en portrait llenaría toda la pantalla —
    la limitamos para que el usuario vea texto+CTA sin scroll */
 @media (max-width: 767px) {
-  .hero-media img,
-  .hero-media video {
-    aspect-ratio: 16 / 9;   /* reserva espacio antes de cargar → evita CLS */
+  .hero-media img {
+    aspect-ratio: 16 / 9;
     max-height: 55vw;
     min-height: 180px;
     object-position: center top;
+  }
+  .hero-media video {
+    aspect-ratio: 9 / 16;
+    max-height: none;
+    min-height: unset;
+    width: 100%;
+    object-position: center;
   }
 }
 
@@ -4842,13 +4848,18 @@ img[loading="lazy"].loaded {
     gap: 5px 12px !important;
   }
 
-  /* Imagen hero en mobile: muestra solo la parte superior del creativo
-     para que quepa en pantalla y haga de "teaser" visual */
-  .hero-media img,
-  .hero-media video {
+  /* Imagen hero en mobile: teaser recortado */
+  .hero-media img {
     max-height: 52vw !important;
     min-height: 180px !important;
     object-position: center 15% !important;
+  }
+  /* Video hero en mobile: portrait completo 9/16 */
+  .hero-media video {
+    aspect-ratio: 9 / 16 !important;
+    max-height: none !important;
+    min-height: unset !important;
+    object-position: center !important;
   }
 }
 
