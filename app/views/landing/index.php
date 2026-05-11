@@ -132,7 +132,7 @@ for ($i = 1; $i <= 5; $i++) {
         $comparisonRows[] = ['without' => $without, 'with' => $with];
     }
 }
-$showComparison = !empty($comparisonRows);
+$_comparisonHasData = !empty($comparisonRows);
 
 // ===== AUTORIDAD / CREDIBILIDAD =====
 $authorityEnabled    = (int)($cfg['authority_enabled']    ?? 0);
@@ -265,7 +265,15 @@ $garantiaItem3 = $cfg['garantia_item3'] ?? '🔄 Si llega dañado o incorrecto, 
 $garantiaItem4 = $cfg['garantia_item4'] ?? '💬 Asesor en WhatsApp disponible para ti';
 
 // ===== SECCIONES FIJAS (no reordenables) =====
-$showTrustStrip  = (int)($cfg['show_trust_strip']  ?? 1);
+$showTrustStrip      = (int)($cfg['show_trust_strip']      ?? 1);
+$showAnnouncementBar = (int)($cfg['show_announcement_bar'] ?? 1);
+$showStickyBar       = (int)($cfg['show_sticky_bar']       ?? 1);
+$showComparison      = (int)($cfg['show_comparison']       ?? 1) && $_comparisonHasData;
+$showResumenOferta   = (int)($cfg['show_resumen_oferta']   ?? 1);
+$showCtaSticky       = (int)($cfg['show_cta_sticky']       ?? 1);
+$showWhatsappBtn     = (int)($cfg['show_whatsapp_btn']     ?? 1);
+$showFomo            = (int)($cfg['show_fomo']             ?? 1);
+$showExitPopup       = (int)($cfg['show_exit_popup']       ?? 1);
 
 // ===== FORM HEADER =====
 $formTitle    = $cfg['form_title']    ?? 'Haz tu pedido — Pago al recibir';
@@ -384,6 +392,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 <body>
 
     <!-- STICKY PRICE BAR -->
+    <?php if ($showStickyBar): ?>
     <div id="stickyPriceBar" class="sticky-price-bar" aria-hidden="true">
         <div class="sticky-price-bar__inner">
             <span class="sticky-price-bar__name"><?= htmlspecialchars(mb_substr($heroTitle, 0, 38)) ?><?= mb_strlen($heroTitle) > 38 ? '…' : '' ?></span>
@@ -396,7 +405,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <a href="#form-pedido" class="sticky-price-bar__cta">Pedir ahora →</a>
         </div>
     </div>
+    <?php endif; ?>
 
+    <?php if ($showAnnouncementBar): ?>
     <div class="announcement-bar" role="banner" aria-label="Información de oferta">
         <div class="announcement-bar__track" aria-hidden="true">
             <?php foreach ([$announcementItems, $announcementItems] as $set): ?>
@@ -407,8 +418,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <?php endforeach; ?>
         </div>
     </div>
+    <?php endif; ?>
 
-    <!-- HERO -->
     <!-- HERO -->
     <header class="container hero">
         <div class="hero-text">
@@ -1132,6 +1143,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php endif; ?>
 
         <!-- RESUMEN DE OFERTA — Ancla pre-formulario -->
+        <?php if ($showResumenOferta): ?>
         <div class="offer-anchor">
             <div class="offer-anchor__product"><?= htmlspecialchars($heroTitle) ?></div>
             <div class="offer-anchor__pricing">
@@ -1154,6 +1166,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </p>
             <?php endif; ?>
         </div>
+        <?php endif; ?>
 
         <!-- FORMULARIO STEPPER -->
         <section class="container" id="form-pedido">
@@ -1727,12 +1740,14 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
 
     <!-- CTA sticky para móviles -->
+    <?php if ($showCtaSticky): ?>
     <a href="#form-pedido" class="cta-sticky-mobile" aria-label="Ir al formulario de pedido">
         <span><?= htmlspecialchars($ctaStickyMobileText) ?></span>
         <span class="sticky-price">
             $<?= number_format($precio_venta, 0, ',', '.') ?>
         </span>
     </a>
+    <?php endif; ?>
 
     <?php
     $success        = $success ?? '';
@@ -1763,6 +1778,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <script src="/tienda_mvc/public/js/funcionesLandin.js" defer></script>
 
     <!-- Botón WhatsApp flotante -->
+    <?php if ($showWhatsappBtn): ?>
     <a href="https://wa.me/<?= urlencode($waPhone) ?>?text=Hola%2C%20me%20interesa%20el%20producto%20y%20tengo%20una%20consulta."
        class="wa-float-btn" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1770,11 +1786,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.557 4.116 1.526 5.845L.057 23.998l6.304-1.658A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.793 9.793 0 01-4.997-1.367l-.356-.212-3.745.985.993-3.644-.232-.373A9.79 9.79 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
         </svg>
     </a>
+    <?php endif; ?>
 
     <!-- Contenedor FOMO notifications -->
+    <?php if ($showFomo): ?>
     <div id="fomoContainer" aria-live="polite" aria-atomic="true"></div>
+    <?php endif; ?>
 
     <!-- EXIT INTENT POPUP -->
+    <?php if ($showExitPopup): ?>
     <div id="exitPopup" class="exit-popup" role="dialog" aria-modal="true"
          aria-labelledby="exitPopupTitle" hidden>
         <div class="exit-popup__backdrop" id="exitPopupBackdrop"></div>
@@ -1804,6 +1824,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </button>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- ── Analytics al final del body para no bloquear el render ────── -->
     <!-- Facebook Pixel -->

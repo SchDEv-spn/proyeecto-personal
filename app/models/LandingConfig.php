@@ -235,6 +235,15 @@ class LandingConfig extends Model
 
                 show_trust_strip = :show_trust_strip,
 
+                show_announcement_bar = :show_announcement_bar,
+                show_sticky_bar       = :show_sticky_bar,
+                show_comparison       = :show_comparison,
+                show_resumen_oferta   = :show_resumen_oferta,
+                show_cta_sticky       = :show_cta_sticky,
+                show_whatsapp_btn     = :show_whatsapp_btn,
+                show_fomo             = :show_fomo,
+                show_exit_popup       = :show_exit_popup,
+
                 form_title    = :form_title,
                 form_subtitle = :form_subtitle
 
@@ -447,6 +456,15 @@ class LandingConfig extends Model
             ':garantia_item4' => $data['garantia_item4'] ?? null,
 
             ':show_trust_strip' => isset($data['show_trust_strip']) ? (int)$data['show_trust_strip'] : 1,
+
+            ':show_announcement_bar' => isset($data['show_announcement_bar']) ? (int)$data['show_announcement_bar'] : 1,
+            ':show_sticky_bar'       => isset($data['show_sticky_bar'])       ? (int)$data['show_sticky_bar']       : 1,
+            ':show_comparison'       => isset($data['show_comparison'])       ? (int)$data['show_comparison']       : 1,
+            ':show_resumen_oferta'   => isset($data['show_resumen_oferta'])   ? (int)$data['show_resumen_oferta']   : 1,
+            ':show_cta_sticky'       => isset($data['show_cta_sticky'])       ? (int)$data['show_cta_sticky']       : 1,
+            ':show_whatsapp_btn'     => isset($data['show_whatsapp_btn'])     ? (int)$data['show_whatsapp_btn']     : 1,
+            ':show_fomo'             => isset($data['show_fomo'])             ? (int)$data['show_fomo']             : 1,
+            ':show_exit_popup'       => isset($data['show_exit_popup'])       ? (int)$data['show_exit_popup']       : 1,
 
             ':form_title'    => $data['form_title']    ?? null,
             ':form_subtitle' => $data['form_subtitle'] ?? null,

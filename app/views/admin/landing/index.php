@@ -169,6 +169,37 @@
                              value="<?= htmlspecialchars($config['section_order'] ?? '') ?>">
 
                     </div>
+
+                    <!-- Elementos fijos -->
+                    <p class="section-hint" style="margin-top:1.5rem; font-weight:600; color:var(--gold-light);">Elementos fijos (sin orden)</p>
+                    <div class="sections-toggle-grid">
+                      <?php
+                      $fixedToggles = [
+                        'show_sticky_bar'       => ['icon' => '📌', 'label' => 'Barra de precio sticky'],
+                        'show_announcement_bar' => ['icon' => '📢', 'label' => 'Barra de anuncios'],
+                        'show_comparison'       => ['icon' => '⚖️', 'label' => 'Tabla comparativa'],
+                        'show_resumen_oferta'   => ['icon' => '🏷️', 'label' => 'Resumen de oferta'],
+                        'show_cta_sticky'       => ['icon' => '📱', 'label' => 'CTA sticky mobile'],
+                        'show_whatsapp_btn'     => ['icon' => '💬', 'label' => 'Botón WhatsApp flotante'],
+                        'show_fomo'             => ['icon' => '🔔', 'label' => 'Notificaciones FOMO'],
+                        'show_exit_popup'       => ['icon' => '🚪', 'label' => 'Popup de salida'],
+                      ];
+                      foreach ($fixedToggles as $fname => $fdata):
+                        $fchecked = isset($config[$fname]) ? (int)$config[$fname] : 1;
+                      ?>
+                        <div class="section-toggle-item">
+                          <span class="section-toggle-icon"><?= $fdata['icon'] ?></span>
+                          <span class="section-toggle-name"><?= $fdata['label'] ?></span>
+                          <label class="toggle-label">
+                            <input type="hidden"   name="<?= $fname ?>" value="0">
+                            <input type="checkbox" name="<?= $fname ?>" value="1"
+                                   class="toggle-cb" <?= $fchecked ? 'checked' : '' ?>>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                          </label>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
+
                   </div>
 
                   <!-- HERO -->
