@@ -13,8 +13,22 @@
  *   · initStickyVisibility      — ocultar sticky al llegar al form
  *   · initLazyImages            — marcar imágenes loaded
  *   · initTelInput              — inputmode="tel" en WhatsApp
+ *   · initWaLinksIAB            — WhatsApp links en Facebook IAB
  * ─────────────────────────────────────────────────────────────
  */
+
+/* ══════════════════════════════════════════════════════════════
+   FETCH CON TIMEOUT — evita cuelgues en conexión lenta (IAB)
+   ══════════════════════════════════════════════════════════════ */
+function fetchWithTimeout(url, options, ms) {
+    ms = ms || 10000;
+    if (!window.AbortController) return fetch(url, options);
+    var ctrl = new AbortController();
+    var promise = fetch(url, Object.assign({}, options, { signal: ctrl.signal }));
+    var timer = setTimeout(function () { ctrl.abort(); }, ms);
+    promise.then(function () { clearTimeout(timer); }, function () { clearTimeout(timer); });
+    return promise;
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     initTipoEntrega();
@@ -28,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initLazyImages();
     initTelInput();
     initPixelEvents();
+    initWaLinksIAB();
 });
 
 
@@ -40,7 +55,7 @@ function initDepartamentoMunicipio() {
 
     if (!selectDept || !selectMun) return;
 
-    fetch('/tienda_mvc/public/js/colombia.json')
+    fetchWithTimeout('/tienda_mvc/public/js/colombia.json', {}, 10000)
         .then(response => {
             if (!response.ok) throw new Error('No se pudo cargar colombia.json');
             return response.json();
@@ -429,6 +444,46 @@ function initTelInput() {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   FACEBOOK IAB — WhatsApp links
+   El Facebook In-App Browser (Android) bloquea wa.me impidiendo
+   que abra WhatsApp. Usamos intent:// en Android y whatsapp://
+   en iOS para saltarnos esa intercepción.
+   ══════════════════════════════════════════════════════════════ */
+function initWaLinksIAB() {
+    var ua = navigator.userAgent;
+    if (!/FBAN|FBAV|FB_IAB|FB4A|FBIOS/i.test(ua)) return;
+
+    var isAndroid = /Android/i.test(ua);
+
+    document.querySelectorAll('a[href*="wa.me"]').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            var href = link.href;
+            var m = href.match(/wa\.me\/([^?#]+)(?:\?text=([^#]*))?/);
+            if (!m) { window.open(href, '_blank'); return; }
+
+            var phone = m[1].replace(/\D/g, '');
+            var text  = m[2] ? decodeURIComponent(m[2]) : '';
+
+            if (isAndroid) {
+                // intent:// le indica al OS de Android que abra el intent
+                // directamente en WhatsApp, saltando la intercepción del IAB
+                var intentUri = 'intent://send?phone=' + phone +
+                    (text ? '&text=' + encodeURIComponent(text) : '') +
+                    '#Intent;scheme=https;package=com.whatsapp;' +
+                    'S.browser_fallback_url=' + encodeURIComponent('https://wa.me/' + phone + (text ? '?text=' + encodeURIComponent(text) : '')) + ';' +
+                    'end';
+                window.location.href = intentUri;
+            } else {
+                // iOS: whatsapp:// funciona dentro del Facebook IAB de iOS
+                window.location.href = 'whatsapp://send?phone=' + phone +
+                    (text ? '&text=' + encodeURIComponent(text) : '');
+            }
+        });
+    });
+}
+
+/* ══════════════════════════════════════════════════════════════
    FACEBOOK PIXEL EVENTS — embudos de conversión
    ══════════════════════════════════════════════════════════════ */
 function initPixelEvents() {
@@ -577,11 +632,11 @@ function initPixelEvents() {
         if (btnText) btnText.style.display = 'none';
         if (btnSpinner) btnSpinner.style.display = 'inline';
 
-        fetch(form.action, {
+        fetchWithTimeout(form.action, {
             method: 'POST',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: new FormData(form),
-        })
+        }, 15000)
             .then(r => r.json())
             .then(function (res) {
                 btnSubmit.disabled = false;

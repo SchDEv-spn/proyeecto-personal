@@ -1,5 +1,11 @@
-
-
+/* Facebook IAB y algunos webviews bloquean sessionStorage —
+   estos helpers absorben el error silenciosamente. */
+function ssGet(key) {
+    try { return sessionStorage.getItem(key); } catch (e) { return null; }
+}
+function ssSet(key, val) {
+    try { sessionStorage.setItem(key, String(val)); } catch (e) {}
+}
 
 /* ============================================================
    CARRUSEL DE TESTIMONIOS — CSS Scroll Snap nativo
@@ -92,10 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const configMinutes = sourceEl ? (parseInt(sourceEl.dataset.minutes, 10) || 25) : 25;
         const DURATION_MS   = configMinutes * 60 * 1000;
 
-        let endTime = parseInt(sessionStorage.getItem(SESSION_KEY), 10);
+        let endTime = parseInt(ssGet(SESSION_KEY), 10);
         if (!endTime || endTime <= Date.now()) {
             endTime = Date.now() + DURATION_MS;
-            sessionStorage.setItem(SESSION_KEY, endTime);
+            ssSet(SESSION_KEY, endTime);
         }
 
         // Un solo interval actualiza TODOS los displays de countdown
@@ -105,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let remaining = endTime - Date.now();
             if (remaining <= 0) {
                 endTime = Date.now() + DURATION_MS;
-                sessionStorage.setItem(SESSION_KEY, endTime);
+                ssSet(SESSION_KEY, endTime);
                 remaining = DURATION_MS;
             }
             const m    = Math.floor(remaining / 60000);
@@ -134,10 +140,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const STOCK_BASE = parseInt(el.dataset.stock, 10) || 12;
 
-        let stock = parseInt(sessionStorage.getItem(STOCK_KEY), 10);
+        let stock = parseInt(ssGet(STOCK_KEY), 10);
         if (!stock || stock > STOCK_BASE) {
             stock = STOCK_BASE;
-            sessionStorage.setItem(STOCK_KEY, stock);
+            ssSet(STOCK_KEY, stock);
         }
 
         el.textContent = stock;
@@ -151,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(function () {
             if (stock > 1) {
                 stock--;
-                sessionStorage.setItem(STOCK_KEY, stock);
+                ssSet(STOCK_KEY, stock);
                 el.textContent = stock;
                 if (bar && stock <= 3) bar.classList.add('critical');
             }
@@ -374,12 +380,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!popup) return;
 
         // No mostrar si ya se mostró en esta sesión
-        if (sessionStorage.getItem(SESSION_KEY_SHOWN)) return;
+        if (ssGet(SESSION_KEY_SHOWN)) return;
 
         function showPopup() {
             if (popupShown) return;
             popupShown = true;
-            sessionStorage.setItem(SESSION_KEY_SHOWN, '1');
+            ssSet(SESSION_KEY_SHOWN, '1');
             popup.removeAttribute('hidden');
             document.body.style.overflow = 'hidden';
             startExitCountdown();

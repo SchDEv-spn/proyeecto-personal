@@ -1195,30 +1195,34 @@ $colorBorder     = $cfg['color_border']     ?? null;
             $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
             $precioCombo2 = (int)($comboPrice2 ?? 115000);
             if ($precioCombo2 <= 0) $precioCombo2 = 115000;
-            $hasColors  = !empty($colores);
-            $totalSteps = $hasColors ? 3 : 2;
-            $stepLabels = $hasColors
-                ? ['Tus datos', 'Tu pedido', 'Entrega']
-                : ['Tus datos', 'Entrega'];
+            $hasColors = !empty($colores);
             ?>
 
-            <!-- Indicador de progreso -->
+            <!-- Indicador de progreso — siempre 3 pasos -->
             <div class="form-stepper-indicator" id="stepperIndicator">
-                <?php for ($s = 1; $s <= $totalSteps; $s++): ?>
-                <div class="stepper-node <?= $s === 1 ? 'is-active' : '' ?>" data-step="<?= $s ?>">
+                <div class="stepper-node is-active" data-step="1">
                     <div class="stepper-node__circle">
-                        <span class="stepper-node__num"><?= $s ?></span>
-                        <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none">
-                            <polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2"
-                                stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
+                        <span class="stepper-node__num">1</span>
+                        <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none"><polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
-                    <span class="stepper-node__label"><?= $stepLabels[$s - 1] ?></span>
+                    <span class="stepper-node__label">👤 ¿Quién eres?</span>
                 </div>
-                <?php if ($s < $totalSteps): ?>
-                <div class="stepper-connector" data-after="<?= $s ?>"></div>
-                <?php endif; ?>
-                <?php endfor; ?>
+                <div class="stepper-connector" data-after="1"></div>
+                <div class="stepper-node" data-step="2">
+                    <div class="stepper-node__circle">
+                        <span class="stepper-node__num">2</span>
+                        <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none"><polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="stepper-node__label">🛍️ ¿Qué pides?</span>
+                </div>
+                <div class="stepper-connector" data-after="2"></div>
+                <div class="stepper-node" data-step="3">
+                    <div class="stepper-node__circle">
+                        <span class="stepper-node__num">3</span>
+                        <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none"><polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="stepper-node__label">📦 ¿A dónde?</span>
+                </div>
             </div>
 
             <div id="stepperErrors" class="error" style="display:none;"></div>
@@ -1227,175 +1231,209 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <form id="formPedido" action="/tienda_mvc/Landing/enviarPedido" method="POST" novalidate>
                     <input type="hidden" name="producto_id" value="<?= htmlspecialchars($producto['id'] ?? 1) ?>">
 
-                    <!-- ══ PASO 1: DATOS PERSONALES ══ -->
+                    <!-- ══════════════════════════════
+                         PASO 1 — DATOS PERSONALES
+                    ══════════════════════════════════ -->
                     <div class="form-step is-active" data-step="1">
                         <div class="form-step__head">
-                            <p class="form-step__badge">Paso 1 de <?= $totalSteps ?></p>
-                            <h3 class="form-step__title">¿A quién le enviamos?</h3>
-                            <p class="form-step__sub">Solo 3 datos y ya podemos empezar 👋</p>
+                            <div class="step-emoji" aria-hidden="true">👤</div>
+                            <h3 class="form-step__title">¿A nombre de quién va el pedido?</h3>
+                            <p class="form-step__sub">Así sabemos cómo llamarte cuando te contactemos</p>
                         </div>
 
-                        <div class="form-row-2">
-                            <div class="form-group">
-                                <label for="nombre">Nombre *</label>
-                                <input type="text" id="nombre" name="nombre" required
-                                    placeholder="Ej: María"
-                                    autocomplete="given-name"
-                                    value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
-                            </div>
-                            <div class="form-group">
-                                <label for="apellidos">Apellidos *</label>
-                                <input type="text" id="apellidos" name="apellidos" required
-                                    placeholder="Ej: González"
-                                    autocomplete="family-name"
-                                    value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
-                            </div>
+                        <div class="form-group">
+                            <label for="nombre" class="form-label-lg">Tu nombre</label>
+                            <input type="text" id="nombre" name="nombre" required class="input-lg"
+                                placeholder="Ej: María"
+                                autocomplete="given-name"
+                                value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
                         </div>
                         <div class="form-group">
-                            <label for="telefono">📱 WhatsApp *</label>
-                            <input type="tel" id="telefono" name="telefono" required
-                                placeholder="3001234567" maxlength="10"
-                                autocomplete="tel-national"
-                                inputmode="numeric"
+                            <label for="apellidos" class="form-label-lg">Tu apellido</label>
+                            <input type="text" id="apellidos" name="apellidos" required class="input-lg"
+                                placeholder="Ej: González"
+                                autocomplete="family-name"
+                                value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="telefono" class="form-label-lg">📱 Tu número de WhatsApp</label>
+                            <input type="tel" id="telefono" name="telefono" required class="input-lg"
+                                placeholder="Ej: 3001234567"
+                                maxlength="10" autocomplete="tel-national" inputmode="numeric"
                                 value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
-                            <small class="help">10 dígitos · empieza en 3 · confirmamos tu pedido aquí</small>
+                            <p class="field-hint">Solo 10 números · empieza por 3 · por aquí te avisamos cuando salga tu pedido</p>
                         </div>
 
-                        <?php if (!$hasColors): ?>
-                        <!-- Selector de cantidad visible cuando no hay colores -->
-                        <div class="form-group form-qty-group">
-                            <label>¿Cuántas unidades quieres?</label>
-                            <div class="qty-stepper">
-                                <button type="button" class="qty-btn" id="qtyMinus" aria-label="Restar">−</button>
-                                <span class="qty-display" id="qtyDisplay">1</span>
-                                <button type="button" class="qty-btn" id="qtyPlus" aria-label="Sumar">+</button>
+                        <div class="form-step__nav form-step__nav--end">
+                            <button type="button" class="btn-step-next btn-next-lg" data-next="2">
+                                Siguiente <span aria-hidden="true">→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════
+                         PASO 2 — QUÉ QUIERE PEDIR
+                    ══════════════════════════════════ -->
+                    <div class="form-step" data-step="2">
+
+                        <?php if ($hasColors): ?>
+                        <!-- Con colores: pills visuales -->
+                        <div class="form-step__head">
+                            <div class="step-emoji" aria-hidden="true">🎨</div>
+                            <h3 class="form-step__title">¿Cuál color te gusta?</h3>
+                            <p class="form-step__sub">Toca el color que quieres pedir</p>
+                        </div>
+
+                        <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
+                        <input type="hidden" id="cantidad_total" name="cantidad_total" value="1">
+
+                        <div id="colorRowsWrap">
+                            <div class="color-row" data-row="0">
+                                <p class="color-row__lbl">Elige el color:</p>
+                                <div class="color-pills-wrap">
+                                    <?php foreach ($colores as $c): ?>
+                                    <button type="button" class="color-pill" data-color="<?= htmlspecialchars($c) ?>">
+                                        <?= htmlspecialchars($c) ?>
+                                    </button>
+                                    <?php endforeach; ?>
+                                </div>
+                                <!-- Selects ocultos — los leen backend y pricing-summary.js -->
+                                <select name="color_item[]" class="color-item-sel" aria-hidden="true" tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:0">
+                                    <option value=""></option>
+                                    <?php foreach ($colores as $c): ?>
+                                    <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <div class="color-row__qty-wrap" style="display:none;">
+                                    <p class="color-row__qty-lbl">¿Cuántos de ese color?</p>
+                                    <div class="qty-stepper qty-stepper--big">
+                                        <button type="button" class="qty-btn qty-btn--big" data-action="minus" aria-label="Menos">−</button>
+                                        <span class="qty-val-big">1</span>
+                                        <button type="button" class="qty-btn qty-btn--big" data-action="plus" aria-label="Más">+</button>
+                                    </div>
+                                </div>
+                                <select name="qty_item[]" class="qty-item-sel" aria-hidden="true" tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:0">
+                                    <?php for ($i = 1; $i <= 10; $i++): ?>
+                                    <option value="<?= $i ?>"><?= $i ?></option>
+                                    <?php endfor; ?>
+                                </select>
                             </div>
-                            <small class="help">Una unidad es suficiente — siempre puedes pedir más después</small>
-                            <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
+                        </div>
+
+                        <button type="button" id="addColorRowBtn" class="btn-add-color-row" style="display:none;">
+                            + Quiero otro color diferente
+                        </button>
+                        <div class="color-sel-summary" id="colorSelSummary" style="display:none;">
+                            Tu selección: <strong id="colorSelText"></strong>
+                        </div>
+
+                        <?php else: ?>
+                        <!-- Sin colores: selector grande de cantidad -->
+                        <div class="form-step__head">
+                            <div class="step-emoji" aria-hidden="true">🛍️</div>
+                            <h3 class="form-step__title">¿Cuántos vas a pedir?</h3>
+                            <p class="form-step__sub">La mayoría lleva solo uno — puedes pedir más después</p>
+                        </div>
+
+                        <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
+
+                        <div class="qty-hero-wrap">
+                            <div class="qty-stepper qty-stepper--hero">
+                                <button type="button" class="qty-btn qty-btn--hero" id="qtyMinus" aria-label="Menos">−</button>
+                                <span class="qty-disp-hero" id="qtyDisplay">1</span>
+                                <button type="button" class="qty-btn qty-btn--hero" id="qtyPlus" aria-label="Más">+</button>
+                            </div>
+                            <p class="qty-unit-lbl" id="qtyUnitLbl">unidad</p>
                             <input type="hidden" id="cantidad_total" name="cantidad_total"
                                 value="<?= htmlspecialchars((string)($old['cantidad_total'] ?? 1)) ?>">
                         </div>
                         <?php endif; ?>
 
-                        <div class="form-step__nav form-step__nav--end">
-                            <button type="button" class="btn-step-next" data-next="2">
-                                Continuar <span aria-hidden="true">→</span>
+                        <!-- Preview de precio en tiempo real -->
+                        <div class="price-preview-strip" id="pricePreviewStrip"
+                            data-unit="<?= (int)$precioVenta ?>"
+                            data-reg="<?= (int)$precioRegular ?>"
+                            data-d2="<?= $d2 ?>" data-d3="<?= $d3 ?>" data-act="<?= $act ?>">
+                            <span class="price-preview-strip__lbl">Pagarás al recibirlo:</span>
+                            <span class="price-preview-strip__amt" id="pricePreviewAmt">
+                                $<?= number_format($precioVenta, 0, ',', '.') ?>
+                            </span>
+                        </div>
+
+                        <div class="form-step__nav">
+                            <button type="button" class="btn-step-prev" data-prev="1">← Atrás</button>
+                            <button type="button" class="btn-step-next btn-next-lg" data-next="3">
+                                Siguiente <span aria-hidden="true">→</span>
                             </button>
                         </div>
                     </div>
 
-                    <?php if ($hasColors): ?>
-                    <!-- ══ PASO 2: PRODUCTO ══ -->
-                    <div class="form-step" data-step="2">
+                    <!-- ══════════════════════════════
+                         PASO 3 — ENTREGA
+                    ══════════════════════════════════ -->
+                    <div class="form-step" data-step="3">
                         <div class="form-step__head">
-                            <p class="form-step__badge">Paso 2 de 3 — ¡Ya casi tienes tu pedido! 🛍️</p>
-                            <h3 class="form-step__title">¿Qué quieres pedir?</h3>
-                            <p class="form-step__sub">Elige las cantidades y estamos listos</p>
-                        </div>
-
-                        <?php if (!empty($comboEnabled) && (int)$comboEnabled === 1): ?>
-                            <div class="form-group">
-                                <label for="pricingModeSelect"><strong>Elige tu oferta</strong></label>
-                                <select id="pricingModeSelect" class="color-select">
-                                    <option value="combo" selected>🔥 Combo x2 — $<?= number_format($precioCombo2, 0, ',', '.') ?> (Recomendado)</option>
-                                    <option value="individual">1 unidad — $<?= number_format($precioVenta, 0, ',', '.') ?></option>
-                                </select>
-                                <input type="hidden" name="pricing_mode" id="pricingMode" value="combo">
-                            </div>
-                            <div id="comboWrap" class="form-group">
-                                <label><strong>Selecciona los colores de tu combo</strong></label>
-                                <div id="combosContainer" class="colors-qty-wrap"></div>
-                                <button type="button" id="addComboBtn" class="btn-ghost add-color-btn">+ Agregar otro combo</button>
-                                <small class="help total-units-note">Total unidades: <strong id="totalUnits">2</strong></small>
-                            </div>
-                            <div id="individualWrap" class="form-group" style="display:none;">
-                                <label><strong>Compra individual</strong></label>
-                                <div class="color-qty-row">
-                                    <select id="indColor" class="color-select">
-                                        <option value="">Selecciona un color</option>
-                                        <?php foreach ($colores as $c): ?>
-                                            <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <select id="indQty" class="qty-select">
-                                        <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <option value="<?= $i ?>"><?= $i ?></option>
-                                        <?php endfor; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div id="generatedItems"></div>
-
-                        <?php else: ?>
-                            <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
-                            <?php
-                            $oldColorItems = $old['color_item'] ?? [];
-                            $oldQtyItems   = $old['qty_item'] ?? [];
-                            if (!is_array($oldColorItems)) $oldColorItems = [];
-                            if (!is_array($oldQtyItems))   $oldQtyItems = [];
-                            $rowsCount = max(1, count($oldColorItems), count($oldQtyItems));
-                            ?>
-                            <div class="form-group">
-                                <div class="color-qty-header">
-                                    <span>Color</span>
-                                    <span>¿Cuántos?</span>
-                                    <span></span>
-                                </div>
-                                <div id="colorsQtyWrap" class="colors-qty-wrap">
-                                    <?php for ($r = 0; $r < $rowsCount; $r++): ?>
-                                        <?php
-                                        $selColor = $oldColorItems[$r] ?? '';
-                                        $selQty   = (int)($oldQtyItems[$r] ?? 1);
-                                        if ($selQty < 1) $selQty = 1;
-                                        ?>
-                                        <div class="color-qty-row">
-                                            <select name="color_item[]" required class="color-select">
-                                                <option value="">Elige un color</option>
-                                                <?php foreach ($colores as $c): ?>
-                                                    <option value="<?= htmlspecialchars($c) ?>" <?= ($selColor === $c) ? 'selected' : '' ?>>
-                                                        <?= htmlspecialchars($c) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <div class="qty-stepper-inline">
-                                                <button type="button" class="qty-btn-inline" data-action="minus" aria-label="Restar">−</button>
-                                                <span class="qty-val"><?= $selQty ?></span>
-                                                <button type="button" class="qty-btn-inline" data-action="plus" aria-label="Sumar">+</button>
-                                                <select name="qty_item[]" required class="qty-select-hidden" aria-hidden="true">
-                                                    <?php for ($i = 1; $i <= 10; $i++): ?>
-                                                        <option value="<?= $i ?>" <?= ($selQty === $i) ? 'selected' : '' ?>><?= $i ?></option>
-                                                    <?php endfor; ?>
-                                                </select>
-                                            </div>
-                                            <button type="button" class="remove-color-qty" aria-label="Quitar">
-                                                <span class="remove-icon">×</span>
-                                                <span class="remove-text">Borrar</span>
-                                            </button>
-                                        </div>
-                                    <?php endfor; ?>
-                                </div>
-                                <button type="button" id="addColorQtyBtn" class="btn-ghost add-color-btn">+ Agregar otro color</button>
-                                <small class="help total-units-note">Total unidades: <strong id="totalUnits">1</strong></small>
-                            </div>
-                        <?php endif; ?>
-
-                        <input type="hidden" id="cantidad_total" name="cantidad_total"
-                            value="<?= htmlspecialchars((string)($old['cantidad_total'] ?? 1)) ?>">
-
-                        <div class="form-step__nav">
-                            <button type="button" class="btn-step-prev" data-prev="1">← Atrás</button>
-                            <button type="button" class="btn-step-next" data-next="3">Continuar <span aria-hidden="true">→</span></button>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-
-                    <!-- ══ PASO ENTREGA (último) ══ -->
-                    <?php $entregaStep = $hasColors ? 3 : 2; ?>
-                    <div class="form-step" data-step="<?= $entregaStep ?>">
-                        <div class="form-step__head">
-                            <p class="form-step__badge">Último paso ✨ — ya vamos a terminar</p>
+                            <div class="step-emoji" aria-hidden="true">📦</div>
                             <h3 class="form-step__title">¿A dónde te lo enviamos?</h3>
-                            <p class="form-step__sub">Un dato más y tu pedido está hecho</p>
+                            <p class="form-step__sub">Último paso — ya casi tienes tu pedido</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="departamento" class="form-label-lg">¿En qué departamento vives?</label>
+                            <select id="departamento" name="departamento" required class="select-lg"
+                                data-old="<?= htmlspecialchars($old['departamento'] ?? '') ?>">
+                                <option value="">— Escoge tu departamento —</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="municipio" class="form-label-lg">¿En qué pueblo o ciudad?</label>
+                            <select id="municipio" name="municipio" required class="select-lg"
+                                data-old="<?= htmlspecialchars($old['municipio'] ?? '') ?>">
+                                <option value="">Primero elige el departamento</option>
+                            </select>
+                        </div>
+
+                        <div id="deliveryETA" class="delivery-eta-badge" style="display:none;" aria-live="polite">
+                            📦 Llega estimado el: <strong id="deliveryETADate"></strong>
+                        </div>
+
+                        <div class="form-group">
+                            <p class="form-label-lg">¿Cómo quieres recibirlo?</p>
+                            <div class="radio-group--cards radio-group--cards-lg">
+                                <label class="radio-card radio-card--lg">
+                                    <input type="radio" name="tipo_entrega" value="domicilio"
+                                        <?= (!empty($old['tipo_entrega']) && $old['tipo_entrega'] === 'domicilio') ? 'checked' : '' ?>>
+                                    <span class="radio-card__icon">🏠</span>
+                                    <span class="radio-card__main">Me lo llevan a mi casa</span>
+                                    <span class="radio-card__note">Te lo entregan en la puerta</span>
+                                </label>
+                                <label class="radio-card radio-card--lg">
+                                    <input type="radio" name="tipo_entrega" value="oficina"
+                                        <?= (!empty($old['tipo_entrega']) && $old['tipo_entrega'] === 'oficina') ? 'checked' : '' ?>>
+                                    <span class="radio-card__icon">🏪</span>
+                                    <span class="radio-card__main">Lo recojo en la oficina</span>
+                                    <span class="radio-card__note">Interrapidísimo más cercana</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="grupo-direccion" style="display:none;">
+                            <label for="direccion" class="form-label-lg">¿Cuál es la dirección?</label>
+                            <input type="text" id="direccion" name="direccion" class="input-lg"
+                                placeholder="Ej: Calle 5 # 10-20, frente a la escuela"
+                                autocomplete="street-address"
+                                value="<?= htmlspecialchars($old['direccion'] ?? '') ?>">
+                            <p class="field-hint">Escríbela bien para que el mensajero llegue sin problema</p>
+                        </div>
+
+                        <div class="form-group" id="grupo-nota-entrega" style="display:none;">
+                            <label for="nota_entrega" class="form-label-lg">
+                                ¿Alguna indicación para el mensajero?
+                                <span class="tag-optional"> — opcional</span>
+                            </label>
+                            <textarea id="nota_entrega" name="nota_entrega" rows="2"
+                                placeholder="Ej: Portón verde · Solo en las tardes"
+                                style="resize:vertical;"><?= htmlspecialchars($old['nota_entrega'] ?? '') ?></textarea>
                         </div>
 
                         <!-- Resumen de compra -->
@@ -1407,110 +1445,47 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             data-d2="<?= htmlspecialchars((string)$d2) ?>"
                             data-d3="<?= htmlspecialchars((string)$d3) ?>"
                             data-act="<?= htmlspecialchars((string)$act) ?>">
-                            <h3 class="order-summary__title">Resumen de tu compra</h3>
+                            <h3 class="order-summary__title">Lo que vas a pagar</h3>
                             <div class="order-summary__rows">
                                 <div class="order-summary__row">
-                                    <span>Subtotal (<strong id="summaryQty">1</strong> <span id="summaryQtyWord">unidad</span>)</span>
+                                    <span><strong id="summaryQty">1</strong> <span id="summaryQtyWord">unidad</span></span>
                                     <strong id="summarySubtotal">$0</strong>
                                 </div>
                                 <div class="order-summary__row">
-                                    <span>Descuento por cantidad</span>
+                                    <span>Descuento</span>
                                     <strong id="summaryDiscount">$0</strong>
                                 </div>
                                 <div class="order-summary__row">
                                     <span>Envío</span>
                                     <strong class="summary-free">GRATIS</strong>
                                 </div>
-                                <div class="order-summary__row">
-                                    <span>Ahorro total</span>
-                                    <strong class="summary-save" id="summarySave">$0</strong>
-                                </div>
                                 <div class="order-summary__row order-summary__row--total">
-                                    <span>Total a pagar al recibir</span>
+                                    <span>Total a pagar cuando llegue</span>
                                     <strong id="summaryTotal">$0</strong>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="form-row-2">
-                            <div class="form-group">
-                                <label for="departamento">Departamento *</label>
-                                <select id="departamento" name="departamento" required
-                                    data-old="<?= htmlspecialchars($old['departamento'] ?? '') ?>">
-                                    <option value="">Selecciona...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="municipio">Municipio *</label>
-                                <select id="municipio" name="municipio" required
-                                    data-old="<?= htmlspecialchars($old['municipio'] ?? '') ?>">
-                                    <option value="">Primero el depto.</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div id="deliveryETA" class="delivery-eta-badge" style="display:none;" aria-live="polite">
-                            📦 Estimado de llegada: <strong id="deliveryETADate"></strong>
-                        </div>
-
-                        <div class="form-group">
-                            <span>¿Cómo quieres recibirlo? *</span>
-                            <div class="radio-group--cards">
-                                <label class="radio-card">
-                                    <input type="radio" name="tipo_entrega" value="domicilio"
-                                        <?= (isset($old['tipo_entrega']) && $old['tipo_entrega'] === 'domicilio') ? 'checked' : '' ?>>
-                                    <span class="radio-card__icon">🏠</span>
-                                    <span class="radio-card__text">A domicilio</span>
-                                </label>
-                                <label class="radio-card">
-                                    <input type="radio" name="tipo_entrega" value="oficina"
-                                        <?= (isset($old['tipo_entrega']) && $old['tipo_entrega'] === 'oficina') ? 'checked' : '' ?>>
-                                    <span class="radio-card__icon">🏪</span>
-                                    <span class="radio-card__text">Oficina Interrapidísimo</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group" id="grupo-direccion" style="display:none;">
-                            <label for="direccion">Dirección completa *</label>
-                            <input type="text" id="direccion" name="direccion"
-                                placeholder="Ej: Calle 45 # 23-10, Apto 301"
-                                autocomplete="street-address"
-                                value="<?= htmlspecialchars($old['direccion'] ?? '') ?>">
-                        </div>
-
-                        <div class="form-group" id="grupo-nota-entrega" style="display:none;">
-                            <label for="nota_entrega">
-                                Nota para el mensajero
-                                <span style="font-weight:400;color:var(--cream-muted);font-size:12px;"> — opcional</span>
-                            </label>
-                            <textarea id="nota_entrega" name="nota_entrega" rows="2"
-                                placeholder="Ej: Conjunto cerrado, timbrar en portería · Horario: después de las 3 pm"
-                                style="resize:vertical;"><?= htmlspecialchars($old['nota_entrega'] ?? '') ?></textarea>
-                        </div>
-
-                        <div class="form-step__nav">
-                            <button type="button" class="btn-step-prev" data-prev="<?= $entregaStep - 1 ?>">← Atrás</button>
-                            <button type="submit" id="btnSubmit" class="btn-submit-hero btn-submit-hero--step">
-                                <span id="btnSubmitText">🏠 Quiero el mío — Pago $<?= number_format($precio_venta, 0, ',', '.') ?> al recibirlo</span>
-                                <span id="btnSubmitSpinner" style="display:none;">Enviando...</span>
+                        <div class="form-step__nav form-step__nav--submit">
+                            <button type="button" class="btn-step-prev" data-prev="2">← Atrás</button>
+                            <button type="submit" id="btnSubmit" class="btn-submit-final">
+                                <span id="btnSubmitText">✅ Confirmar mi pedido — pago $<?= number_format($precio_venta, 0, ',', '.') ?> al recibirlo</span>
+                                <span id="btnSubmitSpinner" style="display:none;">Enviando tu pedido...</span>
                             </button>
                         </div>
 
                         <div class="form-trust-row">
                             <span>🔒 Datos seguros</span>
-                            <span>💳 Pagas al recibir</span>
+                            <span>💳 Pagas al recibirlo</span>
                             <span>🚚 Envío gratis</span>
                             <span>🔄 Cambios sin problema</span>
                         </div>
-                        <p class="form-note">Un asesor te confirmará el pedido por WhatsApp.</p>
+                        <p class="form-note">Te llamamos por WhatsApp para confirmar antes de enviarlo.</p>
 
                         <div class="form-wa-fallback">
-                            ¿Prefieres pedirlo por WhatsApp?
+                            ¿Prefieres pedir por WhatsApp?
                             <a href="https://wa.me/<?= urlencode($waPhone) ?>?text=<?= urlencode('Hola, quiero hacer un pedido de ' . ($producto['nombre'] ?? 'su producto')) ?>"
-                               target="_blank" rel="noopener">
-                                Escribir directamente →
-                            </a>
+                               target="_blank" rel="noopener">Escribir directamente →</a>
                         </div>
                     </div>
 
@@ -1562,18 +1537,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </section>
 
         <script>
-        /* ── Stepper de formulario ─────────────────────────────────── */
+        /* ── Stepper — 3 pasos siempre ─────────────────────────── */
         (function () {
-            const form      = document.getElementById('formPedido');
+            const form = document.getElementById('formPedido');
             if (!form) return;
 
-            const TOTAL     = <?= $totalSteps ?>;
-            let   current   = 1;
-
+            let current = 1;
             const errBox    = document.getElementById('stepperErrors');
             const indicator = document.getElementById('stepperIndicator');
 
-            /* Mostrar / ocultar errores inline */
             function showErrors(errs) {
                 if (!errBox) return;
                 if (!errs.length) { errBox.style.display = 'none'; errBox.innerHTML = ''; return; }
@@ -1582,7 +1554,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 errBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
-            /* Validación por paso */
             function validateStep(n) {
                 const errs = [];
                 if (n === 1) {
@@ -1590,43 +1561,32 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     const apellidos = form.querySelector('#apellidos');
                     const tel       = form.querySelector('#telefono');
                     if (!nombre?.value.trim())    errs.push('El nombre es obligatorio.');
-                    if (!apellidos?.value.trim()) errs.push('Los apellidos son obligatorios.');
+                    if (!apellidos?.value.trim()) errs.push('El apellido es obligatorio.');
                     const tv = tel?.value.trim() ?? '';
                     if (!tv)                       errs.push('El número de WhatsApp es obligatorio.');
-                    else if (!/^3\d{9}$/.test(tv)) errs.push('Número inválido — debe tener 10 dígitos y empezar en 3.');
-                } else if (n === 2 && TOTAL === 3) {
-                    const mode = form.querySelector('#pricingMode')?.value ?? 'individual';
-                    if (mode === 'combo') {
-                        const blocks = form.querySelectorAll('.combo-block');
-                        if (!blocks.length) errs.push('Debes tener al menos 1 combo.');
-                        else blocks.forEach((b, i) => {
-                            if (b.querySelector('select.combo-color:not([value])')?.value === '')
-                                errs.push('Selecciona el color del combo ' + (i + 1) + '.');
-                        });
-                    } else {
-                        let alguno = false;
-                        form.querySelectorAll('select[name="color_item[]"]').forEach(s => { if (s.value) alguno = true; });
-                        if (!alguno) errs.push('Selecciona al menos un color.');
+                    else if (!/^3\d{9}$/.test(tv)) errs.push('El número debe tener 10 dígitos y empezar en 3.');
+                } else if (n === 2) {
+                    const wrap = document.getElementById('colorRowsWrap');
+                    if (wrap) {
+                        const anyColor = Array.from(wrap.querySelectorAll('.color-item-sel')).some(s => s.value !== '');
+                        if (!anyColor) errs.push('Toca el color que quieres pedir.');
                     }
                 }
-                /* El último paso se valida completamente en el submit de main.js */
                 return errs;
             }
 
-            /* Actualizar indicador visual */
             function updateIndicator(n) {
                 if (!indicator) return;
                 indicator.querySelectorAll('.stepper-node').forEach(el => {
                     const s = parseInt(el.dataset.step, 10);
                     el.classList.toggle('is-active', s === n);
-                    el.classList.toggle('is-done',   s < n);
+                    el.classList.toggle('is-done', s < n);
                 });
                 indicator.querySelectorAll('.stepper-connector').forEach(el => {
                     el.classList.toggle('is-done', parseInt(el.dataset.after, 10) < n);
                 });
             }
 
-            /* Ir a un paso */
             function goTo(n) {
                 form.querySelectorAll('.form-step').forEach(el => {
                     el.classList.toggle('is-active', parseInt(el.dataset.step, 10) === n);
@@ -1637,7 +1597,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 if (anchor) window.scrollTo({ top: anchor.offsetTop - 72, behavior: 'smooth' });
             }
 
-            /* Botones Siguiente */
             form.querySelectorAll('.btn-step-next').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const errs = validateStep(current);
@@ -1646,83 +1605,172 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     goTo(parseInt(btn.dataset.next, 10));
                 });
             });
-
-            /* Botones Atrás */
             form.querySelectorAll('.btn-step-prev').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    showErrors([]);
-                    goTo(parseInt(btn.dataset.prev, 10));
-                });
+                btn.addEventListener('click', () => { showErrors([]); goTo(parseInt(btn.dataset.prev, 10)); });
             });
 
-            /* Selector +/− de cantidad (caso sin colores) */
+            /* ── Color pills (paso 2 con colores) ─────────────── */
+            const colorRowsWrap = document.getElementById('colorRowsWrap');
+
+            function syncCantidadTotal() {
+                let t = 0;
+                if (colorRowsWrap) {
+                    colorRowsWrap.querySelectorAll('.color-row').forEach(row => {
+                        const cSel = row.querySelector('.color-item-sel');
+                        const qSel = row.querySelector('.qty-item-sel');
+                        if (cSel?.value) t += parseInt(qSel?.value || '1', 10);
+                    });
+                }
+                const cantEl = form.querySelector('#cantidad_total');
+                if (cantEl) cantEl.value = Math.max(1, t);
+                document.dispatchEvent(new Event('landing:recalc'));
+            }
+
+            function updateColorSummary() {
+                const sumEl = document.getElementById('colorSelSummary');
+                const txtEl = document.getElementById('colorSelText');
+                if (!sumEl || !txtEl || !colorRowsWrap) return;
+                const parts = [];
+                colorRowsWrap.querySelectorAll('.color-row').forEach(row => {
+                    const cSel = row.querySelector('.color-item-sel');
+                    const qSel = row.querySelector('.qty-item-sel');
+                    if (cSel?.value) parts.push(cSel.value + ' ×' + (qSel?.value || '1'));
+                });
+                txtEl.textContent = parts.join(' · ');
+                sumEl.style.display = parts.length ? 'flex' : 'none';
+            }
+
+            function updatePricePreview(qty) {
+                const strip = document.getElementById('pricePreviewStrip');
+                const amtEl = document.getElementById('pricePreviewAmt');
+                if (!strip || !amtEl) return;
+                const unit = parseFloat(strip.dataset.unit) || 0;
+                const d2   = parseInt(strip.dataset.d2, 10) || 15;
+                const d3   = parseInt(strip.dataset.d3, 10) || 20;
+                const act  = parseInt(strip.dataset.act, 10) || 1;
+                let total;
+                if (act !== 1 || qty <= 1) {
+                    total = unit * qty;
+                } else {
+                    total = unit;
+                    if (qty >= 2) total += unit * (1 - d2 / 100);
+                    if (qty >= 3) total += (qty - 2) * unit * (1 - d3 / 100);
+                }
+                amtEl.textContent = '$' + Math.round(total).toLocaleString('es-CO');
+            }
+
+            function initColorRow(row) {
+                const pills    = row.querySelectorAll('.color-pill');
+                const qtyWrap  = row.querySelector('.color-row__qty-wrap');
+                const qtyValEl = row.querySelector('.qty-val-big');
+                const cSel     = row.querySelector('.color-item-sel');
+                const qSel     = row.querySelector('.qty-item-sel');
+
+                pills.forEach(pill => {
+                    pill.addEventListener('click', () => {
+                        pills.forEach(p => p.classList.remove('is-selected'));
+                        pill.classList.add('is-selected');
+                        if (cSel) cSel.value = pill.dataset.color;
+                        if (qtyWrap) qtyWrap.style.display = '';
+                        const addBtn = document.getElementById('addColorRowBtn');
+                        if (addBtn) addBtn.style.display = '';
+                        updateColorSummary();
+                        syncCantidadTotal();
+                        updatePricePreview(parseInt(form.querySelector('#cantidad_total')?.value || '1', 10));
+                    });
+                });
+
+                const btnMinus = row.querySelector('.qty-btn[data-action="minus"]');
+                const btnPlus  = row.querySelector('.qty-btn[data-action="plus"]');
+                if (btnMinus && btnPlus && qSel) {
+                    function syncQty() {
+                        const v = parseInt(qSel.value, 10);
+                        if (qtyValEl) qtyValEl.textContent = v;
+                        btnMinus.disabled = v <= 1;
+                    }
+                    btnMinus.addEventListener('click', () => {
+                        const v = parseInt(qSel.value, 10);
+                        if (v > 1) { qSel.value = v - 1; qSel.dispatchEvent(new Event('change',{bubbles:true})); syncQty(); updateColorSummary(); syncCantidadTotal(); updatePricePreview(parseInt(form.querySelector('#cantidad_total')?.value||'1',10)); }
+                    });
+                    btnPlus.addEventListener('click', () => {
+                        const v = parseInt(qSel.value, 10);
+                        if (v < 10) { qSel.value = v + 1; qSel.dispatchEvent(new Event('change',{bubbles:true})); syncQty(); updateColorSummary(); syncCantidadTotal(); updatePricePreview(parseInt(form.querySelector('#cantidad_total')?.value||'1',10)); }
+                    });
+                    syncQty();
+                }
+
+                const removeBtn = row.querySelector('.btn-remove-color-row');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', () => { row.remove(); updateColorSummary(); syncCantidadTotal(); });
+                }
+            }
+
+            if (colorRowsWrap) {
+                colorRowsWrap.querySelectorAll('.color-row').forEach(initColorRow);
+
+                document.getElementById('addColorRowBtn')?.addEventListener('click', () => {
+                    const tmpl = colorRowsWrap.querySelector('.color-row');
+                    if (!tmpl) return;
+                    const newRow = tmpl.cloneNode(true);
+                    newRow.querySelectorAll('.color-pill').forEach(p => p.classList.remove('is-selected'));
+                    const nCSel = newRow.querySelector('.color-item-sel');
+                    const nQSel = newRow.querySelector('.qty-item-sel');
+                    const nWrap = newRow.querySelector('.color-row__qty-wrap');
+                    const nVal  = newRow.querySelector('.qty-val-big');
+                    if (nCSel) nCSel.value = '';
+                    if (nQSel) nQSel.value = '1';
+                    if (nWrap) nWrap.style.display = 'none';
+                    if (nVal)  nVal.textContent = '1';
+                    const rem = document.createElement('button');
+                    rem.type = 'button'; rem.className = 'btn-remove-color-row'; rem.textContent = '✕ Quitar';
+                    newRow.appendChild(rem);
+                    colorRowsWrap.appendChild(newRow);
+                    initColorRow(newRow);
+                    newRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            }
+
+            /* ── Cantidad sin colores (paso 2) ─────────────────── */
             const qMinus   = document.getElementById('qtyMinus');
             const qPlus    = document.getElementById('qtyPlus');
             const qDisplay = document.getElementById('qtyDisplay');
             const qInput   = document.getElementById('cantidad_total');
+            const qUnitLbl = document.getElementById('qtyUnitLbl');
             if (qMinus && qPlus && qDisplay && qInput) {
                 let qty = parseInt(qInput.value, 10) || 1;
                 function renderQty() {
                     qDisplay.textContent = qty;
                     qInput.value = qty;
-                    qInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (qUnitLbl) qUnitLbl.textContent = qty === 1 ? 'unidad' : 'unidades';
                     qMinus.disabled = qty <= 1;
+                    updatePricePreview(qty);
+                    document.dispatchEvent(new Event('landing:recalc'));
                 }
                 renderQty();
                 qMinus.addEventListener('click', () => { if (qty > 1)  { qty--; renderQty(); } });
                 qPlus.addEventListener('click',  () => { if (qty < 10) { qty++; renderQty(); } });
             }
 
-            /* ── Stepper +/− inline en filas de colores ─────────── */
-            function initQtyRow(row) {
-                const btnMinus = row.querySelector('.qty-btn-inline[data-action="minus"]');
-                const btnPlus  = row.querySelector('.qty-btn-inline[data-action="plus"]');
-                const valSpan  = row.querySelector('.qty-val');
-                const sel      = row.querySelector('.qty-select-hidden');
-                if (!btnMinus || !btnPlus || !valSpan || !sel) return;
+            updatePricePreview(1);
 
-                function sync() {
-                    valSpan.textContent = sel.value;
-                    btnMinus.disabled = parseInt(sel.value, 10) <= 1;
-                    btnMinus.style.opacity = parseInt(sel.value, 10) <= 1 ? '0.35' : '1';
-                }
-
-                btnMinus.addEventListener('click', () => {
-                    const v = parseInt(sel.value, 10);
-                    if (v > 1) {
-                        sel.value = v - 1;
-                        sel.dispatchEvent(new Event('change', { bubbles: true }));
-                        sync();
-                    }
-                });
-                btnPlus.addEventListener('click', () => {
-                    const v = parseInt(sel.value, 10);
-                    if (v < 10) {
-                        sel.value = v + 1;
-                        sel.dispatchEvent(new Event('change', { bubbles: true }));
-                        sync();
-                    }
-                });
-                sync();
-            }
-
-            /* Inicializa filas existentes */
-            const colorsWrap = document.getElementById('colorsQtyWrap');
-            if (colorsWrap) {
-                colorsWrap.querySelectorAll('.color-qty-row').forEach(initQtyRow);
-
-                /* Inicializa filas que pricing-combo.js inserta dinámicamente */
-                new MutationObserver(mutations => {
-                    mutations.forEach(m => {
-                        m.addedNodes.forEach(node => {
-                            if (node.nodeType === 1) {
-                                if (node.classList.contains('color-qty-row')) initQtyRow(node);
-                                node.querySelectorAll?.('.color-qty-row').forEach(initQtyRow);
-                            }
-                        });
+            /* ── Fallback para navegadores sin :has() (Facebook IAB) ─── */
+            (function () {
+                const radios = form.querySelectorAll('input[name="tipo_entrega"]');
+                if (!radios.length) return;
+                function syncCards() {
+                    radios.forEach(function (r) {
+                        const card = r.closest('.radio-card--lg');
+                        if (!card) return;
+                        if (r.checked) {
+                            card.classList.add('is-checked');
+                        } else {
+                            card.classList.remove('is-checked');
+                        }
                     });
-                }).observe(colorsWrap, { childList: true, subtree: true });
-            }
+                }
+                radios.forEach(function (r) { r.addEventListener('change', syncCards); });
+                syncCards();
+            })();
         })();
         </script>
 

@@ -4906,3 +4906,413 @@ img[loading="lazy"].loaded {
     display: none; /* En pantallas de 360px el espacio es demasiado crítico */
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   FORMULARIO 3 PASOS — DISEÑO CAMPO (público rural)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Emoji grande sobre el título de cada paso */
+.step-emoji {
+    font-size: 2.4rem;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+/* Labels más grandes y legibles */
+.form-label-lg {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cream);
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* Inputs más altos y con fuente grande */
+.input-lg {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 17px;
+    border-radius: 10px;
+    border: 1.5px solid var(--gold-border);
+    background: var(--bg-base);
+    color: var(--cream);
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.input-lg:focus {
+    outline: none;
+    border-color: var(--gold);
+}
+.input-lg::placeholder { color: var(--text-muted); }
+
+/* Selects igual de grandes */
+.select-lg {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1.5px solid var(--gold-border);
+    background: var(--bg-base);
+    color: var(--cream);
+    box-sizing: border-box;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 40px;
+}
+.select-lg:focus { outline: none; border-color: var(--gold); }
+
+/* Texto de ayuda pequeño debajo de campos */
+.field-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* Botón "Siguiente" más grande y llamativo */
+.btn-next-lg {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 12px;
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.2px;
+}
+.btn-next-lg:hover  { opacity: 0.9; }
+.btn-next-lg:active { transform: scale(0.98); }
+
+/* Botón submit final — muy prominente */
+.btn-submit-final {
+    width: 100%;
+    padding: 18px 24px;
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 12px;
+    background: var(--success, #22c55e);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    line-height: 1.3;
+}
+.btn-submit-final:hover  { opacity: 0.92; }
+.btn-submit-final:active { transform: scale(0.98); }
+.btn-submit-final:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Color pills ──────────────────────────────────────────── */
+.color-row { margin-bottom: 24px; }
+
+.color-row__lbl {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--cream);
+    margin-bottom: 12px;
+}
+
+.color-pills-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.color-pill {
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 50px;
+    border: 2px solid var(--gold-border);
+    background: var(--bg-layer2);
+    color: var(--cream-dim);
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, color 0.18s, transform 0.1s;
+    min-width: 90px;
+    text-align: center;
+}
+.color-pill:hover { border-color: var(--gold); color: var(--cream); }
+.color-pill.is-selected {
+    border-color: var(--gold);
+    background: color-mix(in srgb, var(--gold) 18%, transparent);
+    color: var(--gold);
+    transform: scale(1.04);
+}
+
+/* Sección de cantidad por color (aparece al seleccionar pill) */
+.color-row__qty-wrap {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 10px;
+    background: var(--bg-base);
+    border: 1px solid var(--gold-border);
+}
+.color-row__qty-lbl {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cream-dim);
+    margin-bottom: 12px;
+}
+
+/* ── Cantidad grande (con colores) ───────────────────────── */
+.qty-stepper--big {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.qty-btn--big {
+    width: 52px;
+    height: 52px;
+    font-size: 26px;
+    font-weight: 700;
+    border-radius: 50%;
+    border: 2px solid var(--gold-border);
+    background: var(--bg-layer2);
+    color: var(--cream);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    display: flex; align-items: center; justify-content: center;
+}
+.qty-btn--big:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--gold) 20%, transparent);
+    border-color: var(--gold);
+}
+.qty-btn--big:disabled { opacity: 0.3; cursor: default; }
+
+.qty-val-big {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--cream);
+    min-width: 40px;
+    text-align: center;
+}
+
+/* ── Cantidad héroe (sin colores) ────────────────────────── */
+.qty-hero-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 28px 0 16px;
+}
+.qty-stepper--hero {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+.qty-btn--hero {
+    width: 68px;
+    height: 68px;
+    font-size: 34px;
+    font-weight: 700;
+    border-radius: 50%;
+    border: 2.5px solid var(--gold);
+    background: var(--bg-layer2);
+    color: var(--gold);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+}
+.qty-btn--hero:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--gold) 22%, transparent);
+    transform: scale(1.06);
+}
+.qty-btn--hero:disabled { opacity: 0.3; cursor: default; }
+
+.qty-disp-hero {
+    font-size: 56px;
+    font-weight: 900;
+    color: var(--cream);
+    min-width: 72px;
+    text-align: center;
+    line-height: 1;
+    font-family: var(--font-display, serif);
+}
+.qty-unit-lbl {
+    font-size: 18px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* ── Resumen de colores seleccionados ────────────────────── */
+.btn-add-color-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1.5px dashed var(--gold-border);
+    background: transparent;
+    color: var(--gold);
+    cursor: pointer;
+    margin-top: 8px;
+    transition: border-color 0.15s, background 0.15s;
+}
+.btn-add-color-row:hover { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 8%, transparent); }
+
+.btn-remove-color-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(220, 60, 60, 0.12);
+    color: #e05c5c;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.15s;
+}
+.btn-remove-color-row:hover { background: rgba(220, 60, 60, 0.22); }
+
+.color-sel-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--gold) 10%, transparent);
+    font-size: 14px;
+    color: var(--cream-dim);
+    border: 1px solid var(--gold-border);
+}
+
+/* ── Preview de precio (paso 2) ──────────────────────────── */
+.price-preview-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--gold) 12%, transparent);
+    border: 1.5px solid var(--gold-border);
+    margin: 20px 0 4px;
+}
+.price-preview-strip__lbl { font-size: 14px; color: var(--cream-dim); }
+.price-preview-strip__amt {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--gold);
+    font-family: var(--font-display, serif);
+}
+
+/* ── Tarjetas de entrega más grandes (público rural) ─────── */
+.radio-group--cards-lg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.radio-card--lg {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px 16px 16px;
+    gap: 5px;
+    border-radius: 14px;
+    border: 2.5px solid var(--input-border);
+    min-height: 110px;
+    position: relative;
+    cursor: pointer;
+    transition: border-color .18s, background .18s, box-shadow .18s, transform .12s;
+    background: var(--input-bg);
+}
+.radio-card--lg:hover {
+    border-color: var(--gold-border);
+}
+
+/* ── Checkmark en esquina — oculto por defecto ── */
+.radio-card--lg::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--input-border);
+    background: transparent;
+    transition: background .18s, border-color .18s;
+}
+
+/* ── Estado SELECCIONADO ── */
+.radio-group--cards-lg .radio-card--lg:has(input:checked),
+.radio-group--cards-lg .radio-card--lg.is-checked {
+    border-color: var(--gold);
+    border-width: 3px;
+    background: rgba(230,156,70,.13);
+    box-shadow: 0 0 0 4px rgba(230,156,70,.18);
+    transform: scale(1.02);
+}
+.radio-group--cards-lg .radio-card--lg:has(input:checked)::after,
+.radio-group--cards-lg .radio-card--lg.is-checked::after {
+    background: var(--gold);
+    border-color: var(--gold);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='2 7 6 11 12 3' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 13px;
+}
+
+.radio-card--lg .radio-card__icon {
+    font-size: 30px;
+    line-height: 1;
+    margin-bottom: 2px;
+}
+.radio-card__main {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1.25;
+    letter-spacing: -.01em;
+}
+.radio-card__note {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+.radio-group--cards-lg .radio-card--lg:has(input:checked) .radio-card__main,
+.radio-group--cards-lg .radio-card--lg.is-checked .radio-card__main {
+    color: var(--gold);
+    font-weight: 800;
+}
+.radio-group--cards-lg .radio-card--lg:has(input:checked) .radio-card__note,
+.radio-group--cards-lg .radio-card--lg.is-checked .radio-card__note {
+    color: var(--gold-border);
+    font-weight: 600;
+}
+
+/* Tag "opcional" en labels */
+.tag-optional {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+/* Nav del paso de submit: botón atrás + submit en columna */
+.form-step__nav--submit {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+}
+.form-step__nav--submit .btn-step-prev {
+    align-self: flex-start;
+    font-size: 14px;
+}
+
+/* Mobile: radio cards de entrega en columna en pantallas muy pequeñas */
+@media (max-width: 360px) {
+    .radio-group--cards-lg { grid-template-columns: 1fr; }
+    .qty-btn--hero  { width: 58px; height: 58px; font-size: 28px; }
+    .qty-disp-hero  { font-size: 46px; }
+    .btn-next-lg    { font-size: 16px; padding: 14px 20px; }
+    .btn-submit-final { font-size: 15px; padding: 16px 20px; }
+}

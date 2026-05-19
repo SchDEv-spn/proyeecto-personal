@@ -59,7 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function getUnitsNormal() {
     // Suma todas las cantidades del modo normal (varios colores)
     const qtySelects = form.querySelectorAll('select[name="qty_item[]"]');
-    if (!qtySelects.length) return 1;
+    if (!qtySelects.length) {
+      // Sin colores: leer directamente del hidden #cantidad_total
+      const cantEl = document.getElementById('cantidad_total');
+      const q = parseInt(cantEl?.value || '1', 10);
+      return Math.max(1, Math.min(20, q));
+    }
 
     let total = 0;
     qtySelects.forEach(sel => {
