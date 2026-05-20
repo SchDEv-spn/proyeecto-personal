@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <title>Acceso al panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="<?= BASE_URL ?>/public/manifest.php">
+  <meta name="theme-color" content="#C9A84C">
   <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/login.css">
+  <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
 </head>
 
 <body class="login-body">

@@ -5,10 +5,11 @@
     <meta charset="UTF-8">
     <title>Admin - Pedidos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    <link rel="manifest" href="<?= BASE_URL ?>/public/manifest.php">
+    <meta name="theme-color" content="#C9A84C">
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+    <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
     <!-- DataTables (lo dejas si más adelante lo usas) -->
     <!-- <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.min.css"> -->
 </head>
