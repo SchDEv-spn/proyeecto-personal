@@ -1,7 +1,6 @@
 <?php
-// En producción (Hostinger): crea /home/[usuario]/tienda_config.php
-// con las credenciales reales. Ese archivo vive fuera de public_html
-// y el autodeploy de git nunca lo toca.
+// En producción (Hostinger): crea ~/domains/[dominio]/tienda_config.php
+// (un nivel arriba de public_html). El autodeploy de git nunca lo toca.
 $_external = dirname(dirname(dirname(__DIR__))) . '/tienda_config.php';
 if (file_exists($_external)) {
     return require $_external;
