@@ -1,6 +1,6 @@
 <?php
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 
 // Cargar variables del .env
@@ -17,10 +17,10 @@ unset($_envFile, $_line, $_k, $_v);
 session_start();
 
 // BASE_URL: vacío en producción (raíz), '/tienda_mvc' en local.
-// Definido en app/config/config.php como 'base_url'.
-$_baseCfg = require __DIR__ . '/app/config/config.php';
-define('BASE_URL', rtrim($_baseCfg['base_url'] ?? '', '/'));
-unset($_baseCfg);
+$_cfgFile = __DIR__ . '/app/config/config.php';
+$_baseCfg = file_exists($_cfgFile) ? (require $_cfgFile) : [];
+define('BASE_URL', rtrim(($_baseCfg['base_url'] ?? ''), '/'));
+unset($_cfgFile, $_baseCfg);
 
 require_once __DIR__ . '/app/core/Controller.php';
 require_once __DIR__ . '/app/core/Model.php';
