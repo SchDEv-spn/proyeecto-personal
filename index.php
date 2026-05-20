@@ -20,7 +20,11 @@ session_start();
 $_cfgFile = __DIR__ . '/app/config/config.php';
 $_baseCfg = file_exists($_cfgFile) ? (require $_cfgFile) : [];
 define('BASE_URL', rtrim(($_baseCfg['base_url'] ?? ''), '/'));
-unset($_cfgFile, $_baseCfg);
+// Exportar claves del config como env vars (para código que usa getenv())
+foreach (['telegram_bot_token' => 'TELEGRAM_BOT_TOKEN', 'telegram_chat_id' => 'TELEGRAM_CHAT_ID'] as $_k => $_v) {
+    if (!empty($_baseCfg[$_k]) && !getenv($_v)) putenv($_v . '=' . $_baseCfg[$_k]);
+}
+unset($_cfgFile, $_baseCfg, $_k, $_v);
 
 require_once __DIR__ . '/app/core/Controller.php';
 require_once __DIR__ . '/app/core/Model.php';
