@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $usuarioNombre   = $usuarioNombre ?? 'Admin';
 $pageTitle       = $pageTitle ?? "¡Hola, {$usuarioNombre}!";
 $pageSubtitle    = $pageSubtitle ?? 'Revisa y gestiona los pedidos de hoy';
@@ -15,7 +15,10 @@ if (!empty($headerCta) && empty($headerCtas)) {
 }
 ?>
 
-<script>window.__CSRF__ = '<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>';</script>
+<script>
+window.__CSRF__ = '<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>';
+window.BASE_URL = '<?= BASE_URL ?>';
+</script>
 
 <header class="material-header">
     <div class="header-greeting header-greeting--with-menu">
@@ -76,7 +79,7 @@ if (!empty($headerCta) && empty($headerCtas)) {
                 <ul class="notif-list" id="notifList" role="list">
                     <li class="notif-item-empty">Sin notificaciones nuevas.</li>
                 </ul>
-                <a href="/tienda_mvc/AdminPedidos/index" class="notif-dropdown-foot">
+                <a href="<?= BASE_URL ?>/AdminPedidos/index" class="notif-dropdown-foot">
                     Ver todos los pedidos →
                 </a>
             </div>

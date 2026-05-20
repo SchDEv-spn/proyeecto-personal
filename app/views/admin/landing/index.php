@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -6,7 +6,7 @@
   <title>Admin - Editar landing</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
+  <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
@@ -36,7 +36,7 @@
   // CTAs del header (tu _header.php ya los usa en las otras vistas)
   $headerCtas = [
     [
-      'href'  => '/tienda_mvc/AdminProductos/index',
+      'href'  => '<?= BASE_URL ?>/AdminProductos/index',
       'label' => '← Volver a productos',
       'class' => 'btn-detail',
       'icon'  => '',
@@ -45,7 +45,7 @@
 
   if ($producto) {
     $headerCtas[] = [
-      'href'   => '/tienda_mvc/Landing/index?producto_id=' . urlencode((string)$producto_id),
+      'href'   => '<?= BASE_URL ?>/Landing/index?producto_id=' . urlencode((string)$producto_id),
       'label'  => 'Ver landing',
       'class'  => 'btn-primary btn-primary--soft',
       'icon'   => 'fa-up-right-from-square',
@@ -87,7 +87,7 @@
                 <h3>Seleccionar producto</h3>
               </div>
               <div class="form-card-body">
-                <form action="/tienda_mvc/AdminLanding/index" method="GET" class="admin-form admin-form--compact">
+                <form action="<?= BASE_URL ?>/AdminLanding/index" method="GET" class="admin-form admin-form--compact">
                   <div class="admin-form-group">
                     <label for="producto_id_select">Producto</label>
                     <select name="producto_id" id="producto_id_select" onchange="this.form.submit()">
@@ -109,7 +109,7 @@
               </div>
 
               <div class="form-card-body">
-                <form action="/tienda_mvc/AdminLanding/guardar" method="POST" class="admin-form" enctype="multipart/form-data">
+                <form action="<?= BASE_URL ?>/AdminLanding/guardar" method="POST" class="admin-form" enctype="multipart/form-data">
                   <?= csrf_field() ?>
                   <input type="hidden" name="producto_id" value="<?= htmlspecialchars($producto_id) ?>">
 
@@ -1997,11 +1997,11 @@
 
 
   <!-- JS global del admin (menú) -->
-  <script src="/tienda_mvc/public/js/funciones.js"></script>
+  <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 
   <!-- JS del índice lateral -->
-  <script src="/tienda_mvc/public/js/admin-landing-toc.js"></script>
-  <script src="/tienda_mvc/public/js/ux-improvements.js"></script>
+  <script src="<?= BASE_URL ?>/public/js/admin-landing-toc.js"></script>
+  <script src="<?= BASE_URL ?>/public/js/ux-improvements.js"></script>
 
 </body>
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -6,7 +6,7 @@
     <title>Admin - Productos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
@@ -36,7 +36,7 @@
     $utilidadProm   = $totalProductos > 0 ? ($utilidadAcum / $totalProductos) : 0.0;
 
     // ✅ AJUSTA ESTO a tu carpeta real de imágenes (si guardas solo el nombre del archivo)
-    $UPLOADS_BASE = '/tienda_mvc/public/uploads/productos/';
+    $UPLOADS_BASE = BASE_URL . '/public/uploads/productos/';
     ?>
 
     <div class="sidebar-overlay" aria-hidden="true"></div>
@@ -61,7 +61,7 @@
             // ✅ CTAs del header (2 botones)
             $headerCtas = [
                 [
-                    'href'  => '/tienda_mvc/AdminProductos/crear',
+                    'href'  => '<?= BASE_URL ?>/AdminProductos/crear',
                     'label' => 'Crear producto',
                     'class' => 'btn-primary',
                     'icon'  => 'fas fa-plus',
@@ -140,8 +140,8 @@
 
                                 $slug = $p['slug'] ?? '';
                                 $landingUrl = $slug !== ''
-                                    ? '/tienda_mvc/producto/' . urlencode($slug)
-                                    : '/tienda_mvc/Landing/index?producto_id=' . urlencode($p['id']);
+                                    ? '<?= BASE_URL ?>/producto/' . urlencode($slug)
+                                    : '<?= BASE_URL ?>/Landing/index?producto_id=' . urlencode($p['id']);
 
                                 $activo = !empty($p['activo']);
 
@@ -160,7 +160,7 @@
                                         } else {
                                             // Si viene como 'uploads/productos/x.jpg' o solo 'x.jpg'
                                             if (stripos($imgRaw, 'uploads/') !== false || stripos($imgRaw, 'public/') !== false) {
-                                                $imgSrc = '/tienda_mvc/' . ltrim($imgRaw, '/');
+                                                $imgSrc = BASE_URL . '/' . ltrim($imgRaw, '/');
                                             } else {
                                                 // Caso típico: solo nombre de archivo
                                                 $imgSrc = $UPLOADS_BASE . $imgRaw;
@@ -248,11 +248,11 @@
 
                                     <div class="card-footer" style="justify-content:flex-end;">
                                         <div class="card-actions" style="gap:10px;">
-                                            <a href="/tienda_mvc/AdminProductos/editar?id=<?= htmlspecialchars($p['id']) ?>" class="btn-detail">
+                                            <a href="<?= BASE_URL ?>/AdminProductos/editar?id=<?= htmlspecialchars($p['id']) ?>" class="btn-detail">
                                                 Editar producto
                                             </a>
 
-                                            <a href="/tienda_mvc/AdminLanding/index?producto_id=<?= htmlspecialchars($p['id']) ?>" class="btn-primary btn-primary--soft">
+                                            <a href="<?= BASE_URL ?>/AdminLanding/index?producto_id=<?= htmlspecialchars($p['id']) ?>" class="btn-primary btn-primary--soft">
                                                 Editar landing
                                             </a>
                                         </div>
@@ -268,7 +268,7 @@
         </main>
     </div>
 
-    <script src="/tienda_mvc/public/js/funciones.js"></script>
+    <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 </body>
 
 </html>

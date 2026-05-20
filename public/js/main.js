@@ -1,4 +1,4 @@
-/**
+﻿/**
  * main.js — Landing Dark Luxury
  * ─────────────────────────────────────────────────────────────
  * Módulos:
@@ -55,7 +55,7 @@ function initDepartamentoMunicipio() {
 
     if (!selectDept || !selectMun) return;
 
-    fetchWithTimeout('/tienda_mvc/public/js/colombia.json', {}, 10000)
+    fetchWithTimeout((window.BASE_URL||'')+'/public/js/colombia.json', {}, 10000)
         .then(response => {
             if (!response.ok) throw new Error('No se pudo cargar colombia.json');
             return response.json();

@@ -1,11 +1,11 @@
-<?php
+﻿<?php
 
 class AdminLandingController extends Controller
 {
     private function requireLogin()
     {
         if (empty($_SESSION['usuario_id'])) {
-            header("Location: /tienda_mvc/Auth/login");
+            header("Location: " . BASE_URL . "/Auth/login");
             exit;
         }
     }
@@ -50,7 +50,7 @@ class AdminLandingController extends Controller
         $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: /tienda_mvc/AdminLanding/index");
+            header("Location: " . BASE_URL . "/AdminLanding/index");
             exit;
         }
 
@@ -383,7 +383,7 @@ class AdminLandingController extends Controller
                 $destPath = $uploadDir . $newName;
 
                 if (move_uploaded_file($tmpName, $destPath)) {
-                    $data[$column] = '/tienda_mvc/public/uploads/landing/' . $newName;
+                    $data[$column] = BASE_URL . '/public/uploads/landing/' . $newName;
                 }
             }
         }
@@ -392,7 +392,7 @@ class AdminLandingController extends Controller
         $configModel->guardarPorProducto($productoId, $data);
 
         $_SESSION['admin_landing_success'] = "Cambios guardados correctamente.";
-        header("Location: /tienda_mvc/AdminLanding/index?producto_id=" . $productoId);
+        header("Location: " . BASE_URL . "/AdminLanding/index?producto_id=" . $productoId);
         exit;
     }
 }

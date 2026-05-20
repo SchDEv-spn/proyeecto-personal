@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Acceso al panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/tienda_mvc/public/css/login.css">
+  <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/login.css">
 </head>
 
 <body class="login-body">
@@ -39,7 +39,7 @@ $old     = $old     ?? [];
       </div>
     <?php endif; ?>
 
-    <form action="/tienda_mvc/Auth/procesar" method="POST" class="login-form" autocomplete="on">
+    <form action="<?= BASE_URL ?>/Auth/procesar" method="POST" class="login-form" autocomplete="on">
       <?= csrf_field() ?>
 
       <div class="admin-form-group">

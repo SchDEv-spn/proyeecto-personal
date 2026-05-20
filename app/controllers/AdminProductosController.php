@@ -1,11 +1,11 @@
-<?php
+﻿<?php
 
 class AdminProductosController extends Controller
 {
     private function requireLogin()
     {
         if (empty($_SESSION['usuario_id'])) {
-            header("Location: /tienda_mvc/Auth/login");
+            header("Location: " . BASE_URL . "/Auth/login");
             exit;
         }
     }
@@ -127,7 +127,7 @@ class AdminProductosController extends Controller
         $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: /tienda_mvc/AdminProductos/index");
+            header("Location: " . BASE_URL . "/AdminProductos/index");
             exit;
         }
 
@@ -221,7 +221,7 @@ class AdminProductosController extends Controller
 
                 $destPath = $uploadDir . $newName;
                 if (move_uploaded_file($tmpName, $destPath)) {
-                    $imagenPrincipal = '/tienda_mvc/public/uploads/productos/' . $newName;
+                    $imagenPrincipal = BASE_URL . '/public/uploads/productos/' . $newName;
                 } else {
                     $errores[] = "No se pudo guardar la imagen. Intenta nuevamente.";
                 }
@@ -265,7 +265,7 @@ class AdminProductosController extends Controller
         $productoModel->syncColoresProducto((int)$productoId, $colores);
 
         $_SESSION['admin_productos_success'] = "Producto creado correctamente.";
-        header("Location: /tienda_mvc/AdminProductos/index");
+        header("Location: " . BASE_URL . "/AdminProductos/index");
         exit;
     }
 
@@ -275,7 +275,7 @@ class AdminProductosController extends Controller
 
         $id = (int)($_GET['id'] ?? 0);
         if ($id <= 0) {
-            header("Location: /tienda_mvc/AdminProductos/index");
+            header("Location: " . BASE_URL . "/AdminProductos/index");
             exit;
         }
 
@@ -284,7 +284,7 @@ class AdminProductosController extends Controller
 
         if (!$producto) {
             $_SESSION['admin_productos_success'] = "El producto no existe.";
-            header("Location: /tienda_mvc/AdminProductos/index");
+            header("Location: " . BASE_URL . "/AdminProductos/index");
             exit;
         }
 
@@ -322,13 +322,13 @@ class AdminProductosController extends Controller
         $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: /tienda_mvc/AdminProductos/index");
+            header("Location: " . BASE_URL . "/AdminProductos/index");
             exit;
         }
 
         $id = (int)($_POST['id'] ?? 0);
         if ($id <= 0) {
-            header("Location: /tienda_mvc/AdminProductos/index");
+            header("Location: " . BASE_URL . "/AdminProductos/index");
             exit;
         }
 
@@ -337,7 +337,7 @@ class AdminProductosController extends Controller
 
         if (!$productoExistente) {
             $_SESSION['admin_productos_success'] = "El producto no existe.";
-            header("Location: /tienda_mvc/AdminProductos/index");
+            header("Location: " . BASE_URL . "/AdminProductos/index");
             exit;
         }
 
@@ -432,7 +432,7 @@ class AdminProductosController extends Controller
 
                 $destPath = $uploadDir . $newName;
                 if (move_uploaded_file($tmpName, $destPath)) {
-                    $imagenPrincipal = '/tienda_mvc/public/uploads/productos/' . $newName;
+                    $imagenPrincipal = BASE_URL . '/public/uploads/productos/' . $newName;
                 } else {
                     $errores[] = "No se pudo guardar la imagen. Intenta nuevamente.";
                 }
@@ -477,7 +477,7 @@ class AdminProductosController extends Controller
         $productoModel->syncColoresProducto($id, $colores);
 
         $_SESSION['admin_productos_success'] = "Producto actualizado correctamente.";
-        header("Location: /tienda_mvc/AdminProductos/index");
+        header("Location: " . BASE_URL . "/AdminProductos/index");
         exit;
     }
 }

@@ -1,11 +1,11 @@
-/* /tienda_mvc/public/js/pricing-summary.js
+﻿/* /tienda_mvc/public/js/pricing-summary.js
    Resumen de compra universal (combo ON / combo OFF)
 */
 document.addEventListener('DOMContentLoaded', () => {
   const summary = document.getElementById('orderSummary');
   if (!summary) return;
 
-  const form = summary.closest('form') || document.querySelector('form[action="/tienda_mvc/Landing/enviarPedido"]');
+  const form = summary.closest('form') || document.querySelector('form[action=(window.BASE_URL||"")+"/Landing/enviarPedido"]');
   if (!form) return;
 
   const totalHidden = document.getElementById('cantidad_total');

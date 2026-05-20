@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 class AuthController extends Controller
 {
@@ -6,7 +6,7 @@ class AuthController extends Controller
     {
         // Si ya está logueado, lo mandamos al panel
         if (!empty($_SESSION['usuario_id'])) {
-            header("Location: /tienda_mvc/AdminPedidos/index");
+            header("Location: " . BASE_URL . "/AdminPedidos/index");
             exit;
         }
 
@@ -24,7 +24,7 @@ class AuthController extends Controller
     public function procesar()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: /tienda_mvc/Auth/login");
+            header("Location: " . BASE_URL . "/Auth/login");
             exit;
         }
 
@@ -47,7 +47,7 @@ class AuthController extends Controller
             $_SESSION['login_old'] = [
                 'email' => $email,
             ];
-            header("Location: /tienda_mvc/Auth/login");
+            header("Location: " . BASE_URL . "/Auth/login");
             exit;
         }
 
@@ -59,7 +59,7 @@ class AuthController extends Controller
             $_SESSION['login_old'] = [
                 'email' => $email,
             ];
-            header("Location: /tienda_mvc/Auth/login");
+            header("Location: " . BASE_URL . "/Auth/login");
             exit;
         }
 
@@ -70,7 +70,7 @@ class AuthController extends Controller
         $_SESSION['usuario_nombre'] = $usuario['nombre'];
         $_SESSION['usuario_email']  = $usuario['email'];
 
-        header("Location: /tienda_mvc/AdminPedidos/index");
+        header("Location: " . BASE_URL . "/AdminPedidos/index");
         exit;
     }
 
@@ -83,7 +83,7 @@ class AuthController extends Controller
         }
         session_destroy();
 
-        header("Location: /tienda_mvc/Auth/login");
+        header("Location: " . BASE_URL . "/Auth/login");
         exit;
     }
 }

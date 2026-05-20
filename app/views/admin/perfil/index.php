@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Mi Perfil</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         .perfil-grid {
@@ -191,7 +191,7 @@ $initials = strtoupper(substr($usuarioNombre, 0, 1) . (strpos($usuarioNombre, ' 
                         Información personal
                     </div>
 
-                    <form method="POST" action="/tienda_mvc/AdminPerfil/guardar" autocomplete="off">
+                    <form method="POST" action="<?= BASE_URL ?>/AdminPerfil/guardar" autocomplete="off">
                         <?= csrf_field() ?>
                         <input type="hidden" name="accion" value="perfil">
 
@@ -235,7 +235,7 @@ $initials = strtoupper(substr($usuarioNombre, 0, 1) . (strpos($usuarioNombre, ' 
                         Cambiar contraseña
                     </div>
 
-                    <form method="POST" action="/tienda_mvc/AdminPerfil/guardar" autocomplete="new-password">
+                    <form method="POST" action="<?= BASE_URL ?>/AdminPerfil/guardar" autocomplete="new-password">
                         <?= csrf_field() ?>
                         <input type="hidden" name="accion" value="password">
 
@@ -296,7 +296,7 @@ $initials = strtoupper(substr($usuarioNombre, 0, 1) . (strpos($usuarioNombre, ' 
     </main>
 </div>
 
-<script src="/tienda_mvc/public/js/funciones.js"></script>
+<script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 <script>
     // Confirm password match before submit
     document.getElementById('btnCambiarPass').closest('form').addEventListener('submit', function(e) {

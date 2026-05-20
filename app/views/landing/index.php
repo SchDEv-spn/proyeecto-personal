@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // $producto viene del controlador
 $precio_venta     = (float)($producto['precio_venta'] ?? 0);
 $precio_proveedor = (float)($producto['precio_proveedor'] ?? 0);
@@ -33,7 +33,7 @@ $heroNote        = $cfg['hero_note']         ?? 'Promoción válida solo por tie
 $heroButtonText  = $cfg['hero_button_text']  ?? '¡Necesito el mío!';
 $heroMediaType   = $cfg['hero_media_type']   ?? 'imagen';
 $heroMediaPath   = $cfg['hero_media_path']
-    ?? ($producto['imagen_principal'] ?? '/tienda_mvc/public/img/producto.png');
+    ?? ($producto['imagen_principal'] ?? BASE_URL . '/public/img/producto.png');
 
 $benefitsMediaType = $cfg['benefits_media_type'] ?? 'imagen';
 $porqueMediaType   = $cfg['porque_media_type']   ?? 'imagen';
@@ -47,7 +47,7 @@ for ($i = 1; $i <= 4; $i++) {
         $benefits[] = $cfg[$key];
     }
 }
-$benefitsMediaPath = $cfg['benefits_media_path'] ?? '/tienda_mvc/public/img/producto/uso-1.jpg';
+$benefitsMediaPath = $cfg['benefits_media_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
 
 // ===== GALERÍA =====
 $galleryPaths = [];
@@ -74,20 +74,20 @@ foreach (['porque_bullet1', 'porque_bullet2', 'porque_bullet3'] as $key) {
         $porqueBullets[] = $cfg[$key];
     }
 }
-$porqueMediaPath = $cfg['porque_media_path'] ?? '/tienda_mvc/public/img/producto/uso-1.jpg';
+$porqueMediaPath = $cfg['porque_media_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
 
 // ===== TESTIMONIOS =====
 $test1Name  = $cfg['test1_name']       ?? 'María G.';
 $test1Text  = $cfg['test1_text']       ?? 'Desde que lo uso, mi día a día es mucho más fácil. Llegó rápido y en perfecto estado.';
-$test1Photo = $cfg['test1_photo_path'] ?? '/tienda_mvc/public/img/producto/uso-1.jpg';
+$test1Photo = $cfg['test1_photo_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
 
 $test2Name  = $cfg['test2_name']       ?? 'Carlos R.';
 $test2Text  = $cfg['test2_text']       ?? 'Muy buena atención, me explicaron todo por WhatsApp y el producto es tal cual a las fotos.';
-$test2Photo = $cfg['test2_photo_path'] ?? '/tienda_mvc/public/img/producto/uso-1.jpg';
+$test2Photo = $cfg['test2_photo_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
 
 $test3Name  = $cfg['test3_name']       ?? 'Laura P.';
 $test3Text  = $cfg['test3_text']       ?? 'Lo recomiendo totalmente. Me dieron confianza con el pago contraentrega y cumplió 10/10.';
-$test3Photo = $cfg['test3_photo_path'] ?? '/tienda_mvc/public/img/producto/uso-1.jpg';
+$test3Photo = $cfg['test3_photo_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
 
 // ===== TESTIMONIOS WHATSAPP (editable) =====
 $waEnabled    = isset($cfg['wa_enabled']) ? (int)$cfg['wa_enabled'] : 1;
@@ -328,6 +328,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <title><?= htmlspecialchars($heroTitle) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="<?= htmlspecialchars(mb_substr($heroSubtitle, 0, 155)) ?>">
+    <script>window.BASE_URL = '<?= BASE_URL ?>';</script>
 
     <?php
     $ogImage = !empty($heroMediaPath) ? 'https://' . $_SERVER['HTTP_HOST'] . $heroMediaPath : '';
@@ -357,7 +358,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <!-- Fuentes: cargadas como link (no @import) para no bloquear el CSS principal -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap">
 
-    <link rel="stylesheet" href="/tienda_mvc/public/css/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/style.css">
 
     <?php
     // Solo emitir vars que el admin haya configurado explícitamente.
@@ -388,7 +389,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </style>
     <?php endif; ?>
 
-    <script src="/tienda_mvc/public/js/main.js" defer></script>
+    <script src="<?= BASE_URL ?>/public/js/main.js" defer></script>
 </head>
 
 
@@ -596,10 +597,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
             $gallery = $galleryPaths;
             if (empty($gallery)) {
                 $gallery = [
-                    '/tienda_mvc/public/img/producto/uso-1.jpg',
-                    '/tienda_mvc/public/img/producto/uso-1.jpg',
-                    '/tienda_mvc/public/img/producto/uso-1.jpg',
-                    '/tienda_mvc/public/img/producto/uso-1.jpg', // Cuarta imagen de respaldo
+                    '<?= BASE_URL ?>/public/img/producto/uso-1.jpg',
+                    '<?= BASE_URL ?>/public/img/producto/uso-1.jpg',
+                    '<?= BASE_URL ?>/public/img/producto/uso-1.jpg',
+                    '<?= BASE_URL ?>/public/img/producto/uso-1.jpg', // Cuarta imagen de respaldo
                 ];
             }
 
@@ -964,7 +965,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                             <?php if (!empty($image)): ?>
                                                 <img src="<?= htmlspecialchars($image) ?>" alt="Testimonio WhatsApp <?= htmlspecialchars($name) ?>" class="whatsapp-screenshot" loading="lazy" decoding="async">
                                             <?php else: ?>
-                                                <img src="/tienda_mvc/public/img/testimonios/1.jpeg" alt="Testimonio WhatsApp" class="whatsapp-screenshot" loading="lazy" decoding="async">
+                                                <img src="<?= BASE_URL ?>/public/img/testimonios/1.jpeg" alt="Testimonio WhatsApp" class="whatsapp-screenshot" loading="lazy" decoding="async">
                                             <?php endif; ?>
                                         </div>
                                         <div class="card-content">
@@ -1129,11 +1130,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <div class="trust-strip" role="complementary" aria-label="Transportadoras">
             <p class="trust-strip__carriers-label">Enviamos a toda Colombia con:</p>
             <div class="trust-strip__carriers">
-                <img src="/tienda_mvc/public/img/transportadoras/interrapidisimo.png"
+                <img src="<?= BASE_URL ?>/public/img/transportadoras/interrapidisimo.png"
                      alt="Interrapidísimo" class="carrier-logo" width="120" height="32" loading="lazy" decoding="async">
-                <img src="/tienda_mvc/public/img/transportadoras/envia.png"
+                <img src="<?= BASE_URL ?>/public/img/transportadoras/envia.png"
                      alt="Envía" class="carrier-logo" width="80" height="32" loading="lazy" decoding="async">
-                <img src="/tienda_mvc/public/img/transportadoras/coordinadora.png"
+                <img src="<?= BASE_URL ?>/public/img/transportadoras/coordinadora.png"
                      alt="Coordinadora" class="carrier-logo" width="100" height="32" loading="lazy" decoding="async">
             </div>
         </div>
@@ -1228,7 +1229,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <div id="stepperErrors" class="error" style="display:none;"></div>
 
             <div class="form-box">
-                <form id="formPedido" action="/tienda_mvc/Landing/enviarPedido" method="POST" novalidate>
+                <form id="formPedido" action="<?= BASE_URL ?>/Landing/enviarPedido" method="POST" novalidate>
                     <input type="hidden" name="producto_id" value="<?= htmlspecialchars($producto['id'] ?? 1) ?>">
 
                     <!-- ══════════════════════════════
@@ -1818,9 +1819,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
         data-colors='<?= htmlspecialchars((string)($colorsJson ?: '[]'), ENT_QUOTES, "UTF-8") ?>'>
     </div>
 
-    <script src="/tienda_mvc/public/js/pricing-summary.js" defer></script>
-    <script src="/tienda_mvc/public/js/pricing-combo.js" defer></script>
-    <script src="/tienda_mvc/public/js/funcionesLandin.js" defer></script>
+    <script src="<?= BASE_URL ?>/public/js/pricing-summary.js" defer></script>
+    <script src="<?= BASE_URL ?>/public/js/pricing-combo.js" defer></script>
+    <script src="<?= BASE_URL ?>/public/js/funcionesLandin.js" defer></script>
 
     <!-- Botón WhatsApp flotante -->
     <?php if ($showWhatsappBtn): ?>

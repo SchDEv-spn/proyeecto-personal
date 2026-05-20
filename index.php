@@ -16,6 +16,12 @@ unset($_envFile, $_line, $_k, $_v);
 
 session_start();
 
+// BASE_URL: vacío en producción (raíz), '/tienda_mvc' en local.
+// Definido en app/config/config.php como 'base_url'.
+$_baseCfg = require __DIR__ . '/app/config/config.php';
+define('BASE_URL', rtrim($_baseCfg['base_url'] ?? '', '/'));
+unset($_baseCfg);
+
 require_once __DIR__ . '/app/core/Controller.php';
 require_once __DIR__ . '/app/core/Model.php';
 require_once __DIR__ . '/app/core/Database.php';

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -6,7 +6,7 @@
     <title>Admin - Pedidos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <!-- DataTables (lo dejas si más adelante lo usas) -->
@@ -162,7 +162,7 @@
                         <div class="table-header">
                             <h3>Pedidos Recientes</h3>
                             <div class="table-header-actions">
-                                <a href="/tienda_mvc/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?>"
+                                <a href="<?= BASE_URL ?>/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?>"
                                    class="btn-csv" title="Exportar a CSV">
                                     <i class="fas fa-file-csv"></i> CSV
                                 </a>
@@ -280,7 +280,7 @@
                                     </div>
 
                                     <div class="card-footer">
-                                        <form action="/tienda_mvc/AdminPedidos/cambiarEstado" method="POST" class="status-form">
+                                        <form action="<?= BASE_URL ?>/AdminPedidos/cambiarEstado" method="POST" class="status-form">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="id" value="<?= htmlspecialchars($p['id'] ?? '') ?>">
                                             <select name="estado" class="form-select-sm">
@@ -310,7 +310,7 @@
                                                 </button>
                                             <?php endif; ?>
 
-                                            <a href="/tienda_mvc/AdminPedidos/detalle?id=<?= htmlspecialchars($p['id'] ?? '') ?>"
+                                            <a href="<?= BASE_URL ?>/AdminPedidos/detalle?id=<?= htmlspecialchars($p['id'] ?? '') ?>"
                                                 class="btn-detail js-ver-detalle"
                                                 data-id="<?= htmlspecialchars($p['id'] ?? '') ?>">
                                                 Detalles
@@ -363,7 +363,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <!-- Tus scripts -->
-    <script src="/tienda_mvc/public/js/funciones.js"></script>
+    <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 
 </body>
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -6,7 +6,7 @@
     <title>Admin - Editar producto</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <!-- Estilos mínimos del bloque de colores (coherentes con tu UI) -->
@@ -38,7 +38,7 @@
     if (empty($coloresForm)) $coloresForm = ['']; // al menos 1 input visible
 
     // Preview robusto para imagen principal (nombre / ruta / URL)
-    $UPLOADS_BASE = '/tienda_mvc/public/uploads/productos/'; // ajusta si tu carpeta real es distinta
+    $UPLOADS_BASE = BASE_URL . '/public/uploads/productos/'; // ajusta si tu carpeta real es distinta
     $imgPreview = '';
     $tmp = trim((string)$imgActual);
 
@@ -49,7 +49,7 @@
             $imgPreview = $tmp;
         } else {
             if (stripos($tmp, 'uploads/') !== false || stripos($tmp, 'public/') !== false) {
-                $imgPreview = '/tienda_mvc/' . ltrim($tmp, '/');
+                $imgPreview = BASE_URL . '/' . ltrim($tmp, '/');
             } else {
                 $imgPreview = $UPLOADS_BASE . $tmp;
             }
@@ -80,7 +80,7 @@
             $showSearch      = false;
 
             $headerCta = [
-                'href'  => '/tienda_mvc/AdminProductos/index',
+                'href'  => '<?= BASE_URL ?>/AdminProductos/index',
                 'label' => '← Volver a productos',
                 'class' => 'btn-detail'
             ];
@@ -122,7 +122,7 @@
                     </div>
 
                     <div class="form-card-body">
-                        <form action="/tienda_mvc/AdminProductos/actualizar"
+                        <form action="<?= BASE_URL ?>/AdminProductos/actualizar"
                             method="POST"
                             class="admin-form"
                             enctype="multipart/form-data">
@@ -276,7 +276,7 @@
                                     <i class="fas fa-save"></i> Guardar cambios
                                 </button>
 
-                                <a href="/tienda_mvc/AdminProductos/index" class="btn-ghost">
+                                <a href="<?= BASE_URL ?>/AdminProductos/index" class="btn-ghost">
                                     Cancelar
                                 </a>
                             </div>
@@ -290,7 +290,7 @@
 
     </div><!-- /app-shell -->
 
-    <script src="/tienda_mvc/public/js/funciones.js"></script>
+    <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 
     <!-- JS del bloque de colores -->
     <script>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 class AdminPerfilController extends Controller
 {
@@ -11,7 +11,7 @@ class AdminPerfilController extends Controller
         $usuario = $usuarioModel->obtenerPorId($id);
 
         if (!$usuario) {
-            header("Location: /tienda_mvc/Auth/logout");
+            header("Location: " . BASE_URL . "/Auth/logout");
             exit;
         }
 
@@ -32,7 +32,7 @@ class AdminPerfilController extends Controller
         $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: /tienda_mvc/AdminPerfil/index");
+            header("Location: " . BASE_URL . "/AdminPerfil/index");
             exit;
         }
 
@@ -47,13 +47,13 @@ class AdminPerfilController extends Controller
 
             if ($nombre === '' || $email === '') {
                 $_SESSION['perfil_flash'] = ['tipo' => 'error', 'msg' => 'Nombre y email son obligatorios.'];
-                header("Location: /tienda_mvc/AdminPerfil/index");
+                header("Location: " . BASE_URL . "/AdminPerfil/index");
                 exit;
             }
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $_SESSION['perfil_flash'] = ['tipo' => 'error', 'msg' => 'El email no tiene un formato válido.'];
-                header("Location: /tienda_mvc/AdminPerfil/index");
+                header("Location: " . BASE_URL . "/AdminPerfil/index");
                 exit;
             }
 
@@ -74,26 +74,26 @@ class AdminPerfilController extends Controller
 
             if ($actual === '' || $nueva === '' || $confirmar === '') {
                 $_SESSION['perfil_flash'] = ['tipo' => 'error', 'msg' => 'Todos los campos de contraseña son obligatorios.'];
-                header("Location: /tienda_mvc/AdminPerfil/index");
+                header("Location: " . BASE_URL . "/AdminPerfil/index");
                 exit;
             }
 
             if ($nueva !== $confirmar) {
                 $_SESSION['perfil_flash'] = ['tipo' => 'error', 'msg' => 'La nueva contraseña y la confirmación no coinciden.'];
-                header("Location: /tienda_mvc/AdminPerfil/index");
+                header("Location: " . BASE_URL . "/AdminPerfil/index");
                 exit;
             }
 
             if (strlen($nueva) < 8) {
                 $_SESSION['perfil_flash'] = ['tipo' => 'error', 'msg' => 'La contraseña debe tener al menos 8 caracteres.'];
-                header("Location: /tienda_mvc/AdminPerfil/index");
+                header("Location: " . BASE_URL . "/AdminPerfil/index");
                 exit;
             }
 
             $usuario = $usuarioModel->obtenerPorId($id);
             if (!$usuario || !password_verify($actual, $usuario['password_hash'])) {
                 $_SESSION['perfil_flash'] = ['tipo' => 'error', 'msg' => 'La contraseña actual es incorrecta.'];
-                header("Location: /tienda_mvc/AdminPerfil/index");
+                header("Location: " . BASE_URL . "/AdminPerfil/index");
                 exit;
             }
 
@@ -105,14 +105,14 @@ class AdminPerfilController extends Controller
                 : ['tipo' => 'error', 'msg' => 'No se pudo cambiar la contraseña. Intenta de nuevo.'];
         }
 
-        header("Location: /tienda_mvc/AdminPerfil/index");
+        header("Location: " . BASE_URL . "/AdminPerfil/index");
         exit;
     }
 
     private function requireLogin(): void
     {
         if (empty($_SESSION['usuario_id'])) {
-            header("Location: /tienda_mvc/Auth/login");
+            header("Location: " . BASE_URL . "/Auth/login");
             exit;
         }
     }

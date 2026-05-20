@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Plantillas WhatsApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         .plantillas-grid {
@@ -282,7 +282,7 @@ $resolvePreview = fn(string $msg): string => str_replace(
                 </div>
             </div>
 
-            <form action="/tienda_mvc/AdminPlantillasWa/guardar" method="POST" id="formPlantillas">
+            <form action="<?= BASE_URL ?>/AdminPlantillasWa/guardar" method="POST" id="formPlantillas">
                 <?= csrf_field() ?>
 
                 <div class="plantillas-grid">
@@ -339,7 +339,7 @@ $resolvePreview = fn(string $msg): string => str_replace(
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="/tienda_mvc/public/js/funciones.js"></script>
+<script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 <script>
 (() => {
     const PREVIEW_DATA = <?= json_encode($previewData, JSON_UNESCAPED_UNICODE) ?>;

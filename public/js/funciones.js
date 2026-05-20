@@ -1,4 +1,4 @@
-// =========================
+﻿// =========================
 // UI: Sidebar + Range filter
 // =========================
 (() => {
@@ -683,7 +683,7 @@
   const getHrefForId = (id) => {
     const card = getCards().find(c => String(c.dataset.pedidoId) === String(id));
     const a = card ? card.querySelector('a.js-ver-detalle') : null;
-    return a?.getAttribute('href') || `/tienda_mvc/AdminPedidos/detalle?id=${encodeURIComponent(id)}`;
+    return a?.getAttribute('href') || `${window.BASE_URL}/AdminPedidos/detalle?id=${encodeURIComponent(id)}`;
   };
 
   const updatePager = () => {
@@ -1240,7 +1240,7 @@
       fd.append('telefono', telefono);
       fd.append('csrf_token', window.__CSRF__ || '');
 
-      const res  = await fetch('/tienda_mvc/AdminPedidos/actualizarTelefono', {
+      const res  = await fetch((window.BASE_URL||'')+'/AdminPedidos/actualizarTelefono', {
         method: 'POST',
         body: fd,
         headers: { 'X-Requested-With': 'fetch' },
@@ -1423,8 +1423,8 @@
 // =========================
 (() => {
   const POLL_MS      = 30_000;
-  const ENDPOINT     = '/tienda_mvc/AdminPedidos/contadores';
-  const PEDIDOS_URL  = '/tienda_mvc/AdminPedidos/index';
+  const ENDPOINT     = (window.BASE_URL||'')+'/AdminPedidos/contadores';
+  const PEDIDOS_URL  = (window.BASE_URL||'')+'/AdminPedidos/index';
 
   // ---- Elementos del DOM
   const bellBtn  = document.getElementById('notifBell');
@@ -1615,7 +1615,7 @@
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
     const n = new Notification('Tienda — Nuevo pedido', {
       body: diff === 1 ? 'Se recibió 1 nuevo pedido.' : `Se recibieron ${diff} nuevos pedidos.`,
-      icon: '/tienda_mvc/public/img/logo.png',
+      icon: (window.BASE_URL||'')+'/public/img/logo.png',
     });
     n.onclick = () => { window.focus(); openPanel(); };
   };

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 class AdminPedidosController extends Controller
 {
@@ -322,7 +322,7 @@ class AdminPedidosController extends Controller
 
         $id = (int)($_GET['id'] ?? 0);
         if ($id <= 0) {
-            header("Location: /tienda_mvc/AdminPedidos/index");
+            header("Location: " . BASE_URL . "/AdminPedidos/index");
             exit;
         }
 
@@ -330,7 +330,7 @@ class AdminPedidosController extends Controller
         $pedido = $pedidoModel->obtenerPorId($id);
 
         if (!$pedido) {
-            header("Location: /tienda_mvc/AdminPedidos/index");
+            header("Location: " . BASE_URL . "/AdminPedidos/index");
             exit;
         }
 
@@ -350,7 +350,7 @@ class AdminPedidosController extends Controller
         $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: /tienda_mvc/AdminPedidos/index");
+            header("Location: " . BASE_URL . "/AdminPedidos/index");
             exit;
         }
 
@@ -363,7 +363,7 @@ class AdminPedidosController extends Controller
                 echo json_encode(['ok' => false, 'error' => 'Datos inválidos']);
                 return;
             }
-            header("Location: /tienda_mvc/AdminPedidos/index");
+            header("Location: " . BASE_URL . "/AdminPedidos/index");
             exit;
         }
 
@@ -374,7 +374,7 @@ class AdminPedidosController extends Controller
                 echo json_encode(['ok' => false, 'error' => 'Estado no permitido']);
                 return;
             }
-            header("Location: /tienda_mvc/AdminPedidos/index");
+            header("Location: " . BASE_URL . "/AdminPedidos/index");
             exit;
         }
 
@@ -391,7 +391,7 @@ class AdminPedidosController extends Controller
             return;
         }
 
-        header("Location: /tienda_mvc/AdminPedidos/index");
+        header("Location: " . BASE_URL . "/AdminPedidos/index");
         exit;
     }
 
@@ -410,7 +410,7 @@ class AdminPedidosController extends Controller
     private function requireLogin()
     {
         if (empty($_SESSION['usuario_id'])) {
-            header("Location: /tienda_mvc/Auth/login");
+            header("Location: " . BASE_URL . "/Auth/login");
             exit;
         }
     }

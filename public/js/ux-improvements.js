@@ -1,8 +1,8 @@
-/* =========================================================
+﻿/* =========================================================
    UX IMPROVEMENTS — editarLanding
    Enlazar AL FINAL del <body>, después de funciones.js y
    admin-landing-toc.js:
-   <script src="/tienda_mvc/public/js/ux-improvements.js"></script>
+   <script src=(window.BASE_URL||"")+"/public/js/ux-improvements.js"></script>
    ========================================================= */
 
 (function () {

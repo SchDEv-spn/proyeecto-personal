@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // Defaults
 $usuarioNombre = $usuarioNombre ?? 'Admin';
 $usuarioEmail  = $usuarioEmail  ?? 'admin@tuempresa.com';
@@ -26,7 +26,7 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
     </div>
 
     <div class="sidebar-user">
-        <img src="/tienda_mvc/public/img/admi/1.jpg?user=<?= substr($usuarioNombre, 0, 2) ?>" alt="User">
+        <img src="<?= BASE_URL ?>/public/img/admi/1.jpg?user=<?= substr($usuarioNombre, 0, 2) ?>" alt="User">
         <div>
             <h4><?= htmlspecialchars($usuarioNombre) ?></h4>
             <small><?= htmlspecialchars($usuarioEmail) ?></small>
@@ -34,23 +34,23 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
     </div>
 
     <nav class="sidebar-nav">
-        <a href="/tienda_mvc/AdminPedidos/index" class="<?= $activeNav === 'pedidos' ? 'active' : '' ?>">
+        <a href="<?= BASE_URL ?>/AdminPedidos/index" class="<?= $activeNav === 'pedidos' ? 'active' : '' ?>">
             <i class="fas fa-box"></i> Pedidos
         </a>
 
-        <a href="/tienda_mvc/AdminProductos/index" class="<?= $activeNav === 'productos' ? 'active' : '' ?>">
+        <a href="<?= BASE_URL ?>/AdminProductos/index" class="<?= $activeNav === 'productos' ? 'active' : '' ?>">
             <i class="fas fa-shopping-bag"></i> Productos
         </a>
 
-        <a href="/tienda_mvc/AdminPlantillasWa/index" class="<?= $activeNav === 'plantillas' ? 'active' : '' ?>">
+        <a href="<?= BASE_URL ?>/AdminPlantillasWa/index" class="<?= $activeNav === 'plantillas' ? 'active' : '' ?>">
             <i class="fab fa-whatsapp"></i> Plantillas WA
         </a>
 
-        <a href="/tienda_mvc/AdminPerfil/index" class="<?= $activeNav === 'perfil' ? 'active' : '' ?>">
+        <a href="<?= BASE_URL ?>/AdminPerfil/index" class="<?= $activeNav === 'perfil' ? 'active' : '' ?>">
             <i class="fas fa-user-circle"></i> Mi Perfil
         </a>
 
-        <a href="/tienda_mvc/Auth/logout">
+        <a href="<?= BASE_URL ?>/Auth/logout">
             <i class="fas fa-sign-out-alt"></i> Cerrar sesión
         </a>
     </nav>

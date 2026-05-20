@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -6,7 +6,7 @@
     <title>Admin - Nuevo producto</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="/tienda_mvc/public/css/admin-unified.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 
@@ -46,7 +46,7 @@
 
             $headerCtas = [
                 [
-                    'href'  => '/tienda_mvc/AdminProductos/index',
+                    'href'  => '<?= BASE_URL ?>/AdminProductos/index',
                     'label' => '← Volver a productos',
                     'class' => 'btn-detail',
                     'icon'  => '',
@@ -78,7 +78,7 @@
                 </div>
 
                 <div class="form-card-body">
-                    <form action="/tienda_mvc/AdminProductos/guardarNuevo"
+                    <form action="<?= BASE_URL ?>/AdminProductos/guardarNuevo"
                           method="POST"
                           class="admin-form"
                           enctype="multipart/form-data">
@@ -205,7 +205,7 @@
                                 <i class="fas fa-save"></i> Guardar producto
                             </button>
 
-                            <a href="/tienda_mvc/AdminProductos/index" class="btn-ghost">
+                            <a href="<?= BASE_URL ?>/AdminProductos/index" class="btn-ghost">
                                 Cancelar
                             </a>
                         </div>
@@ -219,7 +219,7 @@
 
 </div><!-- /app-shell -->
 
-<script src="/tienda_mvc/public/js/funciones.js"></script>
+<script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 
 <!-- JS del bloque de colores -->
 <script>

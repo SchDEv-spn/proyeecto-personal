@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 class LandingController extends Controller
 {
@@ -103,7 +103,7 @@ class LandingController extends Controller
     public function enviarPedido()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header("Location: /tienda_mvc/Landing/index");
+            header("Location: " . BASE_URL . "/Landing/index");
             exit;
         }
 
@@ -380,7 +380,7 @@ class LandingController extends Controller
         }
 
         $_SESSION['success'] = "Tu pedido se ha registrado correctamente.";
-        header("Location: /tienda_mvc/Landing/index?producto_id=" . $productoId);
+        header("Location: " . BASE_URL . "/Landing/index?producto_id=" . $productoId);
         exit;
     }
 
@@ -453,7 +453,7 @@ class LandingController extends Controller
     {
         $slug = trim((string)$slug);
         if ($slug === '') {
-            header("Location: /tienda_mvc/");
+            header("Location: " . BASE_URL . "/");
             exit;
         }
 

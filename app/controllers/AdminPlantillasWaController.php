@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 class AdminPlantillasWaController extends Controller
 {
@@ -22,7 +22,7 @@ class AdminPlantillasWaController extends Controller
         $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /tienda_mvc/AdminPlantillasWa/index');
+            header('Location: ' . BASE_URL . '/AdminPlantillasWa/index');
             exit;
         }
 
@@ -37,14 +37,14 @@ class AdminPlantillasWaController extends Controller
             }
         }
 
-        header('Location: /tienda_mvc/AdminPlantillasWa/index?saved=1');
+        header('Location: ' . BASE_URL . '/AdminPlantillasWa/index?saved=1');
         exit;
     }
 
     private function requireLogin(): void
     {
         if (empty($_SESSION['usuario_id'])) {
-            header('Location: /tienda_mvc/Auth/login');
+            header('Location: ' . BASE_URL . '/Auth/login');
             exit;
         }
     }

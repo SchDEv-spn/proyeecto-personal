@@ -1,10 +1,10 @@
-document.addEventListener('DOMContentLoaded', () => {
+﻿document.addEventListener('DOMContentLoaded', () => {
   // ===== Guards =====
   const cfgEl = document.getElementById('landingConfig');
   if (!cfgEl) return;
 
   // IMPORTANTE: toma el primer form correcto
-  const form = document.querySelector('form[action="/tienda_mvc/Landing/enviarPedido"]');
+  const form = document.querySelector('form[action=(window.BASE_URL||"")+"/Landing/enviarPedido"]');
   if (!form) return;
 
   // OJO: busca el selector dentro del form (para evitar agarrar uno “duplicado” fuera)
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateSummary();
 });
 document.addEventListener('DOMContentLoaded', () => {
-  const form = document.querySelector('form[action="/tienda_mvc/Landing/enviarPedido"]');
+  const form = document.querySelector('form[action=(window.BASE_URL||"")+"/Landing/enviarPedido"]');
   if (!form) return;
 
   const pricingMode = document.getElementById('pricingMode');

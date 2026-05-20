@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $pedido = $pedido ?? null;
 
 if (!$pedido) {
@@ -132,7 +132,7 @@ if ($telLimpio !== '') {
             <?= ucfirst(htmlspecialchars($estadoSafe)) ?>
           </span>
 
-          <form action="/tienda_mvc/AdminPedidos/cambiarEstado" method="POST" class="status-form js-estado-form" style="margin-top:.75rem;">
+          <form action="<?= BASE_URL ?>/AdminPedidos/cambiarEstado" method="POST" class="status-form js-estado-form" style="margin-top:.75rem;">
             <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= htmlspecialchars($pedido['id'] ?? '') ?>">
             <input type="hidden" name="ajax" value="1">
