@@ -16,8 +16,12 @@ package-lock.json
 /tmp/
 *.log
 *.cache
-public/uploads/*
+public/uploads/**
 !public/uploads/.gitkeep
+!public/uploads/landing/
+!public/uploads/landing/.gitkeep
+!public/uploads/productos/
+!public/uploads/productos/.gitkeep
 
 # === Editores e IDEs ===
 .vscode/
