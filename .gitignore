@@ -3,7 +3,7 @@
 .env.local
 .env.*.local
 config/database.php
-app/config/config.php
+# config.php ahora va en git (lee credenciales de env vars, no contiene contraseñas)
 
 # === Dependencias ===
 /vendor/
