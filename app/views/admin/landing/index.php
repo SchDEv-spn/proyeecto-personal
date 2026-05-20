@@ -36,7 +36,7 @@
   // CTAs del header (tu _header.php ya los usa en las otras vistas)
   $headerCtas = [
     [
-      'href'  => '<?= BASE_URL ?>/AdminProductos/index',
+      'href'  => BASE_URL . '/AdminProductos/index',
       'label' => '← Volver a productos',
       'class' => 'btn-detail',
       'icon'  => '',
@@ -45,7 +45,7 @@
 
   if ($producto) {
     $headerCtas[] = [
-      'href'   => '<?= BASE_URL ?>/Landing/index?producto_id=' . urlencode((string)$producto_id),
+      'href'   => BASE_URL . '/Landing/index?producto_id=' . urlencode((string)$producto_id),
       'label'  => 'Ver landing',
       'class'  => 'btn-primary btn-primary--soft',
       'icon'   => 'fa-up-right-from-square',

@@ -80,7 +80,7 @@
             $showSearch      = false;
 
             $headerCta = [
-                'href'  => '<?= BASE_URL ?>/AdminProductos/index',
+                'href'  => BASE_URL . '/AdminProductos/index',
                 'label' => '← Volver a productos',
                 'class' => 'btn-detail'
             ];

@@ -597,10 +597,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
             $gallery = $galleryPaths;
             if (empty($gallery)) {
                 $gallery = [
-                    '<?= BASE_URL ?>/public/img/producto/uso-1.jpg',
-                    '<?= BASE_URL ?>/public/img/producto/uso-1.jpg',
-                    '<?= BASE_URL ?>/public/img/producto/uso-1.jpg',
-                    '<?= BASE_URL ?>/public/img/producto/uso-1.jpg', // Cuarta imagen de respaldo
+                    BASE_URL . '/public/img/producto/uso-1.jpg',
+                    BASE_URL . '/public/img/producto/uso-1.jpg',
+                    BASE_URL . '/public/img/producto/uso-1.jpg',
+                    BASE_URL . '/public/img/producto/uso-1.jpg',
                 ];
             }
 

@@ -61,7 +61,7 @@
             // ✅ CTAs del header (2 botones)
             $headerCtas = [
                 [
-                    'href'  => '<?= BASE_URL ?>/AdminProductos/crear',
+                    'href'  => BASE_URL . '/AdminProductos/crear',
                     'label' => 'Crear producto',
                     'class' => 'btn-primary',
                     'icon'  => 'fas fa-plus',
@@ -140,8 +140,8 @@
 
                                 $slug = $p['slug'] ?? '';
                                 $landingUrl = $slug !== ''
-                                    ? '<?= BASE_URL ?>/producto/' . urlencode($slug)
-                                    : '<?= BASE_URL ?>/Landing/index?producto_id=' . urlencode($p['id']);
+                                    ? BASE_URL . '/producto/' . urlencode($slug)
+                                    : BASE_URL . '/Landing/index?producto_id=' . urlencode($p['id']);
 
                                 $activo = !empty($p['activo']);
 
