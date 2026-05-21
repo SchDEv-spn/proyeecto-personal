@@ -16,6 +16,20 @@ unset($_envFile, $_line, $_k, $_v);
 
 session_start();
 
+// Reparar symlink de uploads si el autodeploy lo sobreescribió con directorio de git
+$_uploadsDir    = __DIR__ . '/public/uploads';
+$_uploadsTarget = dirname(dirname(dirname(__DIR__))) . '/uploads';
+if (!is_link($_uploadsDir) && is_dir($_uploadsTarget)) {
+    if (is_dir($_uploadsDir)) {
+        foreach (scandir($_uploadsDir) as $_f) {
+            if ($_f !== '.' && $_f !== '..') @unlink($_uploadsDir . '/' . $_f);
+        }
+        @rmdir($_uploadsDir);
+    }
+    @symlink($_uploadsTarget, $_uploadsDir);
+}
+unset($_uploadsDir, $_uploadsTarget, $_f);
+
 // BASE_URL: vacío en producción (raíz), '/tienda_mvc' en local.
 $_cfgFile = __DIR__ . '/app/config/config.php';
 $_baseCfg = file_exists($_cfgFile) ? (require $_cfgFile) : [];
