@@ -500,29 +500,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </div>
     </header>
 
-    <?php if ($showTestimonios): ?>
-    <div class="social-proof-strip" role="complementary" aria-label="Opiniones de clientes">
-        <?php
-        $microTest = [
-            ['name' => $test1Name, 'text' => $test1Text],
-            ['name' => $test2Name, 'text' => $test2Text],
-            ['name' => $test3Name, 'text' => $test3Text],
-        ];
-        foreach ($microTest as $mt):
-            if (empty($mt['text'])) continue;
-            $quote = mb_strlen($mt['text']) > 85
-                ? mb_substr($mt['text'], 0, 85) . '…'
-                : $mt['text'];
-        ?>
-        <div class="sp-item">
-            <span class="sp-stars" aria-hidden="true">★★★★★</span>
-            <span class="sp-quote">"<?= htmlspecialchars($quote) ?>"</span>
-            <span class="sp-name">— <?= htmlspecialchars($mt['name']) ?></span>
-        </div>
-        <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
-
     <?php
     // Orden de secciones dinámico
     $defaultSectionOrder = ['benefits','gallery','antes_despues','como_funciona','countdown','porque','para_quien','testimonios','wa_testimonios','faqs'];
