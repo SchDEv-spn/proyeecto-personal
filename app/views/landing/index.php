@@ -78,14 +78,17 @@ $porqueMediaPath = $cfg['porque_media_path'] ?? BASE_URL . '/public/img/producto
 
 // ===== TESTIMONIOS =====
 $test1Name  = $cfg['test1_name']       ?? 'María G.';
+$test1City  = $cfg['test1_city']       ?? 'Bogotá';
 $test1Text  = $cfg['test1_text']       ?? 'Desde que lo uso, mi día a día es mucho más fácil. Llegó rápido y en perfecto estado.';
 $test1Photo = $cfg['test1_photo_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
 
 $test2Name  = $cfg['test2_name']       ?? 'Carlos R.';
+$test2City  = $cfg['test2_city']       ?? 'Medellín';
 $test2Text  = $cfg['test2_text']       ?? 'Muy buena atención, me explicaron todo por WhatsApp y el producto es tal cual a las fotos.';
 $test2Photo = $cfg['test2_photo_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
 
 $test3Name  = $cfg['test3_name']       ?? 'Laura P.';
+$test3City  = $cfg['test3_city']       ?? 'Cali';
 $test3Text  = $cfg['test3_text']       ?? 'Lo recomiendo totalmente. Me dieron confianza con el pago contraentrega y cumplió 10/10.';
 $test3Photo = $cfg['test3_photo_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
 
@@ -201,8 +204,8 @@ if (empty($paraQuienNoItems)) {
 // ===== ANTES Y DESPUÉS =====
 $antesPath   = $cfg['antes_path']          ?? '';
 $despuesPath = $cfg['despues_path']        ?? '';
-$antesLabel  = $cfg['antes_label']         ?? 'Antes';
-$despuesLabel= $cfg['despues_label']       ?? 'Después';
+$antesLabel  = $cfg['antes_label']         ?? 'Otros productos';
+$despuesLabel= $cfg['despues_label']       ?? 'El nuestro';
 $antesDespuesTitle = $cfg['antes_despues_title'] ?? 'La diferencia que notarás';
 $showAntesDespues  = !empty($antesPath) && !empty($despuesPath);
 
@@ -480,8 +483,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <?php if ($heroMediaType === 'video'): ?>
                 <video src="<?= htmlspecialchars($heroMediaPath) ?>"
                     <?php if (!empty($cfg['hero_poster_path'])): ?>poster="<?= htmlspecialchars($cfg['hero_poster_path']) ?>"<?php endif; ?>
-                    loop playsinline controls
-                    preload="metadata"
+                    autoplay muted loop playsinline
+                    preload="auto"
                     style="max-width:100%; border-radius:10px;"></video>
             <?php else: ?>
                 <img src="<?= htmlspecialchars($heroMediaPath) ?>"
@@ -653,40 +656,27 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <!-- ANTES Y DESPUÉS -->
         <section class="container antes-despues-section">
             <h2 class="section-title"><?= htmlspecialchars($antesDespuesTitle) ?></h2>
-            <div class="antes-despues-wrap" id="antesDespuesWrap">
-                <div class="antes-despues-container">
-                    <!-- Imagen base (ANTES) — ocupa el 100% del frame -->
-                    <div class="antes-despues-img antes-img">
-                        <img src="<?= htmlspecialchars($antesPath) ?>"
-                             alt="<?= htmlspecialchars($antesLabel) ?>"
-                             loading="lazy" decoding="async">
-                    </div>
-
-                    <!-- Imagen superior (DESPUÉS) — recortada con clip-path por JS -->
-                    <div class="antes-despues-img despues-img">
-                        <img src="<?= htmlspecialchars($despuesPath) ?>"
-                             alt="<?= htmlspecialchars($despuesLabel) ?>"
-                             loading="lazy" decoding="async">
-                    </div>
-
-                    <!-- Línea + handle -->
-                    <div class="antes-despues-divider" id="adDivider" aria-hidden="true">
-                        <span class="antes-despues-handle">&#8596;</span>
-                    </div>
-
-                    <!-- Etiquetas siempre visibles (hijos directos del contenedor) -->
-                    <span class="antes-despues-label antes-despues-label--despues">
-                        <?= htmlspecialchars($despuesLabel) ?>
-                    </span>
-                    <span class="antes-despues-label antes-despues-label--antes">
+            <div class="antes-despues-static">
+                <div class="antes-despues-card">
+                    <img src="<?= htmlspecialchars($antesPath) ?>"
+                         alt="<?= htmlspecialchars($antesLabel) ?>"
+                         loading="lazy" decoding="async">
+                    <span class="antes-despues-badge antes-despues-badge--antes">
                         <?= htmlspecialchars($antesLabel) ?>
                     </span>
-
-                    <!-- Input range invisible — captura mouse y touch -->
-                    <input type="range" class="antes-despues-slider" id="adSlider"
-                           min="0" max="100" value="50" aria-label="Comparar antes y después">
                 </div>
-                <p class="antes-despues-hint">← Desliza para comparar →</p>
+                <div class="antes-despues-card">
+                    <img src="<?= htmlspecialchars($despuesPath) ?>"
+                         alt="<?= htmlspecialchars($despuesLabel) ?>"
+                         loading="lazy" decoding="async">
+                    <span class="antes-despues-badge antes-despues-badge--despues">
+                        <?= htmlspecialchars($despuesLabel) ?>
+                    </span>
+                </div>
+            </div>
+            <div class="section-cta">
+                <p>¿Ves la diferencia? La tuya puede llegar en días.</p>
+                <a href="#form-pedido" class="btn-primary btn-cta-section">Quiero el mío ahora →</a>
             </div>
         </section>
         <?php endif; $sections['antes_despues'] = ob_get_clean(); ?>
@@ -716,6 +706,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <h3><?= htmlspecialchars($cfStep3Title) ?></h3>
                     <p><?= htmlspecialchars($cfStep3Desc) ?></p>
                 </div>
+            </div>
+            <div class="section-cta">
+                <p>Así de simple. ¿Listo para empezar?</p>
+                <a href="#form-pedido" class="btn-primary btn-cta-section">Hacer mi pedido ahora →</a>
             </div>
         </section>
         <?php endif; $sections['como_funciona'] = ob_get_clean(); ?>
@@ -881,7 +875,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </div>
                     <div class="testimonial-content">
                         <div class="testimonial-stars" aria-label="5 estrellas">★★★★★</div>
-                        <h3><?= htmlspecialchars($test1Name) ?></h3>
+                        <h3><?= htmlspecialchars($test1Name) ?> <span class="testimonial-city">— <?= htmlspecialchars($test1City) ?></span></h3>
                         <p>"<?= htmlspecialchars($test1Text) ?>"</p>
                         <span class="testimonial-verified">✅ Compra verificada</span>
                     </div>
@@ -893,7 +887,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </div>
                     <div class="testimonial-content">
                         <div class="testimonial-stars" aria-label="5 estrellas">★★★★★</div>
-                        <h3><?= htmlspecialchars($test2Name) ?></h3>
+                        <h3><?= htmlspecialchars($test2Name) ?> <span class="testimonial-city">— <?= htmlspecialchars($test2City) ?></span></h3>
                         <p>"<?= htmlspecialchars($test2Text) ?>"</p>
                         <span class="testimonial-verified">✅ Compra verificada</span>
                     </div>
@@ -905,7 +899,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </div>
                     <div class="testimonial-content">
                         <div class="testimonial-stars" aria-label="5 estrellas">★★★★★</div>
-                        <h3><?= htmlspecialchars($test3Name) ?></h3>
+                        <h3><?= htmlspecialchars($test3Name) ?> <span class="testimonial-city">— <?= htmlspecialchars($test3City) ?></span></h3>
                         <p>"<?= htmlspecialchars($test3Text) ?>"</p>
                         <span class="testimonial-verified">✅ Compra verificada</span>
                     </div>
@@ -927,6 +921,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <section class="testimonials-section">
             <div class="container">
                 <div class="section-header">
+                    <div class="social-proof-counter"><?= htmlspecialchars($cfg['wa_social_counter'] ?? '★ +89 pedidos realizados') ?></div>
                     <h2 class="section-title"><?= htmlspecialchars($waTitle) ?></h2>
                     <p class="subtitle"><?= htmlspecialchars($waSubtitle) ?></p>
                 </div>
@@ -995,6 +990,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
                 <div class="slider-footer-note">
                     <p><?= htmlspecialchars($waFooterNote) ?></p>
+                </div>
+                <div class="wa-testimonios-cta">
+                    <a href="#form-pedido" class="btn-wa-cta">Yo también lo quiero →</a>
                 </div>
             </div>
         </section>
@@ -1503,6 +1501,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             </svg>
                         </div>
                         <p class="order-success__label">Pedido registrado</p>
+                        <div class="order-success__num" id="orderSuccessNum" style="display:none;">
+                            Pedido <strong id="orderSuccessNumVal"></strong>
+                        </div>
                         <h2 class="order-success__title">¡Tu pedido está en camino!</h2>
                         <p class="order-success__subtitle">
                             Un asesor te contactará pronto por WhatsApp para confirmar los detalles.
@@ -1531,6 +1532,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <a href="https://wa.me/<?= urlencode($waPhone) ?>?text=Hola%2C%20acabo%20de%20hacer%20un%20pedido%20y%20quiero%20confirmar%20los%20detalles."
                             class="order-success__wa-btn" target="_blank" rel="noopener">
                             Escribir por WhatsApp
+                        </a>
+                        <a id="shareWaBtn"
+                            href="https://wa.me/?text=<?= urlencode('¡Acabo de pedir ' . ($producto['nombre'] ?? 'este producto') . '! Te lo recomiendo 👉 ' . (isset($_SERVER['HTTP_HOST']) ? 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] : '')) ?>"
+                            class="order-success__share-btn" target="_blank" rel="noopener">
+                            📲 Recomendar a un amigo
                         </a>
                     </div>
                 </div>

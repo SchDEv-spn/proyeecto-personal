@@ -76,6 +76,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (i !== current) goTo(i);
     });
   });
+
+  // ── Autoplay cada 4s, se pausa si el usuario interactúa ──
+  let autoplayTimer;
+  function scheduleNext() {
+    clearTimeout(autoplayTimer);
+    autoplayTimer = setTimeout(() => {
+      const next = (current + 1) % slides.length;
+      goTo(next);
+      scheduleNext();
+    }, 4000);
+  }
+  scheduleNext();
+  container.addEventListener('pointerdown', () => clearTimeout(autoplayTimer), { passive: true });
+  outer?.addEventListener('click', () => scheduleNext());
 });
 
 /* ============================================================
@@ -462,37 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 })();
 
-/* ============================================================
-   MEJORA #4 — Antes / Después overlay reveal slider
-   Usa clip-path en lugar de width para que ambas imágenes
-   siempre ocupen el frame completo sin distorsión.
-   ============================================================ */
-(function () {
-    function init() {
-        var slider    = document.getElementById('adSlider');
-        var divider   = document.getElementById('adDivider');
-        var despuesEl = document.querySelector('.despues-img');
-        if (!slider || !divider || !despuesEl) return;
-
-        function update(val) {
-            var right = (100 - val) + '%';
-            despuesEl.style.clipPath = 'inset(0 ' + right + ' 0 0)';
-            divider.style.left       = val + '%';
-        }
-
-        slider.addEventListener('input', function () {
-            update(parseFloat(this.value));
-        });
-
-        update(50);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
+/* MEJORA #4 — slider removido, ahora es layout estático de dos columnas */
 
 /* ============================================================
    MEJORA #6A — Sticky mobile CTA: ocultar en hero y en form

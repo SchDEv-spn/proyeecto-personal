@@ -646,6 +646,11 @@ function initPixelEvents() {
                 if (res.ok) {
                     form.style.display = 'none';
                     if (successBox) {
+                        if (res.pedido_id) {
+                            const numEl = document.getElementById('orderSuccessNum');
+                            const valEl = document.getElementById('orderSuccessNumVal');
+                            if (numEl && valEl) { valEl.textContent = '#' + res.pedido_id; numEl.style.display = ''; }
+                        }
                         successBox.style.display = 'block';
                         successBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
