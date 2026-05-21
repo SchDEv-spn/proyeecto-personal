@@ -865,45 +865,32 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php endif; $sections['para_quien'] = ob_get_clean(); ?>
 
         <?php ob_start(); if ($showTestimonios): ?>
-        <!-- TESTIMONIOS -->
-        <section class="container">
-            <h2 class="section-title"><?= htmlspecialchars($testimoniosTitle) ?></h2>
-            <div class="testimonials">
-                <article class="testimonial">
-                    <div class="testimonial-photo">
-                        <img src="<?= htmlspecialchars($test1Photo) ?>" alt="Cliente 1" width="52" height="52" loading="lazy" decoding="async">
-                    </div>
-                    <div class="testimonial-content">
-                        <div class="testimonial-stars" aria-label="5 estrellas">★★★★★</div>
-                        <h3><?= htmlspecialchars($test1Name) ?> <span class="testimonial-city">— <?= htmlspecialchars($test1City) ?></span></h3>
-                        <p>"<?= htmlspecialchars($test1Text) ?>"</p>
+        <!-- TESTIMONIOS TICKER -->
+        <section class="testimonios-ticker-section">
+            <h2 class="section-title" style="text-align:center; padding: 0 var(--space-md) var(--space-md);"><?= htmlspecialchars($testimoniosTitle) ?></h2>
+            <div class="testimonios-ticker" aria-label="Testimonios de clientes">
+                <div class="testimonios-ticker__track">
+                    <?php
+                    $tickerItems = [
+                        ['name' => $test1Name, 'city' => $test1City, 'text' => $test1Text, 'photo' => $test1Photo],
+                        ['name' => $test2Name, 'city' => $test2City, 'text' => $test2Text, 'photo' => $test2Photo],
+                        ['name' => $test3Name, 'city' => $test3City, 'text' => $test3Text, 'photo' => $test3Photo],
+                    ];
+                    // Duplicar para loop infinito
+                    foreach ([$tickerItems, $tickerItems] as $set):
+                        foreach ($set as $t):
+                    ?>
+                    <article class="testimonios-ticker__card">
+                        <div class="testimonios-ticker__stars">★★★★★</div>
+                        <p class="testimonios-ticker__text">"<?= htmlspecialchars($t['text']) ?>"</p>
+                        <div class="testimonios-ticker__author">
+                            <img src="<?= htmlspecialchars($t['photo']) ?>" alt="<?= htmlspecialchars($t['name']) ?>" width="36" height="36" loading="lazy" decoding="async">
+                            <span><?= htmlspecialchars($t['name']) ?> <em>— <?= htmlspecialchars($t['city']) ?></em></span>
+                        </div>
                         <span class="testimonial-verified">✅ Compra verificada</span>
-                    </div>
-                </article>
-
-                <article class="testimonial">
-                    <div class="testimonial-photo">
-                        <img src="<?= htmlspecialchars($test2Photo) ?>" alt="Cliente 2" width="52" height="52" loading="lazy" decoding="async">
-                    </div>
-                    <div class="testimonial-content">
-                        <div class="testimonial-stars" aria-label="5 estrellas">★★★★★</div>
-                        <h3><?= htmlspecialchars($test2Name) ?> <span class="testimonial-city">— <?= htmlspecialchars($test2City) ?></span></h3>
-                        <p>"<?= htmlspecialchars($test2Text) ?>"</p>
-                        <span class="testimonial-verified">✅ Compra verificada</span>
-                    </div>
-                </article>
-
-                <article class="testimonial">
-                    <div class="testimonial-photo">
-                        <img src="<?= htmlspecialchars($test3Photo) ?>" alt="Cliente 3" width="52" height="52" loading="lazy" decoding="async">
-                    </div>
-                    <div class="testimonial-content">
-                        <div class="testimonial-stars" aria-label="5 estrellas">★★★★★</div>
-                        <h3><?= htmlspecialchars($test3Name) ?> <span class="testimonial-city">— <?= htmlspecialchars($test3City) ?></span></h3>
-                        <p>"<?= htmlspecialchars($test3Text) ?>"</p>
-                        <span class="testimonial-verified">✅ Compra verificada</span>
-                    </div>
-                </article>
+                    </article>
+                    <?php endforeach; endforeach; ?>
+                </div>
             </div>
 
             <!-- CTA de sección -->
