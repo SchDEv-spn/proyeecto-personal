@@ -843,34 +843,44 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
         <?php ob_start(); if ($showTestimonios): ?>
         <!-- TESTIMONIOS TICKER -->
+        <?php
+        $productoBanner = $heroMediaType === 'imagen' && !empty($heroMediaPath)
+            ? $heroMediaPath
+            : ($producto['imagen_principal'] ?? null);
+        ?>
         <section class="testimonios-ticker-section">
             <h2 class="section-title" style="text-align:center; padding: 0 var(--space-md) var(--space-md);"><?= htmlspecialchars($testimoniosTitle) ?></h2>
             <div class="testimonios-ticker" aria-label="Testimonios de clientes">
                 <div class="testimonios-ticker__track">
                     <?php
                     $tickerItems = [
-                        ['name' => $test1Name, 'city' => $test1City, 'text' => $test1Text, 'photo' => $test1Photo],
-                        ['name' => $test2Name, 'city' => $test2City, 'text' => $test2Text, 'photo' => $test2Photo],
-                        ['name' => $test3Name, 'city' => $test3City, 'text' => $test3Text, 'photo' => $test3Photo],
+                        ['name' => $test1Name, 'city' => $test1City, 'text' => $test1Text],
+                        ['name' => $test2Name, 'city' => $test2City, 'text' => $test2Text],
+                        ['name' => $test3Name, 'city' => $test3City, 'text' => $test3Text],
                     ];
-                    // Duplicar para loop infinito
                     foreach ([$tickerItems, $tickerItems] as $set):
                         foreach ($set as $t):
+                            if (empty($t['text'])) continue;
                     ?>
                     <article class="testimonios-ticker__card">
-                        <div class="testimonios-ticker__stars">★★★★★</div>
-                        <p class="testimonios-ticker__text">"<?= htmlspecialchars($t['text']) ?>"</p>
-                        <div class="testimonios-ticker__author">
-                            <img src="<?= htmlspecialchars($t['photo']) ?>" alt="<?= htmlspecialchars($t['name']) ?>" width="36" height="36" loading="lazy" decoding="async">
-                            <span><?= htmlspecialchars($t['name']) ?> <em>— <?= htmlspecialchars($t['city']) ?></em></span>
+                        <?php if ($productoBanner): ?>
+                        <div class="testimonios-ticker__banner">
+                            <img src="<?= htmlspecialchars($productoBanner) ?>" alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>" loading="lazy" decoding="async">
                         </div>
-                        <span class="testimonial-verified">✅ Compra verificada</span>
+                        <?php endif; ?>
+                        <div class="testimonios-ticker__body">
+                            <div class="testimonios-ticker__stars">★★★★★</div>
+                            <p class="testimonios-ticker__text">"<?= htmlspecialchars($t['text']) ?>"</p>
+                            <div class="testimonios-ticker__footer">
+                                <span class="testimonios-ticker__name"><?= htmlspecialchars($t['name']) ?> <em>— <?= htmlspecialchars($t['city']) ?></em></span>
+                                <span class="testimonial-verified">✅ Verificado</span>
+                            </div>
+                        </div>
                     </article>
                     <?php endforeach; endforeach; ?>
                 </div>
             </div>
 
-            <!-- CTA de sección -->
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaTestimonialsText) ?></p>
                 <a href="#form-pedido" class="btn-primary btn-cta-section">
