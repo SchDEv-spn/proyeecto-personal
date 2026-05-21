@@ -201,8 +201,10 @@ class AdminProductosController extends Controller
         // Manejo de imagen principal
         $imagenPrincipal = null;
 
-        $basePath  = dirname(__DIR__, 2);
-        $uploadDir = $basePath . '/public/uploads/productos/';
+        $persistentBase = dirname(dirname(dirname($_SERVER['DOCUMENT_ROOT']))) . '/uploads';
+        $uploadDir = is_dir($persistentBase)
+            ? $persistentBase . '/productos/'
+            : dirname(__DIR__, 2) . '/public/uploads/productos/';
 
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
@@ -412,8 +414,10 @@ class AdminProductosController extends Controller
         ];
 
         // Manejo de imagen
-        $basePath  = dirname(__DIR__, 2);
-        $uploadDir = $basePath . '/public/uploads/productos/';
+        $persistentBase = dirname(dirname(dirname($_SERVER['DOCUMENT_ROOT']))) . '/uploads';
+        $uploadDir = is_dir($persistentBase)
+            ? $persistentBase . '/productos/'
+            : dirname(__DIR__, 2) . '/public/uploads/productos/';
 
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);

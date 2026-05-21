@@ -319,8 +319,10 @@ class AdminLandingController extends Controller
         $data['comparison_img_with']    = $_POST['comparison_img_with_path_actual']    ?? null;
 
         // 4. Manejo de archivos
-        $basePath  = dirname(__DIR__, 2);
-        $uploadDir = $basePath . '/public/uploads/landing/';
+        $persistentBase = dirname(dirname(dirname($_SERVER['DOCUMENT_ROOT']))) . '/uploads';
+        $uploadDir = is_dir($persistentBase)
+            ? $persistentBase . '/landing/'
+            : dirname(__DIR__, 2) . '/public/uploads/landing/';
 
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
