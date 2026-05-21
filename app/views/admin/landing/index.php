@@ -709,12 +709,15 @@
 
                     <div class="stack-cards">
                       <?php for ($i = 1; $i <= 3; $i++):
-                        $nameKey     = "test{$i}_name";
-                        $cityKey     = "test{$i}_city";
-                        $textKey     = "test{$i}_text";
-                        $photoKey    = "test{$i}_photo_path";
-                        $photoInput  = "test{$i}_photo_file";
-                        $photoActual = "test{$i}_photo_path_actual";
+                        $nameKey      = "test{$i}_name";
+                        $cityKey      = "test{$i}_city";
+                        $textKey      = "test{$i}_text";
+                        $photoKey     = "test{$i}_photo_path";
+                        $photoInput   = "test{$i}_photo_file";
+                        $photoActual  = "test{$i}_photo_path_actual";
+                        $bannerKey    = "test{$i}_banner_path";
+                        $bannerInput  = "test{$i}_banner_file";
+                        $bannerActual = "test{$i}_banner_path_actual";
                       ?>
                         <div class="mini-card">
                           <div class="mini-card-title">
@@ -737,13 +740,35 @@
                               <textarea name="<?= $textKey ?>" rows="2"><?= htmlspecialchars($config[$textKey] ?? '') ?></textarea>
                             </div>
 
+                            <!-- Banner de la card -->
                             <div class="admin-form-group">
-                              <label for="<?= $photoInput ?>">Subir nueva foto</label>
+                              <label for="<?= $bannerInput ?>">Banner de la card <small>(imagen que aparece arriba)</small></label>
+                              <input type="file" id="<?= $bannerInput ?>" name="<?= $bannerInput ?>" accept="image/*">
+                            </div>
+
+                            <div class="admin-form-group admin-form-group--full">
+                              <label>Banner actual</label>
+                              <div class="media-preview">
+                                <?php if (!empty($config[$bannerKey])): ?>
+                                  <img src="<?= htmlspecialchars($config[$bannerKey]) ?>" alt="Banner testimonio <?= $i ?>">
+                                <?php else: ?>
+                                  <div class="media-empty">
+                                    <i class="fas fa-image"></i>
+                                    <span>Sin banner — usa imagen del producto</span>
+                                  </div>
+                                <?php endif; ?>
+                              </div>
+                              <input type="hidden" name="<?= $bannerActual ?>" value="<?= htmlspecialchars($config[$bannerKey] ?? '') ?>">
+                            </div>
+
+                            <!-- Foto de perfil (opcional) -->
+                            <div class="admin-form-group">
+                              <label for="<?= $photoInput ?>">Foto de perfil <small>(opcional)</small></label>
                               <input type="file" id="<?= $photoInput ?>" name="<?= $photoInput ?>" accept="image/*">
                             </div>
 
                             <div class="admin-form-group admin-form-group--full">
-                              <label>Foto actual</label>
+                              <label>Foto de perfil actual</label>
                               <div class="media-preview">
                                 <?php if (!empty($config[$photoKey])): ?>
                                   <img src="<?= htmlspecialchars($config[$photoKey]) ?>" alt="Testimonio <?= $i ?>">
@@ -754,7 +779,6 @@
                                   </div>
                                 <?php endif; ?>
                               </div>
-
                               <input type="hidden" name="<?= $photoActual ?>" value="<?= htmlspecialchars($config[$photoKey] ?? '') ?>">
                             </div>
                           </div>

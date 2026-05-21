@@ -844,7 +844,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php ob_start(); if ($showTestimonios): ?>
         <!-- TESTIMONIOS TICKER -->
         <?php
-        $productoBanner = $heroMediaType === 'imagen' && !empty($heroMediaPath)
+        $productoBannerFallback = $heroMediaType === 'imagen' && !empty($heroMediaPath)
             ? $heroMediaPath
             : ($producto['imagen_principal'] ?? null);
         ?>
@@ -854,18 +854,22 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <div class="testimonios-ticker__track">
                     <?php
                     $tickerItems = [
-                        ['name' => $test1Name, 'city' => $test1City, 'text' => $test1Text],
-                        ['name' => $test2Name, 'city' => $test2City, 'text' => $test2Text],
-                        ['name' => $test3Name, 'city' => $test3City, 'text' => $test3Text],
+                        ['name' => $test1Name, 'city' => $test1City, 'text' => $test1Text,
+                         'banner' => $cfg['test1_banner_path'] ?? null],
+                        ['name' => $test2Name, 'city' => $test2City, 'text' => $test2Text,
+                         'banner' => $cfg['test2_banner_path'] ?? null],
+                        ['name' => $test3Name, 'city' => $test3City, 'text' => $test3Text,
+                         'banner' => $cfg['test3_banner_path'] ?? null],
                     ];
                     foreach ([$tickerItems, $tickerItems] as $set):
                         foreach ($set as $t):
                             if (empty($t['text'])) continue;
+                            $bannerSrc = !empty($t['banner']) ? $t['banner'] : $productoBannerFallback;
                     ?>
                     <article class="testimonios-ticker__card">
-                        <?php if ($productoBanner): ?>
+                        <?php if ($bannerSrc): ?>
                         <div class="testimonios-ticker__banner">
-                            <img src="<?= htmlspecialchars($productoBanner) ?>" alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>" loading="lazy" decoding="async">
+                            <img src="<?= htmlspecialchars($bannerSrc) ?>" alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>" loading="lazy" decoding="async">
                         </div>
                         <?php endif; ?>
                         <div class="testimonios-ticker__body">
