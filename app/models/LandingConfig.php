@@ -174,7 +174,9 @@ class LandingConfig extends Model
                 comparison_img_without = :comparison_img_without,
                 comparison_img_with    = :comparison_img_with,
 
-                comparison_title       = :comparison_title,
+                comparison_title          = :comparison_title,
+                comparison_label_without  = :comparison_label_without,
+                comparison_label_with     = :comparison_label_with,
                 comparison_1_without   = :comparison_1_without,
                 comparison_1_with      = :comparison_1_with,
                 comparison_2_without   = :comparison_2_without,
@@ -407,7 +409,9 @@ class LandingConfig extends Model
             ':comparison_img_without' => $data['comparison_img_without'] ?? null,
             ':comparison_img_with'    => $data['comparison_img_with']    ?? null,
 
-            ':comparison_title'     => $data['comparison_title']     ?? null,
+            ':comparison_title'          => $data['comparison_title']          ?? null,
+            ':comparison_label_without'  => $data['comparison_label_without']  ?? null,
+            ':comparison_label_with'     => $data['comparison_label_with']     ?? null,
             ':comparison_1_without' => $data['comparison_1_without'] ?? null,
             ':comparison_1_with'    => $data['comparison_1_with']    ?? null,
             ':comparison_2_without' => $data['comparison_2_without'] ?? null,
