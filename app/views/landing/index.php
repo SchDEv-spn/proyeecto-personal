@@ -1479,16 +1479,17 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                 </form>
 
-                <!-- TRANSPORTADORAS BAJO EL FORM -->
+                <!-- TRANSPORTADORAS BAJO EL FORM — ticker -->
                 <div class="form-carriers">
                     <p class="form-carriers__label">Enviamos con:</p>
-                    <div class="form-carriers__logos">
-                        <img src="<?= BASE_URL ?>/public/img/transportadoras/interrapidisimo.png"
-                             alt="Interrapidísimo" width="110" height="28" loading="lazy" decoding="async">
-                        <img src="<?= BASE_URL ?>/public/img/transportadoras/envia.png"
-                             alt="Envía" width="72" height="28" loading="lazy" decoding="async">
-                        <img src="<?= BASE_URL ?>/public/img/transportadoras/coordinadora.png"
-                             alt="Coordinadora" width="92" height="28" loading="lazy" decoding="async">
+                    <div class="form-carriers__ticker">
+                        <div class="form-carriers__track">
+                            <?php foreach ([1,2] as $_dup): ?>
+                            <img src="<?= BASE_URL ?>/public/img/transportadoras/interrapidisimo.png" alt="Interrapidísimo" height="26" loading="lazy" decoding="async">
+                            <img src="<?= BASE_URL ?>/public/img/transportadoras/envia.png"           alt="Envía"           height="26" loading="lazy" decoding="async">
+                            <img src="<?= BASE_URL ?>/public/img/transportadoras/coordinadora.png"    alt="Coordinadora"    height="26" loading="lazy" decoding="async">
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
 

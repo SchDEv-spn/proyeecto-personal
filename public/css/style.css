@@ -2567,7 +2567,7 @@ img[loading="lazy"].loaded {
   }
 }
 
-/* ── TRANSPORTADORAS BAJO EL FORM ────────────────────────── */
+/* ── TRANSPORTADORAS TICKER BAJO EL FORM ─────────────────── */
 .form-carriers {
     margin-top: 20px;
     padding-top: 16px;
@@ -2584,25 +2584,27 @@ img[loading="lazy"].loaded {
     margin-bottom: 12px;
 }
 
-.form-carriers__logos {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
+.form-carriers__ticker {
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
 }
 
-.form-carriers__logos img {
+.form-carriers__track {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    width: max-content;
+    animation: marquee 10s linear infinite;
+}
+
+.form-carriers__track img {
     height: 26px;
     width: auto;
     object-fit: contain;
-    opacity: 0.55;
-    filter: grayscale(1) brightness(1.6);
-    transition: opacity 0.2s;
-}
-
-.form-carriers__logos img:hover {
-    opacity: 0.8;
+    opacity: 0.5;
+    filter: grayscale(1) brightness(1.8);
+    flex-shrink: 0;
 }
 
 /* ── ORDER SUCCESS ────────────────────────────────────────── */
