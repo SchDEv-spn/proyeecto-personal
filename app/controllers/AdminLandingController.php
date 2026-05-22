@@ -118,7 +118,7 @@ class AdminLandingController extends Controller
             'faq6_a' => trim($_POST['faq6_a'] ?? ''),
 
             'footer_text'  => trim($_POST['footer_text'] ?? ''),
-            'show_footer'  => isset($_POST['show_footer']) ? 1 : 0,
+            'show_footer'  => (int)($_POST['show_footer'] ?? 1),
 
             'cta_benefits_text'       => trim($_POST['cta_benefits_text'] ?? ''),
             'cta_benefits_button'     => trim($_POST['cta_benefits_button'] ?? ''),
