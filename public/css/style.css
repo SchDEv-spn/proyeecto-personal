@@ -3470,9 +3470,10 @@ img[loading="lazy"].loaded {
 }
 
 .para-quien-grid {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: var(--space-md);
+    align-items: start;
 }
 
 .para-quien-card {
@@ -5043,6 +5044,9 @@ img[loading="lazy"].loaded {
   }
   .announcement-bar {
     display: none; /* En pantallas de 360px el espacio es demasiado crítico */
+  }
+  .para-quien-grid {
+    grid-template-columns: 1fr;
   }
 }
 
