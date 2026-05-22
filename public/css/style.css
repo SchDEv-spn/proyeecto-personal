@@ -890,6 +890,7 @@ ul, ol { list-style: none; }
   border-bottom: 1px solid var(--gold-border);
   padding: 10px var(--space-md);
   overflow: hidden;
+  transform: translateZ(0);
 }
 
 .announcement-bar__track {
@@ -898,6 +899,9 @@ ul, ol { list-style: none; }
   width: max-content;
   animation: marquee 22s linear infinite;
   white-space: nowrap;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .announcement-bar__item {
@@ -915,8 +919,8 @@ ul, ol { list-style: none; }
 }
 
 @keyframes marquee {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0%   { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
 /* ── TIPOGRAFÍA ───────────────────────────────────────────── */
@@ -1656,6 +1660,7 @@ h3 {
   position: relative;
   mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  transform: translateZ(0);
 }
 
 .testimonios-ticker__track {
@@ -1663,6 +1668,9 @@ h3 {
   gap: var(--space-md);
   width: max-content;
   animation: marquee 32s linear infinite;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .testimonios-ticker:hover .testimonios-ticker__track {
@@ -2655,7 +2663,8 @@ img[loading="lazy"].loaded {
   }
 
   .announcement-bar__track,
-  .testimonios-ticker__track {
+  .testimonios-ticker__track,
+  .form-carriers__track {
     animation: none;
   }
 }
@@ -2681,6 +2690,7 @@ img[loading="lazy"].loaded {
     overflow: hidden;
     mask-image: linear-gradient(90deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
     -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
+    transform: translateZ(0);
 }
 
 .form-carriers__track {
@@ -2689,6 +2699,9 @@ img[loading="lazy"].loaded {
     gap: 36px;
     width: max-content;
     animation: marquee 10s linear infinite;
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .form-carriers__track img {
