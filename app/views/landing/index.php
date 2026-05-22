@@ -518,7 +518,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <section class="container benefits-section">
             <div class="two-columns">
                 <div class="col">
-                    <h2><?= htmlspecialchars($benefitsTitle) ?></h2>
+                    <h2 class="section-title"><?= htmlspecialchars($benefitsTitle) ?></h2>
 
                     <?php if (!empty($benefits)): ?>
                         <?php foreach ($benefits as $b): ?>
