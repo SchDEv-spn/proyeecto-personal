@@ -2607,8 +2607,17 @@ img[loading="lazy"].loaded {
     width: auto;
     object-fit: contain;
     opacity: 0.65;
-    filter: brightness(0) invert(1);
+    filter: brightness(0) invert(1); /* blanco para fondos oscuros */
     flex-shrink: 0;
+}
+
+/* Temas claros: logos en negro */
+[data-theme="light-luxury"] .form-carriers__track img,
+[data-theme="minimal-clean"] .form-carriers__track img,
+[data-theme="femme-rose"] .form-carriers__track img,
+[data-theme="natural-sage"] .form-carriers__track img {
+    filter: brightness(0);
+    opacity: 0.45;
 }
 
 /* ── ORDER SUCCESS ────────────────────────────────────────── */
