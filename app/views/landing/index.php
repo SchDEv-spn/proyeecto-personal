@@ -1112,20 +1112,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </section>
         <?php endif; ?>
 
-        <!-- TRANSPORTADORAS -->
-        <?php if ($showTrustStrip): ?>
-        <div class="trust-strip" role="complementary" aria-label="Transportadoras">
-            <p class="trust-strip__carriers-label">Enviamos a toda Colombia con:</p>
-            <div class="trust-strip__carriers">
-                <img src="<?= BASE_URL ?>/public/img/transportadoras/interrapidisimo.png"
-                     alt="Interrapidísimo" class="carrier-logo" width="120" height="32" loading="lazy" decoding="async">
-                <img src="<?= BASE_URL ?>/public/img/transportadoras/envia.png"
-                     alt="Envía" class="carrier-logo" width="80" height="32" loading="lazy" decoding="async">
-                <img src="<?= BASE_URL ?>/public/img/transportadoras/coordinadora.png"
-                     alt="Coordinadora" class="carrier-logo" width="100" height="32" loading="lazy" decoding="async">
-            </div>
-        </div>
-        <?php endif; ?>
+        <!-- TRANSPORTADORAS — movidas al pie del form de pedido -->
 
         <!-- RESUMEN DE OFERTA — Ancla pre-formulario -->
         <?php if ($showResumenOferta): ?>
