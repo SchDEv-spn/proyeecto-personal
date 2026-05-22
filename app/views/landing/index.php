@@ -881,13 +881,20 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         foreach ($set as $t):
                     ?>
                     <article class="testimonios-ticker__card">
-                        <div class="testimonios-ticker__stars">★★★★★</div>
-                        <p class="testimonios-ticker__text">"<?= htmlspecialchars($t['text']) ?>"</p>
-                        <div class="testimonios-ticker__author">
-                            <img src="<?= htmlspecialchars($t['photo']) ?>" alt="<?= htmlspecialchars($t['name']) ?>" width="36" height="36" loading="lazy" decoding="async">
-                            <span><?= htmlspecialchars($t['name']) ?> <em>— <?= htmlspecialchars($t['city']) ?></em></span>
+                        <?php if (!empty($t['photo'])): ?>
+                        <div class="testimonios-ticker__photo">
+                            <img src="<?= htmlspecialchars($t['photo']) ?>" alt="<?= htmlspecialchars($t['name']) ?>" loading="lazy" decoding="async">
                         </div>
-                        <span class="testimonial-verified">✅ Compra verificada</span>
+                        <?php endif; ?>
+                        <div class="testimonios-ticker__body">
+                            <div class="testimonios-ticker__stars">★★★★★</div>
+                            <p class="testimonios-ticker__text">"<?= htmlspecialchars($t['text']) ?>"</p>
+                            <div class="testimonios-ticker__author">
+                                <span class="testimonios-ticker__name"><?= htmlspecialchars($t['name']) ?></span>
+                                <em class="testimonios-ticker__city">— <?= htmlspecialchars($t['city']) ?></em>
+                            </div>
+                            <span class="testimonial-verified">✅ Verificado</span>
+                        </div>
                     </article>
                     <?php endforeach; endforeach; ?>
                 </div>
