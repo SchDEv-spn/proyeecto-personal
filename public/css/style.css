@@ -2402,9 +2402,13 @@ select option {
   transform: scale(0.99);
 }
 
-/* Padding bottom para que el contenido no quede tapado */
+/* Padding bottom para que el contenido no quede tapado por la sticky bar */
 body {
-  padding-bottom: 56px;
+  padding-bottom: 0;
+}
+
+#form-pedido {
+  padding-bottom: calc(var(--space-xl) + 56px);
 }
 
 /* ── SKELETON LOADERS (lazy img placeholder) ──────────────── */
@@ -3335,8 +3339,9 @@ img[loading="lazy"].loaded {
 /* ── FOMO TOAST ───────────────────────────────────────────── */
 .fomo-toast {
     position: fixed;
-    bottom: 76px;
+    top: 72px;
     left: 16px;
+    bottom: auto;
     z-index: 80;
     background: var(--bg-layer2);
     border: 1px solid var(--gold-border);
