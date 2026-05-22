@@ -903,47 +903,81 @@ h3 {
 .animate-fadeup:nth-child(5) { animation-delay: 0.45s; }
 
 /* ── BOTONES ──────────────────────────────────────────────── */
+@keyframes btn-shimmer {
+  0%   { transform: translateX(-120%) skewX(-20deg); opacity: 1; }
+  100% { transform: translateX(220%)  skewX(-20deg); opacity: 1; }
+}
+
+@keyframes btn-glow-pulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(201,168,76,0.3), 0 1px 0 rgba(255,255,255,0.18) inset; }
+  50%       { box-shadow: 0 4px 28px rgba(201,168,76,0.5), 0 0 0 5px rgba(201,168,76,0.1), 0 1px 0 rgba(255,255,255,0.18) inset; }
+}
+
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
-  padding: 16px 32px;
+  gap: 8px;
+  padding: 17px 36px;
   font-family: var(--font-body);
   font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--btn-text, #0a0a0a);
-  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+  background: linear-gradient(160deg, var(--gold-light) 0%, var(--gold) 60%, #b8860b 100%);
   border: none;
   border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: var(--transition);
-  box-shadow: 0 4px 20px var(--gold-border), 0 1px 0 rgba(255,255,255,0.15) inset;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
   text-align: center;
   position: relative;
   overflow: hidden;
-  min-height: 52px;
+  min-height: 54px;
+  animation: btn-glow-pulse 2.6s ease-in-out infinite;
+  will-change: transform;
 }
 
+/* Shine sweep — solo se activa al hover */
 .btn-primary::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
-  opacity: 0;
-  transition: var(--transition-fast);
+  top: -10%; bottom: -10%;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+  transform: translateX(-120%) skewX(-20deg);
+  transition: none;
+  pointer-events: none;
 }
 
-.btn-primary:hover::before,
-.btn-primary:active::before {
-  opacity: 1;
+.btn-primary:hover::before {
+  animation: btn-shimmer 0.55s ease forwards;
+}
+
+/* Flecha que avanza al hover */
+.btn-primary::after {
+  content: '→';
+  font-size: 1.05em;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px) scale(1.025);
+  box-shadow: 0 12px 38px rgba(201,168,76,0.55), 0 2px 0 rgba(255,255,255,0.2) inset;
+  filter: brightness(1.07);
+  animation: none;
+}
+
+.btn-primary:hover::after {
+  transform: translateX(6px);
 }
 
 .btn-primary:active {
-  transform: scale(0.97);
+  transform: translateY(0) scale(0.97);
   box-shadow: 0 2px 12px rgba(201,168,76,0.25);
+  filter: brightness(0.95);
+  animation: none;
 }
 
 .btn-full {
@@ -953,20 +987,7 @@ h3 {
   min-height: 56px;
 }
 
-/* Pulso del hero CTA — llama la atención en los primeros segundos */
-@keyframes heroPulse {
-  0%, 100% {
-    box-shadow: 0 4px 20px var(--gold-border), 0 1px 0 rgba(255,255,255,0.15) inset;
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 6px 36px rgba(201,168,76,.55), 0 0 0 6px rgba(201,168,76,.12), 0 1px 0 rgba(255,255,255,0.15) inset;
-    transform: scale(1.025);
-  }
-}
-#heroCta {
-  animation: heroPulse 2.8s ease-in-out 1.5s 3;
-}
+/* #heroCta hereda btn-glow-pulse de .btn-primary */
 #heroCta:hover,
 #heroCta:focus-visible {
   animation: none;
@@ -2912,40 +2933,63 @@ img[loading="lazy"].loaded {
     margin-top: 1px;
 }
 
-/* Botón CTA hero */
+/* Botón CTA principal del form de pedido */
+@keyframes submitPulse {
+  0%, 100% { box-shadow: 0 4px 24px rgba(76,175,125,.35), 0 1px 0 rgba(255,255,255,0.25) inset; }
+  50%       { box-shadow: 0 6px 42px rgba(76,175,125,.6), 0 0 0 6px rgba(76,175,125,.1), 0 1px 0 rgba(255,255,255,0.25) inset; }
+}
+
+@keyframes submitShimmer {
+  0%   { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%)  skewX(-20deg); }
+}
+
 .btn-submit-hero {
     width: 100%;
-    padding: 18px 24px;
-    background: var(--success, #4caf7d);
+    padding: 20px 24px;
+    background: linear-gradient(160deg, #5ecc8a 0%, var(--success, #4caf7d) 55%, #38936a 100%);
     color: #fff;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     font-family: var(--font-body);
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: filter 0.2s, transform 0.15s;
-    box-shadow: 0 4px 24px rgba(76,175,125,0.35);
+    transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 24px rgba(76,175,125,0.4), 0 1px 0 rgba(255,255,255,0.25) inset;
     position: relative;
     overflow: hidden;
+    animation: submitPulse 2.4s ease-in-out infinite;
+    min-height: 60px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.18);
 }
 .btn-submit-hero::before {
     content: '';
     position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,0);
-    transition: background 0.2s;
+    top: -10%; bottom: -10%;
+    width: 28%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform: translateX(-120%) skewX(-20deg);
+    pointer-events: none;
 }
-.btn-submit-hero:hover { filter: brightness(1.08); transform: translateY(-1px); }
-.btn-submit-hero:hover::before { background: rgba(255,255,255,0.06); }
-.btn-submit-hero:active { transform: translateY(0); filter: brightness(0.97); }
-.btn-submit-hero:disabled { opacity: 0.65; cursor: not-allowed; transform: none; animation: none; }
+.btn-submit-hero:hover::before {
+    animation: submitShimmer 0.55s ease forwards;
+}
+.btn-submit-hero:hover {
+    transform: translateY(-3px) scale(1.015);
+    filter: brightness(1.07);
+    box-shadow: 0 14px 44px rgba(76,175,125,0.55), 0 2px 0 rgba(255,255,255,0.2) inset;
+    animation: none;
+}
+.btn-submit-hero:active {
+    transform: translateY(0) scale(0.98);
+    filter: brightness(0.95);
+    animation: none;
+}
+.btn-submit-hero:disabled { opacity: 0.65; cursor: not-allowed; transform: none; animation: none; filter: none; }
 
-@keyframes submitPulse {
-  0%, 100% { box-shadow: 0 4px 24px rgba(76,175,125,.35); }
-  50%       { box-shadow: 0 6px 40px rgba(76,175,125,.65), 0 0 0 5px rgba(76,175,125,.12); }
-}
 .btn-submit-hero--step:not(:disabled) {
   animation: submitPulse 2.4s ease-in-out infinite;
 }
