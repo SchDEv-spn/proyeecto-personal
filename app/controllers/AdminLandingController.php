@@ -161,7 +161,9 @@ class AdminLandingController extends Controller
             'countdown_minutes' => max(1, (int)($_POST['countdown_minutes'] ?? 25)),
 
             // ===== Tabla comparativa =====
-            'comparison_title'     => trim($_POST['comparison_title']     ?? ''),
+            'comparison_title'          => trim($_POST['comparison_title']          ?? ''),
+            'comparison_label_without'  => trim($_POST['comparison_label_without']  ?? ''),
+            'comparison_label_with'     => trim($_POST['comparison_label_with']     ?? ''),
             'comparison_1_without' => trim($_POST['comparison_1_without'] ?? ''),
             'comparison_1_with'    => trim($_POST['comparison_1_with']    ?? ''),
             'comparison_2_without' => trim($_POST['comparison_2_without'] ?? ''),

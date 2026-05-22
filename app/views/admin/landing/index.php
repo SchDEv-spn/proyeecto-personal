@@ -645,6 +645,18 @@
                         <input type="text" id="comparison_title" name="comparison_title"
                           value="<?= htmlspecialchars($config['comparison_title'] ?? 'La diferencia que hace este producto') ?>">
                       </div>
+                      <div class="admin-form-group">
+                        <label for="comparison_label_without">❌ Encabezado columna izquierda</label>
+                        <input type="text" id="comparison_label_without" name="comparison_label_without"
+                          value="<?= htmlspecialchars($config['comparison_label_without'] ?? 'Sin el producto') ?>"
+                          placeholder="ej. Sin el producto">
+                      </div>
+                      <div class="admin-form-group">
+                        <label for="comparison_label_with">✅ Encabezado columna derecha</label>
+                        <input type="text" id="comparison_label_with" name="comparison_label_with"
+                          value="<?= htmlspecialchars($config['comparison_label_with'] ?? 'Con el producto') ?>"
+                          placeholder="ej. Con BOLSO HOBO">
+                      </div>
                     </div>
 
                     <!-- Imágenes por columna -->

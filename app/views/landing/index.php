@@ -126,7 +126,9 @@ $faq6_q = $cfg['faq6_q'] ?? '';
 $faq6_a = $cfg['faq6_a'] ?? '';
 
 // ===== TABLA COMPARATIVA =====
-$comparisonTitle    = $cfg['comparison_title']        ?? 'La diferencia que hace este producto';
+$comparisonTitle        = $cfg['comparison_title']           ?? 'La diferencia que hace este producto';
+$comparisonLabelWithout = $cfg['comparison_label_without']   ?? 'Sin el producto';
+$comparisonLabelWith    = $cfg['comparison_label_with']      ?? 'Con el producto';
 $comparisonImgWith  = $cfg['comparison_img_with']    ?? '';
 $comparisonImgWithout = $cfg['comparison_img_without'] ?? '';
 $comparisonRows  = [];
@@ -767,7 +769,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <div class="comparison-col comparison-col--without">
                     <div class="comparison-header comparison-header--without">
                         <span aria-hidden="true">❌</span>
-                        <strong>Sin el producto</strong>
+                        <strong><?= htmlspecialchars($comparisonLabelWithout) ?></strong>
                     </div>
                     <?php if (!empty($comparisonImgWithout)): ?>
                     <img src="<?= htmlspecialchars($comparisonImgWithout) ?>"
@@ -786,7 +788,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <div class="comparison-col comparison-col--with">
                     <div class="comparison-header comparison-header--with">
                         <span aria-hidden="true">✅</span>
-                        <strong>Con <?= htmlspecialchars($heroTitle) ?></strong>
+                        <strong><?= htmlspecialchars($comparisonLabelWith) ?></strong>
                     </div>
                     <?php if (!empty($comparisonImgWith)): ?>
                     <img src="<?= htmlspecialchars($comparisonImgWith) ?>"
