@@ -1537,29 +1537,30 @@ h3 {
 .testimonios-ticker__card {
   flex: 0 0 260px;
   background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--radius-md);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-.testimonios-ticker__photo {
+.testimonios-ticker__banner {
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
   flex-shrink: 0;
 }
 
-.testimonios-ticker__photo img {
+.testimonios-ticker__banner img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
   display: block;
   transition: transform 0.4s ease;
 }
 
-.testimonios-ticker__card:hover .testimonios-ticker__photo img {
+.testimonios-ticker__card:hover .testimonios-ticker__banner img {
   transform: scale(1.04);
 }
 
@@ -1579,28 +1580,30 @@ h3 {
 
 .testimonios-ticker__text {
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--cream-dim);
   flex: 1;
   margin: 0;
 }
 
-.testimonios-ticker__author {
+.testimonios-ticker__footer {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin-top: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
 }
 
 .testimonios-ticker__name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--cream);
+  color: var(--cream-dim);
 }
 
-.testimonios-ticker__city {
+.testimonios-ticker__name em {
   font-style: normal;
-  font-size: 12px;
+  font-weight: 400;
   color: var(--gold-muted, #a08060);
 }
 
@@ -4912,9 +4915,9 @@ img[loading="lazy"].loaded {
     font-size: 10.5px;
   }
 
-  /* Testimonios ticker — tarjetas un poco más estrechas en móvil */
+  /* Testimonios ticker — tarjetas en móvil */
   .testimonios-ticker__card {
-    flex: 0 0 210px;
+    flex: 0 0 220px;
   }
   .testimonios-ticker__track {
     animation-duration: 24s;

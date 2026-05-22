@@ -301,9 +301,12 @@ class AdminLandingController extends Controller
 
         $data['porque_media_path'] = $_POST['porque_media_path_actual'] ?? null;
 
-        $data['test1_photo_path'] = $_POST['test1_photo_path_actual'] ?? null;
-        $data['test2_photo_path'] = $_POST['test2_photo_path_actual'] ?? null;
-        $data['test3_photo_path'] = $_POST['test3_photo_path_actual'] ?? null;
+        $data['test1_photo_path']  = $_POST['test1_photo_path_actual']  ?? null;
+        $data['test2_photo_path']  = $_POST['test2_photo_path_actual']  ?? null;
+        $data['test3_photo_path']  = $_POST['test3_photo_path_actual']  ?? null;
+        $data['test1_banner_path'] = $_POST['test1_banner_path_actual'] ?? null;
+        $data['test2_banner_path'] = $_POST['test2_banner_path_actual'] ?? null;
+        $data['test3_banner_path'] = $_POST['test3_banner_path_actual'] ?? null;
 
         // WhatsApp images actuales (1..5)
         for ($i = 1; $i <= 5; $i++) {
@@ -340,6 +343,9 @@ class AdminLandingController extends Controller
             'test1_photo_file'     => 'test1_photo_path',
             'test2_photo_file'     => 'test2_photo_path',
             'test3_photo_file'     => 'test3_photo_path',
+            'test1_banner_file'    => 'test1_banner_path',
+            'test2_banner_file'    => 'test2_banner_path',
+            'test3_banner_file'    => 'test3_banner_path',
 
             'wa1_image_file'       => 'wa1_image_path',
             'wa2_image_file'       => 'wa2_image_path',
