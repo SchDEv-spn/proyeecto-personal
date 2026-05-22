@@ -1291,6 +1291,21 @@
                           </div>
                         </label>
 
+                        <label class="theme-card <?= ($config['theme'] ?? '') === 'obsidian' ? 'theme-card--active' : '' ?>">
+                          <input type="radio" name="theme" value="obsidian"
+                            <?= ($config['theme'] ?? '') === 'obsidian' ? 'checked' : '' ?>
+                            onchange="applyThemePreview('obsidian')">
+                          <div class="theme-card__preview theme-card__preview--obsidian">
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                          </div>
+                          <div class="theme-card__info">
+                            <strong>Obsidian</strong>
+                            <small>Negro · Plata · Ultra premium</small>
+                          </div>
+                        </label>
+
                       </div>
                     </div>
 

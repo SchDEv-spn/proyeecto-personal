@@ -275,7 +275,7 @@ class AdminLandingController extends Controller
         // Tema
         $data['theme'] = in_array(
             trim($_POST['theme'] ?? ''),
-            ['dark-luxury', 'light-luxury', 'bold-conversion', 'minimal-clean', 'femme-rose', 'natural-sage'],
+            ['dark-luxury', 'light-luxury', 'bold-conversion', 'minimal-clean', 'femme-rose', 'natural-sage', 'obsidian'],
             true
         ) ? trim($_POST['theme']) : 'dark-luxury';
 
