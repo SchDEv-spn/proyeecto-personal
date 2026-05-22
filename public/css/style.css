@@ -903,14 +903,15 @@ h3 {
 .animate-fadeup:nth-child(5) { animation-delay: 0.45s; }
 
 /* ── BOTONES ──────────────────────────────────────────────── */
-@keyframes btn-shimmer {
-  0%   { transform: translateX(-120%) skewX(-20deg); opacity: 1; }
-  100% { transform: translateX(220%)  skewX(-20deg); opacity: 1; }
+/* Shimmer periódico: visible en reposo → funciona en móvil */
+@keyframes btn-shimmer-loop {
+  0%           { transform: translateX(-120%) skewX(-20deg); }
+  18%, 100%    { transform: translateX(220%)  skewX(-20deg); }
 }
 
 @keyframes btn-glow-pulse {
   0%, 100% { box-shadow: 0 4px 20px rgba(201,168,76,0.3), 0 1px 0 rgba(255,255,255,0.18) inset; }
-  50%       { box-shadow: 0 4px 28px rgba(201,168,76,0.5), 0 0 0 5px rgba(201,168,76,0.1), 0 1px 0 rgba(255,255,255,0.18) inset; }
+  50%       { box-shadow: 0 6px 32px rgba(201,168,76,0.55), 0 0 0 6px rgba(201,168,76,0.1), 0 1px 0 rgba(255,255,255,0.18) inset; }
 }
 
 .btn-primary {
@@ -920,78 +921,68 @@ h3 {
   gap: 8px;
   padding: 17px 36px;
   font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--btn-text, #0a0a0a);
   background: linear-gradient(160deg, var(--gold-light) 0%, var(--gold) 60%, #b8860b 100%);
   border: none;
   border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  touch-action: manipulation;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
   text-align: center;
   position: relative;
   overflow: hidden;
-  min-height: 54px;
+  min-height: 56px;
   animation: btn-glow-pulse 2.6s ease-in-out infinite;
-  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Shine sweep — solo se activa al hover */
+/* Shimmer periódico — visible sin hover, pasa cada ~4s */
 .btn-primary::before {
   content: '';
   position: absolute;
   top: -10%; bottom: -10%;
-  width: 30%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
-  transform: translateX(-120%) skewX(-20deg);
-  transition: none;
+  width: 28%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  animation: btn-shimmer-loop 4s ease-in-out infinite;
   pointer-events: none;
 }
 
-.btn-primary:hover::before {
-  animation: btn-shimmer 0.55s ease forwards;
+/* ── Solo en dispositivos con hover real (desktop) ── */
+@media (hover: hover) {
+  .btn-primary:hover {
+    transform: translateY(-3px) scale(1.025);
+    box-shadow: 0 12px 38px rgba(201,168,76,0.55), 0 2px 0 rgba(255,255,255,0.2) inset;
+    filter: brightness(1.07);
+    animation: none;
+  }
+  .btn-primary:hover::before {
+    animation: none;
+  }
 }
 
-/* Flecha que avanza al hover */
-.btn-primary::after {
-  content: '→';
-  font-size: 1.05em;
-  transition: transform 0.2s ease;
-  display: inline-block;
-}
-
-.btn-primary:hover {
-  transform: translateY(-3px) scale(1.025);
-  box-shadow: 0 12px 38px rgba(201,168,76,0.55), 0 2px 0 rgba(255,255,255,0.2) inset;
-  filter: brightness(1.07);
-  animation: none;
-}
-
-.btn-primary:hover::after {
-  transform: translateX(6px);
-}
-
+/* Feedback táctil — el ":active" es lo que siente el dedo */
 .btn-primary:active {
-  transform: translateY(0) scale(0.97);
-  box-shadow: 0 2px 12px rgba(201,168,76,0.25);
-  filter: brightness(0.95);
+  transform: scale(0.96);
+  filter: brightness(1.12);
+  box-shadow: 0 2px 16px rgba(201,168,76,0.4);
   animation: none;
+  transition: transform 0.08s ease, filter 0.08s ease;
 }
 
 .btn-full {
   width: 100%;
-  font-size: 16px;
-  padding: 18px 32px;
-  min-height: 56px;
+  font-size: 17px;
+  padding: 20px 32px;
+  min-height: 60px;
 }
 
-/* #heroCta hereda btn-glow-pulse de .btn-primary */
-#heroCta:hover,
-#heroCta:focus-visible {
-  animation: none;
-}
+/* #heroCta */
+#heroCta:focus-visible { animation: none; }
+@media (hover: hover) { #heroCta:hover { animation: none; } }
 
 .btn-ghost {
   display: inline-flex;
@@ -2965,28 +2956,30 @@ img[loading="lazy"].loaded {
     min-height: 60px;
     text-shadow: 0 1px 2px rgba(0,0,0,0.18);
 }
+/* Shimmer periódico en el botón verde */
 .btn-submit-hero::before {
     content: '';
     position: absolute;
     top: -10%; bottom: -10%;
     width: 28%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    transform: translateX(-120%) skewX(-20deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+    animation: btn-shimmer-loop 3.8s ease-in-out infinite;
     pointer-events: none;
 }
-.btn-submit-hero:hover::before {
-    animation: submitShimmer 0.55s ease forwards;
-}
-.btn-submit-hero:hover {
+@media (hover: hover) {
+  .btn-submit-hero:hover {
     transform: translateY(-3px) scale(1.015);
     filter: brightness(1.07);
     box-shadow: 0 14px 44px rgba(76,175,125,0.55), 0 2px 0 rgba(255,255,255,0.2) inset;
     animation: none;
+  }
+  .btn-submit-hero:hover::before { animation: none; }
 }
 .btn-submit-hero:active {
-    transform: translateY(0) scale(0.98);
-    filter: brightness(0.95);
+    transform: scale(0.96);
+    filter: brightness(1.1);
     animation: none;
+    transition: transform 0.08s ease, filter 0.08s ease;
 }
 .btn-submit-hero:disabled { opacity: 0.65; cursor: not-allowed; transform: none; animation: none; filter: none; }
 
