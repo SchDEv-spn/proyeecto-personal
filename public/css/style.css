@@ -1535,7 +1535,7 @@ h3 {
 }
 
 .testimonios-ticker__card {
-  flex: 0 0 260px;
+  flex: 0 0 210px;
   background: var(--bg-card);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--radius-md);
@@ -1546,7 +1546,7 @@ h3 {
 
 .testimonios-ticker__banner {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -4917,7 +4917,7 @@ img[loading="lazy"].loaded {
 
   /* Testimonios ticker — tarjetas en móvil */
   .testimonios-ticker__card {
-    flex: 0 0 220px;
+    flex: 0 0 175px;
   }
   .testimonios-ticker__track {
     animation-duration: 24s;
