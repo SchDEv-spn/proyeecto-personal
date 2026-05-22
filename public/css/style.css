@@ -3233,8 +3233,8 @@ img[loading="lazy"].loaded {
         color-mix(in srgb, var(--success) 6%, transparent) 0%,
         color-mix(in srgb, var(--gold) 5%, transparent) 100%
     );
-    border-top: 1px solid color-mix(in srgb, var(--success) 20%, transparent);
-    border-bottom: 1px solid color-mix(in srgb, var(--success) 20%, transparent);
+    border-top: none;
+    border-bottom: none;
     padding: var(--space-xl) 0;
 }
 
@@ -4320,10 +4320,9 @@ img[loading="lazy"].loaded {
     box-shadow: var(--shadow-gold) !important;
 }
 
-/* ── GARANTÍA BANNER — más peso visual ───────────────────── */
+/* ── GARANTÍA BANNER — sin bordes ────────────────────────── */
 .garantia-banner {
-    border-top: 2px solid var(--gold-border);
-    border-bottom: 2px solid var(--gold-border);
+    border: none;
 }
 
 /* ── MOBILE: CTA de sección full-width ───────────────────── */
