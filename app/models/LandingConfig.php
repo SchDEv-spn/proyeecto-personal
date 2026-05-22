@@ -35,6 +35,8 @@ class LandingConfig extends Model
 
                 hero_title         = :hero_title,
                 hero_subtitle      = :hero_subtitle,
+                hero_subtitle_2    = :hero_subtitle_2,
+                hero_subtitle_3    = :hero_subtitle_3,
                 hero_note          = :hero_note,
                 hero_button_text   = :hero_button_text,
                 hero_media_type    = :hero_media_type,
@@ -274,6 +276,8 @@ class LandingConfig extends Model
 
             ':hero_title'         => $data['hero_title']       ?? null,
             ':hero_subtitle'      => $data['hero_subtitle']    ?? null,
+            ':hero_subtitle_2'    => $data['hero_subtitle_2']  ?? null,
+            ':hero_subtitle_3'    => $data['hero_subtitle_3']  ?? null,
             ':hero_note'          => $data['hero_note']        ?? null,
             ':hero_button_text'   => $data['hero_button_text'] ?? null,
             ':hero_media_type'    => $data['hero_media_type']  ?? null,

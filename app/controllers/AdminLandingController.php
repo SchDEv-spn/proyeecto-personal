@@ -65,7 +65,9 @@ class AdminLandingController extends Controller
         // 1. Textos
         $data = [
             'hero_title'       => trim($_POST['hero_title'] ?? ''),
-            'hero_subtitle'    => trim($_POST['hero_subtitle'] ?? ''),
+            'hero_subtitle'    => trim($_POST['hero_subtitle']   ?? ''),
+            'hero_subtitle_2'  => trim($_POST['hero_subtitle_2'] ?? ''),
+            'hero_subtitle_3'  => trim($_POST['hero_subtitle_3'] ?? ''),
             'hero_note'        => trim($_POST['hero_note'] ?? ''),
             'hero_button_text' => trim($_POST['hero_button_text'] ?? ''),
             'hero_media_type'  => trim($_POST['hero_media_type'] ?? 'imagen'),

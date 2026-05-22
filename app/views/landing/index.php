@@ -29,6 +29,9 @@ if ($comboPrice2 <= 0) $comboPrice2 = 115000; // fallback
 // ===== HERO =====
 $heroTitle       = $cfg['hero_title']        ?? ($producto['nombre'] ?? 'Nombre del producto');
 $heroSubtitle    = $cfg['hero_subtitle']     ?? 'Subtítulo potente que explique el beneficio principal del producto en una frase clara.';
+$heroSubtitle2   = trim($cfg['hero_subtitle_2'] ?? '');
+$heroSubtitle3   = trim($cfg['hero_subtitle_3'] ?? '');
+$heroSubtitles   = array_filter([$heroSubtitle, $heroSubtitle2, $heroSubtitle3], fn($s) => $s !== '');
 $heroNote        = $cfg['hero_note']         ?? 'Promoción válida solo por tiempo limitado.';
 $heroButtonText  = $cfg['hero_button_text']  ?? '¡Necesito el mío!';
 $heroMediaType   = $cfg['hero_media_type']   ?? 'imagen';
@@ -434,9 +437,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <div class="hero-text">
             <h1><?= htmlspecialchars($heroTitle) ?></h1>
 
-            <p class="hero-subtitle">
-                <?= htmlspecialchars($heroSubtitle) ?>
-            </p>
+            <?php if (count($heroSubtitles) > 1): ?>
+            <div class="hero-subtitle hero-subtitle--rotate" aria-live="polite">
+                <?php foreach (array_values($heroSubtitles) as $i => $s): ?>
+                <span class="hero-subtitle__phrase" style="--i:<?= $i ?>"><?= htmlspecialchars($s) ?></span>
+                <?php endforeach; ?>
+            </div>
+            <?php else: ?>
+            <p class="hero-subtitle"><?= htmlspecialchars($heroSubtitle) ?></p>
+            <?php endif; ?>
 
             <!-- ✅ NUEVO: Banda de urgencia -->
             <div class="hero-urgency-bar">

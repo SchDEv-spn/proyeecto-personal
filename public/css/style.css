@@ -1100,6 +1100,45 @@ h3 {
   animation: fadeUp 0.8s ease 0.2s both;
 }
 
+/* ── HERO SUBTITLE ROTATIVO ───────────────────────────────── */
+@keyframes subtitleIn {
+  0%          { opacity: 0; transform: translateY(10px); }
+  10%, 88%    { opacity: 1; transform: translateY(0); }
+  96%, 100%   { opacity: 0; transform: translateY(-8px); }
+}
+
+.hero-subtitle--rotate {
+  position: relative;
+  min-height: 1.7em;
+  display: block;
+  overflow: hidden;
+  animation: fadeUp 0.8s ease 0.2s both;
+}
+
+.hero-subtitle__phrase {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  opacity: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  line-height: inherit;
+  animation: subtitleIn var(--total-duration, 12s) ease-in-out infinite;
+  animation-delay: calc(var(--i) * var(--step-duration, 4s));
+}
+
+/* 2 frases: 4s cada una = 8s total */
+.hero-subtitle--rotate:has(.hero-subtitle__phrase:nth-child(2):last-child) {
+  --total-duration: 8s;
+  --step-duration: 4s;
+}
+
+/* 3 frases: 4s cada una = 12s total */
+.hero-subtitle--rotate:has(.hero-subtitle__phrase:nth-child(3):last-child) {
+  --total-duration: 12s;
+  --step-duration: 4s;
+}
+
 .hero-note {
   font-size: 12px;
   color: var(--cream-muted);
