@@ -93,7 +93,8 @@ class LandingConfig extends Model
                 faq6_q = :faq6_q,
                 faq6_a = :faq6_a,
 
-                footer_text = :footer_text,
+                footer_text  = :footer_text,
+                show_footer  = :show_footer,
 
                 cta_benefits_text        = :cta_benefits_text,
                 cta_benefits_button      = :cta_benefits_button,
@@ -334,7 +335,8 @@ class LandingConfig extends Model
             ':faq6_q' => $data['faq6_q'] ?? null,
             ':faq6_a' => $data['faq6_a'] ?? null,
 
-            ':footer_text' => $data['footer_text'] ?? null,
+            ':footer_text'  => $data['footer_text'] ?? null,
+            ':show_footer'  => $data['show_footer']  ?? 1,
 
             ':cta_benefits_text'       => $data['cta_benefits_text']       ?? null,
             ':cta_benefits_button'     => $data['cta_benefits_button']     ?? null,

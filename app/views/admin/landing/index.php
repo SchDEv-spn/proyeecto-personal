@@ -1688,6 +1688,14 @@
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
+                        <label style="display:flex; gap:10px; align-items:center;">
+                          <input type="hidden" name="show_footer" value="0">
+                          <input type="checkbox" name="show_footer" value="1"
+                            <?= !isset($config['show_footer']) || !empty($config['show_footer']) ? 'checked' : '' ?>>
+                          Mostrar footer
+                        </label>
+                      </div>
+                      <div class="admin-form-group admin-form-group--full">
                         <label for="footer_text">Texto del footer</label>
                         <input type="text" id="footer_text" name="footer_text"
                           value="<?= htmlspecialchars($config['footer_text'] ?? '') ?>">

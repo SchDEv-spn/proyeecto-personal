@@ -153,7 +153,8 @@ $authorityRating     = $cfg['authority_rating']     ?? '4.9';
 $authorityGuarantee  = $cfg['authority_guarantee']  ?? 'Garantía de satisfacción';
 
 // ===== FOOTER =====
-$footerText = $cfg['footer_text'] ?? ('© ' . date('Y') . ' Tu Marca. Todos los derechos reservados.');
+$footerText   = $cfg['footer_text']   ?? ('© ' . date('Y') . ' Tu Marca. Todos los derechos reservados.');
+$showFooter   = (int)($cfg['show_footer'] ?? 1);
 
 // ===== CTAs dinámicas =====
 $ctaBenefitsText       = $cfg['cta_benefits_text']
@@ -1775,9 +1776,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
 
 
+    <?php if ($showFooter): ?>
     <div class="footer-text">
         <?= htmlspecialchars($footerText) ?>
     </div>
+    <?php endif; ?>
 
 
 
