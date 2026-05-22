@@ -1479,6 +1479,19 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                 </form>
 
+                <!-- TRANSPORTADORAS BAJO EL FORM -->
+                <div class="form-carriers">
+                    <p class="form-carriers__label">Enviamos con:</p>
+                    <div class="form-carriers__logos">
+                        <img src="<?= BASE_URL ?>/public/img/transportadoras/interrapidisimo.png"
+                             alt="Interrapidísimo" width="110" height="28" loading="lazy" decoding="async">
+                        <img src="<?= BASE_URL ?>/public/img/transportadoras/envia.png"
+                             alt="Envía" width="72" height="28" loading="lazy" decoding="async">
+                        <img src="<?= BASE_URL ?>/public/img/transportadoras/coordinadora.png"
+                             alt="Coordinadora" width="92" height="28" loading="lazy" decoding="async">
+                    </div>
+                </div>
+
                 <!-- PANTALLA DE ÉXITO -->
                 <div id="stepperSuccess" style="display:none;">
                     <div class="order-success">
