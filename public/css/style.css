@@ -3267,6 +3267,11 @@ img[loading="lazy"].loaded {
     50%       { box-shadow: 0 0 0 14px color-mix(in srgb, var(--success) 0%, transparent); }
 }
 
+.garantia-body {
+    text-align: center;
+    width: 100%;
+}
+
 .garantia-body h3 {
     font-size: clamp(1.1rem, 4vw, 1.5rem);
     color: var(--cream);
@@ -3278,16 +3283,20 @@ img[loading="lazy"].loaded {
     color: var(--cream-dim);
     line-height: 1.7;
     margin-bottom: var(--space-md);
+    max-width: 480px;
+    margin-inline: auto;
 }
 
 .garantia-list {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
     gap: 8px;
-    text-align: left;
     font-size: 13px;
     color: var(--cream-dim);
-    padding-left: var(--space-sm);
+    text-align: left;
+    padding: 0;
+    list-style: none;
+    margin-inline: auto;
 }
 
 .garantia-list li {
@@ -3295,14 +3304,6 @@ img[loading="lazy"].loaded {
     align-items: flex-start;
     gap: 6px;
     line-height: 1.5;
-}
-
-@media (min-width: 640px) {
-    .garantia-inner {
-        flex-direction: row;
-        text-align: left;
-        align-items: flex-start;
-    }
 }
 
 /* ── SOCIAL PROOF NEAR FORM ───────────────────────────────── */
