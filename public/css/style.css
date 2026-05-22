@@ -2602,8 +2602,8 @@ img[loading="lazy"].loaded {
     height: 26px;
     width: auto;
     object-fit: contain;
-    opacity: 0.5;
-    filter: grayscale(1) brightness(1.8);
+    opacity: 0.65;
+    filter: brightness(0) invert(1);
     flex-shrink: 0;
 }
 
