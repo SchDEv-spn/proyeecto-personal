@@ -273,6 +273,8 @@ class LandingConfig extends Model
                 'minimal-clean',
                 'femme-rose',
                 'natural-sage',
+                'obsidian',
+                'blanc-luxe',
             ], true) ? $data['theme'] : 'dark-luxury',
 
             ':hero_title'         => $data['hero_title']       ?? null,

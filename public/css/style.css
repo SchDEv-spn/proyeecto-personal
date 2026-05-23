@@ -125,7 +125,8 @@
 [data-theme="bold-conversion"],
 [data-theme="minimal-clean"],
 [data-theme="femme-rose"],
-[data-theme="natural-sage"] {
+[data-theme="natural-sage"],
+[data-theme="blanc-luxe"] {
   --carrier-invert: 0;
   --btn-text: #ffffff;
 }
@@ -725,7 +726,122 @@
 }
 
 
-/* ── TEMA 7: OBSIDIAN (Negro · Plata) ────────────────────── */
+/* ── TEMA 7: BLANC LUXE (Rosa · Pastel · Femenino) ──────── */
+[data-theme="blanc-luxe"] {
+  --primary-color:    #c4687a;
+  --secondary-color:  #a04060;
+  --accent-color:     #e8a4b8;
+  --background-color: #fff8f6;
+  --text-color:       #4a2535;
+
+  --bg-base:       #fff8f6;
+  --bg-layer1:     #fdf0ee;
+  --bg-layer2:     #f8e4e8;
+  --bg-layer3:     #f2d4da;
+  --bg-card:       rgba(255,255,255,0.82);
+  --bg-card-hover: rgba(255,255,255,0.96);
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      color-mix(in srgb, var(--primary-color) 12%, transparent);
+  --gold-border:   color-mix(in srgb, var(--primary-color) 22%, transparent);
+
+  --cream:         var(--text-color);
+  --cream-dim:     color-mix(in srgb, var(--text-color) 62%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 38%, transparent);
+
+  --success:       #3a7c5c;
+  --error:         #c0392b;
+  --countdown-color: var(--primary-color);
+
+  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 18%, transparent);
+  --shadow-card:   0 2px 16px rgba(180,80,100,0.08), 0 1px 4px rgba(180,80,100,0.04);
+  --shadow-deep:   0 12px 48px rgba(180,80,100,0.12);
+
+  --announcement-bg: linear-gradient(90deg, #8a2a42 0%, #b83a5a 50%, #8a2a42 100%);
+  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(196,104,122,0.08) 0%, transparent 70%);
+  --input-bg:        #ffffff;
+  --input-border:    rgba(196,104,122,0.28);
+  --form-bg:         #fdf5f6;
+  --price-box-bg:    #ffffff;
+}
+
+[data-theme="blanc-luxe"] body {
+  color: var(--text-color);
+  background-color: var(--bg-base);
+}
+
+[data-theme="blanc-luxe"] .announcement-bar {
+  background: var(--announcement-bg);
+  border-bottom: none;
+}
+
+[data-theme="blanc-luxe"] .announcement-bar__item {
+  color: rgba(255,255,255,0.95);
+}
+
+[data-theme="blanc-luxe"] input[type="text"],
+[data-theme="blanc-luxe"] input[type="tel"],
+[data-theme="blanc-luxe"] input[type="email"],
+[data-theme="blanc-luxe"] select,
+[data-theme="blanc-luxe"] textarea {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-color);
+}
+
+[data-theme="blanc-luxe"] .accordion-header,
+[data-theme="blanc-luxe"] .section-title {
+  color: var(--text-color);
+}
+
+[data-theme="blanc-luxe"] #countdown-timer {
+  color: var(--primary-color);
+  text-shadow: none;
+}
+
+[data-theme="blanc-luxe"] .benefit-item {
+  background: rgba(255,255,255,0.85);
+  border-color: var(--gold-border);
+  color: var(--cream-dim);
+}
+
+[data-theme="blanc-luxe"] .hero-trust-badge {
+  background: rgba(255,255,255,0.92);
+  color: var(--primary-color);
+  border: 1px solid rgba(196,104,122,0.25);
+}
+
+[data-theme="blanc-luxe"] .price-box {
+  background: var(--price-box-bg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--gold-border);
+}
+
+[data-theme="blanc-luxe"] .testimonial,
+[data-theme="blanc-luxe"] .whatsapp-card,
+[data-theme="blanc-luxe"] .accordion-item,
+[data-theme="blanc-luxe"] .order-summary,
+[data-theme="blanc-luxe"] .form-box {
+  border-color: var(--gold-border);
+  background: rgba(255,255,255,0.82);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="blanc-luxe"] .radio-group label {
+  background: var(--input-bg);
+  border-color: rgba(196,104,122,0.22);
+  color: var(--cream-dim);
+}
+
+[data-theme="blanc-luxe"] .dot { background: var(--bg-layer3); }
+[data-theme="blanc-luxe"] .dot.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+
+/* ── TEMA 8: OBSIDIAN (Negro · Plata) ────────────────────── */
 [data-theme="obsidian"] {
   --primary-color:    #b0b0b0;
   --secondary-color:  #606060;
@@ -883,14 +999,27 @@ ul, ol { list-style: none; }
 
 /* ── ANNOUNCEMENT BAR ─────────────────────────────────────── */
 .announcement-bar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   background: linear-gradient(90deg, #0a0a0a 0%, #1a1408 50%, #0a0a0a 100%);
   border-bottom: 1px solid var(--gold-border);
-  padding: 10px var(--space-md);
+  padding: 20px var(--space-md);
   overflow: hidden;
   transform: translateZ(0);
+}
+
+/* Spacer para que el contenido no quede tapado por la barra fixed */
+.announcement-bar + * {
+  margin-top: 55px;
+}
+
+@media (max-width: 767px) {
+  .announcement-bar + * {
+    margin-top: 62px;
+  }
 }
 
 .announcement-bar__track {
@@ -906,11 +1035,21 @@ ul, ol { list-style: none; }
 
 .announcement-bar__item {
   font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--gold-light);
+}
+
+@media (max-width: 768px) {
+  .announcement-bar {
+    padding: 21px var(--space-md);
+  }
+  .announcement-bar__item {
+    font-size: 14.5px;
+    letter-spacing: 0.1em;
+  }
 }
 
 .announcement-bar__item span {
@@ -2469,6 +2608,11 @@ select option {
   background: var(--bg-base);
 }
 
+@keyframes ctaStickyPulse {
+  0%, 100% { filter: brightness(1); }
+  50%       { filter: brightness(1.14) saturate(1.1); }
+}
+
 /* ── CTA STICKY MOBILE ────────────────────────────────────── */
 .cta-sticky-mobile {
   position: fixed;
@@ -2480,21 +2624,22 @@ select option {
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
-  padding: 14px var(--space-lg);
+  padding: 16px var(--space-lg);
   background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
   color: var(--btn-text, #0a0a0a);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  box-shadow: 0 -4px 24px var(--gold-border);
-  transition: var(--transition);
-  min-height: 56px;
-  border-top: 1px solid rgba(255,255,255,0.2);
+  transition: opacity 0.2s, transform 0.15s;
+  min-height: 58px;
+  border-top: 1px solid rgba(255,255,255,0.25);
+  animation: ctaStickyPulse 2.2s ease-in-out infinite;
 }
 
 .cta-sticky-mobile:active {
+  animation-play-state: paused;
   opacity: 0.9;
   transform: scale(0.99);
 }
@@ -4207,9 +4352,7 @@ img[loading="lazy"].loaded {
 ================================================ */
 .cta-sticky-mobile {
     transform: translateY(0);
-    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1),
-                opacity  0.35s ease,
-                box-shadow 0.3s ease;
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease;
 }
 
 .cta-sticky-mobile.is-hidden {
@@ -5015,6 +5158,7 @@ img[loading="lazy"].loaded {
     margin-bottom: 20px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border);
+    text-align: center;
 }
 
 .form-step__badge {
@@ -5066,19 +5210,24 @@ img[loading="lazy"].loaded {
 .btn-step-next:hover { opacity: 0.9; transform: translateY(-1px); }
 
 .btn-step-prev {
-    padding: 14px 16px;
-    background: transparent;
-    color: var(--text-muted);
-    border: 1px solid var(--border);
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--cream, #e8ddc8);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: var(--radius-sm);
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: color 0.2s, border-color 0.2s;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
     white-space: nowrap;
     flex-shrink: 0;
+    letter-spacing: 0.01em;
 }
-.btn-step-prev:hover { color: var(--cream); border-color: var(--cream); }
+.btn-step-prev:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: translateY(-1px);
+}
 
 /* Submit dentro del stepper */
 .btn-submit-hero--step {
@@ -5135,12 +5284,12 @@ img[loading="lazy"].loaded {
    ============================================================ */
 @media (max-width: 767px) {
 
-  /* Announcement bar más compacto — no roba espacio vital */
+  /* Announcement bar — tamaño mobile */
   .announcement-bar {
-    padding: 6px var(--space-md);
+    padding: 21px var(--space-md);
   }
   .announcement-bar__item {
-    font-size: 10.5px;
+    font-size: 14px;
   }
 
   /* Testimonios ticker — tarjetas en móvil */
@@ -5321,6 +5470,12 @@ img[loading="lazy"].loaded {
 .btn-next-lg:hover  { opacity: 0.9; }
 .btn-next-lg:active { transform: scale(0.98); }
 
+@keyframes submitPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55), 0 4px 18px rgba(34, 197, 94, 0.3); transform: scale(1); }
+    50%  { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0), 0 6px 24px rgba(34, 197, 94, 0.45); transform: scale(1.012); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0), 0 4px 18px rgba(34, 197, 94, 0.3); transform: scale(1); }
+}
+
 /* Botón submit final — muy prominente */
 .btn-submit-final {
     width: 100%;
@@ -5332,12 +5487,13 @@ img[loading="lazy"].loaded {
     color: #fff;
     border: none;
     cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
     line-height: 1.3;
+    animation: submitPulse 2s ease-in-out infinite;
+    transition: transform 0.1s, opacity 0.2s;
 }
-.btn-submit-final:hover  { opacity: 0.92; }
-.btn-submit-final:active { transform: scale(0.98); }
-.btn-submit-final:disabled { opacity: 0.6; cursor: default; }
+.btn-submit-final:hover  { animation-play-state: paused; opacity: 0.92; transform: scale(1.03); }
+.btn-submit-final:active { animation-play-state: paused; transform: scale(0.97); }
+.btn-submit-final:disabled { animation: none; opacity: 0.6; cursor: default; }
 
 /* ── Color pills ──────────────────────────────────────────── */
 .color-row { margin-bottom: 24px; }

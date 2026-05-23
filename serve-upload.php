@@ -9,8 +9,8 @@ if (!preg_match('/^[a-zA-Z0-9_\-\.\/]+$/', $f) || str_contains($f, '..')) {
 $base = rtrim(dirname(dirname(dirname($_SERVER['DOCUMENT_ROOT']))), '/') . '/uploads/';
 
 if (!is_dir($base)) {
-    // Fallback local: public/uploads/
-    $base = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/public/uploads/';
+    // Fallback local: ruta relativa al directorio de este script
+    $base = __DIR__ . '/public/uploads/';
 }
 
 $realBase = realpath($base);

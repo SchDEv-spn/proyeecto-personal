@@ -1306,6 +1306,21 @@
                           </div>
                         </label>
 
+                        <label class="theme-card <?= ($config['theme'] ?? '') === 'blanc-luxe' ? 'theme-card--active' : '' ?>">
+                          <input type="radio" name="theme" value="blanc-luxe"
+                            <?= ($config['theme'] ?? '') === 'blanc-luxe' ? 'checked' : '' ?>
+                            onchange="applyThemePreview('blanc-luxe')">
+                          <div class="theme-card__preview theme-card__preview--blanc-luxe">
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                            <span class="theme-card__dot"></span>
+                          </div>
+                          <div class="theme-card__info">
+                            <strong>Blanc Luxe</strong>
+                            <small>Blanco · Oro · Alta elegancia</small>
+                          </div>
+                        </label>
+
                       </div>
                     </div>
 
@@ -2051,6 +2066,32 @@
           color_countdown: '#2d6a4f',
           color_bg_card: '#eaf2ec',
           color_border: '#2d6a4f'
+        },
+        'obsidian': {
+          background_color: '#050505',
+          text_color: '#f0f0f0',
+          primary_color: '#b0b0b0',
+          accent_color: '#e0e0e0',
+          secondary_color: '#606060',
+          color_gold: '#b0b0b0',
+          color_gold_light: '#e0e0e0',
+          color_success: '#6acd8e',
+          color_countdown: '#e0e0e0',
+          color_bg_card: '#161616',
+          color_border: '#b0b0b0'
+        },
+        'blanc-luxe': {
+          background_color: '#fff8f6',
+          text_color: '#4a2535',
+          primary_color: '#c4687a',
+          accent_color: '#e8a4b8',
+          secondary_color: '#a04060',
+          color_gold: '#c4687a',
+          color_gold_light: '#e8a4b8',
+          color_success: '#3a7c5c',
+          color_countdown: '#c4687a',
+          color_bg_card: '#fdf0ee',
+          color_border: '#c4687a'
         },
       };
 

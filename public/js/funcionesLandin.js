@@ -281,18 +281,17 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '';
         container.appendChild(toast);
 
-        // Ocultar después de 5 segundos
+        // Ocultar después de 6 segundos
         setTimeout(function () {
             toast.classList.add('hiding');
             setTimeout(function () {
                 if (toast.parentNode) toast.parentNode.removeChild(toast);
             }, 450);
-        }, 5000);
-
-        // Siguiente notificación en 18-30 seg
-        var next = (18 + Math.floor(Math.random() * 12)) * 1000;
-        setTimeout(showFomoToast, next);
+        }, 6000);
     }
+
+    /* Exponer para que el modal lo dispare al cerrarse */
+    window.dispararFomo = showFomoToast;
 
     /* ---------- 2. SOCIAL PROOF COUNTER ----------
        Muestra un contador de pedidos cerca del formulario.
@@ -321,10 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ---------- INIT ---------- */
     function init() {
-        // FOMO: primera notificación entre 8-15 seg
-        var firstFomo = (8 + Math.floor(Math.random() * 7)) * 1000;
-        setTimeout(showFomoToast, firstFomo);
-
         initFormOrderCount();
     }
 

@@ -312,6 +312,8 @@ $theme = in_array($cfg['theme'] ?? '', [
     'minimal-clean',
     'femme-rose',
     'natural-sage',
+    'obsidian',
+    'blanc-luxe',
 ], true) ? $cfg['theme'] : 'dark-luxury';
 
 // Colores base (5 existentes)
@@ -368,6 +370,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap">
 
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/order-modal.css">
 
     <?php
     // Solo emitir vars que el admin haya configurado explícitamente.
@@ -404,21 +407,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
 <body>
 
-    <!-- STICKY PRICE BAR -->
-    <?php if ($showStickyBar): ?>
-    <div id="stickyPriceBar" class="sticky-price-bar" aria-hidden="true">
-        <div class="sticky-price-bar__inner">
-            <span class="sticky-price-bar__name"><?= htmlspecialchars(mb_substr($heroTitle, 0, 38)) ?><?= mb_strlen($heroTitle) > 38 ? '…' : '' ?></span>
-            <div class="sticky-price-bar__prices">
-                <?php if ($precio_regular > $precio_venta): ?>
-                <span class="sticky-price-bar__old">$<?= number_format($precio_regular, 0, ',', '.') ?></span>
-                <?php endif; ?>
-                <span class="sticky-price-bar__new">$<?= number_format($precio_venta, 0, ',', '.') ?></span>
-            </div>
-            <a href="#form-pedido" class="sticky-price-bar__cta">Pedir ahora →</a>
-        </div>
-    </div>
-    <?php endif; ?>
 
     <?php if ($showAnnouncementBar): ?>
     <div class="announcement-bar" role="banner" aria-label="Información de oferta">
@@ -1141,41 +1129,96 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </div>
         <?php endif; ?>
 
-        <!-- FORMULARIO STEPPER -->
-        <section class="container" id="form-pedido">
-            <div class="form-section__header">
-                <h2 class="form-section__title"><?= htmlspecialchars($formTitle) ?></h2>
-                <p class="form-section__sub"><?= htmlspecialchars($formSubtitle) ?></p>
-                <div class="form-social-proof">
-                    <span class="form-social-proof__dot"></span>
-                    <span id="formOrderCount" data-base="<?= $pedidosRecientes ?>">
-                        <?= $pedidosRecientes ?>
-                    </span>
-                    pedidos en los últimos 30 días
+        <?php
+        $colores         = $colores ?? [];
+        $precioVenta     = (float)($producto['precio_venta'] ?? 72000);
+        $precioProveedor = (float)($producto['precio_proveedor'] ?? 0);
+        $precioRegular   = (float)($producto['precio_regular'] ?? $precioVenta);
+        if ($precioRegular <= 0 || $precioRegular < $precioVenta) $precioRegular = $precioVenta;
+        $d2  = (int)($producto['descuento_2da'] ?? 15);
+        $d3  = (int)($producto['descuento_3ra'] ?? 20);
+        $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
+        $precioCombo2 = (int)($comboPrice2 ?? 115000);
+        if ($precioCombo2 <= 0) $precioCombo2 = 115000;
+        $hasColors = !empty($colores);
+        ?>
+        <!-- Ancla vacía — mantiene compatibilidad con initStickyVisibility -->
+        <div id="form-pedido" style="display:none;" aria-hidden="true"></div>
+
+        <?php
+        $modalProductImg = !empty($producto['imagen_principal'])
+            ? $producto['imagen_principal']
+            : ($heroMediaType === 'imagen' && !empty($heroMediaPath) ? $heroMediaPath : BASE_URL . '/public/img/producto.png');
+        ?>
+        <!-- ══════════════════════════════════════════════════════
+             MODAL DE PEDIDO
+        ══════════════════════════════════════════════════════════ -->
+        <div id="orderModal" class="order-modal-overlay" hidden
+             role="dialog" aria-modal="true" aria-labelledby="orderModalProductName">
+            <div class="order-modal-card" id="orderModalCard">
+
+                <button class="order-modal-close" id="orderModalClose" aria-label="Cerrar pedido">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+
+                <!-- Barra del producto -->
+                <div class="order-modal-product-bar">
+                    <div class="order-modal-product-bar__imgwrap">
+                        <img src="<?= htmlspecialchars($modalProductImg) ?>"
+                             alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>"
+                             class="order-modal-product-bar__img" loading="eager">
+                        <span class="order-modal-product-bar__badge" id="modalCartBadge">1</span>
+                    </div>
+                    <div class="order-modal-product-bar__info">
+                        <p class="order-modal-product-bar__name" id="orderModalProductName">
+                            <?= htmlspecialchars($producto['nombre'] ?? '') ?>
+                        </p>
+                        <p class="order-modal-product-bar__price">
+                            $<?= number_format($precio_venta, 0, ',', '.') ?>
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-urgency-strip">
-                <span aria-hidden="true">⏳</span>
-                Tu precio especial vence en: <strong id="formCountdown">--:--</strong>
-            </div>
+                <!-- Resumen de precios -->
+                <div class="order-modal-pricing">
+                    <?php if ($ahorro > 0): ?>
+                    <div class="order-modal-pricing__row order-modal-pricing__row--before">
+                        <span>Antes</span>
+                        <span class="order-modal-pricing__before">$<?= number_format($precio_regular, 0, ',', '.') ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <div class="order-modal-pricing__row">
+                        <span>Precio (COP)</span>
+                        <span>$<?= number_format($precio_venta, 0, ',', '.') ?></span>
+                    </div>
+                    <?php if ($ahorro > 0): ?>
+                    <div class="order-modal-pricing__row">
+                        <span>Ahorras</span>
+                        <strong class="order-modal-pricing__saving">-$<?= number_format($ahorro, 0, ',', '.') ?></strong>
+                    </div>
+                    <?php endif; ?>
+                    <div class="order-modal-pricing__row">
+                        <span>Envío</span>
+                        <strong class="order-modal-pricing__free">Gratis</strong>
+                    </div>
+                    <div class="order-modal-pricing__row order-modal-pricing__row--total">
+                        <span>Total (COP)</span>
+                        <strong id="modalTotalPrice">$<?= number_format($precio_venta, 0, ',', '.') ?></strong>
+                    </div>
+                </div>
 
-            <?php
-            $colores         = $colores ?? [];
-            $precioVenta     = (float)($producto['precio_venta'] ?? 72000);
-            $precioProveedor = (float)($producto['precio_proveedor'] ?? 0);
-            $precioRegular   = (float)($producto['precio_regular'] ?? $precioVenta);
-            if ($precioRegular <= 0 || $precioRegular < $precioVenta) $precioRegular = $precioVenta;
-            $d2  = (int)($producto['descuento_2da'] ?? 15);
-            $d3  = (int)($producto['descuento_3ra'] ?? 20);
-            $act = (int)($producto['descuento_multicantidad_activo'] ?? 1);
-            $precioCombo2 = (int)($comboPrice2 ?? 115000);
-            if ($precioCombo2 <= 0) $precioCombo2 = 115000;
-            $hasColors = !empty($colores);
-            ?>
+                <!-- Texto motivacional -->
+                <p class="order-modal-intro-text">
+                    Favor ingresar tus datos correctos<br>para realizar el pedido
+                </p>
 
-            <!-- Indicador de progreso — siempre 3 pasos -->
-            <div class="form-stepper-indicator" id="stepperIndicator">
+                <!-- Cuerpo del formulario -->
+                <div class="order-modal-body">
+
+                    <!-- Indicador de progreso — siempre 3 pasos -->
+                    <div class="form-stepper-indicator" id="stepperIndicator">
                 <div class="stepper-node is-active" data-step="1">
                     <div class="stepper-node__circle">
                         <span class="stepper-node__num">1</span>
@@ -1308,7 +1351,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <div class="form-step__head">
                             <div class="step-emoji" aria-hidden="true">🛍️</div>
                             <h3 class="form-step__title">¿Cuántos vas a pedir?</h3>
-                            <p class="form-step__sub">La mayoría lleva solo uno — puedes pedir más después</p>
+                            <p class="form-step__sub">Elige la cantidad que deseas recibir</p>
                         </div>
 
                         <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
@@ -1531,8 +1574,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         </a>
                     </div>
                 </div>
-            </div>
-        </section>
+                </div><!-- /.form-box -->
+                </div><!-- /.order-modal-body -->
+            </div><!-- /.order-modal-card -->
+        </div><!-- /#orderModal -->
 
         <script>
         /* ── Stepper — 3 pasos siempre ─────────────────────────── */
@@ -1591,8 +1636,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 });
                 updateIndicator(n);
                 current = n;
-                const anchor = document.getElementById('form-pedido');
-                if (anchor) window.scrollTo({ top: anchor.offsetTop - 72, behavior: 'smooth' });
+                const modalCard = document.getElementById('orderModalCard');
+                if (modalCard) { modalCard.scrollTo({ top: 0, behavior: 'smooth' }); }
             }
 
             form.querySelectorAll('.btn-step-next').forEach(btn => {
@@ -1771,6 +1816,69 @@ $colorBorder     = $cfg['color_border']     ?? null;
             })();
         })();
         </script>
+
+    <script>
+    /* ── Modal de pedido — open / close ──────────────────────── */
+    (function () {
+        var modal    = document.getElementById('orderModal');
+        var card     = document.getElementById('orderModalCard');
+        var closeBtn = document.getElementById('orderModalClose');
+        if (!modal || !closeBtn) return;
+
+        function openModal() {
+            modal.removeAttribute('hidden');
+            document.body.classList.add('modal-open');
+            if (card) card.scrollTop = 0;
+            /* Enfocar el primer campo visible */
+            var first = card ? card.querySelector('.form-step.is-active input:not([type="hidden"])') : null;
+            if (first) setTimeout(function () { first.focus(); }, 80);
+        }
+
+        function closeModal() {
+            modal.setAttribute('hidden', '');
+            document.body.classList.remove('modal-open');
+            setTimeout(function () {
+                if (typeof window.dispararFomo === 'function') window.dispararFomo();
+            }, 400);
+        }
+
+        /* Interceptar todos los CTAs usando event delegation
+           (funciona para elementos que aparecen DESPUÉS del script, como el sticky mobile) */
+        document.addEventListener('click', function (e) {
+            var target = e.target.closest('a[href="#form-pedido"]');
+            if (target) {
+                e.preventDefault();
+                openModal();
+            }
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+
+        /* Cerrar al hacer clic fuera del card */
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) closeModal();
+        });
+
+        /* Cerrar con ESC */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !modal.hasAttribute('hidden')) closeModal();
+        });
+
+        /* Auto-abrir si el servidor devolvió éxito (recarga tras submit) */
+        if (typeof window.landingSuccess !== 'undefined' && window.landingSuccess) {
+            openModal();
+        }
+
+        /* Sincronizar precio del header del modal con el total del resumen */
+        var summaryTotal = document.getElementById('summaryTotal');
+        var modalTotal   = document.getElementById('modalTotalPrice');
+        if (summaryTotal && modalTotal) {
+            new MutationObserver(function () {
+                modalTotal.textContent = summaryTotal.textContent;
+            }).observe(summaryTotal, { childList: true, characterData: true, subtree: true });
+        }
+    })();
+    </script>
 
     </main>
 
