@@ -150,10 +150,10 @@ ALTER TABLE landing_config
 
 -- ── landing_config: imágenes por beneficio ──
 ALTER TABLE landing_config
-    ADD COLUMN IF NOT EXISTS benefit_1_img VARCHAR(500) NULL,
-    ADD COLUMN IF NOT EXISTS benefit_2_img VARCHAR(500) NULL,
-    ADD COLUMN IF NOT EXISTS benefit_3_img VARCHAR(500) NULL,
-    ADD COLUMN IF NOT EXISTS benefit_4_img VARCHAR(500) NULL;
+    ADD COLUMN IF NOT EXISTS benefit_1_img TEXT NULL,
+    ADD COLUMN IF NOT EXISTS benefit_2_img TEXT NULL,
+    ADD COLUMN IF NOT EXISTS benefit_3_img TEXT NULL,
+    ADD COLUMN IF NOT EXISTS benefit_4_img TEXT NULL;
 
 -- ── landing_config: toggles de CTA por sección ──
 ALTER TABLE landing_config
