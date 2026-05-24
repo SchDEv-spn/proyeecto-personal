@@ -1,0 +1,206 @@
+-- ============================================================
+-- MIGRACIÓN PARA HOSTINGER — Ejecutar en phpMyAdmin
+-- Todas las sentencias usan IF NOT EXISTS / IF EXISTS:
+-- son idempotentes (se pueden correr varias veces sin error)
+-- ============================================================
+
+-- ── landing_config: columnas de visibilidad de secciones ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS show_benefits      TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_gallery       TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_antes_despues TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_como_funciona TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_countdown     TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_porque        TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_para_quien    TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_testimonios   TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_faqs          TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS section_order      VARCHAR(500) NULL;
+
+-- ── landing_config: títulos de secciones configurables ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS gallery_title      TEXT NULL,
+    ADD COLUMN IF NOT EXISTS testimonios_title  TEXT NULL,
+    ADD COLUMN IF NOT EXISTS para_quien_title   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS faq_title          TEXT NULL;
+
+-- ── landing_config: barra de anuncios ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS announcement_item_1 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS announcement_item_2 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS announcement_item_3 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS announcement_item_4 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS announcement_item_5 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS announcement_item_6 TEXT NULL;
+
+-- ── landing_config: hero trust badges ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS hero_trust_1 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS hero_trust_2 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS hero_trust_3 TEXT NULL;
+
+-- ── landing_config: "cómo funciona" ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS cf_title      TEXT NULL,
+    ADD COLUMN IF NOT EXISTS cf_step1_icon  VARCHAR(20) NULL,
+    ADD COLUMN IF NOT EXISTS cf_step1_title TEXT NULL,
+    ADD COLUMN IF NOT EXISTS cf_step1_desc  TEXT NULL,
+    ADD COLUMN IF NOT EXISTS cf_step2_icon  VARCHAR(20) NULL,
+    ADD COLUMN IF NOT EXISTS cf_step2_title TEXT NULL,
+    ADD COLUMN IF NOT EXISTS cf_step2_desc  TEXT NULL,
+    ADD COLUMN IF NOT EXISTS cf_step3_icon  VARCHAR(20) NULL,
+    ADD COLUMN IF NOT EXISTS cf_step3_title TEXT NULL,
+    ADD COLUMN IF NOT EXISTS cf_step3_desc  TEXT NULL;
+
+-- ── landing_config: garantía ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS show_garantia  TINYINT(1) NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS garantia_title TEXT NULL,
+    ADD COLUMN IF NOT EXISTS garantia_desc  TEXT NULL,
+    ADD COLUMN IF NOT EXISTS garantia_item1 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS garantia_item2 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS garantia_item3 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS garantia_item4 TEXT NULL;
+
+-- ── landing_config: trust strip ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS show_trust_strip TINYINT(1) NULL DEFAULT 1;
+
+-- ── landing_config: toggles de elementos fijos ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS show_announcement_bar TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_sticky_bar       TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_comparison       TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_resumen_oferta   TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_cta_sticky       TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_whatsapp_btn     TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_fomo             TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_exit_popup       TINYINT(1) NOT NULL DEFAULT 1;
+
+-- ── landing_config: imágenes antes/después en comparativa ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS comparison_img_without VARCHAR(300) NULL,
+    ADD COLUMN IF NOT EXISTS comparison_img_with    VARCHAR(300) NULL;
+
+-- ── landing_config: testimonios de WhatsApp toggle ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS show_wa_testimonios TINYINT(1) NOT NULL DEFAULT 1;
+
+-- ── productos: descuentos multicantidad ──
+ALTER TABLE productos
+    ADD COLUMN IF NOT EXISTS precio_regular               DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    ADD COLUMN IF NOT EXISTS descuento_multicantidad_activo TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS descuento_2da                TINYINT(3) UNSIGNED NOT NULL DEFAULT 15,
+    ADD COLUMN IF NOT EXISTS descuento_3ra                TINYINT(3) UNSIGNED NOT NULL DEFAULT 20;
+
+-- ── pedidos: totales desglosados ──
+ALTER TABLE pedidos
+    ADD COLUMN IF NOT EXISTS descuento_total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    ADD COLUMN IF NOT EXISTS precio_total    DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    ADD COLUMN IF NOT EXISTS utilidad_total  DECIMAL(12,2) NOT NULL DEFAULT 0.00;
+
+-- ── Tabla pedido_colores (detalle por color) ──
+CREATE TABLE IF NOT EXISTS pedido_colores (
+    id          INT(11) NOT NULL AUTO_INCREMENT,
+    pedido_id   INT(11) NOT NULL,
+    color       VARCHAR(50) NOT NULL,
+    cantidad    INT(11) NOT NULL DEFAULT 1,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_pedido (pedido_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ── Tabla producto_colores ──
+CREATE TABLE IF NOT EXISTS producto_colores (
+    id          INT(11) NOT NULL AUTO_INCREMENT,
+    producto_id INT(11) NOT NULL,
+    color       VARCHAR(50) NOT NULL,
+    activo      TINYINT(1) NOT NULL DEFAULT 1,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_producto (producto_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ── Tabla plantillas_wa ──
+CREATE TABLE IF NOT EXISTS plantillas_wa (
+    id         INT(11) NOT NULL AUTO_INCREMENT,
+    tipo       VARCHAR(50) NOT NULL,
+    nombre     VARCHAR(100) NOT NULL,
+    mensaje    TEXT NOT NULL,
+    activo     TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ── landing_config: encabezados editables de tabla comparativa ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS comparison_label_without VARCHAR(120) DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS comparison_label_with    VARCHAR(120) DEFAULT NULL;
+
+-- ── landing_config: formulario modal ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS form_title    TEXT NULL,
+    ADD COLUMN IF NOT EXISTS form_subtitle TEXT NULL;
+
+-- ── landing_config: hero subtítulos adicionales y pie de página ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS hero_subtitle_2 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS hero_subtitle_3 TEXT NULL,
+    ADD COLUMN IF NOT EXISTS show_footer     TINYINT(1) NOT NULL DEFAULT 1;
+
+-- ── landing_config: imágenes por beneficio ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS benefit_1_img VARCHAR(500) NULL,
+    ADD COLUMN IF NOT EXISTS benefit_2_img VARCHAR(500) NULL,
+    ADD COLUMN IF NOT EXISTS benefit_3_img VARCHAR(500) NULL,
+    ADD COLUMN IF NOT EXISTS benefit_4_img VARCHAR(500) NULL;
+
+-- ── landing_config: toggles de CTA por sección ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS show_cta_benefits    TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_cta_gallery     TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_cta_porque      TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_cta_testimonials TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS show_cta_faq         TINYINT(1) NOT NULL DEFAULT 1;
+
+-- ── landing_config: sección características (carrusel) ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS show_caracteristicas TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS caract_section_title TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract1_media_path   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract1_media_type   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract1_title        TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract1_text         TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract2_media_path   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract2_media_type   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract2_title        TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract2_text         TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract3_media_path   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract3_media_type   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract3_title        TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract3_text         TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract4_media_path   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract4_media_type   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract4_title        TEXT NULL,
+    ADD COLUMN IF NOT EXISTS caract4_text         TEXT NULL;
+
+-- ── landing_config: CTAs configurables por sección ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS show_cta_como_funciona   TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS cta_como_funciona_text   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS cta_como_funciona_button TEXT NULL,
+    ADD COLUMN IF NOT EXISTS show_cta_comparison      TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS cta_comparison_button    TEXT NULL,
+    ADD COLUMN IF NOT EXISTS show_cta_para_quien      TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS cta_para_quien_button    TEXT NULL,
+    ADD COLUMN IF NOT EXISTS show_cta_wa_testimonios  TINYINT(1) NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS cta_wa_testimonios_button TEXT NULL;
+
+-- ── landing_config: ciudad del testimonio ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS test1_city TEXT NULL,
+    ADD COLUMN IF NOT EXISTS test2_city TEXT NULL,
+    ADD COLUMN IF NOT EXISTS test3_city TEXT NULL;
+
+-- ── Fin de migración ──
+SELECT 'Migración completada OK' AS resultado;

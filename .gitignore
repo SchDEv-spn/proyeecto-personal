@@ -39,6 +39,7 @@ Desktop.ini
 
 # === Bases de datos locales ===
 *.sql
+!migration_hostinger.sql
 *.sqlite
 *.db
 
