@@ -1186,17 +1186,28 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
         <!-- GARANTÍA -->
         <?php if ($showGarantia): ?>
+        <?php
+            $gSvgShield = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+            $gIcons = [
+                '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
+                '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+                '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>',
+                '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+            ];
+            $gItems = array_values(array_filter([$garantiaItem1, $garantiaItem2, $garantiaItem3, $garantiaItem4], fn($x) => !empty($x)));
+        ?>
         <div class="garantia-banner">
             <div class="container garantia-container">
                 <div class="garantia-inner">
-                    <div class="garantia-seal" aria-hidden="true">🛡</div>
+                    <div class="garantia-seal" aria-hidden="true"><?= $gSvgShield ?></div>
                     <div class="garantia-body">
                         <h3><?= htmlspecialchars($garantiaTitle) ?></h3>
                         <div class="garantia-cards-grid">
-                            <?php foreach ([$garantiaItem1, $garantiaItem2, $garantiaItem3, $garantiaItem4] as $gItem): ?>
-                                <?php if (!empty($gItem)): ?>
-                                <div class="garantia-card"><?= htmlspecialchars($gItem) ?></div>
-                                <?php endif; ?>
+                            <?php foreach ($gItems as $i => $gItem): ?>
+                            <div class="garantia-card">
+                                <span class="garantia-card__icon" aria-hidden="true"><?= $gIcons[$i] ?? $gIcons[0] ?></span>
+                                <span><?= htmlspecialchars($stripIcon($gItem)) ?></span>
+                            </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
