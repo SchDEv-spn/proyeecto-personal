@@ -128,16 +128,17 @@
 
                       <?php
                       $toggles = [
-                        'show_benefits'      => ['icon' => '✨', 'label' => 'Beneficios'],
-                        'show_gallery'       => ['icon' => '🖼',  'label' => 'Galería'],
+                        'show_benefits'        => ['icon' => '✨', 'label' => 'Beneficios'],
+                        'show_gallery'         => ['icon' => '🖼',  'label' => 'Galería'],
                         'show_caracteristicas' => ['icon' => '✨', 'label' => 'Características'],
-                        'show_como_funciona' => ['icon' => '📦', 'label' => 'Cómo funciona'],
-                        'show_countdown'     => ['icon' => '⏳', 'label' => 'Contador / Oferta'],
-                        'show_porque'        => ['icon' => '💡', 'label' => 'Por qué encantará'],
-                        'show_para_quien'    => ['icon' => '👥', 'label' => '¿Para quién es?'],
-                        'show_testimonios'   => ['icon' => '⭐', 'label' => 'Testimonios'],
-                        'show_faqs'             => ['icon' => '❓', 'label' => 'Preguntas frecuentes'],
-                        'show_wa_testimonios' => ['icon' => '📱', 'label' => 'Testimonios WhatsApp'],
+                        'show_como_funciona'   => ['icon' => '📦', 'label' => 'Cómo funciona'],
+                        'show_countdown'       => ['icon' => '⏳', 'label' => 'Contador / Oferta'],
+                        'show_porque'          => ['icon' => '💡', 'label' => 'Por qué encantará'],
+                        'show_comparison'      => ['icon' => '⚖️', 'label' => 'Tabla comparativa'],
+                        'show_para_quien'      => ['icon' => '👥', 'label' => '¿Para quién es?'],
+                        'show_testimonios'     => ['icon' => '⭐', 'label' => 'Testimonios'],
+                        'show_faqs'            => ['icon' => '❓', 'label' => 'Preguntas frecuentes'],
+                        'show_wa_testimonios'  => ['icon' => '📱', 'label' => 'Testimonios WhatsApp'],
                       ];
 
                       // Render toggles in saved order
@@ -181,7 +182,6 @@
                       $fixedToggles = [
                         'show_sticky_bar'       => ['icon' => '📌', 'label' => 'Barra de precio sticky'],
                         'show_announcement_bar' => ['icon' => '📢', 'label' => 'Barra de anuncios'],
-                        'show_comparison'       => ['icon' => '⚖️', 'label' => 'Tabla comparativa'],
                         'show_resumen_oferta'   => ['icon' => '🏷️', 'label' => 'Resumen de oferta'],
                         'show_cta_sticky'       => ['icon' => '📱', 'label' => 'CTA sticky mobile'],
                         'show_whatsapp_btn'     => ['icon' => '💬', 'label' => 'Botón WhatsApp flotante'],

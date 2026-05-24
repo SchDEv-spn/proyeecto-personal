@@ -511,7 +511,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
     <?php
     // Orden de secciones dinámico
-    $defaultSectionOrder = ['benefits','gallery','caracteristicas','como_funciona','countdown','porque','para_quien','testimonios','wa_testimonios','faqs'];
+    $defaultSectionOrder = ['benefits','gallery','caracteristicas','como_funciona','countdown','porque','comparison','para_quien','testimonios','wa_testimonios','faqs'];
     $savedOrder = array_filter(array_map('trim', explode(',', $cfg['section_order'] ?? '')));
     $validSaved = array_values(array_filter(array_map(function($k) use ($defaultSectionOrder) {
         return in_array($k, $defaultSectionOrder, true) ? $k : null;
@@ -766,27 +766,34 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php endif; $sections['caracteristicas'] = ob_get_clean(); ?>
 
         <?php ob_start(); if ($showComoFunciona): ?>
+        <?php
+            $cfSvg = [
+                '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>',
+                '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12H19M19 12l-4-4M19 12l-4 4"/><rect x="2" y="7" width="4" height="10" rx="1"/></svg>',
+                '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+            ];
+        ?>
         <!-- CÓMO FUNCIONA -->
         <section class="container como-funciona-section">
             <h2 class="section-title"><?= htmlspecialchars($cfTitle) ?></h2>
             <div class="steps-grid">
                 <div class="step-card animate-fadeup">
                     <div class="step-num" aria-hidden="true">01</div>
-                    <div class="step-icon-wrap"><?= htmlspecialchars($cfStep1Icon) ?></div>
+                    <div class="step-icon-wrap" aria-hidden="true"><?= $cfSvg[0] ?></div>
                     <h3><?= htmlspecialchars($cfStep1Title) ?></h3>
                     <p><?= htmlspecialchars($cfStep1Desc) ?></p>
                 </div>
                 <div class="step-arrow-sep" aria-hidden="true">→</div>
                 <div class="step-card animate-fadeup">
                     <div class="step-num" aria-hidden="true">02</div>
-                    <div class="step-icon-wrap"><?= htmlspecialchars($cfStep2Icon) ?></div>
+                    <div class="step-icon-wrap" aria-hidden="true"><?= $cfSvg[1] ?></div>
                     <h3><?= htmlspecialchars($cfStep2Title) ?></h3>
                     <p><?= htmlspecialchars($cfStep2Desc) ?></p>
                 </div>
                 <div class="step-arrow-sep" aria-hidden="true">→</div>
                 <div class="step-card animate-fadeup">
                     <div class="step-num" aria-hidden="true">03</div>
-                    <div class="step-icon-wrap"><?= htmlspecialchars($cfStep3Icon) ?></div>
+                    <div class="step-icon-wrap" aria-hidden="true"><?= $cfSvg[2] ?></div>
                     <h3><?= htmlspecialchars($cfStep3Title) ?></h3>
                     <p><?= htmlspecialchars($cfStep3Desc) ?></p>
                 </div>
@@ -1134,7 +1141,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             $svgCheck = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="#4caf7d"/><path d="M7.5 13.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
             $stripIcon = fn($t) => trim(preg_replace('/^[\x{1F000}-\x{1FFFF}\x{2600}-\x{27BF}❌✅✓✗✔☑×✘\s]+/u', '', $t));
         ?>
-        <?php if ($showComparison): ?>
+        <?php ob_start(); if ($showComparison): ?>
         <section class="container comparison-section">
             <h2 class="section-title"><?= htmlspecialchars($comparisonTitle) ?></h2>
             <div class="comparison-table">
@@ -1185,7 +1192,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </div>
             <?php endif; ?>
         </section>
-        <?php endif; ?>
+        <?php endif; $sections['comparison'] = ob_get_clean(); ?>
 
         <!-- GARANTÍA -->
         <?php if ($showGarantia): ?>
