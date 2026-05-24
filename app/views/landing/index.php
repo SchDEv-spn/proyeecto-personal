@@ -393,7 +393,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <link rel="dns-prefetch" href="https://www.clarity.ms">
 
     <!-- Fuentes: cargadas como link (no @import) para no bloquear el CSS principal -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap">
 
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/style.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/order-modal.css">
@@ -462,16 +462,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <p class="hero-subtitle"><?= htmlspecialchars($heroSubtitle) ?></p>
             <?php endif; ?>
 
-            <!-- ✅ NUEVO: Banda de urgencia -->
-            <div class="hero-urgency-bar">
-                <span class="urgency-stock">
-                    🔴 <strong id="stockCount" data-stock="<?= $urgencyStock ?>"><?= $urgencyStock ?></strong> unidades disponibles
-                </span>
-                <span class="urgency-sep">·</span>
-                <span class="urgency-viewers">
-                    👁 <strong id="viewersCount">--</strong> personas viendo esto ahora
-                </span>
-            </div>
 
             <div class="price-box">
                 <div class="price-label">Oferta exclusiva · Solo hoy</div>
@@ -860,7 +850,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             $icon = $porqueBulletIcons[$idx] ?? '✅';
                         ?>
                         <div class="porque-benefit-card animate-fadeup">
-                            <span class="porque-benefit-card__icon"><?= htmlspecialchars($icon) ?></span>
+                            <span class="porque-benefit-card__num"><?= $idx + 1 ?></span>
                             <span class="porque-benefit-card__text"><?= htmlspecialchars($pb) ?></span>
                         </div>
                         <?php endforeach; ?>
@@ -881,9 +871,14 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <section class="container comparison-section">
             <h2 class="section-title"><?= htmlspecialchars($comparisonTitle) ?></h2>
             <div class="comparison-table">
+                <?php
+                $svgX = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="#e05c5c"/><path d="M9 9l8 8M17 9l-8 8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
+                $svgCheck = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="#4caf7d"/><path d="M7.5 13.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                $stripIcon = fn($t) => trim(preg_replace('/^[\x{1F000}-\x{1FFFF}\x{2600}-\x{27BF}❌✅✓✗✔☑×✘\s]+/u', '', $t));
+                ?>
                 <div class="comparison-col comparison-col--without">
                     <div class="comparison-header comparison-header--without">
-                        <span aria-hidden="true">❌</span>
+                        <span aria-hidden="true"><?= $svgX ?></span>
                         <strong><?= htmlspecialchars($comparisonLabelWithout) ?></strong>
                     </div>
                     <?php if (!empty($comparisonImgWithout)): ?>
@@ -895,14 +890,14 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <ul class="comparison-list">
                         <?php foreach ($comparisonRows as $row): ?>
                             <?php if ($row['without'] !== ''): ?>
-                            <li><span class="comparison-row-icon" aria-hidden="true">❌</span><?= htmlspecialchars($row['without']) ?></li>
+                            <li><span class="comparison-row-icon" aria-hidden="true"><?= $svgX ?></span><?= htmlspecialchars($stripIcon($row['without'])) ?></li>
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </ul>
                 </div>
                 <div class="comparison-col comparison-col--with">
                     <div class="comparison-header comparison-header--with">
-                        <span aria-hidden="true">✅</span>
+                        <span aria-hidden="true"><?= $svgCheck ?></span>
                         <strong><?= htmlspecialchars($comparisonLabelWith) ?></strong>
                     </div>
                     <?php if (!empty($comparisonImgWith)): ?>
@@ -914,7 +909,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <ul class="comparison-list">
                         <?php foreach ($comparisonRows as $row): ?>
                             <?php if ($row['with'] !== ''): ?>
-                            <li><span class="comparison-row-icon" aria-hidden="true">✅</span><?= htmlspecialchars($row['with']) ?></li>
+                            <li><span class="comparison-row-icon" aria-hidden="true"><?= $svgCheck ?></span><?= htmlspecialchars($stripIcon($row['with'])) ?></li>
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </ul>
@@ -937,7 +932,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <div class="para-quien-grid">
                 <div class="para-quien-card para-quien-card--yes">
                     <div class="para-quien-card__header">
-                        <span class="para-quien-card__icon" aria-hidden="true">✅</span>
+                        <span class="para-quien-card__icon" aria-hidden="true">
+                            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="13" cy="13" r="13" fill="#4caf7d"/>
+                                <path d="M7.5 13.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
                         <h3>Es para ti si…</h3>
                     </div>
                     <ul class="para-quien-list">
@@ -946,14 +946,19 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <?php endforeach; ?>
                     </ul>
                     <?php if ($showCtaParaQuien): ?>
-                    <a href="#form-pedido" class="btn-primary para-quien-cta">
+                    <a href="#form-pedido" class="btn-primary btn-cta-section para-quien-cta">
                         <?= htmlspecialchars($ctaParaQuienButton) ?>
                     </a>
                     <?php endif; ?>
                 </div>
                 <div class="para-quien-card para-quien-card--no">
                     <div class="para-quien-card__header">
-                        <span class="para-quien-card__icon" aria-hidden="true">❌</span>
+                        <span class="para-quien-card__icon" aria-hidden="true">
+                            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="13" cy="13" r="13" fill="#e05c5c"/>
+                                <path d="M9 9l8 8M17 9l-8 8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+                            </svg>
+                        </span>
                         <h3>No es para ti si…</h3>
                     </div>
                     <ul class="para-quien-list">
@@ -1019,7 +1024,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <section class="testimonials-section">
             <div class="container">
                 <div class="section-header">
-                    <div class="social-proof-counter"><?= htmlspecialchars($cfg['wa_social_counter'] ?? '★ +89 pedidos realizados') ?></div>
                     <h2 class="section-title"><?= htmlspecialchars($waTitle) ?></h2>
                     <p class="subtitle"><?= htmlspecialchars($waSubtitle) ?></p>
                 </div>
@@ -1102,7 +1106,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
         <?php ob_start(); if ($showFaqs): ?>
         <!-- PREGUNTAS FRECUENTES -->
-        <section class="container">
+        <section class="container faqs-section">
             <h2 class="section-title"><?= htmlspecialchars($faqTitle) ?></h2>
             <div class="accordion">
                 <div class="accordion-item">
@@ -1280,6 +1284,20 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <!-- ══════════════════════════════════════════════════════
              MODAL DE PEDIDO
         ══════════════════════════════════════════════════════════ -->
+        <?php
+        $micoUser   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+        $micoBag    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>';
+        $micoBox    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>';
+        $micoPaint  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12.5" r="1" fill="currentColor" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.12-.29-.29-.44-.65-.44-1.13A1.64 1.64 0 0114.43 16h2c3.05 0 5.55-2.5 5.55-5.55C21.96 6.01 17.46 2 12 2z"/></svg>';
+        $micoPhone  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>';
+        $micoHouse  = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+        $micoStore  = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M3 9l2.45-4.9A2 2 0 017.24 3h9.52a2 2 0 011.8 1.1L21 9"/><line x1="9" y1="3" x2="9" y2="9"/><line x1="15" y1="3" x2="15" y2="9"/></svg>';
+        $micoCheck  = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        $micoLock   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+        $micoCard   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
+        $micoTruck  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+        $micoSwap   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
+        ?>
         <div id="orderModal" class="order-modal-overlay" hidden
              role="dialog" aria-modal="true" aria-labelledby="orderModalProductName">
             <div class="order-modal-card" id="orderModalCard">
@@ -1351,7 +1369,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <span class="stepper-node__num">1</span>
                         <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none"><polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
-                    <span class="stepper-node__label">👤 ¿Quién eres?</span>
+                    <span class="stepper-node__label"><?= $micoUser ?> ¿Quién eres?</span>
                 </div>
                 <div class="stepper-connector" data-after="1"></div>
                 <div class="stepper-node" data-step="2">
@@ -1359,7 +1377,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <span class="stepper-node__num">2</span>
                         <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none"><polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
-                    <span class="stepper-node__label">🛍️ ¿Qué pides?</span>
+                    <span class="stepper-node__label"><?= $micoBag ?> ¿Qué pides?</span>
                 </div>
                 <div class="stepper-connector" data-after="2"></div>
                 <div class="stepper-node" data-step="3">
@@ -1367,7 +1385,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <span class="stepper-node__num">3</span>
                         <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none"><polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
-                    <span class="stepper-node__label">📦 ¿A dónde?</span>
+                    <span class="stepper-node__label"><?= $micoBox ?> ¿A dónde?</span>
                 </div>
             </div>
 
@@ -1382,7 +1400,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     ══════════════════════════════════ -->
                     <div class="form-step is-active" data-step="1">
                         <div class="form-step__head">
-                            <div class="step-emoji" aria-hidden="true">👤</div>
+                            <div class="step-emoji" aria-hidden="true"><?= $micoUser ?></div>
                             <h3 class="form-step__title">¿A nombre de quién va el pedido?</h3>
                             <p class="form-step__sub">Así sabemos cómo llamarte cuando te contactemos</p>
                         </div>
@@ -1402,7 +1420,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                 value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
                         </div>
                         <div class="form-group">
-                            <label for="telefono" class="form-label-lg">📱 Tu número de WhatsApp</label>
+                            <label for="telefono" class="form-label-lg"><?= $micoPhone ?> Tu número de WhatsApp</label>
                             <input type="tel" id="telefono" name="telefono" required class="input-lg"
                                 placeholder="Ej: 3001234567"
                                 maxlength="10" autocomplete="tel-national" inputmode="numeric"
@@ -1425,7 +1443,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <?php if ($hasColors): ?>
                         <!-- Con colores: pills visuales -->
                         <div class="form-step__head">
-                            <div class="step-emoji" aria-hidden="true">🎨</div>
+                            <div class="step-emoji" aria-hidden="true"><?= $micoPaint ?></div>
                             <h3 class="form-step__title">¿Cuál color te gusta?</h3>
                             <p class="form-step__sub">Toca el color que quieres pedir</p>
                         </div>
@@ -1476,7 +1494,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <?php else: ?>
                         <!-- Sin colores: selector grande de cantidad -->
                         <div class="form-step__head">
-                            <div class="step-emoji" aria-hidden="true">🛍️</div>
+                            <div class="step-emoji" aria-hidden="true"><?= $micoBag ?></div>
                             <h3 class="form-step__title">¿Cuántos vas a pedir?</h3>
                             <p class="form-step__sub">Elige la cantidad que deseas recibir</p>
                         </div>
@@ -1519,7 +1537,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     ══════════════════════════════════ -->
                     <div class="form-step" data-step="3">
                         <div class="form-step__head">
-                            <div class="step-emoji" aria-hidden="true">📦</div>
+                            <div class="step-emoji" aria-hidden="true"><?= $micoBox ?></div>
                             <h3 class="form-step__title">¿A dónde te lo enviamos?</h3>
                             <p class="form-step__sub">Último paso — ya casi tienes tu pedido</p>
                         </div>
@@ -1540,7 +1558,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         </div>
 
                         <div id="deliveryETA" class="delivery-eta-badge" style="display:none;" aria-live="polite">
-                            📦 Llega estimado el: <strong id="deliveryETADate"></strong>
+                            <?= $micoBox ?> Llega estimado el: <strong id="deliveryETADate"></strong>
                         </div>
 
                         <div class="form-group">
@@ -1549,14 +1567,14 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                 <label class="radio-card radio-card--lg">
                                     <input type="radio" name="tipo_entrega" value="domicilio"
                                         <?= (!empty($old['tipo_entrega']) && $old['tipo_entrega'] === 'domicilio') ? 'checked' : '' ?>>
-                                    <span class="radio-card__icon">🏠</span>
+                                    <span class="radio-card__icon"><?= $micoHouse ?></span>
                                     <span class="radio-card__main">Me lo llevan a mi casa</span>
                                     <span class="radio-card__note">Te lo entregan en la puerta</span>
                                 </label>
                                 <label class="radio-card radio-card--lg">
                                     <input type="radio" name="tipo_entrega" value="oficina"
                                         <?= (!empty($old['tipo_entrega']) && $old['tipo_entrega'] === 'oficina') ? 'checked' : '' ?>>
-                                    <span class="radio-card__icon">🏪</span>
+                                    <span class="radio-card__icon"><?= $micoStore ?></span>
                                     <span class="radio-card__main">Lo recojo en la oficina</span>
                                     <span class="radio-card__note">Interrapidísimo más cercana</span>
                                 </label>
@@ -1615,16 +1633,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <div class="form-step__nav form-step__nav--submit">
                             <button type="button" class="btn-step-prev" data-prev="2">← Atrás</button>
                             <button type="submit" id="btnSubmit" class="btn-submit-final">
-                                <span id="btnSubmitText">✅ Confirmar mi pedido — pago $<?= number_format($precio_venta, 0, ',', '.') ?> al recibirlo</span>
+                                <span id="btnSubmitText"><?= $micoCheck ?> Confirmar mi pedido — pago $<?= number_format($precio_venta, 0, ',', '.') ?> al recibirlo</span>
                                 <span id="btnSubmitSpinner" style="display:none;">Enviando tu pedido...</span>
                             </button>
                         </div>
 
                         <div class="form-trust-row">
-                            <span>🔒 Datos seguros</span>
-                            <span>💳 Pagas al recibirlo</span>
-                            <span>🚚 Envío gratis</span>
-                            <span>🔄 Cambios sin problema</span>
+                            <span><?= $micoLock ?> Datos seguros</span>
+                            <span><?= $micoCard ?> Pagas al recibirlo</span>
+                            <span><?= $micoTruck ?> Envío gratis</span>
+                            <span><?= $micoSwap ?> Cambios sin problema</span>
                         </div>
                         <p class="form-note">Te llamamos por WhatsApp para confirmar antes de enviarlo.</p>
 
@@ -2018,6 +2036,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <?php endif; ?>
 
 
+
+    <!-- espaciador para que el sticky nunca tape contenido -->
+    <div class="sticky-spacer" aria-hidden="true"></div>
 
     <!-- CTA sticky para móviles -->
     <?php if ($showCtaSticky): ?>

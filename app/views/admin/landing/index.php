@@ -663,13 +663,13 @@
                           value="<?= htmlspecialchars($config['comparison_title'] ?? 'La diferencia que hace este producto') ?>">
                       </div>
                       <div class="admin-form-group">
-                        <label for="comparison_label_without">❌ Encabezado columna izquierda</label>
+                        <label for="comparison_label_without">Encabezado columna izquierda</label>
                         <input type="text" id="comparison_label_without" name="comparison_label_without"
                           value="<?= htmlspecialchars($config['comparison_label_without'] ?? 'Sin el producto') ?>"
                           placeholder="ej. Sin el producto">
                       </div>
                       <div class="admin-form-group">
-                        <label for="comparison_label_with">✅ Encabezado columna derecha</label>
+                        <label for="comparison_label_with">Encabezado columna derecha</label>
                         <input type="text" id="comparison_label_with" name="comparison_label_with"
                           value="<?= htmlspecialchars($config['comparison_label_with'] ?? 'Con el producto') ?>"
                           placeholder="ej. Con BOLSO HOBO">
@@ -713,13 +713,13 @@
                           </div>
                           <div class="form-grid">
                             <div class="admin-form-group">
-                              <label>❌ Sin el producto</label>
+                              <label>Sin el producto</label>
                               <input type="text" name="<?= $withoutKey ?>"
                                 value="<?= htmlspecialchars($config[$withoutKey] ?? '') ?>"
                                 placeholder="ej. Pierdes tiempo todos los días">
                             </div>
                             <div class="admin-form-group">
-                              <label>✅ Con el producto</label>
+                              <label>Con el producto</label>
                               <input type="text" name="<?= $withKey ?>"
                                 value="<?= htmlspecialchars($config[$withKey] ?? '') ?>"
                                 placeholder="ej. Todo resuelto en minutos">
@@ -903,13 +903,6 @@
                         <textarea id="wa_subtitle" name="wa_subtitle" rows="2"><?= htmlspecialchars($config['wa_subtitle'] ?? 'Capturas reales de conversaciones con nuestros clientes') ?></textarea>
                       </div>
 
-                      <div class="admin-form-group admin-form-group--full">
-                        <label for="wa_social_counter">Contador social (encima del título)</label>
-                        <input type="text" id="wa_social_counter" name="wa_social_counter"
-                          value="<?= htmlspecialchars($config['wa_social_counter'] ?? '★ +89 pedidos realizados') ?>"
-                          placeholder="Ej: ★ +150 pedidos realizados">
-                        <small style="opacity:.7;">Actualízalo cuando crezcan tus ventas.</small>
-                      </div>
 
                       <div class="admin-form-group admin-form-group--full">
                         <label for="wa_footer_note">Nota inferior (debajo de los puntos)</label>
@@ -1742,7 +1735,6 @@
                 <a href="#sec-hero" data-target="sec-hero">Hero</a>
                 <a href="#sec-beneficios" data-target="sec-beneficios">Beneficios</a>
                 <a href="#sec-galeria" data-target="sec-galeria">Galería</a>
-                <a href="#sec-antesdespues" data-target="sec-antesdespues">Antes/Después</a>
                 <a href="#sec-contador" data-target="sec-contador">Contador</a>
                 <a href="#sec-porque" data-target="sec-porque">¿Por qué?</a>
                 <a href="#sec-comparison" data-target="sec-comparison">Comparativa</a>

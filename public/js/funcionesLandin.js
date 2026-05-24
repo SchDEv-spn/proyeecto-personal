@@ -474,39 +474,13 @@ document.addEventListener('DOMContentLoaded', () => {
 /* MEJORA #4 — slider removido, ahora es layout estático de dos columnas */
 
 /* ============================================================
-   MEJORA #6A — Sticky mobile CTA: ocultar en hero y en form
+   MEJORA #6A — Sticky mobile CTA: siempre visible
    ============================================================ */
 (function () {
     var bar = document.querySelector('.cta-sticky-mobile');
     if (!bar) return;
-
-    var heroVisible = true;
-    var formVisible = false;
-
-    function update() {
-        const shouldHide = heroVisible || formVisible;
-        bar.classList.toggle('is-hidden', shouldHide);
-        document.body.classList.toggle('sticky-cta-visible', !shouldHide);
-    }
-
-    var hero = document.querySelector('.hero');
-    var form = document.getElementById('form-pedido');
-
-    if (hero) {
-        new IntersectionObserver(function (entries) {
-            heroVisible = entries[0].isIntersecting;
-            update();
-        }, { threshold: 0.05 }).observe(hero);
-    }
-
-    if (form) {
-        new IntersectionObserver(function (entries) {
-            formVisible = entries[0].isIntersecting;
-            update();
-        }, { threshold: 0.05 }).observe(form);
-    }
-
-    update();
+    bar.classList.remove('is-hidden');
+    document.body.classList.add('sticky-cta-visible');
 })();
 
 /* ============================================================

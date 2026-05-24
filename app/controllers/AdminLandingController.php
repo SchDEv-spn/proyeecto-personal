@@ -99,10 +99,13 @@ class AdminLandingController extends Controller
 
             'test1_name' => trim($_POST['test1_name'] ?? ''),
             'test1_text' => trim($_POST['test1_text'] ?? ''),
+            'test1_city' => trim($_POST['test1_city'] ?? ''),
             'test2_name' => trim($_POST['test2_name'] ?? ''),
             'test2_text' => trim($_POST['test2_text'] ?? ''),
+            'test2_city' => trim($_POST['test2_city'] ?? ''),
             'test3_name' => trim($_POST['test3_name'] ?? ''),
             'test3_text' => trim($_POST['test3_text'] ?? ''),
+            'test3_city' => trim($_POST['test3_city'] ?? ''),
 
             'faq1_q' => trim($_POST['faq1_q'] ?? ''),
             'faq1_a' => trim($_POST['faq1_a'] ?? ''),
