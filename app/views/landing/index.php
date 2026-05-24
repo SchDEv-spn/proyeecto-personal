@@ -810,6 +810,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <div class="countdown">
                 <h2><?= htmlspecialchars($countdownTitle) ?></h2>
                 <span id="countdown-timer" data-minutes="<?= $countdownMinutes ?>">--:--</span>
+                <?php if (!empty($countdownText)): ?>
+                <p class="countdown-desc"><?= htmlspecialchars($countdownText) ?></p>
+                <?php endif; ?>
             </div>
         </section>
         <?php endif; $sections['countdown'] = ob_get_clean(); ?>
@@ -1126,6 +1129,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php foreach ($sectionOrder as $_sec) { echo $sections[$_sec] ?? ''; } ?>
 
         <!-- TABLA COMPARATIVA -->
+        <?php
+            $svgX     = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="#e05c5c"/><path d="M9 9l8 8M17 9l-8 8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
+            $svgCheck = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="#4caf7d"/><path d="M7.5 13.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            $stripIcon = fn($t) => trim(preg_replace('/^[\x{1F000}-\x{1FFFF}\x{2600}-\x{27BF}❌✅✓✗✔☑×✘\s]+/u', '', $t));
+        ?>
         <?php if ($showComparison): ?>
         <section class="container comparison-section">
             <h2 class="section-title"><?= htmlspecialchars($comparisonTitle) ?></h2>
@@ -1197,6 +1205,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <div class="garantia-seal" aria-hidden="true"><?= $gSvgShield ?></div>
                     <div class="garantia-body">
                         <h3><?= htmlspecialchars($garantiaTitle) ?></h3>
+                        <?php if (!empty($garantiaDesc)): ?>
+                        <p class="garantia-desc"><?= htmlspecialchars($garantiaDesc) ?></p>
+                        <?php endif; ?>
                         <div class="garantia-cards-grid">
                             <?php foreach ($gItems as $i => $gItem): ?>
                             <div class="garantia-card">
@@ -1360,7 +1371,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </div>
                 </div>
 
-                <!-- Texto motivacional -->
+                <!-- Título y subtítulo del formulario -->
+                <?php if (!empty($formTitle)): ?>
+                <h2 class="order-modal-form-title"><?= htmlspecialchars($formTitle) ?></h2>
+                <?php endif; ?>
                 <p class="order-modal-intro-text">
                     <?= htmlspecialchars($formSubtitle) ?>
                 </p>
