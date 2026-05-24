@@ -3489,7 +3489,7 @@ img[loading="lazy"].loaded {
 
 .step-icon-wrap {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     margin-bottom: var(--space-sm);
     color: var(--gold);
