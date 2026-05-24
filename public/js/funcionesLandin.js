@@ -528,3 +528,67 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(el);
     });
 })();
+/* ============================================================
+   WA TESTIMONIOS — Drag-to-scroll + snap + loop seamless
+   ============================================================ */
+(function () {
+  var ticker = document.getElementById('waTickerScroll');
+  if (!ticker) return;
+
+  var track = ticker.querySelector('.wa-ticker__track');
+  var allCards = track ? Array.from(track.querySelectorAll('.wa-ticker__card')) : [];
+  if (allCards.length < 2) return;
+
+  var half = allCards.length / 2;
+
+  /* Distancia exacta entre set 1 y set 2 */
+  var halfWidth = allCards[half].offsetLeft - allCards[0].offsetLeft;
+
+  /* ── Snap al card más cercano ── */
+  function snapToNearest() {
+    var cardW  = allCards[0].offsetWidth + 16; /* card + gap */
+    var startOff = allCards[0].offsetLeft;
+    var idx = Math.round((ticker.scrollLeft - startOff) / cardW);
+    idx = Math.max(0, Math.min(idx, allCards.length - 1));
+    ticker.scrollTo({ left: startOff + idx * cardW, behavior: 'smooth' });
+  }
+
+  /* ── Loop seamless: cuando el scroll se asienta en set 2, salta a set 1 */
+  var loopTimer;
+  ticker.addEventListener('scroll', function () {
+    clearTimeout(loopTimer);
+    loopTimer = setTimeout(function () {
+      if (ticker.scrollLeft >= halfWidth) {
+        ticker.scrollLeft -= halfWidth;
+      }
+    }, 80);
+  }, { passive: true });
+
+  /* ── Drag-to-scroll con mouse + snap al soltar ── */
+  var isDown = false, startX, scrollStart;
+
+  ticker.addEventListener('mousedown', function (e) {
+    isDown = true;
+    startX    = e.pageX - ticker.offsetLeft;
+    scrollStart = ticker.scrollLeft;
+    clearTimeout(loopTimer); /* evitar salto durante drag */
+  });
+
+  document.addEventListener('mouseup', function () {
+    if (!isDown) return;
+    isDown = false;
+    snapToNearest();
+  });
+
+  document.addEventListener('mouseleave', function () {
+    if (!isDown) return;
+    isDown = false;
+    snapToNearest();
+  });
+
+  ticker.addEventListener('mousemove', function (e) {
+    if (!isDown) return;
+    e.preventDefault();
+    ticker.scrollLeft = scrollStart - (e.pageX - ticker.offsetLeft - startX);
+  });
+})();

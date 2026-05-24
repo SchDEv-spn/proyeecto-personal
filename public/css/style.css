@@ -1910,205 +1910,159 @@ h3 {
   color: #555;
 }
 
-/* ── SLIDER WHATSAPP ──────────────────────────────────────── */
-.testimonials-section {
-  background: var(--bg-layer1);
+/* ── WA TESTIMONIOS TICKER ────────────────────────────────── */
+.wa-testimonios-section {
   padding-block: var(--space-xl);
-  margin-top: var(--space-xl);
-  border-radius: var(--radius-lg);
   overflow: hidden;
 }
-
 
 .faqs-section .section-title {
   font-family: var(--font-body);
   font-weight: 600;
 }
 
-.testimonials-section .subtitle {
-  font-size: 13px;
-  color: var(--cream-muted);
-  text-align: center;
-  margin-top: -var(--space-md);
-  margin-bottom: var(--space-lg);
-}
-
-.testimonials-slider-outer {
-  position: relative;
-}
-
-.testimonials-slider-container {
-  overflow-x: scroll;
+.wa-ticker {
+  overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
-  scrollbar-width: none;           /* Firefox */
-  -ms-overflow-style: none;        /* IE/Edge legacy */
+  scroll-padding-inline-start: 20px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
 }
 
-.testimonials-slider-container::-webkit-scrollbar {
-  display: none;                   /* Chrome/Safari */
-}
+.wa-ticker::-webkit-scrollbar { display: none; }
 
-.slider-track {
+.wa-ticker:active { cursor: grabbing; }
+
+.wa-ticker__track {
   display: flex;
-  padding-inline: 7.5%;           /* espacio para que el 1er/último slide quede centrado */
-  gap: 10px;
+  gap: 16px;
+  padding-inline: 20px;
+  width: max-content;
 }
 
-.testimonial-slide {
-  flex: 0 0 85%;                  /* el 15% restante = peek a los lados */
-  scroll-snap-align: center;
-  scroll-snap-stop: always;
-  transition: opacity 0.35s ease;
-  opacity: 0.55;
-  cursor: pointer;
-}
-
-/* ── Flechas: ocultas en móvil, visibles en desktop ── */
-.slider-arrow {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .slider-arrow {
-    display: flex;
-    position: absolute;
-    top: 38%;
-    transform: translateY(-50%);
-    z-index: 20;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--bg-layer2);
-    border: 1px solid var(--gold-border);
-    color: var(--gold);
-    font-size: 22px;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.2s, opacity 0.2s;
-    opacity: 0.85;
-    padding: 0;
-  }
-
-  .slider-arrow:hover {
-    background: var(--gold-dim);
-    opacity: 1;
-  }
-
-  .slider-arrow--prev { left: -18px; }
-  .slider-arrow--next { right: -18px; }
-}
-
-.testimonial-slide.is-active {
-  opacity: 1;
-}
-
-.testimonial-slide .whatsapp-card {
-  transform: scale(0.93);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.testimonial-slide.is-active .whatsapp-card {
-  transform: scale(1);
-}
-
-.whatsapp-card {
+.wa-ticker__card {
+  flex: 0 0 calc(100vw - 40px);
+  scroll-snap-align: start;
   background: var(--bg-layer2);
-  border: none;
-  border-radius: var(--radius-md);
+  border: 1px solid var(--gold-border, rgba(255,255,255,0.08));
+  border-radius: 16px;
   overflow: hidden;
-  position: relative;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.13);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
 }
 
-.card-stars {
-  font-size: 14px;
-  color: var(--gold);
-  letter-spacing: 1px;
-  line-height: 1;
-  margin-bottom: 2px;
-}
-
-.card-meta {
+.wa-ticker__hint {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--cream-muted);
+  user-select: none;
 }
 
-.card-check {
-  font-size: 10px;
-  font-weight: 600;
-  color: #6ee7b7;
-  letter-spacing: 0.04em;
-  opacity: 0.85;
-}
 
-.img-wrapper {
+.wa-ticker__imgwrap {
   width: 100%;
-  aspect-ratio: 8.5 / 11;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
+  flex-shrink: 0;
   background: var(--bg-layer3);
 }
 
-.whatsapp-screenshot {
+.wa-ticker__screenshot {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.card-content {
-  padding: var(--space-md);
+.wa-ticker__content {
+  padding: 14px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  flex: 1;
 }
 
-.card-content strong {
-  font-size: 14px;
+.wa-ticker__stars {
+  color: #f59e0b;
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.wa-ticker__text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cream-dim);
+  margin: 0;
+  line-height: 1.55;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wa-ticker__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 4px;
+}
+
+.wa-ticker__name {
+  font-size: 13px;
+  font-weight: 700;
   color: var(--cream);
 }
 
-.card-content span {
+.wa-ticker__time {
   font-size: 11px;
   color: var(--cream-muted);
 }
 
-.card-content p {
-  font-size: 13px;
-  color: var(--cream-dim);
-  font-style: italic;
-  line-height: 1.5;
-  margin-top: 4px;
+.wa-ticker__check {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  padding: 2px 6px;
+  border-radius: 20px;
 }
 
-.slider-pagination {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: var(--space-md);
+/* light-theme overrides */
+[data-theme="light-luxury"] .wa-ticker__card,
+[data-theme="blanc-luxe"] .wa-ticker__card,
+[data-theme="femme-rose"] .wa-ticker__card,
+[data-theme="natural-sage"] .wa-ticker__card,
+[data-theme="minimal-clean"] .wa-ticker__card {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.07);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
 }
 
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--bg-layer3);
-  border: 1px solid var(--gold-border);
-  cursor: pointer;
-  transition: var(--transition);
-  /* área táctil ampliada sin cambiar el tamaño visual */
-  padding: 6px;
-  box-sizing: content-box;
+[data-theme="light-luxury"] .wa-ticker__text,
+[data-theme="blanc-luxe"] .wa-ticker__text,
+[data-theme="femme-rose"] .wa-ticker__text,
+[data-theme="natural-sage"] .wa-ticker__text,
+[data-theme="minimal-clean"] .wa-ticker__text {
+  color: #333;
 }
 
-.dot.active {
-  background: var(--gold);
-  border-color: var(--gold);
-  width: 20px;
-  border-radius: var(--radius-pill);
+[data-theme="light-luxury"] .wa-ticker__name,
+[data-theme="blanc-luxe"] .wa-ticker__name,
+[data-theme="femme-rose"] .wa-ticker__name,
+[data-theme="natural-sage"] .wa-ticker__name,
+[data-theme="minimal-clean"] .wa-ticker__name {
+  color: #111;
 }
 
 .slider-footer-note {
@@ -5310,6 +5264,7 @@ img[loading="lazy"].loaded {
     animation-duration: 28s;
   }
 
+
   /* Hero: menos padding vertical, elementos más juntos */
   .hero {
     padding-top: 16px !important;
@@ -6214,29 +6169,29 @@ img[loading="lazy"].loaded {
     margin-bottom: var(--space-md) !important;
 }
 
-/* Lista vertical de tarjetas */
+/* Grilla 2×2 */
 .benefit-cards-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
-/* Tarjeta individual: horizontal (foto izq, texto der) */
+/* Tarjeta vertical: imagen arriba, texto abajo */
 .benefit-card-h {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    flex-direction: column;
+    align-items: stretch;
     background: var(--bg-layer2);
     border: none;
     border-radius: var(--radius-md);
     box-shadow: 0 1px 8px rgba(0,0,0,0.10);
-    padding: 12px 14px;
+    overflow: hidden;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .benefit-card-h:hover {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    transform: translateY(-2px);
 }
 
 /* Temas claros: tarjetas blancas */
@@ -6251,14 +6206,12 @@ img[loading="lazy"].loaded {
     box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
 }
 
-/* Foto cuadrada del beneficio */
+/* Imagen: ocupa todo el ancho, ratio cuadrado */
 .benefit-card-h__img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
     flex-shrink: 0;
-    width: 72px;
-    height: 72px;
-    border-radius: 10px;
     overflow: hidden;
-    border: 1px solid var(--gold-border);
 }
 
 .benefit-card-h__img img {
@@ -6266,15 +6219,22 @@ img[loading="lazy"].loaded {
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform 0.35s ease;
 }
 
-/* Texto del beneficio */
+.benefit-card-h:hover .benefit-card-h__img img {
+    transform: scale(1.05);
+}
+
+/* Texto: debajo de la imagen */
 .benefit-card-h__text {
     flex: 1;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--cream);
     line-height: 1.45;
+    padding: 10px 12px 14px;
+    text-align: center;
 }
 
 [data-theme="light-luxury"] .benefit-card-h__text,
@@ -6286,18 +6246,18 @@ img[loading="lazy"].loaded {
     color: var(--text-color) !important;
 }
 
-/* Sin foto: centrar texto verticalmente, mayor padding izq */
+/* Sin foto: texto centrado con altura mínima */
 .benefit-card-h:not(:has(.benefit-card-h__img)) {
-    padding-left: 18px;
+    justify-content: center;
+    min-height: 110px;
+    padding: 18px 14px;
 }
 
-/* Sobreescribir el ::before de .benefit-item dentro del card-h (no aplica) */
 .benefit-card-h .benefit-item::before { display: none; }
 
 @media (max-width: 480px) {
-    .benefit-cards-outer { padding: var(--space-md) 12px; }
-    .benefit-card-h__img { width: 60px; height: 60px; }
-    .benefit-card-h__text { font-size: 13px; }
+    .benefit-cards-outer { padding: var(--space-md) 10px; }
+    .benefit-card-h__text { font-size: 12px; padding: 8px 10px 12px; }
 }
 
 /* ============================================================
