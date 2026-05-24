@@ -487,9 +487,8 @@
 }
 
 [data-theme="minimal-clean"] .cta-sticky-mobile {
-  background: #111111;
-  color: #ffffff;
-  box-shadow: 0 -2px 12px rgba(0,0,0,0.15);
+  border-top-color: rgba(0,0,0,0.08);
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
 }
 
 [data-theme="minimal-clean"] .dot {
@@ -1804,9 +1803,9 @@ h3 {
 
 .testimonios-ticker__track {
   display: flex;
-  gap: var(--space-md);
+  gap: 16px;
   width: max-content;
-  animation: marquee 32s linear infinite;
+  animation: marquee 36s linear infinite;
   will-change: transform;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -1817,76 +1816,95 @@ h3 {
 }
 
 .testimonios-ticker__card {
-  flex: 0 0 210px;
+  flex: 0 0 260px;
   background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  border: 1px solid var(--gold-border, rgba(255,255,255,0.08));
+  border-radius: 16px;
+  padding: 20px 20px 18px;
+  position: relative;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10);
 }
 
-.testimonios-ticker__banner {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.testimonios-ticker__banner img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  display: block;
-  transition: transform 0.4s ease;
-}
-
-.testimonios-ticker__card:hover .testimonios-ticker__banner img {
-  transform: scale(1.04);
-}
-
-.testimonios-ticker__body {
-  padding: var(--space-sm) var(--space-md) var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
+/* decorative quotation mark */
+.testimonios-ticker__qmark {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 64px;
+  line-height: 1;
+  color: var(--gold-light);
+  opacity: 0.18;
+  pointer-events: none;
+  user-select: none;
 }
 
 .testimonios-ticker__stars {
-  color: var(--gold-light);
-  font-size: 13px;
+  color: #f59e0b;
+  font-size: 15px;
   letter-spacing: 2px;
+  line-height: 1;
 }
 
 .testimonios-ticker__text {
   font-size: 13px;
-  line-height: 1.55;
-  color: var(--cream-dim);
-  flex: 1;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--cream);
   margin: 0;
+  flex: 1;
 }
 
-.testimonios-ticker__footer {
+.testimonios-ticker__author {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-top: 6px;
-  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.testimonios-ticker__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--gold-border, rgba(255,255,255,0.15));
 }
 
 .testimonios-ticker__name {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--cream-dim);
 }
 
-.testimonios-ticker__name em {
-  font-style: normal;
-  font-weight: 400;
-  color: var(--gold-muted, #a08060);
+/* light-theme overrides */
+[data-theme="light-luxury"] .testimonios-ticker__card,
+[data-theme="blanc-luxe"] .testimonios-ticker__card,
+[data-theme="femme-rose"] .testimonios-ticker__card,
+[data-theme="natural-sage"] .testimonios-ticker__card,
+[data-theme="minimal-clean"] .testimonios-ticker__card {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.07);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+}
+
+[data-theme="light-luxury"] .testimonios-ticker__text,
+[data-theme="blanc-luxe"] .testimonios-ticker__text,
+[data-theme="femme-rose"] .testimonios-ticker__text,
+[data-theme="natural-sage"] .testimonios-ticker__text,
+[data-theme="minimal-clean"] .testimonios-ticker__text {
+  color: #1a1a1a;
+}
+
+[data-theme="light-luxury"] .testimonios-ticker__name,
+[data-theme="blanc-luxe"] .testimonios-ticker__name,
+[data-theme="femme-rose"] .testimonios-ticker__name,
+[data-theme="natural-sage"] .testimonios-ticker__name,
+[data-theme="minimal-clean"] .testimonios-ticker__name {
+  color: #555;
 }
 
 /* ── SLIDER WHATSAPP ──────────────────────────────────────── */
@@ -2622,26 +2640,69 @@ select option {
   z-index: 90;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  padding: 16px var(--space-lg);
-  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
-  color: var(--btn-text, #0a0a0a);
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transition: opacity 0.2s, transform 0.15s;
-  min-height: 58px;
-  border-top: 1px solid rgba(255,255,255,0.25);
-  animation: ctaStickyPulse 2.2s ease-in-out infinite;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--bg-layer2);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.3);
+  min-height: 66px;
+  text-decoration: none;
 }
 
-.cta-sticky-mobile:active {
-  animation-play-state: paused;
-  opacity: 0.9;
-  transform: scale(0.99);
+/* ── CSM sub-components ───────────────────────────────────── */
+.csm-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.csm-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.csm-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.csm-name {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cream);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.csm-prices {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+.csm-current {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--gold-light);
+  line-height: 1;
+}
+.csm-was {
+  font-size: 12px;
+  color: var(--cream-dim);
+  text-decoration: line-through;
+}
+.csm-cta {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 12px 20px !important;
+  font-size: 14px !important;
 }
 
 /* Padding bottom para que el contenido no quede tapado por la sticky bar */
@@ -4424,44 +4485,20 @@ img[loading="lazy"].loaded {
    MÁQUINA DE VENTAS — overrides visuales de conversión
    ============================================================ */
 
-/* ── CTA PRINCIPAL DEL HERO ───────────────────────────────── */
+/* ── CTA PRINCIPAL DEL HERO — tamaño y layout, sin override de color ── */
 #heroCta {
     width: 100%;
     display: flex;
-    background: linear-gradient(135deg, #5dd89a 0%, #4caf7d 55%, #3a8c61 100%);
-    color: #fff;
-    box-shadow: 0 6px 28px rgba(76,175,125,0.45), 0 1px 0 rgba(255,255,255,0.15) inset;
     font-size: 17px;
-    font-weight: 700;
     padding: 20px 32px;
-    letter-spacing: 0.02em;
-    text-transform: none;
-    border-radius: var(--radius-md);
 }
-#heroCta:hover {
-    filter: brightness(1.1);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 36px rgba(76,175,125,0.5);
-}
-#heroCta::before { display: none; }
 
-/* ── CTAs DE SECCIÓN — consistencia verde ─────────────────── */
+/* ── CTAs DE SECCIÓN — tamaño, sin override de color ─────── */
 .btn-cta-section {
-    background: linear-gradient(135deg, #5dd89a 0%, #4caf7d 55%, #3a8c61 100%) !important;
-    color: #fff !important;
-    box-shadow: 0 4px 20px rgba(76,175,125,0.4) !important;
-    border-radius: var(--radius-md) !important;
     font-size: 15px !important;
     padding: 16px 28px !important;
-    font-weight: 700 !important;
-    text-transform: none !important;
-    letter-spacing: 0.01em !important;
     min-width: 240px;
     display: inline-flex;
-}
-.btn-cta-section:hover {
-    filter: brightness(1.1) !important;
-    transform: translateY(-2px) !important;
 }
 
 /* ── PRICE BOX — más impacto visual ──────────────────────── */
@@ -4596,40 +4633,14 @@ img[loading="lazy"].loaded {
    MÁQUINA DE VENTAS — secciones intermedias y CTAs verdes
    ============================================================ */
 
-/* ── TODOS los botones secundarios de conversión → verde ─── */
-.para-quien-cta,
-.comparison-cta .btn-primary,
-.exit-popup__cta {
-    background: linear-gradient(135deg, #5dd89a 0%, #4caf7d 55%, #3a8c61 100%) !important;
-    color: #fff !important;
-    box-shadow: 0 4px 20px rgba(76,175,125,0.4) !important;
-    border-radius: var(--radius-md) !important;
-    font-weight: 700 !important;
-    text-transform: none !important;
-    letter-spacing: 0.01em !important;
-}
-.para-quien-cta:hover,
-.comparison-cta .btn-primary:hover,
-.exit-popup__cta:hover {
-    filter: brightness(1.1) !important;
-    transform: translateY(-2px) !important;
-}
-
-/* ── STICKY PRICE BAR — CTA verde ────────────────────────── */
+/* ── Botones secundarios: heredan btn-primary, sin overrides de color ─── */
 .sticky-price-bar__cta {
-    background: linear-gradient(135deg, #5dd89a 0%, #4caf7d 55%, #3a8c61 100%);
-    color: #fff;
-    box-shadow: 0 3px 14px rgba(76,175,125,0.4);
     border-radius: var(--radius-md);
     font-weight: 700;
     letter-spacing: 0;
     text-transform: none;
     font-size: 14px;
     padding: 10px 20px;
-}
-.sticky-price-bar__cta:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
 }
 
 /* ── PARA QUIÉN — tarjeta SI más llamativa ────────────────── */
@@ -4698,20 +4709,20 @@ img[loading="lazy"].loaded {
     font-weight: 500;
 }
 
-/* ── STICKY MOBILE CTA — más conversión ──────────────────── */
-.cta-sticky-mobile {
-    background: linear-gradient(135deg, #5dd89a 0%, #4caf7d 55%, #3a8c61 100%) !important;
-    color: #fff !important;
-    font-weight: 700 !important;
-    font-size: 16px !important;
-    box-shadow: 0 -4px 24px rgba(76,175,125,0.4) !important;
-    border-top: 2px solid rgba(255,255,255,0.15) !important;
+/* ── STICKY MOBILE CTA — card style, temas claros ────────── */
+[data-theme="light-luxury"] .cta-sticky-mobile,
+[data-theme="blanc-luxe"] .cta-sticky-mobile,
+[data-theme="femme-rose"] .cta-sticky-mobile,
+[data-theme="natural-sage"] .cta-sticky-mobile,
+[data-theme="minimal-clean"] .cta-sticky-mobile {
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
 }
-.cta-sticky-mobile .sticky-price {
-    background: rgba(0,0,0,0.2);
-    padding: 3px 10px;
-    border-radius: var(--radius-pill);
-    font-size: 15px;
+[data-theme="light-luxury"] .csm-thumb,
+[data-theme="blanc-luxe"] .csm-thumb,
+[data-theme="femme-rose"] .csm-thumb,
+[data-theme="natural-sage"] .csm-thumb,
+[data-theme="minimal-clean"] .csm-thumb {
+    border-color: rgba(0,0,0,0.08);
 }
 
 /* ── STEPS — on mobile texto más visible ─────────────────── */
@@ -5294,10 +5305,10 @@ img[loading="lazy"].loaded {
 
   /* Testimonios ticker — tarjetas en móvil */
   .testimonios-ticker__card {
-    flex: 0 0 175px;
+    flex: 0 0 220px;
   }
   .testimonios-ticker__track {
-    animation-duration: 24s;
+    animation-duration: 28s;
   }
 
   /* Hero: menos padding vertical, elementos más juntos */
@@ -5470,25 +5481,21 @@ img[loading="lazy"].loaded {
 .btn-next-lg:hover  { opacity: 0.9; }
 .btn-next-lg:active { transform: scale(0.98); }
 
-@keyframes submitPulse {
-    0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55), 0 4px 18px rgba(34, 197, 94, 0.3); transform: scale(1); }
-    50%  { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0), 0 6px 24px rgba(34, 197, 94, 0.45); transform: scale(1.012); }
-    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0), 0 4px 18px rgba(34, 197, 94, 0.3); transform: scale(1); }
-}
-
-/* Botón submit final — muy prominente */
+/* Botón submit final — mismo estilo que btn-primary */
 .btn-submit-final {
     width: 100%;
     padding: 18px 24px;
     font-size: 17px;
-    font-weight: 700;
-    border-radius: 12px;
-    background: var(--success, #22c55e);
-    color: #fff;
+    font-weight: 800;
+    border-radius: var(--radius-md);
+    background: linear-gradient(160deg, var(--gold-light) 0%, var(--gold) 60%, color-mix(in srgb, var(--gold) 70%, #000) 100%);
+    color: var(--btn-text, #0a0a0a);
     border: none;
     cursor: pointer;
     line-height: 1.3;
-    animation: submitPulse 2s ease-in-out infinite;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    animation: btn-glow-pulse 2.6s ease-in-out infinite;
     transition: transform 0.1s, opacity 0.2s;
 }
 .btn-submit-final:hover  { animation-play-state: paused; opacity: 0.92; transform: scale(1.03); }
@@ -5805,3 +5812,852 @@ img[loading="lazy"].loaded {
     .btn-next-lg    { font-size: 16px; padding: 14px 20px; }
     .btn-submit-final { font-size: 15px; padding: 16px 20px; }
 }
+
+/* ============================================================
+   VISUAL REFRESH — tipografía fuerte, checkmarks verdes
+   Inspirado en tarjetas de referencia, Mayo 2026
+   ============================================================ */
+
+/* ── BENEFIT ITEMS: checkmark verde en lugar de diamante ───── */
+.benefit-item::before {
+    content: '✓' !important;
+    color: var(--success) !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    line-height: 1.35;
+    margin-top: 0 !important;
+}
+
+/* minimal-clean usaba '—', unificamos a ✓ */
+[data-theme="minimal-clean"] .benefit-item::before {
+    content: '✓' !important;
+    color: var(--success) !important;
+}
+
+/* Benefit text: más legible, un toque más grande */
+.benefit-item {
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    color: var(--cream) !important;
+}
+
+/* En temas claros: fondo blanco suave + sombra sutil */
+[data-theme="light-luxury"] .benefit-item,
+[data-theme="bold-conversion"] .benefit-item,
+[data-theme="minimal-clean"] .benefit-item,
+[data-theme="femme-rose"] .benefit-item,
+[data-theme="natural-sage"] .benefit-item,
+[data-theme="blanc-luxe"] .benefit-item {
+    background: rgba(255,255,255,0.9) !important;
+    border: 1px solid rgba(0,0,0,0.06) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+    color: var(--text-color) !important;
+}
+
+/* ── SECTION TITLE: 800, letra ajustada, underline sólido ─── */
+.section-title {
+    font-weight: 800 !important;
+    letter-spacing: -0.025em !important;
+}
+.section-title::after {
+    width: 36px !important;
+    height: 3px !important;
+    background: var(--gold) !important;
+    border-radius: 999px !important;
+    opacity: 0.75;
+}
+
+/* ── PRICE BOX: viejo precio más claramente tachado ─────────── */
+.price-box .old {
+    font-size: 16px !important;
+    font-weight: 400 !important;
+    opacity: 0.6;
+}
+
+/* ── PRICE SAVE BADGE: más gordo, más impacto ─────────────── */
+.price-box .save {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    padding: 5px 16px !important;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+/* ── HERO IMAGE BADGE: pill verde en temas claros ─────────── */
+[data-theme="light-luxury"] .hero-image-badge,
+[data-theme="bold-conversion"] .hero-image-badge,
+[data-theme="minimal-clean"] .hero-image-badge,
+[data-theme="femme-rose"] .hero-image-badge,
+[data-theme="natural-sage"] .hero-image-badge,
+[data-theme="blanc-luxe"] .hero-image-badge {
+    background: var(--success) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    font-weight: 700 !important;
+}
+
+/* ── STEP CARDS (cómo funciona): sombra más visible en claros */
+[data-theme="light-luxury"] .step-card,
+[data-theme="bold-conversion"] .step-card,
+[data-theme="minimal-clean"] .step-card,
+[data-theme="femme-rose"] .step-card,
+[data-theme="natural-sage"] .step-card,
+[data-theme="blanc-luxe"] .step-card {
+    background: #fff !important;
+    border-color: rgba(0,0,0,0.07) !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+}
+
+/* ── STEP NUM: tamaño más contenido para que no sature ─────── */
+.step-num {
+    font-size: 3.2rem !important;
+}
+
+/* ── STEP CARD H3: más peso ─────────────────────────────────── */
+.step-card h3 {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+}
+
+/* ============================================================
+   PRICE BOX REDESIGN — limpio, directo, sin ambigüedad
+   ============================================================ */
+
+.price-box {
+    background: var(--bg-layer2) !important;
+    border: 1.5px solid var(--gold-border) !important;
+    border-radius: 16px !important;
+    padding: 18px 20px 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* Quitar la línea decorativa superior */
+.price-box::before { display: none !important; }
+
+/* Label: pill pequeño de acento arriba */
+.price-label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    color: var(--gold) !important;
+    margin-bottom: 4px !important;
+}
+
+/* Fila viejo precio + badge ahorro — en línea */
+.price-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Precio viejo: tachado, gris, sin prefijo */
+.price-box .old {
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    color: var(--cream-muted) !important;
+    text-decoration: line-through !important;
+    opacity: 0.65 !important;
+    line-height: 1 !important;
+}
+
+/* Badge "Ahorras" junto al precio viejo */
+.price-box .save {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    color: #fff !important;
+    background: var(--success) !important;
+    border-radius: 999px !important;
+    padding: 3px 10px !important;
+    white-space: nowrap;
+    margin-top: 0 !important;
+}
+
+/* Precio nuevo: enorme, sin prefijo */
+.price-box .new {
+    font-family: var(--font-body) !important;
+    font-size: clamp(2.4rem, 10vw, 3.2rem) !important;
+    font-weight: 900 !important;
+    color: var(--cream) !important;
+    line-height: 1 !important;
+    letter-spacing: -0.03em !important;
+    margin: 2px 0 8px !important;
+}
+
+/* Temas claros: precio en color primario */
+[data-theme="light-luxury"] .price-box .new,
+[data-theme="bold-conversion"] .price-box .new,
+[data-theme="minimal-clean"] .price-box .new,
+[data-theme="femme-rose"] .price-box .new,
+[data-theme="natural-sage"] .price-box .new,
+[data-theme="blanc-luxe"] .price-box .new {
+    color: var(--primary-color) !important;
+}
+
+/* Countdown: compacto, dígitos urgentes en rojo/naranja */
+.hero-countdown-inline {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    background: transparent !important;
+    border: 1px solid var(--gold-border) !important;
+    border-radius: 8px !important;
+    padding: 7px 12px !important;
+    margin-top: 0 !important;
+}
+
+.countdown-label {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: var(--cream-dim) !important;
+    white-space: nowrap;
+}
+
+.countdown-digits {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #e05c5c !important;
+    letter-spacing: 0.04em !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+/* Temas claros: countdown border más suave */
+[data-theme="light-luxury"] .hero-countdown-inline,
+[data-theme="bold-conversion"] .hero-countdown-inline,
+[data-theme="minimal-clean"] .hero-countdown-inline,
+[data-theme="femme-rose"] .hero-countdown-inline,
+[data-theme="natural-sage"] .hero-countdown-inline,
+[data-theme="blanc-luxe"] .hero-countdown-inline {
+    border-color: rgba(0,0,0,0.1) !important;
+    background: rgba(0,0,0,0.02) !important;
+}
+
+@media (max-width: 480px) {
+    .price-box { padding: 16px 16px 12px !important; }
+    .price-box .new { font-size: clamp(2.2rem, 12vw, 2.8rem) !important; }
+}
+
+/* ============================================================
+   PORQUE CARD — imagen arriba, contenido abajo (estilo reveal)
+   ============================================================ */
+
+.porque-section {
+    display: flex;
+    justify-content: center;
+}
+
+.porque-card {
+    background: var(--bg-layer2);
+    border: 1px solid var(--gold-border);
+    border-radius: 20px;
+    overflow: hidden;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+/* Temas claros: tarjeta blanca */
+[data-theme="light-luxury"] .porque-card,
+[data-theme="bold-conversion"] .porque-card,
+[data-theme="minimal-clean"] .porque-card,
+[data-theme="femme-rose"] .porque-card,
+[data-theme="natural-sage"] .porque-card,
+[data-theme="blanc-luxe"] .porque-card {
+    background: #fff !important;
+    border-color: rgba(0,0,0,0.07) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.09) !important;
+}
+
+/* Imagen / video arriba — full width, sin bordes */
+.porque-card__media {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: var(--bg-layer3);
+}
+
+.porque-card__media img,
+.porque-card__media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Cuerpo: padding generoso, limpio */
+.porque-card__body {
+    padding: 22px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Título: bold, grande */
+.porque-card__title {
+    font-family: var(--font-body);
+    font-size: clamp(1.15rem, 4vw, 1.45rem);
+    font-weight: 800;
+    color: var(--cream);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+[data-theme="light-luxury"] .porque-card__title,
+[data-theme="bold-conversion"] .porque-card__title,
+[data-theme="minimal-clean"] .porque-card__title,
+[data-theme="femme-rose"] .porque-card__title,
+[data-theme="natural-sage"] .porque-card__title,
+[data-theme="blanc-luxe"] .porque-card__title {
+    color: var(--text-color) !important;
+}
+
+/* Descripción: pequeña y gris */
+.porque-card__desc {
+    font-size: 14px;
+    color: var(--cream-dim);
+    line-height: 1.55;
+    margin: 0;
+}
+
+[data-theme="light-luxury"] .porque-card__desc,
+[data-theme="bold-conversion"] .porque-card__desc,
+[data-theme="minimal-clean"] .porque-card__desc,
+[data-theme="femme-rose"] .porque-card__desc,
+[data-theme="natural-sage"] .porque-card__desc,
+[data-theme="blanc-luxe"] .porque-card__desc {
+    color: rgba(0,0,0,0.5) !important;
+}
+
+/* Lista: ✓ verde, sin viñetas */
+.porque-card__list {
+    list-style: none;
+    padding: 0;
+    margin: 2px 0 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.porque-card__list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cream);
+    line-height: 1.3;
+}
+
+[data-theme="light-luxury"] .porque-card__list li,
+[data-theme="bold-conversion"] .porque-card__list li,
+[data-theme="minimal-clean"] .porque-card__list li,
+[data-theme="femme-rose"] .porque-card__list li,
+[data-theme="natural-sage"] .porque-card__list li,
+[data-theme="blanc-luxe"] .porque-card__list li {
+    color: var(--text-color) !important;
+}
+
+.porque-card__list li::before {
+    content: '';
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--success);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 5l3.5 3.5L11 1' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 10px 8px;
+}
+
+@media (min-width: 640px) {
+    .porque-card { max-width: 520px; }
+}
+
+/* ============================================================
+   BENEFIT CARDS — layout de tarjetas horizontales con foto
+   ============================================================ */
+
+/* Contenedor exterior: fondo sutil + padding generoso */
+.benefit-cards-outer {
+    background: var(--bg-layer1);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg) var(--space-lg) var(--space-md);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+
+/* En temas claros: fondo blanco azulado como la referencia */
+[data-theme="light-luxury"] .benefit-cards-outer,
+[data-theme="bold-conversion"] .benefit-cards-outer,
+[data-theme="minimal-clean"] .benefit-cards-outer,
+[data-theme="femme-rose"] .benefit-cards-outer,
+[data-theme="natural-sage"] .benefit-cards-outer,
+[data-theme="blanc-luxe"] .benefit-cards-outer {
+    background: color-mix(in srgb, var(--primary-color) 6%, #f0f4ff) !important;
+    border-color: rgba(0,0,0,0.06) !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.07) !important;
+}
+
+/* Título dentro del outer */
+.benefit-cards-outer .section-title {
+    margin-bottom: var(--space-md) !important;
+    font-size: clamp(1.2rem, 4vw, 1.6rem) !important;
+}
+
+/* Lista vertical de tarjetas */
+.benefit-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Tarjeta individual: horizontal (foto izq, texto der) */
+.benefit-card-h {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg-layer2);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.benefit-card-h:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+/* Temas claros: tarjetas blancas */
+[data-theme="light-luxury"] .benefit-card-h,
+[data-theme="bold-conversion"] .benefit-card-h,
+[data-theme="minimal-clean"] .benefit-card-h,
+[data-theme="femme-rose"] .benefit-card-h,
+[data-theme="natural-sage"] .benefit-card-h,
+[data-theme="blanc-luxe"] .benefit-card-h {
+    background: #ffffff !important;
+    border-color: rgba(0,0,0,0.06) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+
+/* Foto cuadrada del beneficio */
+.benefit-card-h__img {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--gold-border);
+}
+
+.benefit-card-h__img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Texto del beneficio */
+.benefit-card-h__text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cream);
+    line-height: 1.45;
+}
+
+[data-theme="light-luxury"] .benefit-card-h__text,
+[data-theme="bold-conversion"] .benefit-card-h__text,
+[data-theme="minimal-clean"] .benefit-card-h__text,
+[data-theme="femme-rose"] .benefit-card-h__text,
+[data-theme="natural-sage"] .benefit-card-h__text,
+[data-theme="blanc-luxe"] .benefit-card-h__text {
+    color: var(--text-color) !important;
+}
+
+/* Sin foto: centrar texto verticalmente, mayor padding izq */
+.benefit-card-h:not(:has(.benefit-card-h__img)) {
+    padding-left: 18px;
+}
+
+/* Sobreescribir el ::before de .benefit-item dentro del card-h (no aplica) */
+.benefit-card-h .benefit-item::before { display: none; }
+
+@media (max-width: 480px) {
+    .benefit-cards-outer { padding: var(--space-md) 12px; }
+    .benefit-card-h__img { width: 60px; height: 60px; }
+    .benefit-card-h__text { font-size: 13px; }
+}
+
+/* ============================================================
+   PORQUE — tagline + benefit cards grid
+   ============================================================ */
+
+/* Tagline corto — reemplaza el párrafo libre multilinea */
+.porque-card__tagline {
+    font-size: 14px;
+    color: var(--cream-dim);
+    line-height: 1.5;
+    margin: 0 0 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+[data-theme="light-luxury"] .porque-card__tagline,
+[data-theme="bold-conversion"] .porque-card__tagline,
+[data-theme="minimal-clean"] .porque-card__tagline,
+[data-theme="femme-rose"] .porque-card__tagline,
+[data-theme="natural-sage"] .porque-card__tagline,
+[data-theme="blanc-luxe"] .porque-card__tagline {
+    color: rgba(0,0,0,0.5) !important;
+}
+
+/* Grid de mini-cards: 1 columna en mobile, 3 en desktop */
+.porque-benefits-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 8px 0 12px;
+}
+
+@media (min-width: 480px) {
+    .porque-benefits-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+}
+
+/* Tarjeta individual de beneficio */
+.porque-benefit-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    background: var(--bg-layer3);
+    border: 1px solid var(--gold-border);
+    border-radius: var(--radius-md);
+    padding: 16px 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.porque-benefit-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+}
+
+[data-theme="light-luxury"] .porque-benefit-card,
+[data-theme="bold-conversion"] .porque-benefit-card,
+[data-theme="minimal-clean"] .porque-benefit-card,
+[data-theme="femme-rose"] .porque-benefit-card,
+[data-theme="natural-sage"] .porque-benefit-card,
+[data-theme="blanc-luxe"] .porque-benefit-card {
+    background: color-mix(in srgb, var(--primary-color) 5%, #ffffff) !important;
+    border-color: rgba(0,0,0,0.07) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.porque-benefit-card__icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.porque-benefit-card__text {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1.35;
+}
+
+[data-theme="light-luxury"] .porque-benefit-card__text,
+[data-theme="bold-conversion"] .porque-benefit-card__text,
+[data-theme="minimal-clean"] .porque-benefit-card__text,
+[data-theme="femme-rose"] .porque-benefit-card__text,
+[data-theme="natural-sage"] .porque-benefit-card__text,
+[data-theme="blanc-luxe"] .porque-benefit-card__text {
+    color: var(--text-color) !important;
+}
+
+/* En mobile: horizontal (icono izq, texto der) */
+@media (max-width: 479px) {
+    .porque-benefit-card {
+        flex-direction: row;
+        text-align: left;
+        padding: 12px 14px;
+    }
+    .porque-benefit-card__icon { font-size: 24px; }
+}
+
+/* ============================================================
+   GARANTÍA — grid de cards, sin párrafo
+   ============================================================ */
+
+.garantia-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+    width: 100%;
+    max-width: 560px;
+    margin-inline: auto;
+}
+
+@media (max-width: 400px) {
+    .garantia-cards-grid { grid-template-columns: 1fr; }
+}
+
+.garantia-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-md);
+    padding: 11px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cream);
+    line-height: 1.35;
+    text-align: left;
+}
+
+[data-theme="light-luxury"] .garantia-card,
+[data-theme="bold-conversion"] .garantia-card,
+[data-theme="minimal-clean"] .garantia-card,
+[data-theme="femme-rose"] .garantia-card,
+[data-theme="natural-sage"] .garantia-card,
+[data-theme="blanc-luxe"] .garantia-card {
+    background: rgba(255,255,255,0.75) !important;
+    border-color: rgba(0,0,0,0.08) !important;
+    color: var(--text-color) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* ============================================================
+   COMPARISON — icono por fila individual
+   ============================================================ */
+
+.comparison-row-icon {
+    flex-shrink: 0;
+    font-size: 13px;
+    line-height: 1;
+    margin-right: 4px;
+}
+
+/* ============================================================
+   PRICE BOX — CTA dentro del box, countdown debajo
+   ============================================================ */
+
+/* El btn-primary dentro del price-box ocupa todo el ancho */
+.price-box .btn-primary {
+    display: block;
+    width: 100%;
+    margin: 12px 0 4px;
+    box-sizing: border-box;
+}
+
+/* ============================================================
+   ANTES Y DESPUÉS — pill flotante sobre la imagen
+   ============================================================ */
+
+.ayd-wrap {
+    max-width: 440px;
+    margin-inline: auto;
+}
+
+/* Contenedor de imagen: ambas fotos apiladas */
+.ayd-media {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    box-shadow: 0 8px 36px rgba(0,0,0,0.25);
+}
+
+.ayd-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0;
+    transition: opacity 0.32s ease;
+    pointer-events: none;
+}
+
+.ayd-img--visible { opacity: 1; }
+
+/* Pill flotante centrada sobre el borde inferior de la foto */
+.ayd-pills {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 100px;
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    white-space: nowrap;
+}
+
+/* Cada botón dentro del pill */
+.ayd-pill {
+    padding: 9px 22px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.72);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    line-height: 1;
+}
+
+/* Activo: usa el color primario del tema — cero hardcode */
+.ayd-pill.is-active {
+    background: var(--primary-color);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* ══════════════════════════════════════════════════════════
+   CARACTERÍSTICAS — CAROUSEL
+══════════════════════════════════════════════════════════ */
+.caract-section {
+    padding-block: var(--space-2xl);
+}
+
+.caract-slider {
+    position: relative;
+    overflow: hidden;
+    max-width: 500px;
+    margin-inline: auto;
+}
+
+.caract-track {
+    display: flex;
+    gap: 14px;
+    transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+
+.caract-slide {
+    flex: 0 0 85%;
+    width: 85%;
+    background: var(--bg-card, rgba(255,255,255,0.05));
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--gold-border, rgba(255,255,255,0.06));
+}
+
+.caract-media {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: var(--bg-layer2);
+    display: block;
+}
+
+.caract-media img,
+.caract-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.caract-body {
+    padding: 20px 20px 24px;
+}
+
+.caract-title {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    margin: 0 0 8px;
+    line-height: 1.3;
+}
+
+.caract-text {
+    font-size: 0.88rem;
+    color: var(--cream);
+    line-height: 1.65;
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* ── Navigation ───────────────────────────────────────────── */
+.caract-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    max-width: 500px;
+    margin-inline: auto;
+    width: 100%;
+    padding-inline: 8px;
+    box-sizing: border-box;
+}
+
+.caract-dots {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    width: 100%;
+}
+
+@keyframes caract-dot-breathe {
+    0%, 100% { transform: scale(1);    opacity: 1; }
+    50%       { transform: scale(1.7); opacity: 0.85; }
+}
+
+.caract-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--cream-dim);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.3s, transform 0.3s;
+    flex-shrink: 0;
+    animation: caract-dot-breathe 1.7s ease-in-out infinite;
+}
+
+.caract-dot.is-active {
+    background: var(--gold);
+    animation: none;
+    transform: scale(1.4);
+}
+
+/* Light themes — softer card shadow */
+[data-theme="light-luxury"] .caract-slide,
+[data-theme="blanc-luxe"] .caract-slide,
+[data-theme="femme-rose"] .caract-slide,
+[data-theme="natural-sage"] .caract-slide,
+[data-theme="minimal-clean"] .caract-slide {
+    border-color: rgba(0,0,0,0.07);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+

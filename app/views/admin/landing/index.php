@@ -130,7 +130,7 @@
                       $toggles = [
                         'show_benefits'      => ['icon' => '✨', 'label' => 'Beneficios'],
                         'show_gallery'       => ['icon' => '🖼',  'label' => 'Galería'],
-                        'show_antes_despues' => ['icon' => '🔄', 'label' => 'Antes y Después'],
+                        'show_caracteristicas' => ['icon' => '✨', 'label' => 'Características'],
                         'show_como_funciona' => ['icon' => '📦', 'label' => 'Cómo funciona'],
                         'show_countdown'     => ['icon' => '⏳', 'label' => 'Contador / Oferta'],
                         'show_porque'        => ['icon' => '💡', 'label' => 'Por qué encantará'],
@@ -318,22 +318,31 @@
                           value="<?= htmlspecialchars($config['benefits_title'] ?? 'Beneficios clave para ti') ?>">
                       </div>
 
-                      <div class="admin-form-group">
-                        <label>Beneficio 1</label>
-                        <input type="text" name="benefit_1" value="<?= htmlspecialchars($config['benefit_1'] ?? '') ?>">
+                      <?php for ($bi = 1; $bi <= 4; $bi++): ?>
+                      <div class="admin-form-group admin-form-group--full">
+                        <label>Beneficio <?= $bi ?></label>
+                        <input type="text" name="benefit_<?= $bi ?>"
+                          value="<?= htmlspecialchars($config['benefit_' . $bi] ?? '') ?>"
+                          placeholder="Texto del beneficio <?= $bi ?>">
+                        <div style="display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap;">
+                          <div>
+                            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Foto del beneficio (opcional)</label>
+                            <input type="file" name="benefit_<?= $bi ?>_img_file"
+                              accept="image/jpeg,image/png,image/webp,image/gif"
+                              style="font-size:13px;">
+                          </div>
+                          <?php if (!empty($config['benefit_' . $bi . '_img'])): ?>
+                          <div style="position:relative;">
+                            <img src="<?= htmlspecialchars($config['benefit_' . $bi . '_img']) ?>"
+                              alt="Foto beneficio <?= $bi ?>"
+                              style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border-color);">
+                          </div>
+                          <?php endif; ?>
+                        </div>
+                        <input type="hidden" name="benefit_<?= $bi ?>_img_actual"
+                          value="<?= htmlspecialchars($config['benefit_' . $bi . '_img'] ?? '') ?>">
                       </div>
-                      <div class="admin-form-group">
-                        <label>Beneficio 2</label>
-                        <input type="text" name="benefit_2" value="<?= htmlspecialchars($config['benefit_2'] ?? '') ?>">
-                      </div>
-                      <div class="admin-form-group">
-                        <label>Beneficio 3</label>
-                        <input type="text" name="benefit_3" value="<?= htmlspecialchars($config['benefit_3'] ?? '') ?>">
-                      </div>
-                      <div class="admin-form-group">
-                        <label>Beneficio 4</label>
-                        <input type="text" name="benefit_4" value="<?= htmlspecialchars($config['benefit_4'] ?? '') ?>">
-                      </div>
+                      <?php endfor; ?>
 
                       <!-- ── TIPO DE MEDIO ─────────────────────────────────── -->
                       <div class="admin-form-group">
@@ -440,69 +449,69 @@
 
                   <hr class="section-hr">
 
-                  <!-- ANTES Y DESPUÉS -->
-                  <div class="section-block" id="sec-antesdespues" data-toc="Antes/Después">
-                    <h2>Antes y Después</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Comparador deslizable. Solo aparece en la landing cuando ambas imágenes están cargadas.</p>
+                  <!-- CARACTERÍSTICAS -->
+                  <div class="section-block" id="sec-caracteristicas" data-toc="Características">
+                    <h2>Características del producto</h2>
+                    <p style="opacity:.8; margin-bottom:16px;">Carousel de hasta 4 tarjetas. Cada una puede tener imagen, video o gif, título y descripción.</p>
 
-                    <div class="form-grid">
-                      <div class="admin-form-group">
-                        <label for="antes_despues_title">Título de la sección</label>
-                        <input type="text" id="antes_despues_title" name="antes_despues_title"
-                          value="<?= htmlspecialchars($config['antes_despues_title'] ?? 'Mira la diferencia') ?>">
-                      </div>
-
-                      <div class="admin-form-group">
-                        <label for="antes_label">Etiqueta "Antes"</label>
-                        <input type="text" id="antes_label" name="antes_label"
-                          value="<?= htmlspecialchars($config['antes_label'] ?? 'Antes') ?>">
-                      </div>
-
-                      <div class="admin-form-group">
-                        <label for="despues_label">Etiqueta "Después"</label>
-                        <input type="text" id="despues_label" name="despues_label"
-                          value="<?= htmlspecialchars($config['despues_label'] ?? 'Después') ?>">
-                      </div>
+                    <div class="admin-form-group" style="margin-bottom:20px;">
+                      <label for="caract_section_title">Título de la sección</label>
+                      <input type="text" id="caract_section_title" name="caract_section_title"
+                        value="<?= htmlspecialchars($config['caract_section_title'] ?? 'Características del producto') ?>">
                     </div>
 
-                    <div class="gallery-grid" style="grid-template-columns: repeat(2, 1fr); margin-top:16px;">
-                      <div class="gallery-card">
-                        <div class="gallery-title">Imagen "Antes"</div>
+                    <div class="stack-cards">
+                    <?php for ($cn = 1; $cn <= 4; $cn++):
+                      $cPath = $config["caract{$cn}_media_path"] ?? '';
+                      $cType = $config["caract{$cn}_media_type"] ?? 'image';
+                    ?>
+                    <div class="mini-card">
+                      <div class="mini-card-title"><i class="fas fa-layer-group"></i> Característica <?= $cn ?></div>
+
+                      <div class="gallery-card" style="margin-bottom:12px;">
                         <div class="media-preview">
-                          <?php if (!empty($config['antes_path'])): ?>
-                            <img src="<?= htmlspecialchars($config['antes_path']) ?>" alt="Antes">
+                          <?php if (!empty($cPath)): ?>
+                            <?php if ($cType === 'video'): ?>
+                              <video src="<?= htmlspecialchars($cPath) ?>" muted controls style="width:100%;border-radius:6px;"></video>
+                            <?php else: ?>
+                              <img src="<?= htmlspecialchars($cPath) ?>" alt="Característica <?= $cn ?>">
+                            <?php endif; ?>
                           <?php else: ?>
                             <div class="media-empty">
-                              <i class="fas fa-image"></i>
-                              <span>Sin imagen</span>
+                              <i class="fas fa-photo-video"></i>
+                              <span>Sin media</span>
                             </div>
                           <?php endif; ?>
                         </div>
-                        <input type="hidden" name="antes_path_actual" value="<?= htmlspecialchars($config['antes_path'] ?? '') ?>">
-                        <div class="admin-form-group">
-                          <label for="antes_file">Subir nueva</label>
-                          <input type="file" id="antes_file" name="antes_file" accept="image/*">
+                        <input type="hidden" name="caract<?= $cn ?>_media_path_actual" value="<?= htmlspecialchars($cPath) ?>">
+                        <div class="form-grid" style="margin-top:10px;">
+                          <div class="admin-form-group">
+                            <label for="caract<?= $cn ?>_media_type">Tipo de media</label>
+                            <select id="caract<?= $cn ?>_media_type" name="caract<?= $cn ?>_media_type" class="admin-select">
+                              <option value="image" <?= $cType === 'image' ? 'selected' : '' ?>>Imagen / GIF</option>
+                              <option value="video" <?= $cType === 'video' ? 'selected' : '' ?>>Video</option>
+                            </select>
+                          </div>
+                          <div class="admin-form-group">
+                            <label for="caract<?= $cn ?>_media_file">Subir media</label>
+                            <input type="file" id="caract<?= $cn ?>_media_file" name="caract<?= $cn ?>_media_file" accept="image/*,video/*,.gif">
+                          </div>
                         </div>
                       </div>
 
-                      <div class="gallery-card">
-                        <div class="gallery-title">Imagen "Después"</div>
-                        <div class="media-preview">
-                          <?php if (!empty($config['despues_path'])): ?>
-                            <img src="<?= htmlspecialchars($config['despues_path']) ?>" alt="Después">
-                          <?php else: ?>
-                            <div class="media-empty">
-                              <i class="fas fa-image"></i>
-                              <span>Sin imagen</span>
-                            </div>
-                          <?php endif; ?>
-                        </div>
-                        <input type="hidden" name="despues_path_actual" value="<?= htmlspecialchars($config['despues_path'] ?? '') ?>">
+                      <div class="form-grid">
                         <div class="admin-form-group">
-                          <label for="despues_file">Subir nueva</label>
-                          <input type="file" id="despues_file" name="despues_file" accept="image/*">
+                          <label for="caract<?= $cn ?>_title">Título</label>
+                          <input type="text" id="caract<?= $cn ?>_title" name="caract<?= $cn ?>_title"
+                            value="<?= htmlspecialchars($config["caract{$cn}_title"] ?? '') ?>">
+                        </div>
+                        <div class="admin-form-group admin-form-group--full">
+                          <label for="caract<?= $cn ?>_text">Descripción</label>
+                          <textarea id="caract<?= $cn ?>_text" name="caract<?= $cn ?>_text" rows="3"><?= htmlspecialchars($config["caract{$cn}_text"] ?? '') ?></textarea>
                         </div>
                       </div>
+                    </div>
+                    <?php endfor; ?>
                     </div>
                   </div>
 
@@ -756,8 +765,15 @@
                             </div>
 
                             <div class="admin-form-group admin-form-group--full">
-                              <label>Texto</label>
-                              <textarea name="<?= $textKey ?>" rows="2"><?= htmlspecialchars($config[$textKey] ?? '') ?></textarea>
+                              <label style="display:flex;justify-content:space-between;align-items:center;">
+                                Texto del testimonio
+                                <span class="char-counter" id="counter_<?= $textKey ?>">
+                                  <?= mb_strlen($config[$textKey] ?? '') ?>/100
+                                </span>
+                              </label>
+                              <textarea name="<?= $textKey ?>" rows="2" maxlength="100"
+                                oninput="document.getElementById('counter_<?= $textKey ?>').textContent=this.value.length+'/100'"
+                              ><?= htmlspecialchars($config[$textKey] ?? '') ?></textarea>
                             </div>
 
                             <!-- Banner de la card -->
@@ -765,6 +781,7 @@
                               <label for="<?= $bannerInput ?>">Banner de la card <small>(imagen que aparece arriba)</small></label>
                               <input type="file" id="<?= $bannerInput ?>" name="<?= $bannerInput ?>" accept="image/*">
                             </div>
+                            <?php // maxlength ya definido en el textarea de arriba ?>
 
                             <div class="admin-form-group admin-form-group--full">
                               <label>Banner actual</label>
@@ -1053,80 +1070,47 @@
                     <h2>Textos de llamadas a la acción</h2>
 
                     <div class="stack-cards">
+                      <?php
+                      $sectionCtas = [
+                        'benefits'        => ['icon' => 'fa-bullhorn',        'label' => 'CTA Beneficios',       'has_text' => true,  'text_default' => 'Ya sabes lo que hace. El siguiente paso es recibirlo en casa.', 'btn_default' => 'Quiero aprovechar la oferta'],
+                        'gallery'         => ['icon' => 'fa-images',          'label' => 'CTA Galería',          'has_text' => true,  'text_default' => 'Lo que ves es lo que llega. Sin sorpresas, sin excusas.',       'btn_default' => 'Lo quiero igual que en las fotos'],
+                        'porque'          => ['icon' => 'fa-heart',           'label' => 'CTA ¿Por qué?',        'has_text' => true,  'text_default' => 'Miles lo recibieron. Tú eres el siguiente.',                    'btn_default' => 'Quiero sentir ese cambio'],
+                        'testimonials'    => ['icon' => 'fa-star',            'label' => 'CTA Testimonios',      'has_text' => true,  'text_default' => 'Ellos ya lo tienen. Tu pedido tarda menos de 2 minutos.',      'btn_default' => 'Quiero ser el próximo en recibirlo'],
+                        'faq'             => ['icon' => 'fa-shield-halved',   'label' => 'CTA FAQ',              'has_text' => true,  'text_default' => 'Dudas resueltas. Esto solo falta: hacer tu pedido.',            'btn_default' => 'Sí, quiero pedirlo ahora'],
+                        'como_funciona'   => ['icon' => 'fa-list-check',      'label' => 'CTA Cómo funciona',    'has_text' => true,  'text_default' => 'Así de simple. ¿Listo para empezar?',                          'btn_default' => 'Hacer mi pedido ahora →'],
+                        'comparison'      => ['icon' => 'fa-scale-balanced',  'label' => 'CTA Comparativa',      'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Quiero experimentar la diferencia →'],
+                        'para_quien'      => ['icon' => 'fa-user-check',      'label' => 'CTA Para quién es',    'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Sí, es para mí →'],
+                        'wa_testimonios'  => ['icon' => 'fa-whatsapp',        'label' => 'CTA WA Testimonios',   'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Yo también lo quiero →'],
+                      ];
+                      foreach ($sectionCtas as $ctaKey => $ctaData):
+                        $showField = 'show_cta_' . $ctaKey;
+                        $isOn = (int)($config[$showField] ?? 1);
+                      ?>
                       <div class="mini-card">
-                        <div class="mini-card-title"><i class="fas fa-bullhorn"></i> CTA Beneficios</div>
-                        <div class="form-grid">
+                        <div class="mini-card-title" style="display:flex; justify-content:space-between; align-items:center;">
+                          <span><i class="fas <?= $ctaData['icon'] ?>"></i> <?= $ctaData['label'] ?></span>
+                          <label class="toggle-label" style="margin:0;">
+                            <input type="hidden"   name="<?= $showField ?>" value="0">
+                            <input type="checkbox" name="<?= $showField ?>" value="1"
+                                   class="toggle-cb" <?= $isOn ? 'checked' : '' ?>>
+                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                          </label>
+                        </div>
+                        <div class="form-grid" style="margin-top:12px;">
+                          <?php if (!empty($ctaData['has_text'])): ?>
                           <div class="admin-form-group admin-form-group--full">
-                            <label for="cta_benefits_text">Texto</label>
-                            <textarea id="cta_benefits_text" name="cta_benefits_text" rows="2"><?= htmlspecialchars($config['cta_benefits_text'] ?? 'Ya sabes lo que hace. El siguiente paso es recibirlo en casa.') ?></textarea>
+                            <label for="cta_<?= $ctaKey ?>_text">Texto</label>
+                            <textarea id="cta_<?= $ctaKey ?>_text" name="cta_<?= $ctaKey ?>_text" rows="2"><?= htmlspecialchars($config['cta_' . $ctaKey . '_text'] ?? $ctaData['text_default']) ?></textarea>
                           </div>
-                          <div class="admin-form-group">
-                            <label for="cta_benefits_button">Botón</label>
-                            <input type="text" id="cta_benefits_button" name="cta_benefits_button"
-                              value="<?= htmlspecialchars($config['cta_benefits_button'] ?? 'Quiero aprovechar la oferta') ?>">
+                          <?php endif; ?>
+                          <div class="admin-form-group <?= empty($ctaData['has_text']) ? 'admin-form-group--full' : '' ?>">
+                            <label for="cta_<?= $ctaKey ?>_button">Botón</label>
+                            <input type="text" id="cta_<?= $ctaKey ?>_button" name="cta_<?= $ctaKey ?>_button"
+                              value="<?= htmlspecialchars($config['cta_' . $ctaKey . '_button'] ?? $ctaData['btn_default']) ?>">
                           </div>
                         </div>
                       </div>
-
-                      <div class="mini-card">
-                        <div class="mini-card-title"><i class="fas fa-images"></i> CTA Galería</div>
-                        <div class="form-grid">
-                          <div class="admin-form-group admin-form-group--full">
-                            <label for="cta_gallery_text">Texto</label>
-                            <textarea id="cta_gallery_text" name="cta_gallery_text" rows="2"><?= htmlspecialchars($config['cta_gallery_text'] ?? 'Lo que ves es lo que llega. Sin sorpresas, sin excusas.') ?></textarea>
-                          </div>
-                          <div class="admin-form-group">
-                            <label for="cta_gallery_button">Botón</label>
-                            <input type="text" id="cta_gallery_button" name="cta_gallery_button"
-                              value="<?= htmlspecialchars($config['cta_gallery_button'] ?? 'Lo quiero igual que en las fotos') ?>">
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="mini-card">
-                        <div class="mini-card-title"><i class="fas fa-heart"></i> CTA ¿Por qué?</div>
-                        <div class="form-grid">
-                          <div class="admin-form-group admin-form-group--full">
-                            <label for="cta_porque_text">Texto</label>
-                            <textarea id="cta_porque_text" name="cta_porque_text" rows="2"><?= htmlspecialchars($config['cta_porque_text'] ?? 'Miles lo recibieron. Tú eres el siguiente.') ?></textarea>
-                          </div>
-                          <div class="admin-form-group">
-                            <label for="cta_porque_button">Botón</label>
-                            <input type="text" id="cta_porque_button" name="cta_porque_button"
-                              value="<?= htmlspecialchars($config['cta_porque_button'] ?? 'Quiero sentir ese cambio') ?>">
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="mini-card">
-                        <div class="mini-card-title"><i class="fas fa-star"></i> CTA Testimonios</div>
-                        <div class="form-grid">
-                          <div class="admin-form-group admin-form-group--full">
-                            <label for="cta_testimonials_text">Texto</label>
-                            <textarea id="cta_testimonials_text" name="cta_testimonials_text" rows="2"><?= htmlspecialchars($config['cta_testimonials_text'] ?? 'Ellos ya lo tienen. Tu pedido tarda menos de 2 minutos.') ?></textarea>
-                          </div>
-                          <div class="admin-form-group">
-                            <label for="cta_testimonials_button">Botón</label>
-                            <input type="text" id="cta_testimonials_button" name="cta_testimonials_button"
-                              value="<?= htmlspecialchars($config['cta_testimonials_button'] ?? 'Quiero ser el próximo en recibirlo') ?>">
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="mini-card">
-                        <div class="mini-card-title"><i class="fas fa-shield-halved"></i> CTA FAQ</div>
-                        <div class="form-grid">
-                          <div class="admin-form-group admin-form-group--full">
-                            <label for="cta_faq_text">Texto</label>
-                            <textarea id="cta_faq_text" name="cta_faq_text" rows="2"><?= htmlspecialchars($config['cta_faq_text'] ?? 'Dudas resueltas. Esto solo falta: hacer tu pedido.') ?></textarea>
-                          </div>
-                          <div class="admin-form-group">
-                            <label for="cta_faq_button">Botón</label>
-                            <input type="text" id="cta_faq_button" name="cta_faq_button"
-                              value="<?= htmlspecialchars($config['cta_faq_button'] ?? 'Sí, quiero pedirlo ahora') ?>">
-                          </div>
-                        </div>
-                      </div>
+                      <?php endforeach; ?>
 
                       <div class="mini-card">
                         <div class="mini-card-title"><i class="fas fa-mobile-screen"></i> CTA fija móvil</div>

@@ -77,6 +77,11 @@ foreach (['porque_bullet1', 'porque_bullet2', 'porque_bullet3'] as $key) {
         $porqueBullets[] = $cfg[$key];
     }
 }
+$defaultBulletIcons = ['✨', '🎯', '🛡️'];
+$porqueBulletIcons  = [];
+foreach (['porque_bullet1_icon', 'porque_bullet2_icon', 'porque_bullet3_icon'] as $idx => $key) {
+    $porqueBulletIcons[] = !empty($cfg[$key]) ? $cfg[$key] : $defaultBulletIcons[$idx];
+}
 $porqueMediaPath = $cfg['porque_media_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
 
 // ===== TESTIMONIOS =====
@@ -145,7 +150,7 @@ for ($i = 1; $i <= 5; $i++) {
 $_comparisonHasData = !empty($comparisonRows) || !empty($comparisonImgWithout) || !empty($comparisonImgWith);
 
 // ===== AUTORIDAD / CREDIBILIDAD =====
-$authorityEnabled    = (int)($cfg['authority_enabled']    ?? 0);
+$authorityEnabled    = (int)($cfg['authority_enabled']    ?? 1);
 $authorityTitle      = $cfg['authority_title']      ?? '¿Por qué confiar en nosotros?';
 $authorityYears      = $cfg['authority_years']      ?? '3';
 $authorityDeliveries = $cfg['authority_deliveries'] ?? '5.000+';
@@ -179,6 +184,22 @@ $ctaFaqButton          = $cfg['cta_faq_button'] ?? 'Sí, quiero pedirlo ahora';
 
 $ctaStickyMobileText   = $cfg['cta_sticky_mobile_text'] ?? '🔥 Aprovechar oferta hoy';
 
+// ===== CTAs DE SECCIÓN — visibilidad =====
+$showCtaBenefits        = (int)($cfg['show_cta_benefits']        ?? 1);
+$showCtaGallery         = (int)($cfg['show_cta_gallery']         ?? 1);
+$showCtaPorque          = (int)($cfg['show_cta_porque']          ?? 1);
+$showCtaTestimonials    = (int)($cfg['show_cta_testimonials']    ?? 1);
+$showCtaFaq             = (int)($cfg['show_cta_faq']             ?? 1);
+$showCtaComoFunciona    = (int)($cfg['show_cta_como_funciona']   ?? 1);
+$ctaComoFuncionaText    = $cfg['cta_como_funciona_text']   ?? 'Así de simple. ¿Listo para empezar?';
+$ctaComoFuncionaButton  = $cfg['cta_como_funciona_button'] ?? 'Hacer mi pedido ahora →';
+$showCtaComparison      = (int)($cfg['show_cta_comparison']      ?? 1);
+$ctaComparisonButton    = $cfg['cta_comparison_button']    ?? 'Quiero experimentar la diferencia →';
+$showCtaParaQuien       = (int)($cfg['show_cta_para_quien']      ?? 1);
+$ctaParaQuienButton     = $cfg['cta_para_quien_button']    ?? 'Sí, es para mí →';
+$showCtaWaTestimonios   = (int)($cfg['show_cta_wa_testimonios']  ?? 1);
+$ctaWaTestimoniasButton = $cfg['cta_wa_testimonios_button'] ?? 'Yo también lo quiero →';
+
 // ===== PARA QUIÉN ES =====
 $paraQuienSiItems = [];
 for ($i = 1; $i <= 4; $i++) {
@@ -207,18 +228,23 @@ if (empty($paraQuienNoItems)) {
     ];
 }
 
-// ===== ANTES Y DESPUÉS =====
-$antesPath   = $cfg['antes_path']          ?? '';
-$despuesPath = $cfg['despues_path']        ?? '';
-$antesLabel  = $cfg['antes_label']         ?? 'Otros productos';
-$despuesLabel= $cfg['despues_label']       ?? 'El nuestro';
-$antesDespuesTitle = $cfg['antes_despues_title'] ?? 'La diferencia que notarás';
-$showAntesDespues  = !empty($antesPath) && !empty($despuesPath);
+// ===== CARACTERÍSTICAS =====
+$caractSectionTitle = $cfg['caract_section_title'] ?? 'Características del producto';
+$caractItems = [];
+for ($i = 1; $i <= 4; $i++) {
+    $cPath  = $cfg["caract{$i}_media_path"] ?? '';
+    $cType  = $cfg["caract{$i}_media_type"] ?? 'image';
+    $cTitle = $cfg["caract{$i}_title"]      ?? '';
+    $cText  = $cfg["caract{$i}_text"]       ?? '';
+    if ($cTitle !== '' || $cPath !== '') {
+        $caractItems[] = ['media_path' => $cPath, 'media_type' => $cType, 'title' => $cTitle, 'text' => $cText];
+    }
+}
 
 // ===== SECCIONES VISIBLES =====
-$showBenefits     = (int)($cfg['show_benefits']      ?? 1);
-$showGallery      = (int)($cfg['show_gallery']       ?? 1);
-$showAntesDespues = (int)($cfg['show_antes_despues'] ?? 1) && !empty($antesPath) && !empty($despuesPath);
+$showBenefits         = (int)($cfg['show_benefits']        ?? 1);
+$showGallery          = (int)($cfg['show_gallery']         ?? 1);
+$showCaracteristicas  = (int)($cfg['show_caracteristicas'] ?? 1) && !empty($caractItems);
 $showComoFunciona = (int)($cfg['show_como_funciona'] ?? 1);
 $showCountdown    = (int)($cfg['show_countdown']     ?? 1);
 $showPorque       = (int)($cfg['show_porque']        ?? 1);
@@ -448,35 +474,28 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </div>
 
             <div class="price-box">
-                <div class="price-label">Oferta de hoy</div>
-                <div class="old">
-                    Antes: $<?= number_format($precio_regular, 0, ',', '.') ?>
+                <div class="price-label">Oferta exclusiva · Solo hoy</div>
+                <div class="price-row">
+                    <div class="old">$<?= number_format($precio_regular, 0, ',', '.') ?></div>
+                    <div class="save">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></div>
                 </div>
-                <div class="new">
-                    Hoy: $<?= number_format($precio_venta, 0, ',', '.') ?>
-                </div>
-                <div class="save">
-                    Te ahorras: $<?= number_format($ahorro, 0, ',', '.') ?>
-                </div>
+                <div class="new">$<?= number_format($precio_venta, 0, ',', '.') ?></div>
 
-                <!-- ✅ NUEVO: Countdown persistente por sesión (reemplaza el badge hardcodeado) -->
+                <a href="#form-pedido" class="btn-primary" id="heroCta">
+                    <?= htmlspecialchars($heroButtonText) ?>
+                </a>
+
                 <div class="hero-countdown-inline">
-                    <span class="countdown-label">⏳ Oferta expira en:</span>
+                    <span class="countdown-label">Expira en</span>
                     <span id="heroCountdown" class="countdown-digits" data-minutes="<?= $countdownMinutes ?>">--:--</span>
                 </div>
             </div>
-
-            <a href="#form-pedido" class="btn-primary" id="heroCta">
-                <?= htmlspecialchars($heroButtonText) ?>
-            </a>
 
             <div class="hero-trust-row">
                 <span><?= htmlspecialchars($heroTrust1) ?></span>
                 <span><?= htmlspecialchars($heroTrust2) ?></span>
                 <span><?= htmlspecialchars($heroTrust3) ?></span>
             </div>
-
-            <p class="hero-note"><?= htmlspecialchars($heroNote) ?></p>
         </div>
 
         <div class="hero-media">
@@ -502,7 +521,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
     <?php
     // Orden de secciones dinámico
-    $defaultSectionOrder = ['benefits','gallery','antes_despues','como_funciona','countdown','porque','para_quien','testimonios','wa_testimonios','faqs'];
+    $defaultSectionOrder = ['benefits','gallery','caracteristicas','como_funciona','countdown','porque','para_quien','testimonios','wa_testimonios','faqs'];
     $savedOrder = array_filter(array_map('trim', explode(',', $cfg['section_order'] ?? '')));
     $validSaved = array_values(array_filter(array_map(function($k) use ($defaultSectionOrder) {
         return in_array($k, $defaultSectionOrder, true) ? $k : null;
@@ -514,49 +533,39 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <main>
 
         <?php ob_start(); if ($showBenefits): ?>
-        <!-- BENEFICIOS + IMAGEN -->
+        <!-- BENEFICIOS — tarjetas horizontales con foto por beneficio -->
         <section class="container benefits-section">
-            <div class="two-columns">
-                <div class="col">
-                    <h2 class="section-title"><?= htmlspecialchars($benefitsTitle) ?></h2>
+            <div class="benefit-cards-outer">
+                <h2 class="section-title"><?= htmlspecialchars($benefitsTitle) ?></h2>
 
-                    <?php if (!empty($benefits)): ?>
-                        <?php foreach ($benefits as $b): ?>
-                            <div class="benefit-item"> <?= htmlspecialchars($b) ?></div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <div class="benefit-item"> Beneficio 1 enfocado en el resultado que quiere el cliente.</div>
-                        <div class="benefit-item"> Beneficio 2 que ataque su principal dolor o problema.</div>
-                        <div class="benefit-item"> Beneficio 3 que resalte comodidad, rapidez o facilidad.</div>
-                        <div class="benefit-item"> Beneficio 4 relacionado con garantía, soporte o confianza.</div>
-                    <?php endif; ?>
-                </div>
-                <div class="col col-media">
-                    <?php if ($benefitsMediaType === 'video'): ?>
-                        <video
-                            src="<?= htmlspecialchars($benefitsMediaPath) ?>"
-                            autoplay
-                            muted
-                            loop
-                            playsinline
-                            style="width:100%; aspect-ratio:8.5/11; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
-                        </video>
-                    <?php elseif ($benefitsMediaType === 'gif'): ?>
-                        <img
-                            src="<?= htmlspecialchars($benefitsMediaPath) ?>"
-                            alt="Beneficios del producto"
-                            style="width:100%; aspect-ratio:8.5/11; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
-                    <?php else: ?>
-                        <img
-                            src="<?= htmlspecialchars($benefitsMediaPath) ?>"
-                            alt="Uso del producto"
-                            loading="lazy"
-                            decoding="async"
-                            style="width:100%; aspect-ratio:8.5/11; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
-                    <?php endif; ?>
+                <div class="benefit-cards-list">
+                    <?php
+                    $defaultBenefits = [
+                        'Beneficio 1 enfocado en el resultado que quiere el cliente.',
+                        'Beneficio 2 que ataque su principal dolor o problema.',
+                        'Beneficio 3 que resalte comodidad, rapidez o facilidad.',
+                        'Beneficio 4 relacionado con garantía, soporte o confianza.',
+                    ];
+                    $displayBenefits = !empty($benefits) ? $benefits : $defaultBenefits;
+                    foreach ($displayBenefits as $idx => $b):
+                        $imgNum  = $idx + 1;
+                        $imgPath = !empty($cfg['benefit_' . $imgNum . '_img']) ? $cfg['benefit_' . $imgNum . '_img'] : '';
+                    ?>
+                    <div class="benefit-card-h animate-fadeup">
+                        <?php if ($imgPath): ?>
+                        <div class="benefit-card-h__img">
+                            <img src="<?= htmlspecialchars($imgPath) ?>"
+                                 alt="<?= htmlspecialchars($b) ?>"
+                                 loading="lazy" decoding="async">
+                        </div>
+                        <?php endif; ?>
+                        <div class="benefit-card-h__text"><?= htmlspecialchars($b) ?></div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
 
+            <?php if ($showCtaBenefits): ?>
             <!-- CTA de sección -->
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaBenefitsText) ?></p>
@@ -564,6 +573,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <?= htmlspecialchars($ctaBenefitsButton) ?>
                 </a>
             </div>
+            <?php endif; ?>
         </section>
         <?php endif; $sections['benefits'] = ob_get_clean(); ?>
 
@@ -620,43 +630,150 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <?php endif; ?>
             </div>
 
+            <?php if ($showCtaGallery): ?>
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaGalleryText) ?></p>
                 <a href="#form-pedido" class="btn-primary btn-cta-section">
                     <?= htmlspecialchars($ctaGalleryButton) ?>
                 </a>
             </div>
+            <?php endif; ?>
         </section>
         <?php endif; $sections['gallery'] = ob_get_clean(); ?>
 
-        <?php ob_start(); if ($showAntesDespues): ?>
-        <!-- ANTES Y DESPUÉS -->
-        <section class="container antes-despues-section">
-            <h2 class="section-title"><?= htmlspecialchars($antesDespuesTitle) ?></h2>
-            <div class="antes-despues-static">
-                <div class="antes-despues-card">
-                    <img src="<?= htmlspecialchars($antesPath) ?>"
-                         alt="<?= htmlspecialchars($antesLabel) ?>"
-                         loading="lazy" decoding="async">
-                    <span class="antes-despues-badge antes-despues-badge--antes">
-                        <?= htmlspecialchars($antesLabel) ?>
-                    </span>
-                </div>
-                <div class="antes-despues-card">
-                    <img src="<?= htmlspecialchars($despuesPath) ?>"
-                         alt="<?= htmlspecialchars($despuesLabel) ?>"
-                         loading="lazy" decoding="async">
-                    <span class="antes-despues-badge antes-despues-badge--despues">
-                        <?= htmlspecialchars($despuesLabel) ?>
-                    </span>
+        <?php ob_start(); if ($showCaracteristicas): ?>
+        <!-- CARACTERÍSTICAS — carousel de tarjetas -->
+        <section class="container caract-section animate-fadeup">
+            <h2 class="section-title"><?= htmlspecialchars($caractSectionTitle) ?></h2>
+
+            <div class="caract-slider" id="caractSlider">
+                <div class="caract-track" id="caractTrack">
+                    <?php foreach ($caractItems as $ci => $cItem): ?>
+                    <div class="caract-slide" aria-hidden="<?= $ci === 0 ? 'false' : 'true' ?>">
+                        <?php if (!empty($cItem['media_path'])): ?>
+                        <div class="caract-media">
+                            <?php if (($cItem['media_type'] ?? 'image') === 'video'): ?>
+                            <video autoplay muted loop playsinline preload="metadata">
+                                <source src="<?= htmlspecialchars($cItem['media_path']) ?>">
+                            </video>
+                            <?php else: ?>
+                            <img src="<?= htmlspecialchars($cItem['media_path']) ?>"
+                                 alt="<?= htmlspecialchars($cItem['title'] ?? '') ?>"
+                                 loading="<?= $ci === 0 ? 'eager' : 'lazy' ?>" decoding="async">
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+                        <div class="caract-body">
+                            <?php if (!empty($cItem['title'])): ?>
+                            <h3 class="caract-title"><?= htmlspecialchars($cItem['title']) ?></h3>
+                            <?php endif; ?>
+                            <?php if (!empty($cItem['text'])): ?>
+                            <p class="caract-text"><?= htmlspecialchars($cItem['text']) ?></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
-            <div class="section-cta">
-                <p>¿Ves la diferencia? La tuya puede llegar en días.</p>
-                <a href="#form-pedido" class="btn-primary btn-cta-section">Quiero el mío ahora →</a>
+
+            <?php if (count($caractItems) > 1): ?>
+            <div class="caract-nav" id="caractNav" aria-label="Navegación de características">
+                <div class="caract-dots" role="tablist">
+                    <?php foreach ($caractItems as $ci => $cItem): ?>
+                    <button class="caract-dot <?= $ci === 0 ? 'is-active' : '' ?>"
+                            data-idx="<?= $ci ?>"
+                            role="tab"
+                            aria-label="Característica <?= $ci + 1 ?>"
+                            aria-selected="<?= $ci === 0 ? 'true' : 'false' ?>"></button>
+                    <?php endforeach; ?>
+                </div>
             </div>
+            <?php endif; ?>
+
+            <script>
+            (function () {
+                var track  = document.getElementById('caractTrack');
+                if (!track) return;
+                var realSlides = Array.from(track.querySelectorAll('.caract-slide'));
+                var dots       = document.querySelectorAll('#caractNav .caract-dot');
+                var total      = realSlides.length;
+                if (total < 2) return;
+                var GAP     = 14;
+                var current = 0;
+
+                /* clone first and last for seamless wrap */
+                var cloneFirst = realSlides[0].cloneNode(true);
+                var cloneLast  = realSlides[total - 1].cloneNode(true);
+                cloneFirst.setAttribute('aria-hidden', 'true');
+                cloneLast.setAttribute('aria-hidden',  'true');
+                track.appendChild(cloneFirst);
+                track.insertBefore(cloneLast, realSlides[0]);
+
+                /* all slides including clones */
+                var slides = Array.from(track.querySelectorAll('.caract-slide'));
+                /* real slides start at index 1 (after the leading clone) */
+
+                function stepPx() {
+                    return slides[0] ? slides[0].offsetWidth + GAP : 0;
+                }
+
+                function setPos(idx, animated) {
+                    if (!animated) track.style.transition = 'none';
+                    track.style.transform = 'translateX(-' + (idx * stepPx()) + 'px)';
+                    if (!animated) track.offsetHeight; /* force reflow */
+                    if (!animated) track.style.transition = '';
+                }
+
+                function updateDots(idx) {
+                    dots.forEach(function(d, i) {
+                        d.classList.toggle('is-active', i === idx);
+                        d.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+                    });
+                    realSlides.forEach(function(s, i) {
+                        s.setAttribute('aria-hidden', i !== idx ? 'true' : 'false');
+                    });
+                }
+
+                function goTo(idx) {
+                    current = (idx + total) % total;
+                    /* visual position = current + 1 (offset for leading clone) */
+                    setPos(current + 1, true);
+                    updateDots(current);
+                }
+
+                /* after transition: if we're on a clone, jump silently to the real slide */
+                track.addEventListener('transitionend', function() {
+                    /* detect if we slid to leading clone (visual pos 0) */
+                    var mat = new WebKitCSSMatrix(window.getComputedStyle(track).transform);
+                    var x   = mat.m41;
+                    var step = stepPx();
+                    if (step === 0) return;
+                    var pos = Math.round(-x / step);
+                    if (pos === 0) {
+                        setPos(total, false); /* jump to real last */
+                        current = total - 1;
+                    } else if (pos === total + 1) {
+                        setPos(1, false); /* jump to real first */
+                        current = 0;
+                    }
+                });
+
+                dots.forEach(function(d, i) { d.addEventListener('click', function() { goTo(i); }); });
+
+                var startX = 0;
+                track.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, {passive: true});
+                track.addEventListener('touchend', function(e) {
+                    var dx = e.changedTouches[0].clientX - startX;
+                    if (Math.abs(dx) > 40) goTo(dx < 0 ? current + 1 : current - 1);
+                }, {passive: true});
+
+                /* init at real slide 0 (visual pos 1) */
+                setPos(1, false);
+                updateDots(0);
+            })();
+            </script>
         </section>
-        <?php endif; $sections['antes_despues'] = ob_get_clean(); ?>
+        <?php endif; $sections['caracteristicas'] = ob_get_clean(); ?>
 
         <?php ob_start(); if ($showComoFunciona): ?>
         <!-- CÓMO FUNCIONA -->
@@ -684,10 +801,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <p><?= htmlspecialchars($cfStep3Desc) ?></p>
                 </div>
             </div>
+            <?php if ($showCtaComoFunciona): ?>
             <div class="section-cta">
-                <p>Así de simple. ¿Listo para empezar?</p>
-                <a href="#form-pedido" class="btn-primary btn-cta-section">Hacer mi pedido ahora →</a>
+                <?php if (!empty($ctaComoFuncionaText)): ?>
+                <p><?= htmlspecialchars($ctaComoFuncionaText) ?></p>
+                <?php endif; ?>
+                <a href="#form-pedido" class="btn-primary btn-cta-section">
+                    <?= htmlspecialchars($ctaComoFuncionaButton) ?>
+                </a>
             </div>
+            <?php endif; ?>
         </section>
         <?php endif; $sections['como_funciona'] = ob_get_clean(); ?>
 
@@ -697,67 +820,61 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <div class="countdown">
                 <h2><?= htmlspecialchars($countdownTitle) ?></h2>
                 <span id="countdown-timer" data-minutes="<?= $countdownMinutes ?>">--:--</span>
-                <p><?= htmlspecialchars($countdownText) ?></p>
             </div>
         </section>
         <?php endif; $sections['countdown'] = ob_get_clean(); ?>
 
         <?php ob_start(); if ($showPorque): ?>
-        <!-- POR QUÉ TE ENCANTARÁ -->
-        <section class="container">
-            <h2 class="section-title"><?= htmlspecialchars($porqueTitle) ?></h2>
-            <div class="two-columns">
-                <div class="col">
-                    <p>
-                        <?= nl2br(htmlspecialchars($porqueText)) ?>
-                    </p>
-                    <ul class="why-list">
-                        <?php if (!empty($porqueBullets)): ?>
-                            <?php foreach ($porqueBullets as $pb): ?>
-                                <li><?= htmlspecialchars($pb) ?></li>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <li>Punto fuerte 1: resultado directo o transformación.</li>
-                            <li>Punto fuerte 2: algo que lo hace más fácil o rápido.</li>
-                            <li>Punto fuerte 3: respaldo, garantía o confianza.</li>
-                        <?php endif; ?>
-                    </ul>
-                </div>
-                <div class="col col-media">
+        <!-- POR QUÉ TE ENCANTARÁ — tarjeta reveal: imagen arriba, contenido abajo -->
+        <section class="container porque-section">
+            <div class="porque-card animate-fadeup">
+
+                <!-- Imagen / video arriba -->
+                <div class="porque-card__media">
                     <?php if ($porqueMediaType === 'video'): ?>
-                        <video
-                            src="<?= htmlspecialchars($porqueMediaPath) ?>"
-                            autoplay
-                            muted
-                            loop
-                            playsinline
-                            style="width:100%; aspect-ratio:8.5/11; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
-                        </video>
-                    <?php elseif ($porqueMediaType === 'gif'): ?>
-                        <img
-                            src="<?= htmlspecialchars($porqueMediaPath) ?>"
-                            alt="Por qué te encantará"
-                            style="width:100%; aspect-ratio:8.5/11; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
+                        <video src="<?= htmlspecialchars($porqueMediaPath) ?>"
+                               autoplay muted loop playsinline></video>
                     <?php else: ?>
-                        <img
-                            src="<?= htmlspecialchars($porqueMediaPath) ?>"
-                            alt="Cliente feliz"
-                            loading="lazy"
-                            decoding="async"
-                            style="width:100%; aspect-ratio:8.5/11; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--gold-border); box-shadow:var(--shadow-card);">
+                        <img src="<?= htmlspecialchars($porqueMediaPath) ?>"
+                             alt="<?= htmlspecialchars($porqueTitle) ?>"
+                             loading="lazy" decoding="async">
+                    <?php endif; ?>
+                </div>
+
+                <!-- Contenido abajo -->
+                <div class="porque-card__body">
+                    <h2 class="porque-card__title"><?= htmlspecialchars($porqueTitle) ?></h2>
+
+                    <?php if (!empty(trim($porqueText))): ?>
+                    <p class="porque-card__tagline"><?= htmlspecialchars($porqueText) ?></p>
+                    <?php endif; ?>
+
+                    <div class="porque-benefits-grid">
+                        <?php
+                        $displayBullets = !empty($porqueBullets) ? $porqueBullets : [
+                            'Resultado directo desde el primer uso',
+                            'Más fácil y rápido que cualquier alternativa',
+                            'Respaldado por garantía y miles de clientes',
+                        ];
+                        foreach ($displayBullets as $idx => $pb):
+                            $icon = $porqueBulletIcons[$idx] ?? '✅';
+                        ?>
+                        <div class="porque-benefit-card animate-fadeup">
+                            <span class="porque-benefit-card__icon"><?= htmlspecialchars($icon) ?></span>
+                            <span class="porque-benefit-card__text"><?= htmlspecialchars($pb) ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ($showCtaPorque): ?>
+                    <a href="#form-pedido" class="btn-primary btn-full">
+                        <?= htmlspecialchars($ctaPorqueButton) ?>
+                    </a>
                     <?php endif; ?>
                 </div>
             </div>
-
-            <!-- CTA de sección -->
-            <div class="section-cta">
-                <p><?= htmlspecialchars($ctaPorqueText) ?></p>
-                <a href="#form-pedido" class="btn-primary btn-cta-section">
-                    <?= htmlspecialchars($ctaPorqueButton) ?>
-                </a>
-            </div>
         </section>
-        <?php endif; ?>
+        <?php endif; $sections['porque'] = ob_get_clean(); ?>
 
         <!-- TABLA COMPARATIVA -->
         <?php if ($showComparison): ?>
@@ -778,7 +895,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <ul class="comparison-list">
                         <?php foreach ($comparisonRows as $row): ?>
                             <?php if ($row['without'] !== ''): ?>
-                            <li><?= htmlspecialchars($row['without']) ?></li>
+                            <li><span class="comparison-row-icon" aria-hidden="true">❌</span><?= htmlspecialchars($row['without']) ?></li>
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </ul>
@@ -797,17 +914,21 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <ul class="comparison-list">
                         <?php foreach ($comparisonRows as $row): ?>
                             <?php if ($row['with'] !== ''): ?>
-                            <li><?= htmlspecialchars($row['with']) ?></li>
+                            <li><span class="comparison-row-icon" aria-hidden="true">✅</span><?= htmlspecialchars($row['with']) ?></li>
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </ul>
                 </div>
             </div>
+            <?php if ($showCtaComparison): ?>
             <div class="comparison-cta">
-                <a href="#form-pedido" class="btn-primary">Quiero experimentar la diferencia →</a>
+                <a href="#form-pedido" class="btn-primary">
+                    <?= htmlspecialchars($ctaComparisonButton) ?>
+                </a>
             </div>
+            <?php endif; ?>
         </section>
-        <?php endif; $sections['porque'] = ob_get_clean(); ?>
+        <?php endif; ?>
 
         <?php ob_start(); if ($showParaQuien): ?>
         <!-- PARA QUIÉN ES -->
@@ -824,7 +945,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <li><?= htmlspecialchars($item) ?></li>
                         <?php endforeach; ?>
                     </ul>
-                    <a href="#form-pedido" class="btn-primary para-quien-cta">Sí, es para mí →</a>
+                    <?php if ($showCtaParaQuien): ?>
+                    <a href="#form-pedido" class="btn-primary para-quien-cta">
+                        <?= htmlspecialchars($ctaParaQuienButton) ?>
+                    </a>
+                    <?php endif; ?>
                 </div>
                 <div class="para-quien-card para-quien-card--no">
                     <div class="para-quien-card__header">
@@ -854,43 +979,38 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <div class="testimonios-ticker__track">
                     <?php
                     $tickerItems = [
-                        ['name' => $test1Name, 'city' => $test1City, 'text' => $test1Text,
-                         'banner' => $cfg['test1_banner_path'] ?? null],
-                        ['name' => $test2Name, 'city' => $test2City, 'text' => $test2Text,
-                         'banner' => $cfg['test2_banner_path'] ?? null],
-                        ['name' => $test3Name, 'city' => $test3City, 'text' => $test3Text,
-                         'banner' => $cfg['test3_banner_path'] ?? null],
+                        ['name' => $test1Name, 'text' => $test1Text, 'photo' => $test1Photo],
+                        ['name' => $test2Name, 'text' => $test2Text, 'photo' => $test2Photo],
+                        ['name' => $test3Name, 'text' => $test3Text, 'photo' => $test3Photo],
                     ];
                     foreach ([$tickerItems, $tickerItems] as $set):
                         foreach ($set as $t):
                             if (empty($t['text'])) continue;
-                            $bannerSrc = !empty($t['banner']) ? $t['banner'] : $productoBannerFallback;
                     ?>
                     <article class="testimonios-ticker__card">
-                        <?php if ($bannerSrc): ?>
-                        <div class="testimonios-ticker__banner">
-                            <img src="<?= htmlspecialchars($bannerSrc) ?>" alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>" loading="lazy" decoding="async">
-                        </div>
-                        <?php endif; ?>
-                        <div class="testimonios-ticker__body">
-                            <div class="testimonios-ticker__stars">★★★★★</div>
-                            <p class="testimonios-ticker__text">"<?= htmlspecialchars($t['text']) ?>"</p>
-                            <div class="testimonios-ticker__footer">
-                                <span class="testimonios-ticker__name"><?= htmlspecialchars($t['name']) ?> <em>— <?= htmlspecialchars($t['city']) ?></em></span>
-                                <span class="testimonial-verified">✅ Verificado</span>
-                            </div>
+                        <span class="testimonios-ticker__qmark" aria-hidden="true">"</span>
+                        <div class="testimonios-ticker__stars">★★★★★</div>
+                        <p class="testimonios-ticker__text">"<?= htmlspecialchars($t['text']) ?>"</p>
+                        <div class="testimonios-ticker__author">
+                            <img class="testimonios-ticker__avatar"
+                                 src="<?= htmlspecialchars($t['photo']) ?>"
+                                 alt="<?= htmlspecialchars($t['name']) ?>"
+                                 loading="lazy" decoding="async">
+                            <span class="testimonios-ticker__name"><?= htmlspecialchars($t['name']) ?></span>
                         </div>
                     </article>
                     <?php endforeach; endforeach; ?>
                 </div>
             </div>
 
+            <?php if ($showCtaTestimonials): ?>
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaTestimonialsText) ?></p>
                 <a href="#form-pedido" class="btn-primary btn-cta-section">
                     <?= htmlspecialchars($ctaTestimonialsButton) ?>
                 </a>
             </div>
+            <?php endif; ?>
         </section>
         <?php endif; $sections['testimonios'] = ob_get_clean(); ?>
 
@@ -969,9 +1089,13 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <div class="slider-footer-note">
                     <p><?= htmlspecialchars($waFooterNote) ?></p>
                 </div>
+                <?php if ($showCtaWaTestimonios): ?>
                 <div class="wa-testimonios-cta">
-                    <a href="#form-pedido" class="btn-wa-cta">Yo también lo quiero →</a>
+                    <a href="#form-pedido" class="btn-primary btn-cta-section">
+                        <?= htmlspecialchars($ctaWaTestimoniasButton) ?>
+                    </a>
                 </div>
+                <?php endif; ?>
             </div>
         </section>
         <?php endif; $sections['wa_testimonios'] = ob_get_clean(); ?>
@@ -1042,6 +1166,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <?php endif; ?>
             </div>
 
+            <?php if ($showCtaFaq): ?>
             <!-- CTA de sección -->
             <div class="section-cta">
                 <p><?= htmlspecialchars($ctaFaqText) ?></p>
@@ -1049,6 +1174,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <?= htmlspecialchars($ctaFaqButton) ?>
                 </a>
             </div>
+            <?php endif; ?>
         </section>
         <?php endif; $sections['faqs'] = ob_get_clean(); ?>
 
@@ -1062,12 +1188,13 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <div class="garantia-seal" aria-hidden="true">🛡</div>
                     <div class="garantia-body">
                         <h3><?= htmlspecialchars($garantiaTitle) ?></h3>
-                        <p><?= nl2br(htmlspecialchars($garantiaDesc)) ?></p>
-                        <ul class="garantia-list">
+                        <div class="garantia-cards-grid">
                             <?php foreach ([$garantiaItem1, $garantiaItem2, $garantiaItem3, $garantiaItem4] as $gItem): ?>
-                                <?php if (!empty($gItem)): ?><li><?= htmlspecialchars($gItem) ?></li><?php endif; ?>
+                                <?php if (!empty($gItem)): ?>
+                                <div class="garantia-card"><?= htmlspecialchars($gItem) ?></div>
+                                <?php endif; ?>
                             <?php endforeach; ?>
-                        </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1211,7 +1338,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                 <!-- Texto motivacional -->
                 <p class="order-modal-intro-text">
-                    Favor ingresar tus datos correctos<br>para realizar el pedido
+                    <?= htmlspecialchars($formSubtitle) ?>
                 </p>
 
                 <!-- Cuerpo del formulario -->
@@ -1894,12 +2021,28 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
     <!-- CTA sticky para móviles -->
     <?php if ($showCtaSticky): ?>
-    <a href="#form-pedido" class="cta-sticky-mobile" aria-label="Ir al formulario de pedido">
-        <span><?= htmlspecialchars($ctaStickyMobileText) ?></span>
-        <span class="sticky-price">
-            $<?= number_format($precio_venta, 0, ',', '.') ?>
-        </span>
-    </a>
+    <div class="cta-sticky-mobile">
+        <div class="csm-info">
+            <?php if (!empty($producto['imagen_principal'])): ?>
+            <img class="csm-thumb"
+                 src="<?= htmlspecialchars($producto['imagen_principal']) ?>"
+                 alt="<?= htmlspecialchars($producto['nombre'] ?? '') ?>"
+                 loading="eager" decoding="async">
+            <?php endif; ?>
+            <div class="csm-meta">
+                <span class="csm-name"><?= htmlspecialchars($producto['nombre'] ?? '') ?></span>
+                <div class="csm-prices">
+                    <span class="csm-current">$<?= number_format($precio_venta, 0, ',', '.') ?></span>
+                    <?php if ($precio_regular > $precio_venta): ?>
+                    <span class="csm-was">$<?= number_format($precio_regular, 0, ',', '.') ?></span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <a href="#form-pedido" class="btn-primary csm-cta">
+            <?= htmlspecialchars($ctaStickyMobileText) ?>
+        </a>
+    </div>
     <?php endif; ?>
 
     <?php

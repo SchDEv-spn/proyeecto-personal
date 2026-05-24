@@ -138,10 +138,14 @@ class AdminLandingController extends Controller
             'wa_subtitle'    => trim($_POST['wa_subtitle'] ?? ''),
             'wa_footer_note' => trim($_POST['wa_footer_note'] ?? ''),
 
-            // ===== Antes y Después =====
+            // ===== Antes y Después (legacy, kept for compat) =====
             'antes_label'         => trim($_POST['antes_label']         ?? 'Antes'),
             'despues_label'       => trim($_POST['despues_label']       ?? 'Después'),
             'antes_despues_title' => trim($_POST['antes_despues_title'] ?? 'Mira la diferencia'),
+
+            // ===== Características =====
+            'show_caracteristicas' => (int)($_POST['show_caracteristicas'] ?? 1),
+            'caract_section_title' => trim($_POST['caract_section_title'] ?? ''),
 
             // ===== Para quién es =====
             'para_quien_si_1' => trim($_POST['para_quien_si_1'] ?? ''),
@@ -191,11 +195,11 @@ class AdminLandingController extends Controller
             'combo_price_2' => $comboPrice2,
 
             // ===== Secciones visibles + orden =====
-            'section_order'      => trim($_POST['section_order'] ?? ''),
-            'show_benefits'      => (int)($_POST['show_benefits']      ?? 1),
-            'show_gallery'       => (int)($_POST['show_gallery']       ?? 1),
-            'show_antes_despues' => (int)($_POST['show_antes_despues'] ?? 1),
-            'show_como_funciona' => (int)($_POST['show_como_funciona'] ?? 1),
+            'section_order'        => trim($_POST['section_order'] ?? ''),
+            'show_benefits'        => (int)($_POST['show_benefits']        ?? 1),
+            'show_gallery'         => (int)($_POST['show_gallery']         ?? 1),
+            'show_antes_despues'   => (int)($_POST['show_antes_despues']   ?? 1),
+            'show_como_funciona'   => (int)($_POST['show_como_funciona']   ?? 1),
             'show_countdown'     => (int)($_POST['show_countdown']     ?? 1),
             'show_porque'        => (int)($_POST['show_porque']        ?? 1),
             'show_para_quien'    => (int)($_POST['show_para_quien']    ?? 1),
@@ -260,6 +264,31 @@ class AdminLandingController extends Controller
             $data["wa{$i}_text"] = trim($_POST["wa{$i}_text"] ?? '');
         }
 
+        // Características items (1..4)
+        for ($i = 1; $i <= 4; $i++) {
+            $data["caract{$i}_media_type"] = in_array(
+                trim($_POST["caract{$i}_media_type"] ?? 'image'), ['image', 'video', 'gif'], true
+            ) ? trim($_POST["caract{$i}_media_type"]) : 'image';
+            $data["caract{$i}_title"] = trim($_POST["caract{$i}_title"] ?? '');
+            $data["caract{$i}_text"]  = trim($_POST["caract{$i}_text"]  ?? '');
+        }
+
+        // CTAs de sección show/hide
+        $data['show_cta_benefits']          = (int)($_POST['show_cta_benefits']          ?? 1);
+        $data['show_cta_gallery']           = (int)($_POST['show_cta_gallery']           ?? 1);
+        $data['show_cta_porque']            = (int)($_POST['show_cta_porque']            ?? 1);
+        $data['show_cta_testimonials']      = (int)($_POST['show_cta_testimonials']      ?? 1);
+        $data['show_cta_faq']               = (int)($_POST['show_cta_faq']               ?? 1);
+        $data['show_cta_como_funciona']     = (int)($_POST['show_cta_como_funciona']     ?? 1);
+        $data['cta_como_funciona_text']     = trim($_POST['cta_como_funciona_text']     ?? '');
+        $data['cta_como_funciona_button']   = trim($_POST['cta_como_funciona_button']   ?? '');
+        $data['show_cta_comparison']        = (int)($_POST['show_cta_comparison']        ?? 1);
+        $data['cta_comparison_button']      = trim($_POST['cta_comparison_button']      ?? '');
+        $data['show_cta_para_quien']        = (int)($_POST['show_cta_para_quien']        ?? 1);
+        $data['cta_para_quien_button']      = trim($_POST['cta_para_quien_button']      ?? '');
+        $data['show_cta_wa_testimonios']    = (int)($_POST['show_cta_wa_testimonios']    ?? 1);
+        $data['cta_wa_testimonios_button']  = trim($_POST['cta_wa_testimonios_button']  ?? '');
+
         // Announcement bar items (1..6)
         for ($i = 1; $i <= 6; $i++) {
             $data["announcement_item_{$i}"] = trim($_POST["announcement_item_{$i}"] ?? '');
@@ -298,6 +327,10 @@ class AdminLandingController extends Controller
         $data['hero_media_path']     = $_POST['hero_media_path_actual']     ?? null;
         $data['hero_poster_path']    = $_POST['hero_poster_path_actual']    ?? null;
         $data['benefits_media_path'] = $_POST['benefits_media_path_actual'] ?? null;
+        $data['benefit_1_img'] = $_POST['benefit_1_img_actual'] ?? null;
+        $data['benefit_2_img'] = $_POST['benefit_2_img_actual'] ?? null;
+        $data['benefit_3_img'] = $_POST['benefit_3_img_actual'] ?? null;
+        $data['benefit_4_img'] = $_POST['benefit_4_img_actual'] ?? null;
 
         $data['gallery_1_path'] = $_POST['gallery_1_path_actual'] ?? null;
         $data['gallery_2_path'] = $_POST['gallery_2_path_actual'] ?? null;
@@ -318,9 +351,14 @@ class AdminLandingController extends Controller
             $data["wa{$i}_image_path"] = $_POST["wa{$i}_image_path_actual"] ?? null;
         }
 
-        // Antes/Después paths actuales
+        // Antes/Después paths actuales (legacy)
         $data['antes_path']   = $_POST['antes_path_actual']   ?? null;
         $data['despues_path'] = $_POST['despues_path_actual'] ?? null;
+
+        // Características media paths actuales
+        for ($i = 1; $i <= 4; $i++) {
+            $data["caract{$i}_media_path"] = $_POST["caract{$i}_media_path_actual"] ?? null;
+        }
 
         // Comparativa imágenes actuales
         $data['comparison_img_without'] = $_POST['comparison_img_without_path_actual'] ?? null;
@@ -358,8 +396,18 @@ class AdminLandingController extends Controller
             'wa4_image_file'       => 'wa4_image_path',
             'wa5_image_file'       => 'wa5_image_path',
 
+            'benefit_1_img_file' => 'benefit_1_img',
+            'benefit_2_img_file' => 'benefit_2_img',
+            'benefit_3_img_file' => 'benefit_3_img',
+            'benefit_4_img_file' => 'benefit_4_img',
+
             'antes_file'   => 'antes_path',
             'despues_file' => 'despues_path',
+
+            'caract1_media_file' => 'caract1_media_path',
+            'caract2_media_file' => 'caract2_media_path',
+            'caract3_media_file' => 'caract3_media_path',
+            'caract4_media_file' => 'caract4_media_path',
 
             'comparison_img_without_file' => 'comparison_img_without',
             'comparison_img_with_file'    => 'comparison_img_with',

@@ -2693,3 +2693,12 @@ body.modal-open { overflow: hidden; }
   .card-actions { flex-wrap: wrap; }
   .card-footer  { gap: 6px; }
 }
+
+/* Contador de caracteres en campos con maxlength */
+.char-counter {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #888);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s;
+}
