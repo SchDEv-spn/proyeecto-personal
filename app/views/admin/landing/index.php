@@ -1816,6 +1816,7 @@
       grid.addEventListener('dragend', function() {
         if (dragged) dragged.classList.remove('dragging');
         grid.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        saveOrder();
         dragged = null;
       });
 

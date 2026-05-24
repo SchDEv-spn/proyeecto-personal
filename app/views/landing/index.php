@@ -866,65 +866,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </section>
         <?php endif; $sections['porque'] = ob_get_clean(); ?>
 
-        <!-- TABLA COMPARATIVA -->
-        <?php if ($showComparison): ?>
-        <section class="container comparison-section">
-            <h2 class="section-title"><?= htmlspecialchars($comparisonTitle) ?></h2>
-            <div class="comparison-table">
-                <?php
-                $svgX = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="#e05c5c"/><path d="M9 9l8 8M17 9l-8 8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
-                $svgCheck = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="#4caf7d"/><path d="M7.5 13.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-                $stripIcon = fn($t) => trim(preg_replace('/^[\x{1F000}-\x{1FFFF}\x{2600}-\x{27BF}❌✅✓✗✔☑×✘\s]+/u', '', $t));
-                ?>
-                <div class="comparison-col comparison-col--without">
-                    <div class="comparison-header comparison-header--without">
-                        <span aria-hidden="true"><?= $svgX ?></span>
-                        <strong><?= htmlspecialchars($comparisonLabelWithout) ?></strong>
-                    </div>
-                    <?php if (!empty($comparisonImgWithout)): ?>
-                    <img src="<?= htmlspecialchars($comparisonImgWithout) ?>"
-                         alt="Sin el producto"
-                         class="comparison-col__img"
-                         loading="lazy" decoding="async">
-                    <?php endif; ?>
-                    <ul class="comparison-list">
-                        <?php foreach ($comparisonRows as $row): ?>
-                            <?php if ($row['without'] !== ''): ?>
-                            <li><span class="comparison-row-icon" aria-hidden="true"><?= $svgX ?></span><?= htmlspecialchars($stripIcon($row['without'])) ?></li>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <div class="comparison-col comparison-col--with">
-                    <div class="comparison-header comparison-header--with">
-                        <span aria-hidden="true"><?= $svgCheck ?></span>
-                        <strong><?= htmlspecialchars($comparisonLabelWith) ?></strong>
-                    </div>
-                    <?php if (!empty($comparisonImgWith)): ?>
-                    <img src="<?= htmlspecialchars($comparisonImgWith) ?>"
-                         alt="Con el producto"
-                         class="comparison-col__img"
-                         loading="lazy" decoding="async">
-                    <?php endif; ?>
-                    <ul class="comparison-list">
-                        <?php foreach ($comparisonRows as $row): ?>
-                            <?php if ($row['with'] !== ''): ?>
-                            <li><span class="comparison-row-icon" aria-hidden="true"><?= $svgCheck ?></span><?= htmlspecialchars($stripIcon($row['with'])) ?></li>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            </div>
-            <?php if ($showCtaComparison): ?>
-            <div class="comparison-cta">
-                <a href="#form-pedido" class="btn-primary">
-                    <?= htmlspecialchars($ctaComparisonButton) ?>
-                </a>
-            </div>
-            <?php endif; ?>
-        </section>
-        <?php endif; ?>
-
         <?php ob_start(); if ($showParaQuien): ?>
         <!-- PARA QUIÉN ES -->
         <section class="container para-quien-section">
@@ -1183,6 +1124,60 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php endif; $sections['faqs'] = ob_get_clean(); ?>
 
         <?php foreach ($sectionOrder as $_sec) { echo $sections[$_sec] ?? ''; } ?>
+
+        <!-- TABLA COMPARATIVA -->
+        <?php if ($showComparison): ?>
+        <section class="container comparison-section">
+            <h2 class="section-title"><?= htmlspecialchars($comparisonTitle) ?></h2>
+            <div class="comparison-table">
+                <div class="comparison-col comparison-col--without">
+                    <div class="comparison-header comparison-header--without">
+                        <span aria-hidden="true"><?= $svgX ?></span>
+                        <strong><?= htmlspecialchars($comparisonLabelWithout) ?></strong>
+                    </div>
+                    <?php if (!empty($comparisonImgWithout)): ?>
+                    <img src="<?= htmlspecialchars($comparisonImgWithout) ?>"
+                         alt="Sin el producto"
+                         class="comparison-col__img"
+                         loading="lazy" decoding="async">
+                    <?php endif; ?>
+                    <ul class="comparison-list">
+                        <?php foreach ($comparisonRows as $row): ?>
+                            <?php if ($row['without'] !== ''): ?>
+                            <li><span class="comparison-row-icon" aria-hidden="true"><?= $svgX ?></span><?= htmlspecialchars($stripIcon($row['without'])) ?></li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <div class="comparison-col comparison-col--with">
+                    <div class="comparison-header comparison-header--with">
+                        <span aria-hidden="true"><?= $svgCheck ?></span>
+                        <strong><?= htmlspecialchars($comparisonLabelWith) ?></strong>
+                    </div>
+                    <?php if (!empty($comparisonImgWith)): ?>
+                    <img src="<?= htmlspecialchars($comparisonImgWith) ?>"
+                         alt="Con el producto"
+                         class="comparison-col__img"
+                         loading="lazy" decoding="async">
+                    <?php endif; ?>
+                    <ul class="comparison-list">
+                        <?php foreach ($comparisonRows as $row): ?>
+                            <?php if ($row['with'] !== ''): ?>
+                            <li><span class="comparison-row-icon" aria-hidden="true"><?= $svgCheck ?></span><?= htmlspecialchars($stripIcon($row['with'])) ?></li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
+            <?php if ($showCtaComparison): ?>
+            <div class="comparison-cta">
+                <a href="#form-pedido" class="btn-primary">
+                    <?= htmlspecialchars($ctaComparisonButton) ?>
+                </a>
+            </div>
+            <?php endif; ?>
+        </section>
+        <?php endif; ?>
 
         <!-- GARANTÍA -->
         <?php if ($showGarantia): ?>
