@@ -1187,16 +1187,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <h2 class="section-title"><?= htmlspecialchars($comparisonTitle) ?></h2>
             <div class="comparison-table">
                 <div class="comparison-col comparison-col--without">
-                    <div class="comparison-header comparison-header--without">
-                        <span aria-hidden="true"><?= $svgX ?></span>
-                        <strong><?= htmlspecialchars($comparisonLabelWithout) ?></strong>
-                    </div>
                     <?php if (!empty($comparisonImgWithout)): ?>
                     <img src="<?= htmlspecialchars($comparisonImgWithout) ?>"
                          alt="Sin el producto"
                          class="comparison-col__img"
                          loading="lazy" decoding="async">
                     <?php endif; ?>
+                    <div class="comparison-header comparison-header--without">
+                        <span aria-hidden="true"><?= $svgX ?></span>
+                        <strong><?= htmlspecialchars($comparisonLabelWithout) ?></strong>
+                    </div>
                     <ul class="comparison-list">
                         <?php foreach ($comparisonRows as $row): ?>
                             <?php if ($row['without'] !== ''): ?>
@@ -1206,16 +1206,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </ul>
                 </div>
                 <div class="comparison-col comparison-col--with">
-                    <div class="comparison-header comparison-header--with">
-                        <span aria-hidden="true"><?= $svgCheck ?></span>
-                        <strong><?= htmlspecialchars($comparisonLabelWith) ?></strong>
-                    </div>
                     <?php if (!empty($comparisonImgWith)): ?>
                     <img src="<?= htmlspecialchars($comparisonImgWith) ?>"
                          alt="Con el producto"
                          class="comparison-col__img"
                          loading="lazy" decoding="async">
                     <?php endif; ?>
+                    <div class="comparison-header comparison-header--with">
+                        <span aria-hidden="true"><?= $svgCheck ?></span>
+                        <strong><?= htmlspecialchars($comparisonLabelWith) ?></strong>
+                    </div>
                     <ul class="comparison-list">
                         <?php foreach ($comparisonRows as $row): ?>
                             <?php if ($row['with'] !== ''): ?>

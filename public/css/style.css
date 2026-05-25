@@ -4217,12 +4217,10 @@ img[loading="lazy"].loaded {
 }
 
 .comparison-col--without {
-    border-top: 3px solid #e63946;
     box-shadow: 0 2px 16px rgba(0,0,0,0.13);
 }
 
 .comparison-col--with {
-    border-top: 3px solid #4caf7d;
     box-shadow: 0 2px 16px rgba(0,0,0,0.13);
 }
 
@@ -4235,31 +4233,52 @@ img[loading="lazy"].loaded {
     border-radius: 0;
 }
 
+/* Header debajo de la imagen: fila icono + título centrado */
 .comparison-header {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 6px;
-    padding: 18px 14px 14px;
-    font-size: .88rem;
-    font-weight: 700;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 16px;
     text-align: center;
-    letter-spacing: .01em;
 }
 
 .comparison-header span[aria-hidden="true"] {
-    font-size: 1.6rem;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.comparison-header span[aria-hidden="true"] svg {
+    width: 22px;
+    height: 22px;
+}
+
+.comparison-header strong {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .comparison-header--without {
-    background: rgba(230,57,70,.09);
-    border-bottom: 1px solid rgba(230,57,70,.18);
+    background: rgba(230,57,70,.1);
+    border-top: 2px solid rgba(230,57,70,.25);
+}
+
+.comparison-header--without strong {
+    color: #e05c5c;
 }
 
 .comparison-header--with {
-    background: rgba(76,175,125,.09);
-    border-bottom: 1px solid rgba(76,175,125,.18);
+    background: rgba(76,175,125,.1);
+    border-top: 2px solid rgba(76,175,125,.25);
+}
+
+.comparison-header--with strong {
+    color: #4caf7d;
 }
 
 .comparison-list {
