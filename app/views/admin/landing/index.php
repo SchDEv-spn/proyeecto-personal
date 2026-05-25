@@ -463,11 +463,18 @@
 
                     <div class="stack-cards">
                     <?php for ($cn = 1; $cn <= 4; $cn++):
-                      $cPath = $config["caract{$cn}_media_path"] ?? '';
-                      $cType = $config["caract{$cn}_media_type"] ?? 'image';
+                      $cPath   = $config["caract{$cn}_media_path"] ?? '';
+                      $cType   = $config["caract{$cn}_media_type"] ?? 'image';
+                      $cActive = (int)($config["caract{$cn}_active"] ?? 1);
                     ?>
                     <div class="mini-card">
-                      <div class="mini-card-title"><i class="fas fa-layer-group"></i> Característica <?= $cn ?></div>
+                      <div class="mini-card-title" style="display:flex;align-items:center;justify-content:space-between;">
+                        <span><i class="fas fa-layer-group"></i> Característica <?= $cn ?></span>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;">
+                          <input type="checkbox" name="caract<?= $cn ?>_active" value="1" <?= $cActive ? 'checked' : '' ?>>
+                          Visible
+                        </label>
+                      </div>
 
                       <div class="gallery-card" style="margin-bottom:12px;">
                         <div class="media-preview">

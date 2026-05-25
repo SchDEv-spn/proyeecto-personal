@@ -1816,8 +1816,10 @@ h3 {
   backface-visibility: hidden;
 }
 
-.testimonios-ticker:hover .testimonios-ticker__track {
-  animation-play-state: paused;
+@media (hover: hover) {
+  .testimonios-ticker:hover .testimonios-ticker__track {
+    animation-play-state: paused;
+  }
 }
 
 .testimonios-ticker__card {

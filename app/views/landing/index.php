@@ -232,6 +232,7 @@ if (empty($paraQuienNoItems)) {
 $caractSectionTitle = $cfg['caract_section_title'] ?? 'Características del producto';
 $caractItems = [];
 for ($i = 1; $i <= 4; $i++) {
+    if (!(int)($cfg["caract{$i}_active"] ?? 1)) continue;
     $cPath  = $cfg["caract{$i}_media_path"] ?? '';
     $cType  = $cfg["caract{$i}_media_type"] ?? 'image';
     $cTitle = $cfg["caract{$i}_title"]      ?? '';

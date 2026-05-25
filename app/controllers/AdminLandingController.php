@@ -269,6 +269,7 @@ class AdminLandingController extends Controller
 
         // Características items (1..4)
         for ($i = 1; $i <= 4; $i++) {
+            $data["caract{$i}_active"]     = isset($_POST["caract{$i}_active"]) ? 1 : 0;
             $data["caract{$i}_media_type"] = in_array(
                 trim($_POST["caract{$i}_media_type"] ?? 'image'), ['image', 'video', 'gif'], true
             ) ? trim($_POST["caract{$i}_media_type"]) : 'image';
