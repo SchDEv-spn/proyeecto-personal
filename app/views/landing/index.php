@@ -465,10 +465,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
             <div class="price-box">
                 <div class="price-label">Oferta exclusiva · Solo hoy</div>
-                <div class="price-row">
-                    <div class="old">$<?= number_format($precio_regular, 0, ',', '.') ?></div>
-                    <div class="save">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></div>
-                </div>
+                <div class="save">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></div>
+                <div class="old">$<?= number_format($precio_regular, 0, ',', '.') ?></div>
                 <div class="new">$<?= number_format($precio_venta, 0, ',', '.') ?></div>
 
                 <a href="#form-pedido" class="btn-primary" id="heroCta">
@@ -482,9 +480,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </div>
 
             <div class="hero-trust-row">
-                <span><?= htmlspecialchars($heroTrust1) ?></span>
-                <span><?= htmlspecialchars($heroTrust2) ?></span>
-                <span><?= htmlspecialchars($heroTrust3) ?></span>
+                <span class="hero-trust-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <?= htmlspecialchars($heroTrust1) ?>
+                </span>
+                <span class="hero-trust-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <?= htmlspecialchars($heroTrust2) ?>
+                </span>
+                <span class="hero-trust-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <?= htmlspecialchars($heroTrust3) ?>
+                </span>
             </div>
         </div>
 

@@ -4539,11 +4539,24 @@ img[loading="lazy"].loaded {
 .hero-trust-row {
     opacity: 1 !important;
     font-size: 13px !important;
-    gap: 8px 20px !important;
+    gap: 8px 16px !important;
     padding: 10px 14px;
     background: rgba(255,255,255,0.04);
     border-radius: var(--radius-md);
     border: 1px solid rgba(255,255,255,0.06);
+    justify-content: center !important;
+}
+
+.hero-trust-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--cream-dim);
+}
+
+.hero-trust-item svg {
+    flex-shrink: 0;
+    color: var(--success);
 }
 
 /* ── SECTION TITLES — línea dorada más larga ─────────────── */
@@ -5906,14 +5919,22 @@ img[loading="lazy"].loaded {
     padding: 18px 20px 14px !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 4px !important;
+    align-items: center !important;
+    gap: 6px !important;
     position: relative !important;
     overflow: visible !important;
     width: 100% !important;
+    text-align: center !important;
 }
 
 /* Quitar la línea decorativa superior */
 .price-box::before { display: none !important; }
+
+/* CTA dentro del price-box ocupa todo el ancho */
+.price-box .btn-primary {
+    align-self: stretch !important;
+    width: 100% !important;
+}
 
 /* Label: pill pequeño de acento arriba */
 .price-label {
@@ -5922,28 +5943,10 @@ img[loading="lazy"].loaded {
     letter-spacing: 0.1em !important;
     text-transform: uppercase !important;
     color: var(--gold) !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 2px !important;
 }
 
-/* Fila viejo precio + badge ahorro — en línea */
-.price-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-/* Precio viejo: tachado, gris, sin prefijo */
-.price-box .old {
-    font-size: 15px !important;
-    font-weight: 400 !important;
-    color: var(--cream-muted) !important;
-    text-decoration: line-through !important;
-    opacity: 0.65 !important;
-    line-height: 1 !important;
-}
-
-/* Badge "Ahorras" junto al precio viejo */
+/* Badge "Ahorras": pill prominente debajo del label */
 .price-box .save {
     font-size: 11px !important;
     font-weight: 800 !important;
@@ -5952,9 +5955,21 @@ img[loading="lazy"].loaded {
     color: #fff !important;
     background: var(--success) !important;
     border-radius: 999px !important;
-    padding: 3px 10px !important;
+    padding: 4px 14px !important;
     white-space: nowrap;
-    margin-top: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    margin-bottom: 2px !important;
+}
+
+/* Precio viejo: tachado, solo, encima del precio grande */
+.price-box .old {
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    color: var(--cream-muted) !important;
+    text-decoration: line-through !important;
+    opacity: 0.65 !important;
+    line-height: 1 !important;
 }
 
 /* Precio nuevo: enorme, sin prefijo */
