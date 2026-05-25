@@ -780,12 +780,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     if (volBtn) {
                         e.stopPropagation();
                         var isNowUnmuted = volBtn.classList.toggle('is-unmuted');
-                        track.querySelectorAll('.caract-vol-btn').forEach(function(b) {
-                            b.classList.toggle('is-unmuted', isNowUnmuted);
-                        });
-                        track.querySelectorAll('video').forEach(function(v) {
-                            v.muted = !isNowUnmuted;
-                        });
+                        var volWrap = volBtn.closest('.caract-video-wrap');
+                        var volVid  = volWrap && volWrap.querySelector('video');
+                        if (volVid) volVid.muted = !isNowUnmuted;
                         return;
                     }
                     /* Tap to pause / play */
