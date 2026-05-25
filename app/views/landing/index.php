@@ -643,9 +643,25 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <?php if (!empty($cItem['media_path'])): ?>
                         <div class="caract-media">
                             <?php if (($cItem['media_type'] ?? 'image') === 'video'): ?>
-                            <video autoplay muted loop playsinline preload="metadata">
-                                <source src="<?= htmlspecialchars($cItem['media_path']) ?>">
-                            </video>
+                            <div class="caract-video-wrap">
+                                <video autoplay muted loop playsinline preload="metadata">
+                                    <source src="<?= htmlspecialchars($cItem['media_path']) ?>">
+                                </video>
+                                <div class="caract-video-tap" aria-hidden="true"></div>
+                                <div class="caract-play-overlay" aria-hidden="true">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="rgba(255,255,255,0.92)" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                </div>
+                                <button class="caract-vol-btn" type="button" aria-label="Silenciar / activar sonido">
+                                    <svg class="caract-vol-icon caract-vol-icon--muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                        <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+                                    </svg>
+                                    <svg class="caract-vol-icon caract-vol-icon--sound" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                                    </svg>
+                                </button>
+                            </div>
                             <?php else: ?>
                             <img src="<?= htmlspecialchars($cItem['media_path']) ?>"
                                  alt="<?= htmlspecialchars($cItem['title'] ?? '') ?>"
@@ -756,6 +772,37 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     var dx = e.changedTouches[0].clientX - startX;
                     if (Math.abs(dx) > 40) goTo(dx < 0 ? current + 1 : current - 1);
                 }, {passive: true});
+
+                /* ── Controles de video: tap-to-pause + mute toggle ── */
+                track.addEventListener('click', function(e) {
+                    /* Mute / unmute */
+                    var volBtn = e.target.closest('.caract-vol-btn');
+                    if (volBtn) {
+                        e.stopPropagation();
+                        var isNowUnmuted = volBtn.classList.toggle('is-unmuted');
+                        track.querySelectorAll('.caract-vol-btn').forEach(function(b) {
+                            b.classList.toggle('is-unmuted', isNowUnmuted);
+                        });
+                        track.querySelectorAll('video').forEach(function(v) {
+                            v.muted = !isNowUnmuted;
+                        });
+                        return;
+                    }
+                    /* Tap to pause / play */
+                    var tap = e.target.closest('.caract-video-tap');
+                    if (tap) {
+                        var wrap  = tap.closest('.caract-video-wrap');
+                        var video = wrap && wrap.querySelector('video');
+                        if (!video) return;
+                        if (video.paused) {
+                            video.play();
+                            wrap.classList.remove('is-paused');
+                        } else {
+                            video.pause();
+                            wrap.classList.add('is-paused');
+                        }
+                    }
+                });
 
                 /* init at real slide 0 (visual pos 1) */
                 setPos(1, false);

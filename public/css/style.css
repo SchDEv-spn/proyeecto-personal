@@ -6555,6 +6555,7 @@ img[loading="lazy"].loaded {
     overflow: hidden;
     background: var(--bg-layer2);
     display: block;
+    position: relative;
 }
 
 .caract-media img,
@@ -6564,6 +6565,88 @@ img[loading="lazy"].loaded {
     object-fit: cover;
     display: block;
 }
+
+/* ── Wrapper de video con controles ── */
+.caract-video-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.caract-video-wrap video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Área invisible de tap para pause/play */
+.caract-video-tap {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    cursor: pointer;
+}
+
+/* Overlay de pausa — círculo con triángulo */
+.caract-play-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.caract-play-overlay svg {
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+}
+
+.caract-video-wrap.is-paused .caract-play-overlay {
+    opacity: 1;
+}
+
+/* Botón de volumen — frosted glass, esquina superior derecha */
+.caract-vol-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 4;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+    padding: 0;
+}
+
+.caract-vol-btn:hover {
+    background: rgba(0, 0, 0, 0.65);
+    transform: scale(1.1);
+}
+
+.caract-vol-btn:active {
+    transform: scale(0.95);
+}
+
+/* Estado muted (default): mostrar X, ocultar ondas */
+.caract-vol-icon--sound { display: none; }
+.caract-vol-icon--muted { display: flex; }
+
+.caract-vol-btn.is-unmuted .caract-vol-icon--sound { display: flex; }
+.caract-vol-btn.is-unmuted .caract-vol-icon--muted  { display: none; }
 
 .caract-body {
     padding: 20px 20px 24px;
