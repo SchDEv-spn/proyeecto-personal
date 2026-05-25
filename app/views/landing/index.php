@@ -1194,7 +1194,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                          loading="lazy" decoding="async">
                     <?php endif; ?>
                     <div class="comparison-header comparison-header--without">
-                        <span aria-hidden="true"><?= $svgX ?></span>
                         <strong><?= htmlspecialchars($comparisonLabelWithout) ?></strong>
                     </div>
                     <ul class="comparison-list">
@@ -1213,7 +1212,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                          loading="lazy" decoding="async">
                     <?php endif; ?>
                     <div class="comparison-header comparison-header--with">
-                        <span aria-hidden="true"><?= $svgCheck ?></span>
                         <strong><?= htmlspecialchars($comparisonLabelWith) ?></strong>
                     </div>
                     <ul class="comparison-list">

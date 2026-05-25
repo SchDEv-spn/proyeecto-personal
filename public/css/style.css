@@ -4233,33 +4233,19 @@ img[loading="lazy"].loaded {
     border-radius: 0;
 }
 
-/* Header debajo de la imagen: fila icono + título centrado */
+/* Header debajo de la imagen: título alineado a la izquierda */
 .comparison-header {
     display: flex;
-    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
     padding: 14px 16px;
-    text-align: center;
-}
-
-.comparison-header span[aria-hidden="true"] {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.comparison-header span[aria-hidden="true"] svg {
-    width: 22px;
-    height: 22px;
+    text-align: left;
 }
 
 .comparison-header strong {
     font-family: var(--font-display);
-    font-size: 0.78rem;
+    font-size: 1.1rem;
     font-weight: 800;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
 }
 
