@@ -1916,6 +1916,10 @@ h3 {
   overflow: hidden;
 }
 
+.wa-testimonios-section .container {
+  padding-block: 0;
+}
+
 .faqs-section .section-title {
   font-family: var(--font-body);
   font-weight: 600;

@@ -1032,9 +1032,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </svg>
             </div>
             <div class="container">
-                <div class="slider-footer-note">
-                    <p><?= htmlspecialchars($waFooterNote) ?></p>
-                </div>
                 <?php if ($showCtaWaTestimonios): ?>
                 <div class="wa-testimonios-cta">
                     <a href="#form-pedido" class="btn-primary btn-cta-section">
