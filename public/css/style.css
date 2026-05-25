@@ -4250,7 +4250,7 @@ img[loading="lazy"].loaded {
 }
 
 .comparison-header--without {
-    border-top: 2px solid rgba(230,57,70,.25);
+    border-top: none;
 }
 
 .comparison-header--without strong {
@@ -4258,7 +4258,7 @@ img[loading="lazy"].loaded {
 }
 
 .comparison-header--with {
-    border-top: 2px solid rgba(76,175,125,.25);
+    border-top: none;
 }
 
 .comparison-header--with strong {
@@ -4665,14 +4665,11 @@ img[loading="lazy"].loaded {
     font-weight: 500;
 }
 
-/* ── COMPARISON TABLE — headers más drama ─────────────────── */
-.comparison-header--with {
-    background: rgba(76,175,125,0.14) !important;
-    border-bottom-color: rgba(76,175,125,0.4) !important;
-}
+/* ── COMPARISON TABLE — headers sin fondo ─────────────────── */
+.comparison-header--with,
 .comparison-header--without {
-    background: rgba(230,57,70,0.12) !important;
-    border-bottom-color: rgba(230,57,70,0.35) !important;
+    background: none !important;
+    border: none !important;
 }
 .comparison-table {
     box-shadow: var(--shadow-card);
