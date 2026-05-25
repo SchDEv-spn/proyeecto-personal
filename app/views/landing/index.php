@@ -277,9 +277,10 @@ if (empty($announcementItems)) {
 }
 
 // ===== HERO TRUST ROW =====
-$heroTrust1 = $cfg['hero_trust_1'] ?? '✅ Pago al recibir';
-$heroTrust2 = $cfg['hero_trust_2'] ?? '🚚 Envío gratis';
-$heroTrust3 = $cfg['hero_trust_3'] ?? '🔄 Cambios sin problema';
+$stripLeadingEmoji = fn(string $t): string => trim(preg_replace('/^[^\p{L}\p{N}]+/u', '', $t));
+$heroTrust1 = $stripLeadingEmoji($cfg['hero_trust_1'] ?? 'Pago al recibir');
+$heroTrust2 = $stripLeadingEmoji($cfg['hero_trust_2'] ?? 'Envío gratis');
+$heroTrust3 = $stripLeadingEmoji($cfg['hero_trust_3'] ?? 'Cambios sin problema');
 
 // ===== CÓMO FUNCIONA =====
 $cfTitle      = $cfg['cf_title']       ?? 'Así de simple es recibirlo en casa';

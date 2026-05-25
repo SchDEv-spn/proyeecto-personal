@@ -4556,7 +4556,7 @@ img[loading="lazy"].loaded {
 
 .hero-trust-item svg {
     flex-shrink: 0;
-    color: var(--success);
+    opacity: 0.75;
 }
 
 /* ── SECTION TITLES — línea dorada más larga ─────────────── */
