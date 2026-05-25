@@ -4250,7 +4250,6 @@ img[loading="lazy"].loaded {
 }
 
 .comparison-header--without {
-    background: rgba(230,57,70,.1);
     border-top: 2px solid rgba(230,57,70,.25);
 }
 
@@ -4259,7 +4258,6 @@ img[loading="lazy"].loaded {
 }
 
 .comparison-header--with {
-    background: rgba(76,175,125,.1);
     border-top: 2px solid rgba(76,175,125,.25);
 }
 
