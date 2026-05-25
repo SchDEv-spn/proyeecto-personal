@@ -5899,6 +5899,7 @@ img[loading="lazy"].loaded {
     gap: 4px !important;
     position: relative !important;
     overflow: visible !important;
+    width: 100% !important;
 }
 
 /* Quitar la línea decorativa superior */
