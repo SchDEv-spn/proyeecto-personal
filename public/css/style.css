@@ -4583,6 +4583,16 @@ img[loading="lazy"].loaded {
     border: none;
 }
 
+/* ── GARANTÍA INNER — misma card que price-box ───────────── */
+.garantia-inner {
+    background: var(--bg-layer2) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.13) !important;
+    padding: 28px 20px 24px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 /* ── MOBILE: CTA de sección full-width ───────────────────── */
 @media (max-width: 640px) {
     #heroCta { font-size: 15px; padding: 17px 24px; }
