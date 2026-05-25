@@ -4511,7 +4511,7 @@ img[loading="lazy"].loaded {
 /* ── COUNTDOWN INLINE HERO — más visible ─────────────────── */
 .hero-countdown-inline {
     background: rgba(201,168,76,0.1) !important;
-    border: 1px solid var(--gold-border);
+    border: none !important;
     border-radius: var(--radius-md) !important;
     padding: 10px 16px !important;
 }
@@ -5999,7 +5999,6 @@ img[loading="lazy"].loaded {
 [data-theme="femme-rose"] .hero-countdown-inline,
 [data-theme="natural-sage"] .hero-countdown-inline,
 [data-theme="blanc-luxe"] .hero-countdown-inline {
-    border-color: rgba(0,0,0,0.1) !important;
     background: rgba(0,0,0,0.02) !important;
 }
 
