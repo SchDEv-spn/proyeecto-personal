@@ -241,3 +241,174 @@ body.modal-open { overflow: hidden; }
     max-width: none !important;
     margin: 0 !important;
 }
+
+/* ── Trust line compacta (reemplaza bloque de precios) ─────── */
+.order-modal-trust-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 20px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cream-dim);
+    border-bottom: 1px solid var(--gold-border);
+}
+.order-modal-trust-line__saving {
+    color: var(--success);
+}
+.order-modal-trust-line__dot {
+    opacity: 0.4;
+}
+
+/* ── Scroll wrapper interno ────────────────────────────────── */
+.order-modal-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.order-modal-card__scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold-dim, rgba(255,255,255,0.1)) transparent;
+}
+.order-modal-card__scroll::-webkit-scrollbar { width: 4px; }
+.order-modal-card__scroll::-webkit-scrollbar-thumb {
+    background: var(--gold-dim, rgba(255,255,255,0.12));
+    border-radius: 4px;
+}
+
+/* ── Barra de progreso ─────────────────────────────────────── */
+.modal-progress-bar {
+    height: 3px;
+    background: var(--bg-layer3, rgba(255,255,255,0.08));
+    overflow: hidden;
+}
+.modal-progress-bar__fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 0 2px 2px 0;
+    transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 10%;
+}
+
+/* ── Chip flotante de total ────────────────────────────────── */
+.modal-floating-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px 12px;
+    background: var(--bg-layer2);
+    border-top: 1px solid var(--gold-border);
+    flex-shrink: 0;
+    transition: opacity 0.22s, transform 0.22s;
+}
+.modal-floating-total.is-hidden {
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+    height: 0;
+    padding: 0;
+    border: none;
+    overflow: hidden;
+}
+.modal-floating-total__label {
+    font-size: 12px;
+    color: var(--cream-dim);
+    margin-bottom: 1px;
+}
+.modal-floating-total__shipping {
+    font-size: 11px;
+    color: var(--success);
+    font-weight: 600;
+}
+.modal-floating-total__amount {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: -0.5px;
+}
+
+/* ── Validación teléfono en tiempo real ────────────────────── */
+.input-lg.tel-valid {
+    border-color: var(--success, #22c55e) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2322c55e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+.input-lg.tel-invalid {
+    border-color: #ef4444 !important;
+}
+.tel-hint {
+    font-size: 12px;
+    margin-top: 5px;
+    transition: color 0.2s;
+    color: var(--text-muted);
+}
+.tel-hint.ok  { color: var(--success, #22c55e); font-weight: 600; }
+.tel-hint.err { color: #ef4444; font-weight: 600; }
+
+/* ── Icono de éxito animado ────────────────────────────────── */
+.order-success__icon-wrap {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--success, #22c55e) 12%, transparent);
+    border: 2px solid var(--success, #22c55e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    animation: successPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+@keyframes successPop {
+    0%   { transform: scale(0); opacity: 0; }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.success-check-path {
+    stroke-dasharray: 28;
+    stroke-dashoffset: 28;
+    animation: drawCheck 0.35s 0.38s ease forwards;
+}
+@keyframes drawCheck {
+    to { stroke-dashoffset: 0; }
+}
+
+/* Confetti CSS */
+.success-confetti {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+.confetti-p {
+    position: absolute;
+    top: -10px;
+    width: 7px; height: 7px;
+    border-radius: 2px;
+    opacity: 0;
+    animation: confettiFall 1.1s ease-out both;
+}
+@keyframes confettiFall {
+    0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(140px) rotate(600deg); }
+}
+/* Variantes de posición y color y delay */
+.confetti-p:nth-child(1)  { left: 10%; background: var(--gold);          animation-delay: 0.05s; }
+.confetti-p:nth-child(2)  { left: 20%; background: #60a5fa;               animation-delay: 0.10s; width:5px; height:10px; }
+.confetti-p:nth-child(3)  { left: 30%; background: var(--success,#22c55e);animation-delay: 0.02s; }
+.confetti-p:nth-child(4)  { left: 42%; background: #f472b6;               animation-delay: 0.15s; width:9px; }
+.confetti-p:nth-child(5)  { left: 52%; background: var(--gold);           animation-delay: 0.08s; height:9px; }
+.confetti-p:nth-child(6)  { left: 62%; background: #a78bfa;               animation-delay: 0.12s; width:5px; height:10px; }
+.confetti-p:nth-child(7)  { left: 72%; background: #fb923c;               animation-delay: 0.04s; }
+.confetti-p:nth-child(8)  { left: 82%; background: #60a5fa;               animation-delay: 0.18s; }
+.confetti-p:nth-child(9)  { left: 90%; background: var(--success,#22c55e);animation-delay: 0.07s; width:9px; }
+.confetti-p:nth-child(10) { left: 5%;  background: #f472b6;               animation-delay: 0.13s; height:5px; }

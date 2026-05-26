@@ -1374,6 +1374,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </svg>
                 </button>
 
+                <div class="order-modal-card__scroll" id="orderModalScroll">
+
                 <!-- Barra del producto -->
                 <div class="order-modal-product-bar">
                     <div class="order-modal-product-bar__imgwrap">
@@ -1392,32 +1394,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </div>
                 </div>
 
-                <!-- Resumen de precios -->
-                <div class="order-modal-pricing">
+                <!-- Trust line compacta -->
+                <div class="order-modal-trust-line">
                     <?php if ($ahorro > 0): ?>
-                    <div class="order-modal-pricing__row order-modal-pricing__row--before">
-                        <span>Antes</span>
-                        <span class="order-modal-pricing__before">$<?= number_format($precio_regular, 0, ',', '.') ?></span>
-                    </div>
+                    <span class="order-modal-trust-line__saving">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></span>
+                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
                     <?php endif; ?>
-                    <div class="order-modal-pricing__row">
-                        <span>Precio (COP)</span>
-                        <span>$<?= number_format($precio_venta, 0, ',', '.') ?></span>
-                    </div>
-                    <?php if ($ahorro > 0): ?>
-                    <div class="order-modal-pricing__row">
-                        <span>Ahorras</span>
-                        <strong class="order-modal-pricing__saving">-$<?= number_format($ahorro, 0, ',', '.') ?></strong>
-                    </div>
-                    <?php endif; ?>
-                    <div class="order-modal-pricing__row">
-                        <span>Envío</span>
-                        <strong class="order-modal-pricing__free">Gratis</strong>
-                    </div>
-                    <div class="order-modal-pricing__row order-modal-pricing__row--total">
-                        <span>Total (COP)</span>
-                        <strong id="modalTotalPrice">$<?= number_format($precio_venta, 0, ',', '.') ?></strong>
-                    </div>
+                    <span>Envío gratis</span>
+                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
+                    <span>Pagas al recibirlo</span>
                 </div>
 
                 <!-- Título y subtítulo del formulario -->
@@ -1430,6 +1415,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                 <!-- Cuerpo del formulario -->
                 <div class="order-modal-body">
+
+                    <!-- Barra de progreso -->
+                    <div class="modal-progress-bar"><div class="modal-progress-bar__fill" id="modalProgressFill"></div></div>
 
                     <!-- Indicador de progreso — siempre 3 pasos -->
                     <div class="form-stepper-indicator" id="stepperIndicator">
@@ -1494,7 +1482,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                 placeholder="Ej: 3001234567"
                                 maxlength="10" autocomplete="tel-national" inputmode="numeric"
                                 value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
-                            <p class="field-hint">Solo 10 números · empieza por 3 · por aquí te avisamos cuando salga tu pedido</p>
+                            <p class="tel-hint" id="telHint">Solo 10 números · empieza por 3 · por aquí te avisamos cuando salga tu pedido</p>
                         </div>
 
                         <div class="form-step__nav form-step__nav--end">
@@ -1740,12 +1728,19 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                 <!-- PANTALLA DE ÉXITO -->
                 <div id="stepperSuccess" style="display:none;">
-                    <div class="order-success">
-                        <div class="order-success__icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2.5"
+                    <div class="order-success" style="position:relative;">
+                        <div class="success-confetti" aria-hidden="true">
+                            <div class="confetti-p"></div><div class="confetti-p"></div>
+                            <div class="confetti-p"></div><div class="confetti-p"></div>
+                            <div class="confetti-p"></div><div class="confetti-p"></div>
+                            <div class="confetti-p"></div><div class="confetti-p"></div>
+                            <div class="confetti-p"></div><div class="confetti-p"></div>
+                        </div>
+                        <div class="order-success__icon-wrap">
+                            <svg class="success-check-svg" width="38" height="38" viewBox="0 0 24 24" fill="none"
+                                stroke="var(--success,#22c55e)" stroke-width="2.5"
                                 stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
+                                <polyline class="success-check-path" points="20 6 9 17 4 12"/>
                             </svg>
                         </div>
                         <p class="order-success__label">Pedido registrado</p>
@@ -1790,6 +1785,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
                 </div><!-- /.form-box -->
                 </div><!-- /.order-modal-body -->
+
+                </div><!-- /.order-modal-card__scroll -->
+
+                <!-- Total flotante — visible en pasos 1 y 2 -->
+                <div class="modal-floating-total is-hidden" id="modalFloatingTotal">
+                    <div>
+                        <div class="modal-floating-total__label">Total a pagar al recibirlo</div>
+                        <div class="modal-floating-total__shipping">Envío gratis incluido</div>
+                    </div>
+                    <span class="modal-floating-total__amount" id="modalFloatingTotalAmt">$<?= number_format($precio_venta, 0, ',', '.') ?></span>
+                </div>
+
             </div><!-- /.order-modal-card -->
         </div><!-- /#orderModal -->
 
@@ -1832,6 +1839,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 return errs;
             }
 
+            const progressFill   = document.getElementById('modalProgressFill');
+            const floatingTotal  = document.getElementById('modalFloatingTotal');
+            const floatingAmt    = document.getElementById('modalFloatingTotalAmt');
+            const PROGRESS_MAP   = { 1: '10%', 2: '48%', 3: '82%' };
+
             function updateIndicator(n) {
                 if (!indicator) return;
                 indicator.querySelectorAll('.stepper-node').forEach(el => {
@@ -1842,6 +1854,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 indicator.querySelectorAll('.stepper-connector').forEach(el => {
                     el.classList.toggle('is-done', parseInt(el.dataset.after, 10) < n);
                 });
+                if (progressFill) progressFill.style.width = PROGRESS_MAP[n] || '10%';
+                if (floatingTotal) floatingTotal.classList.toggle('is-hidden', n === 3);
+            }
+
+            function updateFloatingTotal() {
+                if (!floatingAmt) return;
+                setTimeout(() => {
+                    const summaryTotal = document.getElementById('summaryTotal');
+                    const pricePreview = document.getElementById('pricePreviewAmt');
+                    const src = summaryTotal?.textContent?.trim() || pricePreview?.textContent?.trim() || '';
+                    if (src) floatingAmt.textContent = src;
+                }, 0);
             }
 
             function goTo(n) {
@@ -1850,9 +1874,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 });
                 updateIndicator(n);
                 current = n;
-                const modalCard = document.getElementById('orderModalCard');
-                if (modalCard) { modalCard.scrollTo({ top: 0, behavior: 'smooth' }); }
+                const scroll = document.getElementById('orderModalScroll');
+                if (scroll) scroll.scrollTo({ top: 0, behavior: 'smooth' });
+                requestAnimationFrame(() => {
+                    const step = form.querySelector(`.form-step[data-step="${n}"]`);
+                    const first = step?.querySelector('input:not([type=hidden]):not([type=radio]), select');
+                    first?.focus({ preventScroll: true });
+                });
             }
+
+            /* Actualizar total flotante cuando cambia el precio */
+            document.addEventListener('landing:recalc', updateFloatingTotal);
+            updateFloatingTotal();
 
             form.querySelectorAll('.btn-step-next').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -2010,6 +2043,37 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
             updatePricePreview(1);
 
+            /* ── Validación en tiempo real del teléfono ─────────── */
+            (function () {
+                const tel  = form.querySelector('#telefono');
+                const hint = document.getElementById('telHint');
+                if (!tel || !hint) return;
+                tel.addEventListener('input', function () {
+                    const v = tel.value.trim();
+                    if (!v) {
+                        tel.classList.remove('tel-valid', 'tel-invalid');
+                        hint.className = 'tel-hint';
+                        hint.textContent = 'Solo 10 números · empieza por 3 · por aquí te avisamos cuando salga tu pedido';
+                        return;
+                    }
+                    if (/^3\d{9}$/.test(v)) {
+                        tel.classList.add('tel-valid');
+                        tel.classList.remove('tel-invalid');
+                        hint.className = 'tel-hint ok';
+                        hint.textContent = 'Número válido';
+                    } else {
+                        tel.classList.add('tel-invalid');
+                        tel.classList.remove('tel-valid');
+                        hint.className = 'tel-hint err';
+                        hint.textContent = v.length < 10
+                            ? `Faltan ${10 - v.length} dígito${10 - v.length !== 1 ? 's' : ''}`
+                            : !v.startsWith('3')
+                                ? 'Debe empezar en 3'
+                                : 'Revisa el número';
+                    }
+                });
+            })();
+
             /* ── Fallback para navegadores sin :has() (Facebook IAB) ─── */
             (function () {
                 const radios = form.querySelectorAll('input[name="tipo_entrega"]');
@@ -2042,7 +2106,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
         function openModal() {
             modal.removeAttribute('hidden');
             document.body.classList.add('modal-open');
-            if (card) card.scrollTop = 0;
+            var scroll = document.getElementById('orderModalScroll');
+            if (scroll) scroll.scrollTop = 0;
             /* Enfocar el primer campo visible */
             var first = card ? card.querySelector('.form-step.is-active input:not([type="hidden"])') : null;
             if (first) setTimeout(function () { first.focus(); }, 80);
