@@ -92,7 +92,9 @@
                 <form action="<?= BASE_URL ?>/AdminLanding/index" method="GET" class="admin-form admin-form--compact">
                   <div class="admin-form-group">
                     <label for="producto_id_select">Producto</label>
-                    <select name="producto_id" id="producto_id_select" onchange="this.form.submit()">
+                    <select name="producto_id" id="producto_id_select"
+                    data-current="<?= htmlspecialchars((string)$producto_id) ?>"
+                    onchange="if(window.formDirty && !confirm('Tienes cambios sin guardar en la landing actual. ¿Cambiar de producto de todas formas?')) { this.value = this.dataset.current; return; } this.form.submit()">
                       <?php foreach ($productos as $prod): ?>
                         <option value="<?= htmlspecialchars($prod['id']) ?>" <?= ($prod['id'] == $producto_id) ? 'selected' : '' ?>>
                           <?= htmlspecialchars($prod['nombre']) ?>
@@ -471,6 +473,7 @@
                       <div class="mini-card-title" style="display:flex;align-items:center;justify-content:space-between;">
                         <span><i class="fas fa-layer-group"></i> Característica <?= $cn ?></span>
                         <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;">
+                          <input type="hidden" name="caract<?= $cn ?>_active" value="0">
                           <input type="checkbox" name="caract<?= $cn ?>_active" value="1" <?= $cActive ? 'checked' : '' ?>>
                           Visible
                         </label>
@@ -1393,10 +1396,10 @@
                           <div class="color-picker-wrap">
                             <input type="color" id="color_gold" name="color_gold"
                               value="<?= htmlspecialchars($config['color_gold'] ?? '#c9a84c') ?>"
-                              oninput="syncHex(this, 'color_gold_hex')">
+                              oninput="syncHex(this, 'color_gold_hex'); updatePreviewBar()">
                             <input type="text" id="color_gold_hex" class="color-hex-input"
                               value="<?= htmlspecialchars($config['color_gold'] ?? '#c9a84c') ?>"
-                              maxlength="7" oninput="syncPicker(this, 'color_gold')">
+                              maxlength="7" oninput="syncPicker(this, 'color_gold'); updatePreviewBar()">
                           </div>
                         </div>
 
@@ -1405,10 +1408,10 @@
                           <div class="color-picker-wrap">
                             <input type="color" id="color_gold_light" name="color_gold_light"
                               value="<?= htmlspecialchars($config['color_gold_light'] ?? '#e8c96a') ?>"
-                              oninput="syncHex(this, 'color_gold_light_hex')">
+                              oninput="syncHex(this, 'color_gold_light_hex'); updatePreviewBar()">
                             <input type="text" id="color_gold_light_hex" class="color-hex-input"
                               value="<?= htmlspecialchars($config['color_gold_light'] ?? '#e8c96a') ?>"
-                              maxlength="7" oninput="syncPicker(this, 'color_gold_light')">
+                              maxlength="7" oninput="syncPicker(this, 'color_gold_light'); updatePreviewBar()">
                           </div>
                         </div>
 
@@ -1417,10 +1420,10 @@
                           <div class="color-picker-wrap">
                             <input type="color" id="color_success" name="color_success"
                               value="<?= htmlspecialchars($config['color_success'] ?? '#4caf7d') ?>"
-                              oninput="syncHex(this, 'color_success_hex')">
+                              oninput="syncHex(this, 'color_success_hex'); updatePreviewBar()">
                             <input type="text" id="color_success_hex" class="color-hex-input"
                               value="<?= htmlspecialchars($config['color_success'] ?? '#4caf7d') ?>"
-                              maxlength="7" oninput="syncPicker(this, 'color_success')">
+                              maxlength="7" oninput="syncPicker(this, 'color_success'); updatePreviewBar()">
                           </div>
                         </div>
 
@@ -1429,10 +1432,10 @@
                           <div class="color-picker-wrap">
                             <input type="color" id="color_countdown" name="color_countdown"
                               value="<?= htmlspecialchars($config['color_countdown'] ?? '#e8c96a') ?>"
-                              oninput="syncHex(this, 'color_countdown_hex')">
+                              oninput="syncHex(this, 'color_countdown_hex'); updatePreviewBar()">
                             <input type="text" id="color_countdown_hex" class="color-hex-input"
                               value="<?= htmlspecialchars($config['color_countdown'] ?? '#e8c96a') ?>"
-                              maxlength="7" oninput="syncPicker(this, 'color_countdown')">
+                              maxlength="7" oninput="syncPicker(this, 'color_countdown'); updatePreviewBar()">
                           </div>
                         </div>
 
@@ -1612,15 +1615,6 @@
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
-                        <label style="display:flex; gap:10px; align-items:center;">
-                          <input type="hidden" name="show_garantia" value="0">
-                          <input type="checkbox" name="show_garantia" value="1"
-                            <?= !empty($config['show_garantia']) || !isset($config['show_garantia']) ? 'checked' : '' ?>>
-                          Mostrar banner de garantía
-                        </label>
-                      </div>
-
-                      <div class="admin-form-group admin-form-group--full">
                         <label for="garantia_title">Título</label>
                         <input type="text" id="garantia_title" name="garantia_title"
                           value="<?= htmlspecialchars($config['garantia_title'] ?? 'Tu compra está 100% protegida') ?>">
@@ -1743,6 +1737,7 @@
                 <a href="#sec-hero" data-target="sec-hero">Hero</a>
                 <a href="#sec-beneficios" data-target="sec-beneficios">Beneficios</a>
                 <a href="#sec-galeria" data-target="sec-galeria">Galería</a>
+                <a href="#sec-caracteristicas" data-target="sec-caracteristicas">Características</a>
                 <a href="#sec-contador" data-target="sec-contador">Contador</a>
                 <a href="#sec-porque" data-target="sec-porque">¿Por qué?</a>
                 <a href="#sec-comparison" data-target="sec-comparison">Comparativa</a>
