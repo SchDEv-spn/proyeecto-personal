@@ -1676,6 +1676,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                     <span>Descuento</span>
                                     <strong id="summaryDiscount">$0</strong>
                                 </div>
+                                <div class="order-summary__row" id="summarySaveRow" style="display:none;">
+                                    <span>Ahorras</span>
+                                    <strong id="summarySave" style="color:var(--success,#22c55e);"></strong>
+                                </div>
                                 <div class="order-summary__row">
                                     <span>Envío</span>
                                     <strong class="summary-free">GRATIS</strong>
@@ -1913,6 +1917,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 }
                 const cantEl = form.querySelector('#cantidad_total');
                 if (cantEl) cantEl.value = Math.max(1, t);
+                const badge = document.getElementById('modalCartBadge');
+                if (badge) badge.textContent = Math.max(1, t);
                 document.dispatchEvent(new Event('landing:recalc'));
             }
 
@@ -2033,6 +2039,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     qInput.value = qty;
                     if (qUnitLbl) qUnitLbl.textContent = qty === 1 ? 'unidad' : 'unidades';
                     qMinus.disabled = qty <= 1;
+                    const badge = document.getElementById('modalCartBadge');
+                    if (badge) badge.textContent = qty;
                     updatePricePreview(qty);
                     document.dispatchEvent(new Event('landing:recalc'));
                 }

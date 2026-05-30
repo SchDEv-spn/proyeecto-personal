@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const summary = document.getElementById('orderSummary');
   if (!summary) return;
 
-  const form = summary.closest('form') || document.querySelector('form[action=(window.BASE_URL||"")+"/Landing/enviarPedido"]');
+  const form = summary.closest('form') || document.getElementById('formPedido');
   if (!form) return;
 
   const totalHidden = document.getElementById('cantidad_total');
@@ -136,7 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (subEl) subEl.textContent = formatCOP(subtotal);
     if (disEl) disEl.textContent = formatCOP(discount);
     if (totEl) totEl.textContent = formatCOP(totalPay);
-    if (savEl) savEl.textContent = formatCOP(ahorroTotal);
+    if (savEl) {
+      savEl.textContent = formatCOP(ahorroTotal);
+      const saveRow = document.getElementById('summarySaveRow');
+      if (saveRow) saveRow.style.display = ahorroTotal > 0 ? '' : 'none';
+    }
 
     if (totalUnitsEl) totalUnitsEl.textContent = String(units);
     if (totalHidden) totalHidden.value = String(units);
