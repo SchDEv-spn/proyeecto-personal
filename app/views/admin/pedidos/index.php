@@ -180,6 +180,7 @@
                             <button class="state-chip" data-estado="cancelado">Cancelado</button>
                         </div>
 
+                        <p class="results-counter" id="resultsCounter"></p>
                         <div class="cards-container" id="contenedorPedidos">
                             <?php foreach ($pedidos as $p): ?>
                                 <?php
@@ -320,7 +321,8 @@
                                     </div>
                                 </div>
                             <?php endforeach; ?>
-                        </div>
+                        </div><!-- /cards-container -->
+                    </div><!-- /table-container -->
                     <?php endif; ?>
             </section>
         </main>

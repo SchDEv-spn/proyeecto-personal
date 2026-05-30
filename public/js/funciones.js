@@ -1153,22 +1153,36 @@
 // PEDIDOS: Filtro por estado
 // =========================
 (() => {
-  const stateFilter = document.getElementById('stateFilter');
-  const container   = document.getElementById('contenedorPedidos');
+  const stateFilter  = document.getElementById('stateFilter');
+  const container    = document.getElementById('contenedorPedidos');
+  const counterEl    = document.getElementById('resultsCounter');
   if (!stateFilter || !container) return;
 
   const cards = Array.from(container.querySelectorAll('.order-card'));
 
+  const countVisible = () => cards.filter(c =>
+    !c.classList.contains('is-hidden-by-state') &&
+    !c.classList.contains('is-hidden-by-range') &&
+    !c.classList.contains('is-hidden-by-search')
+  ).length;
+
+  const updateCounter = (estado) => {
+    if (!counterEl) return;
+    const visible = countVisible();
+    const total   = cards.length;
+    counterEl.textContent = estado === ''
+      ? `${total} pedido${total !== 1 ? 's' : ''}`
+      : `${visible} de ${total} pedido${total !== 1 ? 's' : ''}`;
+  };
+
   const updateEmptyState = () => {
     const emptyEl = container.querySelector('.cards-empty');
     if (!emptyEl) return;
-    const visible = cards.filter(c =>
-      !c.classList.contains('is-hidden-by-state') &&
-      !c.classList.contains('is-hidden-by-range') &&
-      !c.classList.contains('is-hidden-by-search')
-    ).length;
-    emptyEl.style.display = visible === 0 ? '' : 'none';
+    emptyEl.style.display = countVisible() === 0 ? '' : 'none';
   };
+
+  // Inicializar contador con todos los pedidos
+  updateCounter('');
 
   stateFilter.addEventListener('click', (e) => {
     const chip = e.target.closest('.state-chip');
@@ -1185,6 +1199,7 @@
     });
 
     updateEmptyState();
+    updateCounter(estado);
   });
 })();
 

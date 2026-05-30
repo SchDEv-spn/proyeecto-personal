@@ -84,7 +84,14 @@ if ($telLimpio !== '') {
   <div class="modal-header">
     <div>
       <h3 id="pedidoModalTitle">Pedido #<?= htmlspecialchars($pedido['id'] ?? '') ?></h3>
-      <p>Creado el <?= htmlspecialchars($pedido['created_at'] ?? '') ?></p>
+      <?php
+      $_fechaTs  = !empty($pedido['created_at']) ? strtotime($pedido['created_at']) : 0;
+      $_meses    = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      $_fechaFmt = $_fechaTs
+          ? (date('j', $_fechaTs) . ' ' . $_meses[(int)date('n', $_fechaTs) - 1] . '. ' . date('Y', $_fechaTs) . ', ' . date('g:i a', $_fechaTs))
+          : ($pedido['created_at'] ?? '');
+      ?>
+      <p>Creado el <time datetime="<?= htmlspecialchars($pedido['created_at'] ?? '') ?>"><?= htmlspecialchars($_fechaFmt) ?></time></p>
     </div>
 
     <div class="detalle-acciones">
@@ -230,8 +237,55 @@ if ($telLimpio !== '') {
             <span class="detalle-value"><?= htmlspecialchars($pedido['direccion']) ?></span>
           </div>
         <?php endif; ?>
+
+        <?php if (!empty($pedido['nota_entrega'])): ?>
+          <div class="detalle-item detalle-item-full">
+            <span class="detalle-label">📝 Nota para el mensajero</span>
+            <span class="detalle-value"><?= htmlspecialchars($pedido['nota_entrega']) ?></span>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
+
+    <!-- Sección financiera -->
+    <div class="table-container" style="margin-top:1.25rem;">
+      <div class="table-header">
+        <h3>Financiero</h3>
+      </div>
+      <div class="detalle-grid">
+
+        <div class="detalle-item">
+          <span class="detalle-label">Precio unitario</span>
+          <span class="detalle-value">$<?= number_format($precioUnit, 0, ',', '.') ?></span>
+        </div>
+
+        <?php if ($descuentoTotal > 0): ?>
+        <div class="detalle-item">
+          <span class="detalle-label">Descuento</span>
+          <span class="detalle-value" style="color:var(--ok,#4caf7d);">−$<?= number_format($descuentoTotal, 0, ',', '.') ?></span>
+        </div>
+        <?php endif; ?>
+
+        <div class="detalle-item">
+          <span class="detalle-label">Total cobrado</span>
+          <span class="detalle-value" style="font-weight:700;">$<?= number_format($precioTotal, 0, ',', '.') ?></span>
+        </div>
+
+        <?php if ($costoEnvio > 0): ?>
+        <div class="detalle-item">
+          <span class="detalle-label">Costo envío</span>
+          <span class="detalle-value">$<?= number_format($costoEnvio, 0, ',', '.') ?></span>
+        </div>
+        <?php endif; ?>
+
+        <div class="detalle-item">
+          <span class="detalle-label">Utilidad</span>
+          <span class="detalle-value profit-tag" style="font-weight:700;">$<?= number_format($utilidadTotal, 0, ',', '.') ?></span>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
 </div>
