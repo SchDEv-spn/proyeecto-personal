@@ -87,9 +87,13 @@ if ($telLimpio !== '') {
       <?php
       $_fechaTs  = !empty($pedido['created_at']) ? strtotime($pedido['created_at']) : 0;
       $_meses    = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-      $_fechaFmt = $_fechaTs
-          ? (date('j', $_fechaTs) . ' ' . $_meses[(int)date('n', $_fechaTs) - 1] . '. ' . date('Y', $_fechaTs) . ', ' . date('g:i a', $_fechaTs))
-          : ($pedido['created_at'] ?? '');
+      $_fechaFmt = '';
+      if ($_fechaTs) {
+          $_dtM = (new DateTime('@' . $_fechaTs))->setTimezone(new DateTimeZone('America/Bogota'));
+          $_fechaFmt = $_dtM->format('j') . ' ' . $_meses[(int)$_dtM->format('n') - 1] . '. ' . $_dtM->format('Y') . ', ' . $_dtM->format('g:i a');
+      } else {
+          $_fechaFmt = $pedido['created_at'] ?? '';
+      }
       ?>
       <p>Creado el <time datetime="<?= htmlspecialchars($pedido['created_at'] ?? '') ?>"><?= htmlspecialchars($_fechaFmt) ?></time></p>
     </div>

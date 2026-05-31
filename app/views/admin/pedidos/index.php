@@ -190,7 +190,8 @@
                         <div class="cards-container" id="contenedorPedidos">
                             <?php
                             $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
-                            $_meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                            $_meses   = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                            $_tzBogota = new DateTimeZone('America/Bogota');
                             foreach ($pedidos as $p):
                             ?>
                                 <?php
@@ -225,10 +226,12 @@
                                 ?>
 
                                 <?php
-                                $tsCreado = strtotime($p['created_at'] ?? '');
-                                $createdFmt = $tsCreado
-                                    ? (date('j', $tsCreado) . ' ' . $_meses[(int)date('n', $tsCreado) - 1] . '. ' . date('Y', $tsCreado) . ' · ' . date('g:i a', $tsCreado))
-                                    : '';
+                                $tsCreado = !empty($p['created_at']) ? strtotime($p['created_at']) : 0;
+                                $createdFmt = '';
+                                if ($tsCreado) {
+                                    $_dtC = (new DateTime('@' . $tsCreado))->setTimezone($_tzBogota);
+                                    $createdFmt = $_dtC->format('j') . ' ' . $_meses[(int)$_dtC->format('n') - 1] . '. ' . $_dtC->format('Y') . ' · ' . $_dtC->format('g:i a');
+                                }
                                 ?>
                                 <div class="order-card"
                                      data-pedido-id="<?= htmlspecialchars($p['id'] ?? '') ?>"

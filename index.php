@@ -15,6 +15,7 @@ if (file_exists($_envFile)) {
 unset($_envFile, $_line, $_k, $_v);
 
 session_start();
+date_default_timezone_set('America/Bogota');
 
 // Garantizar que los directorios de uploads existan tras cada deploy
 foreach (['public/uploads/productos', 'public/uploads/landing'] as $_d) {
