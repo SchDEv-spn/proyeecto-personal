@@ -312,6 +312,7 @@ $showComparison      = (int)($cfg['show_comparison']       ?? 1) && $_comparison
 $showResumenOferta   = (int)($cfg['show_resumen_oferta']   ?? 1);
 $regaloImagePath     = $cfg['regalo_image_path'] ?? '';
 $regaloLabel         = $cfg['regalo_label']       ?? 'Cartera a juego incluida de regalo';
+$showRegalo          = (int)($cfg['show_regalo']  ?? 1) && !empty($regaloImagePath);
 $showCtaSticky       = (int)($cfg['show_cta_sticky']       ?? 1);
 $showWhatsappBtn     = (int)($cfg['show_whatsapp_btn']     ?? 1);
 $showFomo            = (int)($cfg['show_fomo']             ?? 1);
@@ -525,7 +526,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
     <?php
     // Orden de secciones dinámico
-    $defaultSectionOrder = ['benefits','gallery','caracteristicas','como_funciona','countdown','porque','comparison','para_quien','testimonios','wa_testimonios','faqs','garantia'];
+    $defaultSectionOrder = ['benefits','gallery','caracteristicas','como_funciona','countdown','porque','comparison','para_quien','testimonios','wa_testimonios','faqs','garantia','regalo'];
     $savedOrder = array_filter(array_map('trim', explode(',', $cfg['section_order'] ?? '')));
     $validSaved = array_values(array_filter(array_map(function($k) use ($defaultSectionOrder) {
         return in_array($k, $defaultSectionOrder, true) ? $k : null;
@@ -1271,6 +1272,23 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </div>
         <?php endif; $sections['garantia'] = ob_get_clean(); ?>
 
+        <!-- REGALO -->
+        <?php ob_start(); if ($showRegalo): ?>
+        <section class="container regalo-section animate-fadeup">
+            <div class="regalo-inner">
+                <div class="regalo-badge">🎁 Incluye de regalo</div>
+                <div class="regalo-img-wrap">
+                    <img src="<?= htmlspecialchars($regaloImagePath) ?>"
+                         alt="<?= htmlspecialchars($regaloLabel) ?>"
+                         class="regalo-img"
+                         loading="lazy" decoding="async">
+                </div>
+                <p class="regalo-label"><?= htmlspecialchars($regaloLabel) ?></p>
+                <a href="#form-pedido" class="btn-primary regalo-cta">Lo quiero con el regalo incluido</a>
+            </div>
+        </section>
+        <?php endif; $sections['regalo'] = ob_get_clean(); ?>
+
         <?php foreach ($sectionOrder as $_sec) { echo $sections[$_sec] ?? ''; } ?>
 
         <!-- AUTORIDAD / CREDIBILIDAD -->
@@ -1320,16 +1338,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <span>💳 Pago al recibir</span>
                 <span>🔄 Garantía de cambio</span>
             </div>
-            <?php if (!empty($regaloImagePath)): ?>
-            <div class="offer-anchor__regalo">
-                <div class="offer-anchor__regalo-badge">🎁 GRATIS con tu pedido</div>
-                <img src="<?= htmlspecialchars($regaloImagePath) ?>"
-                     alt="<?= htmlspecialchars($regaloLabel) ?>"
-                     class="offer-anchor__regalo-img"
-                     loading="lazy">
-                <p class="offer-anchor__regalo-label"><?= htmlspecialchars($regaloLabel) ?></p>
-            </div>
-            <?php endif; ?>
             <?php if ($urgencyStock <= 10): ?>
             <p class="offer-anchor__scarcity">
                 ⚠️ Solo quedan <strong id="offerAnchorStock"><?= $urgencyStock ?></strong> unidades a este precio

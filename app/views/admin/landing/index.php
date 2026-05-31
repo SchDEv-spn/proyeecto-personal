@@ -142,6 +142,7 @@
                         'show_faqs'            => ['icon' => '❓', 'label' => 'Preguntas frecuentes'],
                         'show_wa_testimonios'  => ['icon' => '📱', 'label' => 'Testimonios WhatsApp'],
                         'show_garantia'        => ['icon' => '🛡️', 'label' => 'Banner de garantía'],
+                        'show_regalo'          => ['icon' => '🎁', 'label' => 'Regalo incluido'],
                       ];
 
                       // Render toggles in saved order

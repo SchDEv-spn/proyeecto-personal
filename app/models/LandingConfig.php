@@ -307,7 +307,8 @@ class LandingConfig extends Model
                 form_subtitle = :form_subtitle,
 
                 regalo_image_path = :regalo_image_path,
-                regalo_label      = :regalo_label
+                regalo_label      = :regalo_label,
+                show_regalo       = :show_regalo
 
             WHERE producto_id = :producto_id";
 
@@ -596,6 +597,7 @@ class LandingConfig extends Model
 
             ':regalo_image_path' => $data['regalo_image_path'] ?? null,
             ':regalo_label'      => $data['regalo_label']      ?? null,
+            ':show_regalo'       => isset($data['show_regalo']) ? (int)$data['show_regalo'] : 1,
 
             ':producto_id' => $productoId,
         ]);
