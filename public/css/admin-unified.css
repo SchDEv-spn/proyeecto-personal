@@ -364,8 +364,32 @@ body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
 
 /* Grupo de botones de rango (hoy / ayer / semana / mes) */
 .range-btns { display: flex; gap: 4px; }
-.range-btns .range-btn { height: 30px; padding: 0 11px; font-size: 12px; text-decoration: none; line-height: 1; }
-.range-btns .range-btn.is-active { background: var(--gold-ghost, rgba(201,168,76,.12)); border-color: rgba(201,168,76,.35); color: var(--gold); font-weight: 700; }
+.range-btns .range-btn {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--bd-default);
+  background: var(--bg-elevated);
+  color: var(--tx-secondary);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s, border-color .15s;
+  flex: 0 0 auto;
+}
+.range-btns .range-btn:hover { color: var(--tx-primary); border-color: var(--bd-strong); }
+.range-btns .range-btn.is-active {
+  background: var(--gold-ghost);
+  border-color: rgba(201,168,76,.35);
+  color: var(--gold);
+  font-weight: 700;
+}
 
 .range-menu {
   position: absolute;
@@ -487,7 +511,7 @@ body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
   gap: 12px;
   margin-bottom: 20px;
 }
-@media (min-width: 1100px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 750px)  { .stats-grid { grid-template-columns: repeat(5, 1fr); } }
 
 .stat-card {
   background: var(--bg-surface);
@@ -538,6 +562,7 @@ body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
   color: var(--tx-primary);
   line-height: 1;
 }
+@media (max-width: 599px) { .stat-info h3 { font-size: 20px; } }
 
 .stat-icon {
   width: 42px; height: 42px;
@@ -658,16 +683,27 @@ body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
 .order-card {
   background: var(--bg-elevated);
   border: 1px solid var(--bd-subtle);
+  border-left-width: 3px;
   border-radius: var(--r-lg);
   overflow: hidden;
   box-shadow: var(--sh-sm);
   transition: transform .18s, box-shadow .18s, border-color .18s;
+  animation: cardIn .25s ease-out both;
 }
 .order-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--sh-md);
-  border-color: rgba(201,168,76,.20);
+  border-color: rgba(201,168,76,.25);
 }
+
+/* Status left-border accents — scanning visual rápido */
+.order-card[data-estado="nuevo"]      { border-left-color: var(--info); }
+.order-card[data-estado="contactado"] { border-left-color: #a78bfa; }
+.order-card[data-estado="confirmado"] { border-left-color: var(--ok); }
+.order-card[data-estado="enviado"]    { border-left-color: var(--warn); }
+.order-card[data-estado="en_oficina"] { border-left-color: var(--warn); }
+.order-card[data-estado="entregado"]  { border-left-color: var(--ok); }
+.order-card[data-estado="cancelado"]  { border-left-color: var(--err); }
 
 .card-header {
   padding: 12px 14px;
@@ -708,6 +744,88 @@ body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
   color: var(--tx-muted);
   text-align: center;
   font-size: 13px;
+}
+
+/* Card entry animation */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.order-card:nth-child(1)   { animation-delay: .03s; }
+.order-card:nth-child(2)   { animation-delay: .06s; }
+.order-card:nth-child(3)   { animation-delay: .09s; }
+.order-card:nth-child(4)   { animation-delay: .12s; }
+.order-card:nth-child(5)   { animation-delay: .15s; }
+.order-card:nth-child(6)   { animation-delay: .18s; }
+.order-card:nth-child(7)   { animation-delay: .21s; }
+.order-card:nth-child(8)   { animation-delay: .24s; }
+.order-card:nth-child(9)   { animation-delay: .27s; }
+.order-card:nth-child(10)  { animation-delay: .30s; }
+.order-card:nth-child(11)  { animation-delay: .33s; }
+.order-card:nth-child(12)  { animation-delay: .36s; }
+.order-card:nth-child(n+13){ animation-delay: .38s; }
+
+/* Card financials section */
+.card-fin {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  background: linear-gradient(135deg, var(--bg-elevated) 60%, var(--bg-surface) 100%);
+}
+.card-fin__right { text-align: right; }
+.card-price {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tx-primary);
+  letter-spacing: -.02em;
+  margin-top: 3px;
+  line-height: 1;
+}
+.card-profit {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ok-bd);
+  background: var(--ok-bg);
+  color: var(--ok);
+  margin-top: 3px;
+  letter-spacing: -.01em;
+}
+
+/* Orders search bar */
+.orders-search { padding: 10px 14px 0; }
+.orders-search__wrap { position: relative; }
+.orders-search__icon {
+  position: absolute;
+  left: 11px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--tx-muted);
+  font-size: 11px;
+  pointer-events: none;
+}
+.orders-search__input {
+  width: 100%;
+  height: 36px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--bd-default);
+  border-radius: var(--r-md);
+  padding: 0 12px 0 32px;
+  color: var(--tx-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s, background .15s;
+  -webkit-appearance: none;
+}
+.orders-search__input::placeholder { color: var(--tx-muted); }
+.orders-search__input:focus {
+  border-color: var(--gold-dim);
+  background: var(--bg-overlay);
 }
 
 /* ============================================================
@@ -1802,8 +1920,9 @@ body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
   border-bottom: 1px solid var(--bd-subtle);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
+.state-filter::-webkit-scrollbar { display: none; }
 .results-counter {
   font-size: .75rem;
   color: var(--tx-muted);

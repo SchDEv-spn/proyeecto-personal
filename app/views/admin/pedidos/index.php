@@ -175,6 +175,16 @@
                                 </a>
                             </div>
                         </div>
+                        <div class="orders-search">
+                            <div class="orders-search__wrap">
+                                <i class="fas fa-search orders-search__icon"></i>
+                                <input type="search" id="searchPedidos"
+                                       class="orders-search__input"
+                                       placeholder="Buscar nombre, teléfono, ciudad…"
+                                       autocomplete="off">
+                            </div>
+                        </div>
+
                         <div class="state-filter" id="stateFilter">
                             <button class="state-chip is-active" data-estado="">Todos</button>
                             <button class="state-chip" data-estado="nuevo">Nuevo</button>
@@ -270,14 +280,14 @@
                                         </div>
                                     </div>
 
-                                    <div class="card-section" style="display: flex; justify-content: space-between;">
+                                    <div class="card-section card-fin">
                                         <div>
-                                            <span class="card-label">Precio Total</span>
-                                            <div class="card-value"><strong>$<?= number_format($precioTotal, 0, ',', '.') ?></strong></div>
+                                            <span class="card-label">Total cobrado</span>
+                                            <strong class="card-price">$<?= number_format($precioTotal, 0, ',', '.') ?></strong>
                                         </div>
-                                        <div style="text-align: right;">
+                                        <div class="card-fin__right">
                                             <span class="card-label">Utilidad</span>
-                                            <div class="card-value profit-tag">$<?= number_format($utilidadTotal, 0, ',', '.') ?></div>
+                                            <span class="card-profit">$<?= number_format($utilidadTotal, 0, ',', '.') ?></span>
                                         </div>
                                     </div>
 
