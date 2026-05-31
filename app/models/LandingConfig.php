@@ -304,7 +304,10 @@ class LandingConfig extends Model
                 caract4_text          = :caract4_text,
 
                 form_title    = :form_title,
-                form_subtitle = :form_subtitle
+                form_subtitle = :form_subtitle,
+
+                regalo_image_path = :regalo_image_path,
+                regalo_label      = :regalo_label
 
             WHERE producto_id = :producto_id";
 
@@ -590,6 +593,9 @@ class LandingConfig extends Model
 
             ':form_title'    => $data['form_title']    ?? null,
             ':form_subtitle' => $data['form_subtitle'] ?? null,
+
+            ':regalo_image_path' => $data['regalo_image_path'] ?? null,
+            ':regalo_label'      => $data['regalo_label']      ?? null,
 
             ':producto_id' => $productoId,
         ]);
