@@ -261,7 +261,8 @@ class AdminLandingController extends Controller
 
             // ===== Regalo =====
             'regalo_label'  => trim($_POST['regalo_label'] ?? ''),
-            'show_regalo'   => (int)($_POST['show_regalo'] ?? 1),
+            'show_regalo'   => (int)($_POST['show_regalo']    ?? 1),
+            'show_price_box'=> (int)($_POST['show_price_box'] ?? 1),
         ];
 
         // WhatsApp items (1..5)

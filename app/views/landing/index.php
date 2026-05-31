@@ -310,6 +310,7 @@ $showAnnouncementBar = (int)($cfg['show_announcement_bar'] ?? 1);
 $showStickyBar       = (int)($cfg['show_sticky_bar']       ?? 1);
 $showComparison      = (int)($cfg['show_comparison']       ?? 1) && $_comparisonHasData;
 $showResumenOferta   = (int)($cfg['show_resumen_oferta']   ?? 1);
+$showPriceBox        = (int)($cfg['show_price_box'] ?? 1);
 $regaloImagePath     = $cfg['regalo_image_path'] ?? '';
 $regaloLabel         = $cfg['regalo_label']       ?? 'Cartera a juego incluida de regalo';
 $showRegalo          = (int)($cfg['show_regalo']  ?? 1) && !empty($regaloImagePath);
@@ -468,39 +469,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <?php endif; ?>
 
 
-            <div class="price-box">
-                <div class="price-label">Oferta exclusiva · Solo hoy</div>
-                <div class="save">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></div>
-                <div class="old">$<?= number_format($precio_regular, 0, ',', '.') ?></div>
-                <div class="new">$<?= number_format($precio_venta, 0, ',', '.') ?></div>
-
-                <a href="#form-pedido" class="btn-primary" id="heroCta">
-                    <?= htmlspecialchars($heroButtonText) ?>
-                </a>
-
-                <div class="hero-countdown-inline">
-                    <span class="countdown-label">Expira en</span>
-                    <span id="heroCountdown" class="countdown-digits" data-minutes="<?= $countdownMinutes ?>">--:--</span>
-                </div>
-            </div>
-
-            <div class="hero-trust-row">
-                <!-- pago al recibir: tarjeta/dinero -->
-                <span class="hero-trust-item">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                    <?= htmlspecialchars($heroTrust1) ?>
-                </span>
-                <!-- envío gratis: camión -->
-                <span class="hero-trust-item">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                    <?= htmlspecialchars($heroTrust2) ?>
-                </span>
-                <!-- cambios sin problema: flechas refresh -->
-                <span class="hero-trust-item">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-                    <?= htmlspecialchars($heroTrust3) ?>
-                </span>
-            </div>
         </div>
 
         <div class="hero-media">
@@ -526,7 +494,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
     <?php
     // Orden de secciones dinámico
-    $defaultSectionOrder = ['benefits','gallery','caracteristicas','como_funciona','countdown','porque','comparison','para_quien','testimonios','wa_testimonios','faqs','garantia','regalo'];
+    $defaultSectionOrder = ['price_box','benefits','gallery','caracteristicas','como_funciona','countdown','porque','comparison','para_quien','testimonios','wa_testimonios','faqs','garantia','regalo'];
     $savedOrder = array_filter(array_map('trim', explode(',', $cfg['section_order'] ?? '')));
     $validSaved = array_values(array_filter(array_map(function($k) use ($defaultSectionOrder) {
         return in_array($k, $defaultSectionOrder, true) ? $k : null;
@@ -536,6 +504,46 @@ $colorBorder     = $cfg['color_border']     ?? null;
     ?>
 
     <main>
+
+        <!-- PRICE BOX -->
+        <?php ob_start(); if ($showPriceBox): ?>
+        <section class="container price-box-section animate-fadeup">
+            <div class="price-box">
+                <div class="price-label">Oferta exclusiva · Solo hoy</div>
+                <?php if ($ahorro > 0): ?>
+                <div class="save">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></div>
+                <?php endif; ?>
+                <?php if ($precio_regular > $precio_venta): ?>
+                <div class="old">$<?= number_format($precio_regular, 0, ',', '.') ?></div>
+                <?php endif; ?>
+                <div class="new">$<?= number_format($precio_venta, 0, ',', '.') ?></div>
+
+                <a href="#form-pedido" class="btn-primary" id="heroCta">
+                    <?= htmlspecialchars($heroButtonText) ?>
+                </a>
+
+                <div class="hero-countdown-inline">
+                    <span class="countdown-label">Expira en</span>
+                    <span id="heroCountdown" class="countdown-digits" data-minutes="<?= $countdownMinutes ?>">--:--</span>
+                </div>
+            </div>
+
+            <div class="hero-trust-row">
+                <span class="hero-trust-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    <?= htmlspecialchars($heroTrust1) ?>
+                </span>
+                <span class="hero-trust-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                    <?= htmlspecialchars($heroTrust2) ?>
+                </span>
+                <span class="hero-trust-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                    <?= htmlspecialchars($heroTrust3) ?>
+                </span>
+            </div>
+        </section>
+        <?php endif; $sections['price_box'] = ob_get_clean(); ?>
 
         <?php ob_start(); if ($showBenefits): ?>
         <!-- BENEFICIOS — tarjetas horizontales con foto por beneficio -->

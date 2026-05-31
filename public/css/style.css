@@ -1375,6 +1375,15 @@ h3 {
 }
 
 /* ── PRICE BOX ────────────────────────────────────────────── */
+.price-box-section {
+  padding: var(--space-lg) 0;
+}
+.price-box-section .price-box {
+  max-width: 480px;
+  margin-inline: auto;
+  animation: none;
+}
+
 .price-box {
   background: var(--bg-layer2);
   border: 1px solid var(--gold-border);
