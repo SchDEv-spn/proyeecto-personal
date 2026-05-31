@@ -1339,6 +1339,7 @@ h3 {
   Cada frase ocupa exactamente 0%-33% de su propio ciclo de 12s.
   Con delay 0s / 4s / 8s nunca coinciden dos frases visibles.
 */
+/* 3 frases: ciclo 12s, cada frase ocupa 4s (33%) */
 @keyframes subtitlePhrase {
   0%    { opacity: 0; transform: translateY(9px); }
   7%    { opacity: 1; transform: translateY(0);   }
@@ -1347,9 +1348,18 @@ h3 {
   100%  { opacity: 0; transform: translateY(-7px);}
 }
 
+/* 2 frases: ciclo 8s, cada frase ocupa 4s (50%) — sin dead zone */
+@keyframes subtitlePhrase2 {
+  0%    { opacity: 0; transform: translateY(9px); }
+  10%   { opacity: 1; transform: translateY(0);   }
+  40%   { opacity: 1; transform: translateY(0);   }
+  50%   { opacity: 0; transform: translateY(-7px);}
+  100%  { opacity: 0; transform: translateY(-7px);}
+}
+
 .hero-subtitle--rotate {
   position: relative;
-  min-height: 2.8em;   /* suficiente para 2 líneas */
+  min-height: 2.8em;
   display: block;
   overflow: hidden;
   animation: fadeUp 0.8s ease 0.2s both;
@@ -1365,6 +1375,12 @@ h3 {
   line-height: inherit;
   animation: subtitlePhrase 12s ease-in-out infinite;
   animation-delay: calc(var(--i) * 4s);
+}
+
+/* Con 2 frases usa el keyframe ajustado y ciclo de 8s */
+[data-count="2"] .hero-subtitle__phrase {
+  animation-name: subtitlePhrase2;
+  animation-duration: 8s;
 }
 
 .hero-note {
