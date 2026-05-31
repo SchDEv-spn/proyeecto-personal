@@ -2784,14 +2784,14 @@ body.modal-open { overflow: hidden; }
 @media (max-width: 767px) {
   .header-greeting > div { flex-shrink: 0; }
   .header-greeting h3 {
-    width: 130px;
+    width: 160px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 }
 
 @media (max-width: 360px) {
-  .header-greeting h3 { width: 100px; }
+  .header-greeting h3 { width: 120px; }
 }
 
 /* Header CTAs: icon-only en mobile para liberar espacio */
