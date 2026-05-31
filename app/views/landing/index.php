@@ -310,6 +310,8 @@ $showAnnouncementBar = (int)($cfg['show_announcement_bar'] ?? 1);
 $showStickyBar       = (int)($cfg['show_sticky_bar']       ?? 1);
 $showComparison      = (int)($cfg['show_comparison']       ?? 1) && $_comparisonHasData;
 $showResumenOferta   = (int)($cfg['show_resumen_oferta']   ?? 1);
+$regaloImagePath     = $cfg['regalo_image_path'] ?? '';
+$regaloLabel         = $cfg['regalo_label']       ?? 'Cartera a juego incluida de regalo';
 $showCtaSticky       = (int)($cfg['show_cta_sticky']       ?? 1);
 $showWhatsappBtn     = (int)($cfg['show_whatsapp_btn']     ?? 1);
 $showFomo            = (int)($cfg['show_fomo']             ?? 1);
@@ -1318,6 +1320,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <span>💳 Pago al recibir</span>
                 <span>🔄 Garantía de cambio</span>
             </div>
+            <?php if (!empty($regaloImagePath)): ?>
+            <div class="offer-anchor__regalo">
+                <div class="offer-anchor__regalo-badge">🎁 GRATIS con tu pedido</div>
+                <img src="<?= htmlspecialchars($regaloImagePath) ?>"
+                     alt="<?= htmlspecialchars($regaloLabel) ?>"
+                     class="offer-anchor__regalo-img"
+                     loading="lazy">
+                <p class="offer-anchor__regalo-label"><?= htmlspecialchars($regaloLabel) ?></p>
+            </div>
+            <?php endif; ?>
             <?php if ($urgencyStock <= 10): ?>
             <p class="offer-anchor__scarcity">
                 ⚠️ Solo quedan <strong id="offerAnchorStock"><?= $urgencyStock ?></strong> unidades a este precio

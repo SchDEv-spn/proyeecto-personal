@@ -258,6 +258,9 @@ class AdminLandingController extends Controller
             // ===== Form header =====
             'form_title'    => trim($_POST['form_title']    ?? ''),
             'form_subtitle' => trim($_POST['form_subtitle'] ?? ''),
+
+            // ===== Regalo =====
+            'regalo_label' => trim($_POST['regalo_label'] ?? ''),
         ];
 
         // WhatsApp items (1..5)
@@ -368,6 +371,9 @@ class AdminLandingController extends Controller
         $data['comparison_img_without'] = $_POST['comparison_img_without_path_actual'] ?? null;
         $data['comparison_img_with']    = $_POST['comparison_img_with_path_actual']    ?? null;
 
+        // Regalo imagen actual
+        $data['regalo_image_path'] = $_POST['regalo_image_path'] ?? null;
+
         // 4. Manejo de archivos
         $persistentBase = dirname(dirname(dirname($_SERVER['DOCUMENT_ROOT']))) . '/uploads';
         $uploadDir = is_dir($persistentBase)
@@ -415,6 +421,8 @@ class AdminLandingController extends Controller
 
             'comparison_img_without_file' => 'comparison_img_without',
             'comparison_img_with_file'    => 'comparison_img_with',
+
+            'regalo_image_file' => 'regalo_image_path',
         ];
 
         $allowedExts  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'webm'];

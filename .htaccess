@@ -1,5 +1,8 @@
 RewriteEngine On
 
+# Redirigir slug obsoleto a slug nuevo (301 permanente)
+RewriteRule ^producto/bolso-110000/?$ /producto/bolso-cuero-vegano [R=301,L]
+
 # Servir uploads desde almacenamiento persistente fuera de public_html
 RewriteRule ^public/uploads/(.+)$ serve-upload.php?f=$1 [L,QSA]
 

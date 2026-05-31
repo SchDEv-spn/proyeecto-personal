@@ -1691,6 +1691,36 @@
 
                   <hr class="section-hr">
 
+                  <!-- REGALO / BONUS -->
+                  <div class="section-block" id="sec-regalo" data-toc="Regalo">
+                    <h2>Regalo incluido 🎁</h2>
+                    <p style="opacity:.8; margin-bottom:16px;">Imagen del artículo de regalo que se muestra en el resumen de oferta antes del formulario. Déjala vacía si no ofreces regalo.</p>
+
+                    <div class="form-grid">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="regalo_label">Texto del regalo</label>
+                        <input type="text" id="regalo_label" name="regalo_label"
+                          placeholder="Ej: Cartera a juego incluida de regalo"
+                          value="<?= htmlspecialchars($config['regalo_label'] ?? '') ?>">
+                      </div>
+
+                      <div class="admin-form-group admin-form-group--full">
+                        <label>Imagen del regalo</label>
+                        <?php if (!empty($config['regalo_image_path'])): ?>
+                        <div style="margin-bottom:8px;">
+                          <img src="<?= htmlspecialchars($config['regalo_image_path']) ?>"
+                               alt="Regalo actual" style="max-height:120px; border-radius:8px; object-fit:cover;">
+                        </div>
+                        <?php endif; ?>
+                        <input type="hidden" name="regalo_image_path"
+                               value="<?= htmlspecialchars($config['regalo_image_path'] ?? '') ?>">
+                        <input type="file" id="regalo_image_file" name="regalo_image_file" accept="image/*">
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr class="section-hr">
+
                   <!-- FOOTER -->
                   <div class="section-block" id="sec-footer" data-toc="Footer">
                     <h2>Footer</h2>
