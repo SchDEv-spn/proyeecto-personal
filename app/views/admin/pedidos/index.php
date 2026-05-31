@@ -163,6 +163,12 @@
                         <div class="table-header">
                             <h3>Pedidos Recientes</h3>
                             <div class="table-header-actions">
+                                <div class="range-btns" role="group" aria-label="Rango de fechas">
+                                    <a href="<?= BASE_URL ?>/AdminPedidos?rango=hoy"    class="range-btn <?= $rango === 'hoy'    ? 'is-active' : '' ?>">Hoy</a>
+                                    <a href="<?= BASE_URL ?>/AdminPedidos?rango=ayer"   class="range-btn <?= $rango === 'ayer'   ? 'is-active' : '' ?>">Ayer</a>
+                                    <a href="<?= BASE_URL ?>/AdminPedidos?rango=semana" class="range-btn <?= $rango === 'semana' ? 'is-active' : '' ?>">Semana</a>
+                                    <a href="<?= BASE_URL ?>/AdminPedidos?rango=mes"    class="range-btn <?= $rango === 'mes'    ? 'is-active' : '' ?>">Mes</a>
+                                </div>
                                 <a href="<?= BASE_URL ?>/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?>"
                                    class="btn-csv" title="Exportar a CSV">
                                     <i class="fas fa-file-csv"></i> CSV
@@ -182,12 +188,14 @@
 
                         <p class="results-counter" id="resultsCounter"></p>
                         <div class="cards-container" id="contenedorPedidos">
-                            <?php foreach ($pedidos as $p): ?>
+                            <?php
+                            $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
+                            $_meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                            foreach ($pedidos as $p):
+                            ?>
                                 <?php
-                                // --- SE MANTIENE TU LÓGICA DE PROCESAMIENTO ---
                                 $telRaw    = $p['telefono'] ?? '';
                                 $telLimpio = preg_replace('/\D+/', '', $telRaw);
-                                $waUrl     = '';
 
                                 if ($telLimpio !== '') {
                                     if (strpos($telLimpio, '00') === 0) $telLimpio = substr($telLimpio, 2);
@@ -195,13 +203,9 @@
                                         if (strlen($telLimpio) === 11 && $telLimpio[0] === '0') $telLimpio = substr($telLimpio, 1);
                                         $telLimpio = '57' . $telLimpio;
                                     }
-                                    $waUrl = "https://wa.me/" . $telLimpio . "?text=" . urlencode(
-                                        "Hola " . ($p['nombre'] ?? '') . ", te escribimos sobre tu pedido de " . ($p['producto_nombre'] ?? '') . "."
-                                    );
                                 }
 
                                 $estadoActual = $p['estado'] ?? 'nuevo';
-                                $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
                                 $cantidadTotal = (int)($p['cantidad_total'] ?? 1);
                                 if ($cantidadTotal < 1) $cantidadTotal = 1;
 
@@ -230,6 +234,10 @@
                                     elseif ($diff < 86400) $timeBadge = round($diff/3600)  . 'h';
                                     else                   $timeBadge = round($diff/86400) . 'd';
                                 }
+                                $tsCreado = strtotime($p['created_at'] ?? '');
+                                $createdFmt = $tsCreado
+                                    ? (date('j', $tsCreado) . ' ' . $_meses[(int)date('n', $tsCreado) - 1] . '. ' . date('Y', $tsCreado))
+                                    : '';
                                 ?>
                                 <div class="order-card"
                                      data-pedido-id="<?= htmlspecialchars($p['id'] ?? '') ?>"
@@ -240,6 +248,9 @@
                                         <div>
                                             <span class="card-label">ID Pedido</span>
                                             <strong>#<?= htmlspecialchars($p['id'] ?? '') ?></strong>
+                                            <?php if ($createdFmt): ?>
+                                                <small style="display:block;color:var(--tx-muted,#888);font-size:.72rem;margin-top:2px;"><?= htmlspecialchars($createdFmt) ?></small>
+                                            <?php endif; ?>
                                         </div>
                                         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
                                             <span class="status-tag status-<?= htmlspecialchars($estadoActual) ?>">
@@ -355,12 +366,20 @@
 
     <!-- Datos para JS -->
     <script>
-        window.__PEDIDOS__     = <?= json_encode($pedidos,      JSON_UNESCAPED_UNICODE) ?>;
+        window.__PEDIDOS__     = <?= json_encode(array_map(fn($p) => [
+            'id'                   => $p['id']                   ?? null,
+            'estado'               => $p['estado']               ?? null,
+            'created_at'           => $p['created_at']           ?? null,
+            'updated_at'           => $p['updated_at']           ?? null,
+            'precio_total'         => $p['precio_total']         ?? null,
+            'precio_venta'         => $p['precio_venta']         ?? null,
+            'precio_proveedor'     => $p['precio_proveedor']     ?? null,
+            'producto_costo_envio' => $p['producto_costo_envio'] ?? null,
+            'cantidad_total'       => $p['cantidad_total']       ?? null,
+            'telefono'             => $p['telefono']             ?? null,
+        ], $pedidos), JSON_UNESCAPED_UNICODE) ?>;
         window.__PLANTILLAS__  = <?= json_encode($plantillas_wa, JSON_UNESCAPED_UNICODE) ?>;
     </script>
-
-    <!-- Librerías -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

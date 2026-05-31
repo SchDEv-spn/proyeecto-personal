@@ -362,6 +362,11 @@ body.sidebar-open .sidebar-overlay { opacity: 1; pointer-events: auto; }
 .range-btn__label { font-weight: 600; }
 .range-btn__chev { opacity: .5; font-size: 11px; }
 
+/* Grupo de botones de rango (hoy / ayer / semana / mes) */
+.range-btns { display: flex; gap: 4px; }
+.range-btns .range-btn { height: 30px; padding: 0 11px; font-size: 12px; text-decoration: none; line-height: 1; }
+.range-btns .range-btn.is-active { background: var(--gold-ghost, rgba(201,168,76,.12)); border-color: rgba(201,168,76,.35); color: var(--gold); font-weight: 700; }
+
 .range-menu {
   position: absolute;
   top: calc(100% + 8px);
