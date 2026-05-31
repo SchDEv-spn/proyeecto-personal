@@ -1275,16 +1275,22 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <!-- REGALO -->
         <?php ob_start(); if ($showRegalo): ?>
         <section class="container regalo-section animate-fadeup">
-            <div class="regalo-inner">
-                <div class="regalo-badge">🎁 Incluye de regalo</div>
-                <div class="regalo-img-wrap">
+            <div class="regalo-card">
+                <div class="regalo-ribbon">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a5 5 0 015 5c0 1.64-.79 3.09-2 4h5a1 1 0 010 2h-1l-1 9H6l-1-9H4a1 1 0 010-2h5A5 5 0 017 7a5 5 0 015-5zm0 2a3 3 0 100 6 3 3 0 000-6z"/></svg>
+                    <span>Incluye de regalo</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a5 5 0 015 5c0 1.64-.79 3.09-2 4h5a1 1 0 010 2h-1l-1 9H6l-1-9H4a1 1 0 010-2h5A5 5 0 017 7a5 5 0 015-5zm0 2a3 3 0 100 6 3 3 0 000-6z"/></svg>
+                </div>
+                <div class="regalo-img-frame">
                     <img src="<?= htmlspecialchars($regaloImagePath) ?>"
                          alt="<?= htmlspecialchars($regaloLabel) ?>"
                          class="regalo-img"
                          loading="lazy" decoding="async">
                 </div>
-                <p class="regalo-label"><?= htmlspecialchars($regaloLabel) ?></p>
-                <a href="#form-pedido" class="btn-primary regalo-cta">Lo quiero con el regalo incluido</a>
+                <div class="regalo-footer">
+                    <div class="regalo-divider"><span>✦</span></div>
+                    <p class="regalo-label"><?= htmlspecialchars($regaloLabel) ?></p>
+                </div>
             </div>
         </section>
         <?php endif; $sections['regalo'] = ob_get_clean(); ?>

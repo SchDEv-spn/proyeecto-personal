@@ -1717,60 +1717,108 @@ h3 {
 .regalo-section {
     padding: var(--space-xl) 0;
 }
-.regalo-inner {
-    background: var(--bg-layer2);
-    border: 1px solid var(--gold-border);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 2px 24px rgba(0,0,0,0.15);
-    padding: var(--space-xl) var(--space-lg);
-    text-align: center;
+
+.regalo-card {
     position: relative;
-    overflow: hidden;
-    max-width: 480px;
+    max-width: 380px;
     margin-inline: auto;
+    margin-top: 18px;
+    background: var(--bg-layer2);
+    border-radius: 20px;
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--gold) 30%, transparent),
+        0 12px 48px rgba(0,0,0,0.28),
+        0 0 80px color-mix(in srgb, var(--gold) 7%, transparent);
 }
-.regalo-inner::before {
+
+/* Glow sweep superior */
+.regalo-card::before {
     content: '';
     position: absolute;
-    top: -60px; left: 50%;
-    transform: translateX(-50%);
-    width: 260px; height: 260px;
-    background: radial-gradient(circle, color-mix(in srgb, var(--gold) 12%, transparent) 0%, transparent 70%);
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(ellipse 70% 40% at 50% 0%,
+        color-mix(in srgb, var(--gold) 14%, transparent) 0%,
+        transparent 70%);
     pointer-events: none;
 }
-.regalo-badge {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .08em;
+
+/* Badge flotante tipo ribbon */
+.regalo-ribbon {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+    color: #1a0e00;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--bg-base, #0a0a0a);
-    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    padding: 6px 18px;
     border-radius: 999px;
-    padding: 5px 14px;
-    margin-bottom: var(--space-lg);
+    box-shadow:
+        0 3px 14px color-mix(in srgb, var(--gold) 45%, transparent),
+        0 1px 0 rgba(255,255,255,0.25) inset;
 }
-.regalo-img-wrap {
-    margin-bottom: var(--space-md);
+.regalo-ribbon svg {
+    flex-shrink: 0;
+    opacity: .8;
 }
+
+/* Marco de la imagen */
+.regalo-img-frame {
+    padding: 28px 20px 0;
+}
+
 .regalo-img {
     width: 100%;
-    max-width: 280px;
-    height: auto;
-    border-radius: var(--radius-md);
-    display: block;
-    margin-inline: auto;
+    aspect-ratio: 4/3;
     object-fit: cover;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    object-position: center;
+    border-radius: 12px;
+    display: block;
+    box-shadow:
+        0 2px 0 color-mix(in srgb, var(--gold) 20%, transparent),
+        0 8px 24px rgba(0,0,0,0.35);
 }
+
+/* Pie de tarjeta */
+.regalo-footer {
+    padding: 18px 24px 28px;
+    text-align: center;
+}
+
+.regalo-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.regalo-divider::before,
+.regalo-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--gold) 35%, transparent), transparent);
+}
+.regalo-divider span {
+    font-size: 11px;
+    color: var(--gold);
+    opacity: .7;
+}
+
 .regalo-label {
-    font-size: 15px;
+    font-size: 14px;
     color: var(--cream-dim);
-    margin: 0 0 var(--space-lg);
-    line-height: 1.5;
-}
-.regalo-cta {
-    display: inline-block;
+    line-height: 1.55;
+    margin: 0;
+    font-style: italic;
+    letter-spacing: .01em;
 }
 
 /* ── POR QUÉ TE ENCANTARÁ ─────────────────────────────────── */
