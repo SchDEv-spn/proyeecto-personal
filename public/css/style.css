@@ -1735,7 +1735,6 @@ h3 {
     background: var(--bg-layer2);
     border-radius: 20px;
     box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--gold) 30%, transparent),
         0 12px 48px rgba(0,0,0,0.28),
         0 0 80px color-mix(in srgb, var(--gold) 7%, transparent);
 }
@@ -1763,7 +1762,7 @@ h3 {
     gap: 7px;
     white-space: nowrap;
     background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
-    color: #1a0e00;
+    color: var(--btn-text, #0a0a0a);
     font-size: 10.5px;
     font-weight: 800;
     letter-spacing: .1em;
