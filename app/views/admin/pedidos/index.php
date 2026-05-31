@@ -227,7 +227,7 @@
                                 <?php
                                 $tsCreado = strtotime($p['created_at'] ?? '');
                                 $createdFmt = $tsCreado
-                                    ? (date('j', $tsCreado) . ' ' . $_meses[(int)date('n', $tsCreado) - 1] . '. ' . date('Y', $tsCreado))
+                                    ? (date('j', $tsCreado) . ' ' . $_meses[(int)date('n', $tsCreado) - 1] . '. ' . date('Y', $tsCreado) . ' · ' . date('g:i a', $tsCreado))
                                     : '';
                                 ?>
                                 <div class="order-card"
