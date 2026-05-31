@@ -10,7 +10,7 @@ class Database {
                 "mysql:host={$cfg['db_host']};dbname={$cfg['db_name']};charset=utf8mb4",
                 $cfg['db_user'],
                 $cfg['db_password'],
-                [PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"]
+                [PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci; SET time_zone = '-05:00'"]
             );
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
