@@ -225,15 +225,6 @@
                                 ?>
 
                                 <?php
-                                $tsRef = strtotime($p['updated_at'] ?? '') ?: strtotime($p['created_at'] ?? '');
-                                $timeBadge = '';
-                                if ($tsRef) {
-                                    $diff = time() - $tsRef;
-                                    if ($diff < 60)        $timeBadge = '<1 min';
-                                    elseif ($diff < 3600)  $timeBadge = round($diff/60)    . ' min';
-                                    elseif ($diff < 86400) $timeBadge = round($diff/3600)  . 'h';
-                                    else                   $timeBadge = round($diff/86400) . 'd';
-                                }
                                 $tsCreado = strtotime($p['created_at'] ?? '');
                                 $createdFmt = $tsCreado
                                     ? (date('j', $tsCreado) . ' ' . $_meses[(int)date('n', $tsCreado) - 1] . '. ' . date('Y', $tsCreado))
@@ -252,14 +243,9 @@
                                                 <small style="display:block;color:var(--tx-muted,#888);font-size:.72rem;margin-top:2px;"><?= htmlspecialchars($createdFmt) ?></small>
                                             <?php endif; ?>
                                         </div>
-                                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-                                            <span class="status-tag status-<?= htmlspecialchars($estadoActual) ?>">
-                                                <?= ucfirst(htmlspecialchars($estadoActual)) ?>
-                                            </span>
-                                            <?php if ($timeBadge): ?>
-                                                <span class="time-badge"><i class="fas fa-clock"></i> <?= htmlspecialchars($timeBadge) ?></span>
-                                            <?php endif; ?>
-                                        </div>
+                                        <span class="status-tag status-<?= htmlspecialchars($estadoActual) ?>">
+                                            <?= ucfirst(htmlspecialchars($estadoActual)) ?>
+                                        </span>
                                     </div>
 
                                     <div class="card-section">
