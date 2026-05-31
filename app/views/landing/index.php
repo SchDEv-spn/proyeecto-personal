@@ -458,16 +458,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <div class="hero-text">
             <h1><?= htmlspecialchars($heroTitle) ?></h1>
 
-            <?php if (count($heroSubtitles) > 1): ?>
-            <div class="hero-subtitle hero-subtitle--rotate" aria-live="polite"
-                 data-count="<?= count($heroSubtitles) ?>">
-                <?php foreach (array_values($heroSubtitles) as $i => $s): ?>
-                <span class="hero-subtitle__phrase" style="--i:<?= $i ?>"><?= htmlspecialchars($s) ?></span>
-                <?php endforeach; ?>
-            </div>
-            <?php else: ?>
             <p class="hero-subtitle"><?= htmlspecialchars($heroSubtitle) ?></p>
-            <?php endif; ?>
 
 
         </div>

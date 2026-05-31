@@ -233,15 +233,6 @@
                         <textarea id="hero_subtitle" name="hero_subtitle" rows="2"><?= htmlspecialchars($config['hero_subtitle'] ?? '') ?></textarea>
                       </div>
                       <div class="admin-form-group admin-form-group--full">
-                        <label for="hero_subtitle_2">Subtítulo rotativo 2 <small style="opacity:.65;font-weight:400">(opcional — activa la rotación)</small></label>
-                        <textarea id="hero_subtitle_2" name="hero_subtitle_2" rows="2" placeholder="ej. 🚚 Envío gratis · Pago al recibir"><?= htmlspecialchars($config['hero_subtitle_2'] ?? '') ?></textarea>
-                      </div>
-                      <div class="admin-form-group admin-form-group--full">
-                        <label for="hero_subtitle_3">Subtítulo rotativo 3 <small style="opacity:.65;font-weight:400">(opcional)</small></label>
-                        <textarea id="hero_subtitle_3" name="hero_subtitle_3" rows="2" placeholder="ej. ✅ +89 clientes felices"><?= htmlspecialchars($config['hero_subtitle_3'] ?? '') ?></textarea>
-                      </div>
-
-                      <div class="admin-form-group admin-form-group--full">
                         <label for="hero_note">Nota debajo del botón</label>
                         <input type="text" id="hero_note" name="hero_note"
                           value="<?= htmlspecialchars($config['hero_note'] ?? '') ?>">
