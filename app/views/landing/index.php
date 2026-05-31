@@ -522,6 +522,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <?= htmlspecialchars($heroButtonText) ?>
                 </a>
 
+                <?php if (!empty($heroNote)): ?>
+                <p class="hero-note"><?= htmlspecialchars($heroNote) ?></p>
+                <?php endif; ?>
+
                 <div class="hero-countdown-inline">
                     <span class="countdown-label">Expira en</span>
                     <span id="heroCountdown" class="countdown-digits" data-minutes="<?= $countdownMinutes ?>">--:--</span>
