@@ -2782,16 +2782,16 @@ body.modal-open { overflow: hidden; }
    colapsando el contenedor. Con width fijo en h3, el div padre hereda ese
    tamaño natural y flex-shrink:0 lo mantiene fijo. */
 @media (max-width: 767px) {
-  .header-greeting > div { flex-shrink: 0; }
+  .header-greeting > div { flex-shrink: 1; min-width: 0; }
   .header-greeting h3 {
-    width: 160px;
+    max-width: 240px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 }
 
 @media (max-width: 360px) {
-  .header-greeting h3 { width: 120px; }
+  .header-greeting h3 { max-width: 160px; }
 }
 
 /* Header CTAs: icon-only en mobile para liberar espacio */

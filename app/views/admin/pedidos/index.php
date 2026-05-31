@@ -27,6 +27,7 @@
     $usuarioNombre   = $_SESSION['usuario_nombre'] ?? 'Admin';
     $usuarioEmail    = $_SESSION['usuario_email'] ?? 'admin@tuempresa.com';
     $showRangeFilter = false; // usamos los botones Hoy/Ayer/Semana/Mes en la tabla
+    $showSearch      = false; // buscador está en la sección de tabla, más cerca del contenido
 
     $renderTrend = function(array $t): string {
         if (!isset($t['dir']) || $t['dir'] === 'flat') {
@@ -176,6 +177,16 @@
                                 </a>
                             </div>
                         </div>
+                        <div class="orders-search">
+                            <div class="orders-search__wrap">
+                                <i class="fas fa-search orders-search__icon"></i>
+                                <input type="search" id="searchPedidos"
+                                       class="orders-search__input"
+                                       placeholder="Buscar nombre, teléfono, ciudad…"
+                                       autocomplete="off">
+                            </div>
+                        </div>
+
                         <div class="state-filter" id="stateFilter">
                             <button class="state-chip is-active" data-estado="">Todos</button>
                             <button class="state-chip" data-estado="nuevo">Nuevo</button>
