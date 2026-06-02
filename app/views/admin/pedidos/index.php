@@ -22,6 +22,8 @@
     $pedidos_nuevos  = $pedidos_nuevos  ?? 0;
     $pedidos         = $pedidos         ?? [];
     $rango           = $rango           ?? 'mes';
+    $desde           = $desde           ?? null;
+    $hasta           = $hasta           ?? null;
     $tendencias      = $tendencias      ?? [];
     $plantillas_wa   = $plantillas_wa   ?? [];
     $usuarioNombre   = $_SESSION['usuario_nombre'] ?? 'Admin';
@@ -156,12 +158,7 @@
                     </div>
                 </div>
 
-                <?php if (empty($pedidos)): ?>
-                    <div class="empty-state">
-                        <p>No hay pedidos registrados todavía.</p>
-                    </div>
-                <?php else: ?>
-                    <div class="table-container">
+                <div class="table-container">
                         <div class="table-header">
                             <h3>Pedidos Recientes</h3>
                             <div class="table-header-actions">
@@ -170,8 +167,46 @@
                                     <a href="<?= BASE_URL ?>/AdminPedidos?rango=ayer"   class="range-btn <?= $rango === 'ayer'   ? 'is-active' : '' ?>">Ayer</a>
                                     <a href="<?= BASE_URL ?>/AdminPedidos?rango=semana" class="range-btn <?= $rango === 'semana' ? 'is-active' : '' ?>">Semana</a>
                                     <a href="<?= BASE_URL ?>/AdminPedidos?rango=mes"    class="range-btn <?= $rango === 'mes'    ? 'is-active' : '' ?>">Mes</a>
+                                    <div class="range-picker-wrap" id="rangePickerWrap">
+                                        <button type="button"
+                                                class="range-btn range-btn--custom <?= $rango === 'personalizado' ? 'is-active' : '' ?>"
+                                                id="btnRangeCustom"
+                                                aria-expanded="<?= $rango === 'personalizado' ? 'true' : 'false' ?>"
+                                                aria-controls="rangePickerPopup"
+                                                title="Filtrar por rango de fechas">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <?php if ($rango === 'personalizado' && $desde && $hasta): ?>
+                                                <span class="range-btn__dates"><?= date('d/m', strtotime($desde)) ?> – <?= date('d/m', strtotime($hasta)) ?></span>
+                                            <?php else: ?>
+                                                <span class="range-btn__dates">Rango</span>
+                                            <?php endif; ?>
+                                        </button>
+                                        <form class="range-picker-popup<?= $rango === 'personalizado' ? ' is-open' : '' ?>"
+                                              id="rangePickerPopup"
+                                              method="get"
+                                              action="<?= BASE_URL ?>/AdminPedidos">
+                                            <input type="hidden" name="rango" value="personalizado">
+                                            <div class="range-picker-popup__body">
+                                                <label class="range-picker-popup__field">
+                                                    <span>Desde</span>
+                                                    <input type="date" name="desde"
+                                                           value="<?= htmlspecialchars($desde ?? '') ?>"
+                                                           max="<?= date('Y-m-d') ?>"
+                                                           required>
+                                                </label>
+                                                <label class="range-picker-popup__field">
+                                                    <span>Hasta</span>
+                                                    <input type="date" name="hasta"
+                                                           value="<?= htmlspecialchars($hasta ?? '') ?>"
+                                                           max="<?= date('Y-m-d') ?>"
+                                                           required>
+                                                </label>
+                                                <button type="submit" class="range-picker-popup__apply">Aplicar</button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
-                                <a href="<?= BASE_URL ?>/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?>"
+                                <a href="<?= BASE_URL ?>/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?><?= $rango === 'personalizado' && $desde && $hasta ? '&desde=' . urlencode($desde) . '&hasta=' . urlencode($hasta) : '' ?>"
                                    class="btn-csv" title="Exportar a CSV">
                                     <i class="fas fa-file-csv"></i> CSV
                                 </a>
@@ -200,6 +235,11 @@
 
                         <p class="results-counter" id="resultsCounter"></p>
                         <div class="cards-container" id="contenedorPedidos">
+                            <?php if (empty($pedidos)): ?>
+                                <div class="empty-state">
+                                    <p>No hay pedidos en este período. Prueba con otro rango de fechas.</p>
+                                </div>
+                            <?php else: ?>
                             <?php
                             $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
                             $_meses   = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -333,9 +373,9 @@
                                     </div>
                                 </div>
                             <?php endforeach; ?>
+                            <?php endif; ?>
                         </div><!-- /cards-container -->
                     </div><!-- /table-container -->
-                    <?php endif; ?>
             </section>
         </main>
 
@@ -380,6 +420,10 @@
             'telefono'             => $p['telefono']             ?? null,
         ], $pedidos), JSON_UNESCAPED_UNICODE) ?>;
         window.__PLANTILLAS__  = <?= json_encode($plantillas_wa, JSON_UNESCAPED_UNICODE) ?>;
+        window.__RANGE_INIT__  = <?= json_encode($rango === 'personalizado' ? 'custom' : 'month') ?>;
+        window.__RANGE_CUSTOM__ = <?= ($rango === 'personalizado' && $desde && $hasta)
+            ? json_encode(['desde' => $desde, 'hasta' => $hasta])
+            : 'null' ?>;
     </script>
 
     <!-- Chart.js -->

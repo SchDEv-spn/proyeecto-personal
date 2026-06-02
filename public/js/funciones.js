@@ -267,6 +267,15 @@
       const s = addDays(today, -6); // 7 días incl.
       return { start: s, end: addDays(today, 1), mode: 'days', titleA: 'Pedidos (7 días)', titleB: 'Ventas (7 días)' };
     }
+    if (range === 'custom') {
+      const c = window.__RANGE_CUSTOM__;
+      if (c && c.desde && c.hasta) {
+        const s = startOfDay(new Date(c.desde + 'T00:00:00'));
+        const e = addDays(startOfDay(new Date(c.hasta + 'T00:00:00')), 1);
+        const label = c.desde + ' – ' + c.hasta;
+        return { start: s, end: e, mode: 'days', titleA: 'Pedidos (' + label + ')', titleB: 'Ventas (' + label + ')' };
+      }
+    }
     // month (default): últimos 30 días
     const s30 = addDays(today, -29);
     return { start: s30, end: addDays(today, 1), mode: 'days', titleA: 'Pedidos (30 días)', titleB: 'Ventas (30 días)' };
@@ -579,8 +588,9 @@
   };
 
   // Render inicial
-  renderAll('month');
-  window.__RANGE_SELECTED = window.__RANGE_SELECTED || 'month';
+  const _initRange = window.__RANGE_INIT__ || 'month';
+  renderAll(_initRange);
+  window.__RANGE_SELECTED = _initRange;
 
   // Escucha cambios del rango (lo emite tu UI del dropdown)
   window.addEventListener('range:change', (e) => {
@@ -1200,6 +1210,38 @@
 
     updateEmptyState();
     updateCounter(estado);
+  });
+})();
+
+// =========================
+// RANGE PICKER: toggle popup
+// =========================
+(() => {
+  const btn   = document.getElementById('btnRangeCustom');
+  const popup = document.getElementById('rangePickerPopup');
+  if (!btn || !popup) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = popup.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', String(open));
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!popup.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+      popup.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Validate: desde <= hasta before submit
+  popup.addEventListener('submit', (e) => {
+    const desde = popup.querySelector('[name="desde"]').value;
+    const hasta = popup.querySelector('[name="hasta"]').value;
+    if (desde && hasta && desde > hasta) {
+      e.preventDefault();
+      popup.querySelector('[name="hasta"]').focus();
+    }
   });
 })();
 

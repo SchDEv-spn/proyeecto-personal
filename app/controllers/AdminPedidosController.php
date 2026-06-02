@@ -6,13 +6,22 @@ class AdminPedidosController extends Controller
     {
         $this->requireLogin();
 
-        // ✅ Rango permitido: hoy | ayer | semana | mes
+        // ✅ Rango permitido: hoy | ayer | semana | mes | personalizado
         $rango = $_GET['rango'] ?? 'mes';
-        $permitidos = ['hoy', 'ayer', 'semana', 'mes'];
+        $permitidos = ['hoy', 'ayer', 'semana', 'mes', 'personalizado'];
         if (!in_array($rango, $permitidos, true)) $rango = 'mes';
 
+        // Fechas custom para rango personalizado
+        $desdeStr = null;
+        $hastaStr = null;
+        if ($rango === 'personalizado') {
+            $desdeStr = isset($_GET['desde']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['desde']) ? $_GET['desde'] : null;
+            $hastaStr = isset($_GET['hasta']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['hasta']) ? $_GET['hasta'] : null;
+            if (!$desdeStr || !$hastaStr || $desdeStr > $hastaStr) $rango = 'mes';
+        }
+
         // ✅ Fechas inicio/fin (America/Bogota) en formato SQL
-        list($inicioObj, $finObj) = $this->calcularRangoFechas($rango);
+        list($inicioObj, $finObj) = $this->calcularRangoFechas($rango, $desdeStr, $hastaStr);
         $inicioStr = $inicioObj->format('Y-m-d H:i:s');
         $finStr    = $finObj->format('Y-m-d H:i:s');
 
@@ -95,7 +104,7 @@ class AdminPedidosController extends Controller
         $ticketPromedio = $pedidosActivos > 0 ? round($totalVenta / $pedidosActivos) : 0;
 
         // ======= Período previo para tendencias =======
-        list($prevInicioObj, $prevFinObj) = $this->calcularRangoPrevio($rango, $inicioObj);
+        list($prevInicioObj, $prevFinObj) = $this->calcularRangoPrevio($rango, $inicioObj, $finObj);
 
         $pedidosPrev = [];
         if (method_exists($pedidoModel, 'obtenerPorRango')) {
@@ -141,15 +150,25 @@ class AdminPedidosController extends Controller
             'pedidos_nuevos'   => $pedidosNuevos,
             'ticket_promedio'  => $ticketPromedio,
             'rango'            => $rango,
+            'desde'            => $desdeStr,
+            'hasta'            => $hastaStr,
             'tendencias'       => $tendencias,
             'plantillas_wa'    => $plantillasWa,
         ]);
     }
 
-    private function calcularRangoPrevio(string $rango, DateTime $inicio): array
+    private function calcularRangoPrevio(string $rango, DateTime $inicio, ?DateTime $finActual = null): array
     {
-        $fin    = clone $inicio;
+        $fin = clone $inicio;
         switch ($rango) {
+            case 'personalizado':
+                if ($finActual !== null) {
+                    $durSecs = $finActual->getTimestamp() - $inicio->getTimestamp();
+                    $inicio = (clone $fin)->modify("-{$durSecs} seconds");
+                } else {
+                    $inicio = (clone $fin)->modify('-1 month');
+                }
+                break;
             case 'hoy':
             case 'ayer':
                 $inicio = (clone $fin)->modify('-1 day');
@@ -177,12 +196,17 @@ class AdminPedidosController extends Controller
     }
 
     // ✅ ÚNICA versión del helper (sin duplicados)
-    private function calcularRangoFechas(string $rango): array
+    private function calcularRangoFechas(string $rango, ?string $desdeStr = null, ?string $hastaStr = null): array
     {
         $tz  = new DateTimeZone('America/Bogota');
         $now = new DateTime('now', $tz);
 
         switch ($rango) {
+            case 'personalizado':
+                $inicio = (new DateTime($desdeStr, $tz))->setTime(0, 0, 0);
+                $fin    = (new DateTime($hastaStr, $tz))->setTime(0, 0, 0)->modify('+1 day');
+                break;
+
             case 'hoy':
                 $inicio = (clone $now)->setTime(0, 0, 0);
                 $fin    = (clone $inicio)->modify('+1 day');
@@ -213,10 +237,18 @@ class AdminPedidosController extends Controller
         $this->requireLogin();
 
         $rango      = $_GET['rango'] ?? 'mes';
-        $permitidos = ['hoy', 'ayer', 'semana', 'mes'];
+        $permitidos = ['hoy', 'ayer', 'semana', 'mes', 'personalizado'];
         if (!in_array($rango, $permitidos, true)) $rango = 'mes';
 
-        list($inicioObj, $finObj) = $this->calcularRangoFechas($rango);
+        $desdeStr = null;
+        $hastaStr = null;
+        if ($rango === 'personalizado') {
+            $desdeStr = isset($_GET['desde']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['desde']) ? $_GET['desde'] : null;
+            $hastaStr = isset($_GET['hasta']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['hasta']) ? $_GET['hasta'] : null;
+            if (!$desdeStr || !$hastaStr || $desdeStr > $hastaStr) $rango = 'mes';
+        }
+
+        list($inicioObj, $finObj) = $this->calcularRangoFechas($rango, $desdeStr, $hastaStr);
         $pedidoModel = new Pedido();
 
         if (method_exists($pedidoModel, 'obtenerPorRango')) {
@@ -229,7 +261,10 @@ class AdminPedidosController extends Controller
             $pedidos = $pedidoModel->obtenerTodos(2000);
         }
 
-        $filename = 'pedidos_' . $rango . '_' . date('Ymd_His') . '.csv';
+        $rangoLabel = ($rango === 'personalizado' && $desdeStr && $hastaStr)
+            ? $desdeStr . '_' . $hastaStr
+            : $rango;
+        $filename = 'pedidos_' . $rangoLabel . '_' . date('Ymd_His') . '.csv';
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Cache-Control: no-cache, no-store, must-revalidate');
