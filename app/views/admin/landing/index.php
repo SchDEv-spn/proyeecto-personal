@@ -2415,12 +2415,15 @@
 
     let currentSection = null;
 
-    // ── Inject "✨ IA" button in each section h2 ─────────────────────────────
+    // ── Inject "✨ IA" button in each section header ──────────────────────────
+    // ux-improvements.js replaces each h2 with div.sec-toggle-header > span.sec-toggle-title
+    // so we target .sec-toggle-title and insert the button after it.
     Object.keys(sectionKeyMap).forEach(blockId => {
       const block = document.getElementById(blockId);
       if (!block) return;
-      const h2 = block.querySelector('h2');
-      if (!h2) return;
+
+      const titleSpan = block.querySelector('.sec-toggle-title');
+      if (!titleSpan) return;
 
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -2428,11 +2431,11 @@
       btn.innerHTML = '✨ IA';
       btn.title = 'Generar texto de esta sección con IA';
       btn.dataset.section = sectionKeyMap[blockId];
-      h2.appendChild(btn);
+      titleSpan.insertAdjacentElement('afterend', btn);
 
       btn.addEventListener('click', (e) => {
         e.preventDefault();
-        e.stopPropagation();
+        e.stopPropagation(); // evita colapsar/expandir la sección
         openTxtPanel(btn, sectionKeyMap[blockId]);
       });
     });
