@@ -2432,6 +2432,7 @@
 
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         openTxtPanel(btn, sectionKeyMap[blockId]);
       });
     });
@@ -2484,7 +2485,7 @@
     function getCtx() {
       return {
         nombre:      (document.querySelector('[name="hero_title"]')?.value
-                   || '<?= htmlspecialchars($producto['nombre'] ?? '') ?>').trim(),
+                   || <?= json_encode($producto['nombre'] ?? '') ?>).trim(),
         descripcion: (document.querySelector('[name="hero_subtitle"]')?.value
                    || document.querySelector('[name="porque_text"]')?.value || '').trim(),
       };
@@ -2771,7 +2772,7 @@
     // ── Get product context from form ────────────────────────────────────────
     function getProductoCtx() {
       return {
-        producto:    (document.querySelector('[name="hero_title"]')?.value || '<?= htmlspecialchars($producto['nombre'] ?? '') ?>').trim(),
+        producto:    (document.querySelector('[name="hero_title"]')?.value || <?= json_encode($producto['nombre'] ?? '') ?>).trim(),
         descripcion: (document.querySelector('[name="hero_subtitle"]')?.value || document.querySelector('[name="porque_text"]')?.value || '').trim(),
       };
     }
