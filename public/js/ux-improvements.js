@@ -404,6 +404,7 @@
   ───────────────────────────────────────────────────────── */
   function init() {
     initCollapsibleSections();  // primero: transforma el DOM
+    document.dispatchEvent(new CustomEvent('ux:sections-ready'));
     initProgress();
     initExpandCollapse();
     initTocDots();

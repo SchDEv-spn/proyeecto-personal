@@ -2415,30 +2415,35 @@
 
     let currentSection = null;
 
-    // ── Inject "✨ IA" button in each section header ──────────────────────────
-    // ux-improvements.js replaces each h2 with div.sec-toggle-header > span.sec-toggle-title
-    // so we target .sec-toggle-title and insert the button after it.
-    Object.keys(sectionKeyMap).forEach(blockId => {
-      const block = document.getElementById(blockId);
-      if (!block) return;
+    // ── Inject "✨ IA" buttons after ux-improvements.js rebuilds the DOM ────
+    // ux-improvements.js dispatches 'ux:sections-ready' once initCollapsibleSections()
+    // completes. At that point .sec-toggle-title elements exist.
+    function injectTxtButtons() {
+      Object.keys(sectionKeyMap).forEach(blockId => {
+        const block = document.getElementById(blockId);
+        if (!block) return;
+        if (block.querySelector('.ia-txt-trigger')) return; // already injected
 
-      const titleSpan = block.querySelector('.sec-toggle-title');
-      if (!titleSpan) return;
+        const titleSpan = block.querySelector('.sec-toggle-title');
+        if (!titleSpan) return;
 
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'ia-txt-trigger';
-      btn.innerHTML = '✨ IA';
-      btn.title = 'Generar texto de esta sección con IA';
-      btn.dataset.section = sectionKeyMap[blockId];
-      titleSpan.insertAdjacentElement('afterend', btn);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ia-txt-trigger';
+        btn.innerHTML = '✨ IA';
+        btn.title = 'Generar texto de esta sección con IA';
+        btn.dataset.section = sectionKeyMap[blockId];
+        titleSpan.insertAdjacentElement('afterend', btn);
 
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation(); // evita colapsar/expandir la sección
-        openTxtPanel(btn, sectionKeyMap[blockId]);
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openTxtPanel(btn, sectionKeyMap[blockId]);
+        });
       });
-    });
+    }
+
+    document.addEventListener('ux:sections-ready', injectTxtButtons, { once: true });
 
     // ── Open panel ───────────────────────────────────────────────────────────
     function openTxtPanel(triggerBtn, section) {
