@@ -2598,6 +2598,32 @@
       </div>
       <?php endif; ?>
 
+      <!-- Foto de referencia del producto -->
+      <div class="ia-ref-section">
+        <div class="ia-ref-header">
+          <span><i class="fas fa-image"></i> Foto de referencia del producto</span>
+          <span class="ia-ref-badge" id="iaRefBadge" style="display:none;">✅ Cargada</span>
+        </div>
+        <div class="ia-ref-body" id="iaRefBody">
+          <input type="file" id="iaRefFile" accept="image/jpeg,image/png,image/webp"
+                 style="font-size:12px; width:100%;">
+          <small>Sube una foto real de tu producto. Flux la usará como base para <strong>todas</strong> las generaciones.</small>
+        </div>
+        <div id="iaRefPreview" style="display:none; margin-top:8px;">
+          <img id="iaRefPreviewImg" src="" alt="Referencia"
+               style="width:100%; max-height:120px; object-fit:contain; border-radius:6px; border:1px solid var(--bd-default,#2a2a3a);">
+          <button type="button" id="iaRefClear" class="ia-ref-clear">✕ Quitar referencia</button>
+        </div>
+        <div class="ia-ref-strength" id="iaRefStrength" style="display:none;">
+          <label for="iaStrengthSelect">Fidelidad al producto</label>
+          <select id="iaStrengthSelect">
+            <option value="0.60">Alta — muy parecida a la foto</option>
+            <option value="0.75" selected>Balanceada — respeta el producto + mejora</option>
+            <option value="0.90">Creativa — inspirada en la foto</option>
+          </select>
+        </div>
+      </div>
+
       <!-- Prompt -->
       <div class="ia-img-panel__field">
         <div class="ia-img-panel__field-header">
@@ -2810,6 +2836,48 @@
       finally { btn.textContent = orig; btn.disabled = false; }
     });
 
+    // ── Referencia del producto ───────────────────────────────────────────────
+    let referenciaUrl = null;
+
+    const refFile    = document.getElementById('iaRefFile');
+    const refPreview = document.getElementById('iaRefPreview');
+    const refBadge   = document.getElementById('iaRefBadge');
+    const refStrength= document.getElementById('iaRefStrength');
+    const refBody    = document.getElementById('iaRefBody');
+
+    refFile.addEventListener('change', async () => {
+      const file = refFile.files[0];
+      if (!file) return;
+
+      refBadge.textContent = '⏳ Subiendo...';
+      refBadge.style.display = 'inline';
+
+      const fd = new FormData();
+      fd.append('referencia', file);
+      try {
+        const res  = await fetch(BASE + '/AdminLanding/subirReferencia', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data.ok) { setError(data.error || 'Error subiendo la referencia.'); refBadge.style.display='none'; return; }
+
+        referenciaUrl = data.url;
+        document.getElementById('iaRefPreviewImg').src = data.url;
+        refPreview.style.display  = 'block';
+        refStrength.style.display = 'block';
+        refBody.style.display     = 'none';
+        refBadge.textContent = '✅ Cargada';
+        refBadge.style.display = 'inline';
+      } catch(e) { setError('Error subiendo la referencia: ' + e.message); refBadge.style.display='none'; }
+    });
+
+    document.getElementById('iaRefClear').addEventListener('click', () => {
+      referenciaUrl = null;
+      refFile.value = '';
+      refPreview.style.display  = 'none';
+      refStrength.style.display = 'none';
+      refBody.style.display     = '';
+      refBadge.style.display    = 'none';
+    });
+
     // ── Guardar key Replicate si se ingresó ──────────────────────────────────
     async function saveReplicateKeyIfNeeded() {
       const keyInput = document.getElementById('ia_replicate_key');
@@ -2840,10 +2908,17 @@
       showPreview(null);
 
       try {
+        const strength = document.getElementById('iaStrengthSelect')?.value || '0.75';
+        const body = new URLSearchParams({
+          prompt,
+          seccion: currentSection,
+          referencia_url:  referenciaUrl || '',
+          prompt_strength: strength,
+        });
         const res  = await fetch(BASE + '/AdminLanding/generarImagenIA', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ prompt, seccion: currentSection }),
+          body,
         });
         const data = await res.json();
         setLoading(false);

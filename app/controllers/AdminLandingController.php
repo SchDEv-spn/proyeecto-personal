@@ -569,8 +569,12 @@ class AdminLandingController extends Controller
         $replicateKey = (new AppSettings())->get('replicate_api_key');
         if (!$replicateKey) { echo json_encode(['ok' => false, 'error' => 'no_replicate_key']); return; }
 
-        $prompt  = trim($_POST['prompt']  ?? '');
-        $seccion = trim($_POST['seccion'] ?? 'hero');
+        $prompt         = trim($_POST['prompt']          ?? '');
+        $seccion        = trim($_POST['seccion']         ?? 'hero');
+        $referenciaUrl  = trim($_POST['referencia_url']  ?? '');
+        $promptStrength = (float)($_POST['prompt_strength'] ?? 0.80);
+        $promptStrength = max(0.5, min(1.0, $promptStrength));
+
         if (!$prompt) { echo json_encode(['ok' => false, 'error' => 'El prompt es requerido']); return; }
 
         $aspectos = [
@@ -601,13 +605,51 @@ class AdminLandingController extends Controller
         $aspectRatio = $aspectos[$seccion]  ?? '1:1';
         $dims        = $maxDims[$seccion]   ?? [800, 800];
 
-        $imageUrl = $this->callReplicateFlux($replicateKey, $prompt, $aspectRatio);
+        $imageUrl = $this->callReplicateFlux($replicateKey, $prompt, $aspectRatio, $referenciaUrl ?: null, $promptStrength);
         if (is_array($imageUrl)) { echo json_encode(['ok' => false, 'error' => $imageUrl['error']]); return; }
 
         $publicUrl = $this->downloadAndOptimizeImage($imageUrl, $seccion, $dims);
         if (!$publicUrl) { echo json_encode(['ok' => false, 'error' => 'Error procesando la imagen generada']); return; }
 
         echo json_encode(['ok' => true, 'url' => $publicUrl]);
+    }
+
+    // ── Sube foto de referencia del producto al servidor ─────────────────────
+    public function subirReferencia()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            return;
+        }
+
+        $file = $_FILES['referencia'] ?? null;
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['ok' => false, 'error' => 'No se recibió ningún archivo']);
+            return;
+        }
+
+        $allowedMime = ['image/jpeg','image/png','image/webp','image/gif'];
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime  = $finfo->file($file['tmp_name']);
+        if (!in_array($mime, $allowedMime, true)) {
+            echo json_encode(['ok' => false, 'error' => 'Solo se permiten imágenes JPG, PNG, WEBP o GIF']);
+            return;
+        }
+
+        $uploadDir = __DIR__ . '/../../public/uploads/landing/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+        $ext      = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','image/gif'=>'gif'][$mime];
+        $filename = 'ref_' . time() . '_' . mt_rand(1000,9999) . '.' . $ext;
+        if (!move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+            echo json_encode(['ok' => false, 'error' => 'Error al guardar el archivo']);
+            return;
+        }
+
+        echo json_encode(['ok' => true, 'url' => BASE_URL . '/public/uploads/landing/' . $filename]);
     }
 
     // ── Genera el texto de UNA sección específica con Claude ─────────────────
@@ -965,18 +1007,26 @@ PROMPT;
         return ['ok' => true, 'text' => trim($data['content'][0]['text'] ?? '')];
     }
 
-    // ── Replicate: llama a Flux 1.1 Pro ──────────────────────────────────────
-    private function callReplicateFlux(string $apiKey, string $prompt, string $aspectRatio): string|array
+    // ── Replicate: llama a Flux 1.1 Pro (texto o img2img) ────────────────────
+    private function callReplicateFlux(string $apiKey, string $prompt, string $aspectRatio, ?string $imageUrl = null, float $promptStrength = 0.80): string|array
     {
-        $payload = json_encode([
-            'input' => [
-                'prompt'           => $prompt,
-                'aspect_ratio'     => $aspectRatio,
-                'output_format'    => 'webp',
-                'output_quality'   => 85,
-                'safety_tolerance' => 2,
-            ],
-        ]);
+        $input = [
+            'prompt'           => $prompt,
+            'output_format'    => 'webp',
+            'output_quality'   => 85,
+            'safety_tolerance' => 2,
+        ];
+
+        if ($imageUrl) {
+            // img2img: referencia del producto real
+            $input['image']           = $imageUrl;
+            $input['prompt_strength'] = $promptStrength;
+        } else {
+            // text2img: sin referencia, usar aspect_ratio
+            $input['aspect_ratio'] = $aspectRatio;
+        }
+
+        $payload = json_encode(['input' => $input]);
 
         $ch = curl_init('https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions');
         curl_setopt_array($ch, [
