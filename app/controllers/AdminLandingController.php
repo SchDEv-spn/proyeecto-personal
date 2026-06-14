@@ -610,6 +610,98 @@ class AdminLandingController extends Controller
         echo json_encode(['ok' => true, 'url' => $publicUrl]);
     }
 
+    // ── Genera el texto de UNA sección específica con Claude ─────────────────
+    public function generarSeccionIA()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            return;
+        }
+
+        $apiKey = (new AppSettings())->get('claude_api_key');
+        if (!$apiKey) { echo json_encode(['ok' => false, 'error' => 'no_key']); return; }
+
+        $seccion     = trim($_POST['seccion']     ?? '');
+        $nombre      = trim($_POST['nombre']      ?? '');
+        $descripcion = trim($_POST['descripcion'] ?? '');
+        $publico     = trim($_POST['publico']      ?? 'adultos colombianos');
+        $precio      = trim($_POST['precio']      ?? '');
+        $extra       = trim($_POST['extra']        ?? '');
+
+        if (!$seccion || !$nombre) {
+            echo json_encode(['ok' => false, 'error' => 'Faltan datos del producto']);
+            return;
+        }
+
+        $prompt = $this->buildSeccionPrompt($seccion, $nombre, $descripcion, $publico, $precio, $extra);
+        if (!$prompt) {
+            echo json_encode(['ok' => false, 'error' => 'Sección no reconocida']);
+            return;
+        }
+
+        echo json_encode($this->callClaudeApi($apiKey, $prompt));
+    }
+
+    // ── Prompt focalizado por sección ─────────────────────────────────────────
+    private function buildSeccionPrompt(string $sec, string $nombre, string $desc, string $publico, string $precio, string $extra): ?string
+    {
+        $base = "Eres experto en copywriting de alta conversión para e-commerce colombiano (dropshipping).\n"
+              . "Producto: {$nombre}" . ($desc ? " — {$desc}" : '') . "\n"
+              . "Público: {$publico}" . ($precio ? " · Precio: {$precio} COP" : '') . "\n"
+              . ($extra ? "Instrucciones adicionales: {$extra}\n" : '')
+              . "REGLAS: español colombiano informal, emocional, orientado al beneficio, "
+              . "pago contraentrega, urgencia real, nombres/ciudades colombianas.\n\n"
+              . "Devuelve SOLO JSON válido (sin markdown). Rellena cada campo con copy real, no con descripciones.\n\n";
+
+        $schemas = [
+            'hero' => '{"hero_title":"","hero_subtitle":"","hero_button_text":"","hero_note":"Ej: Pago al recibir • Envío gratis","hero_badge_customers":""}',
+
+            'beneficios' => '{"benefits_title":"","benefit_1":"","benefit_2":"","benefit_3":"","benefit_4":""}',
+
+            'caracteristicas' => '{"caract_section_title":"","caract1_title":"","caract1_text":"","caract2_title":"","caract2_text":"","caract3_title":"","caract3_text":"","caract4_title":"","caract4_text":""}',
+
+            'countdown' => '{"countdown_title":"","countdown_text":""}',
+
+            'porque' => '{"porque_title":"","porque_text":"","porque_bullet1":"","porque_bullet2":"","porque_bullet3":""}',
+
+            'comparativa' => '{"comparison_title":"","comparison_label_without":"Sin el producto","comparison_label_with":"Con el producto","comparison_1_without":"","comparison_1_with":"","comparison_2_without":"","comparison_2_with":"","comparison_3_without":"","comparison_3_with":"","comparison_4_without":"","comparison_4_with":"","comparison_5_without":"","comparison_5_with":""}',
+
+            'testimonios' => '{"test1_name":"","test1_city":"","test1_text":"","test2_name":"","test2_city":"","test2_text":"","test3_name":"","test3_city":"","test3_text":""}',
+
+            'paraquien' => '{"para_quien_si_1":"","para_quien_si_2":"","para_quien_si_3":"","para_quien_si_4":"","para_quien_no_1":"","para_quien_no_2":"","para_quien_no_3":""}',
+
+            'wa' => '{"wa_title":"","wa_subtitle":"","wa_footer_note":"","wa1_name":"","wa1_time":"","wa1_text":"","wa2_name":"","wa2_time":"","wa2_text":"","wa3_name":"","wa3_time":"","wa3_text":"","wa4_name":"","wa4_time":"","wa4_text":"","wa5_name":"","wa5_time":"","wa5_text":""}',
+
+            'faq' => '{"faq1_q":"","faq1_a":"","faq2_q":"","faq2_a":"","faq3_q":"","faq3_a":"","faq4_q":"","faq4_a":"","faq5_q":"","faq5_a":"","faq6_q":"","faq6_a":""}',
+
+            'autoridad' => '{"authority_title":"","authority_years":"","authority_deliveries":"","authority_rating":"4.9","authority_guarantee":""}',
+
+            'ctas' => '{"cta_benefits_text":"","cta_benefits_button":"","cta_gallery_text":"","cta_gallery_button":"","cta_porque_text":"","cta_porque_button":"","cta_testimonials_text":"","cta_testimonials_button":"","cta_faq_text":"","cta_faq_button":"","cta_como_funciona_text":"","cta_como_funciona_button":"","cta_comparison_button":"","cta_para_quien_button":"","cta_wa_testimonios_button":"","cta_sticky_mobile_text":""}',
+        ];
+
+        if (!isset($schemas[$sec])) return null;
+
+        $hints = [
+            'hero'            => 'Hero: título ≤8 palabras, promesa poderosa. Subtítulo habla al dolor. hero_note menciona pago contraentrega.',
+            'beneficios'      => 'Beneficios: orientados a resultados concretos, no a características técnicas.',
+            'caracteristicas' => 'Características: cada texto 2-3 oraciones que explican el beneficio de esa característica.',
+            'countdown'       => 'Countdown: urgencia real. El texto debe crear miedo a perder la oferta.',
+            'porque'          => 'Por qué: emocional. porque_text es el párrafo más persuasivo de la landing.',
+            'comparativa'     => 'Comparativa: TRANSFORMACIÓN emocional. Sin/Con no son specs, son situaciones de vida.',
+            'testimonios'     => 'Testimonios: nombres y ciudades colombianas 100% reales. Textos ≤100 chars, muy naturales.',
+            'paraquien'       => 'Para quién: los "Sí" generan identificación, los "No" califican y generan FOMO inverso.',
+            'wa'              => 'WhatsApp: mensajes ultra-informales, emojis naturales, como copiados del celular de un cliente feliz.',
+            'faq'             => 'FAQ: faq1 SIEMPRE sobre pago (contraentrega), faq2 sobre tiempo de envío (3-7 días hábiles Colombia).',
+            'autoridad'       => 'Autoridad: números creíbles. authority_years puede ser pequeño si la marca es nueva.',
+            'ctas'            => 'CTAs: máx 6 palabras por botón. Verbo acción + urgencia. Textos 1 oración persuasiva.',
+        ];
+
+        return $base . ($hints[$sec] ?? '') . "\n\nJSON a completar:\n" . $schemas[$sec];
+    }
+
     // ── Genera el contenido de la landing con Claude ──────────────────────────
     public function generarConIA()
     {

@@ -2358,6 +2358,206 @@
   })();
   </script>
 
+  <!-- ===== PANEL FLOTANTE: GENERACIÓN DE TEXTO POR SECCIÓN =============== -->
+  <div id="iaTxtPanel" class="ia-img-panel" style="display:none;" aria-hidden="true">
+    <div class="ia-img-panel__header">
+      <span id="iaTxtPanelTitle">✨ Generar texto</span>
+      <button type="button" id="iaTxtClose" class="ia-img-panel__close" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="ia-img-panel__body">
+
+      <div class="ia-img-panel__field">
+        <label for="iaTxtExtra">Instrucciones adicionales <span style="font-weight:400;text-transform:none;opacity:.7">(opcional)</span></label>
+        <textarea id="iaTxtExtra" rows="2"
+          placeholder="Ej: tono más formal, enfócate en durabilidad, menciona el color dorado..."></textarea>
+      </div>
+
+      <div id="iaTxtError" class="ia-img-error" style="display:none;"></div>
+
+      <button type="button" id="iaTxtGenerar" class="ia-img-btn-generar">✨ Generar esta sección</button>
+
+      <div id="iaTxtLoading" style="display:none; text-align:center; padding:16px 0;">
+        <div class="ia-spinner"></div>
+        <p style="margin:10px 0 4px; font-size:13px; font-weight:600;">Escribiendo...</p>
+        <small style="color:var(--tx-secondary,#888);">Claude está generando el copy para esta sección</small>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    const BASE   = '<?= BASE_URL ?>';
+    const panel  = document.getElementById('iaTxtPanel');
+    const titulo = document.getElementById('iaTxtPanelTitle');
+
+    // Map: section-block id → section key for backend
+    const sectionKeyMap = {
+      'sec-hero':            'hero',
+      'sec-beneficios':      'beneficios',
+      'sec-caracteristicas': 'caracteristicas',
+      'sec-contador':        'countdown',
+      'sec-porque':          'porque',
+      'sec-comparison':      'comparativa',
+      'sec-testimonios':     'testimonios',
+      'sec-paraquien':       'paraquien',
+      'sec-wa':              'wa',
+      'sec-faq':             'faq',
+      'sec-autoridad':       'autoridad',
+      'sec-ctas':            'ctas',
+    };
+    const sectionLabels = {
+      'hero':'Hero', 'beneficios':'Beneficios', 'caracteristicas':'Características',
+      'countdown':'Contador/Oferta', 'porque':'¿Por qué?', 'comparativa':'Tabla comparativa',
+      'testimonios':'Testimonios', 'paraquien':'¿Para quién es?', 'wa':'Testimonios WhatsApp',
+      'faq':'Preguntas frecuentes', 'autoridad':'Autoridad', 'ctas':'CTAs',
+    };
+
+    let currentSection = null;
+
+    // ── Inject "✨ IA" button in each section h2 ─────────────────────────────
+    Object.keys(sectionKeyMap).forEach(blockId => {
+      const block = document.getElementById(blockId);
+      if (!block) return;
+      const h2 = block.querySelector('h2');
+      if (!h2) return;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ia-txt-trigger';
+      btn.innerHTML = '✨ IA';
+      btn.title = 'Generar texto de esta sección con IA';
+      btn.dataset.section = sectionKeyMap[blockId];
+      h2.appendChild(btn);
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openTxtPanel(btn, sectionKeyMap[blockId]);
+      });
+    });
+
+    // ── Open panel ───────────────────────────────────────────────────────────
+    function openTxtPanel(triggerBtn, section) {
+      currentSection = section;
+      titulo.textContent = '✨ Generar — ' + (sectionLabels[section] || section);
+      setTxtError('');
+      setTxtLoading(false);
+      document.getElementById('iaTxtExtra').value = '';
+
+      const rect = triggerBtn.getBoundingClientRect();
+      panel.style.display = 'block';
+      panel.setAttribute('aria-hidden', 'false');
+
+      const panelW = 360;
+      let left = rect.left + window.scrollX;
+      let top  = rect.bottom + window.scrollY + 8;
+      if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
+      if (left < 8) left = 8;
+      panel.style.left = left + 'px';
+      panel.style.top  = top  + 'px';
+    }
+
+    // ── Close ────────────────────────────────────────────────────────────────
+    document.getElementById('iaTxtClose').addEventListener('click', closeTxtPanel);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTxtPanel(); });
+    document.addEventListener('click', e => {
+      if (panel.style.display !== 'none'
+          && !panel.contains(e.target)
+          && !e.target.classList.contains('ia-txt-trigger')) {
+        closeTxtPanel();
+      }
+    });
+    function closeTxtPanel() {
+      panel.style.display = 'none';
+      panel.setAttribute('aria-hidden', 'true');
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function setTxtError(msg) {
+      const el = document.getElementById('iaTxtError');
+      el.textContent = msg; el.style.display = msg ? 'block' : 'none';
+    }
+    function setTxtLoading(on) {
+      document.getElementById('iaTxtLoading').style.display = on ? 'block' : 'none';
+      document.getElementById('iaTxtGenerar').style.display = on ? 'none'  : 'block';
+    }
+    function getCtx() {
+      return {
+        nombre:      (document.querySelector('[name="hero_title"]')?.value
+                   || '<?= htmlspecialchars($producto['nombre'] ?? '') ?>').trim(),
+        descripcion: (document.querySelector('[name="hero_subtitle"]')?.value
+                   || document.querySelector('[name="porque_text"]')?.value || '').trim(),
+      };
+    }
+
+    // ── Fill form fields from Claude response ─────────────────────────────────
+    function fillFields(fields) {
+      let filled = 0;
+      Object.entries(fields).forEach(([key, val]) => {
+        if (!val) return;
+        const input = document.querySelector(`input[name="${key}"]`);
+        if (input && !['hidden','file','checkbox','radio'].includes(input.type)) {
+          input.value = val;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          filled++; return;
+        }
+        const ta = document.querySelector(`textarea[name="${key}"]`);
+        if (ta) {
+          ta.value = val;
+          ta.dispatchEvent(new Event('input', { bubbles: true }));
+          filled++;
+        }
+      });
+      return filled;
+    }
+
+    // ── Generate ─────────────────────────────────────────────────────────────
+    document.getElementById('iaTxtGenerar').addEventListener('click', async () => {
+      setTxtError('');
+      const ctx   = getCtx();
+      const extra = document.getElementById('iaTxtExtra').value.trim();
+
+      if (!ctx.nombre) { setTxtError('Agrega el nombre del producto en el campo "Título principal" del Hero primero.'); return; }
+
+      setTxtLoading(true);
+      try {
+        const body = new URLSearchParams({
+          seccion: currentSection, nombre: ctx.nombre,
+          descripcion: ctx.descripcion, extra,
+        });
+        const res  = await fetch(BASE + '/AdminLanding/generarSeccionIA', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        });
+        const data = await res.json();
+        setTxtLoading(false);
+
+        if (!data.ok) {
+          setTxtError(data.error === 'no_key'
+            ? 'Configura primero la API key de Claude en "✨ Generar con IA".'
+            : (data.error || 'Error generando el texto.'));
+          return;
+        }
+
+        const filled = fillFields(data.fields || {});
+
+        // Brief success flash then close
+        const btn = document.getElementById('iaTxtGenerar');
+        btn.textContent = `✅ ${filled} campos aplicados`;
+        btn.style.background = '#22c55e';
+        btn.style.display = 'block';
+        setTimeout(() => {
+          btn.textContent = '✨ Generar esta sección';
+          btn.style.background = '';
+          closeTxtPanel();
+        }, 1800);
+
+      } catch(e) { setTxtLoading(false); setTxtError('Error de red: ' + e.message); }
+    });
+  })();
+  </script>
+
   <!-- ===== PANEL FLOTANTE: GENERACIÓN DE IMÁGENES IA ====================== -->
   <?php $tieneReplicateKey = $tiene_replicate_key ?? false; ?>
 

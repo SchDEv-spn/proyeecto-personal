@@ -3146,6 +3146,27 @@ body.modal-open { overflow: hidden; }
    IA IMAGE GENERATOR — trigger button + floating panel
    ============================================================ */
 
+/* "✨ IA" button injected inside section h2 headers (text generation) */
+.ia-txt-trigger {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 10px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(93,104,255,.35);
+  background: rgba(93,104,255,.1);
+  color: #8b96ff;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background .15s, border-color .15s;
+  white-space: nowrap;
+  letter-spacing: .03em;
+}
+.ia-txt-trigger:hover { background: rgba(93,104,255,.22); border-color: rgba(93,104,255,.6); color: #a8b0ff; }
+
 /* "✨ IA" button injected next to file inputs */
 .ia-img-trigger {
   display: inline-flex;
