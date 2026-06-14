@@ -3193,6 +3193,11 @@ body.modal-open { overflow: hidden; }
   font-size: 11px; cursor: pointer; transition: color .15s;
 }
 .ia-ref-clear:hover { color: #f87171; border-color: rgba(248,113,113,.4); }
+.ia-ref-section--sec {
+  border-color: rgba(93,104,255,.25);
+  background: rgba(93,104,255,.05);
+}
+.ia-ref-section--sec .ia-ref-header { color: #8b96ff; }
 .ia-ref-strength { margin-top: 8px; }
 .ia-ref-strength label {
   display: block; font-size: 11px; font-weight: 600;

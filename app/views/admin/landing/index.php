@@ -2598,30 +2598,50 @@
       </div>
       <?php endif; ?>
 
-      <!-- Foto de referencia del producto -->
+      <!-- Referencia global del producto -->
       <div class="ia-ref-section">
         <div class="ia-ref-header">
-          <span><i class="fas fa-image"></i> Foto de referencia del producto</span>
+          <span><i class="fas fa-image"></i> Referencia global del producto</span>
           <span class="ia-ref-badge" id="iaRefBadge" style="display:none;">✅ Cargada</span>
         </div>
         <div class="ia-ref-body" id="iaRefBody">
           <input type="file" id="iaRefFile" accept="image/jpeg,image/png,image/webp"
                  style="font-size:12px; width:100%;">
-          <small>Sube una foto real de tu producto. Flux la usará como base para <strong>todas</strong> las generaciones.</small>
+          <small>Foto base de tu producto — aplica a <strong>todas</strong> las secciones.</small>
         </div>
         <div id="iaRefPreview" style="display:none; margin-top:8px;">
-          <img id="iaRefPreviewImg" src="" alt="Referencia"
-               style="width:100%; max-height:120px; object-fit:contain; border-radius:6px; border:1px solid var(--bd-default,#2a2a3a);">
-          <button type="button" id="iaRefClear" class="ia-ref-clear">✕ Quitar referencia</button>
+          <img id="iaRefPreviewImg" src="" alt="Referencia global"
+               style="width:100%; max-height:100px; object-fit:contain; border-radius:6px; border:1px solid var(--bd-default,#2a2a3a);">
+          <button type="button" id="iaRefClear" class="ia-ref-clear">✕ Quitar referencia global</button>
         </div>
-        <div class="ia-ref-strength" id="iaRefStrength" style="display:none;">
-          <label for="iaStrengthSelect">Fidelidad al producto</label>
-          <select id="iaStrengthSelect">
-            <option value="0.60">Alta — muy parecida a la foto</option>
-            <option value="0.75" selected>Balanceada — respeta el producto + mejora</option>
-            <option value="0.90">Creativa — inspirada en la foto</option>
-          </select>
+      </div>
+
+      <!-- Referencia específica de esta sección -->
+      <div class="ia-ref-section ia-ref-section--sec">
+        <div class="ia-ref-header">
+          <span><i class="fas fa-crop-alt"></i> Referencia de <em id="iaRefSecLabel">esta sección</em></span>
+          <span class="ia-ref-badge" id="iaRefSecBadge" style="display:none;">✅ Cargada</span>
         </div>
+        <div class="ia-ref-body" id="iaRefSecBody">
+          <input type="file" id="iaRefSecFile" accept="image/jpeg,image/png,image/webp"
+                 style="font-size:12px; width:100%;">
+          <small>Foto específica para esta sección (ej: medidas, detalle, ángulo). <strong>Sobreescribe</strong> la global solo aquí. Se resetea al cambiar de sección.</small>
+        </div>
+        <div id="iaRefSecPreview" style="display:none; margin-top:8px;">
+          <img id="iaRefSecPreviewImg" src="" alt="Referencia sección"
+               style="width:100%; max-height:100px; object-fit:contain; border-radius:6px; border:1px solid rgba(93,104,255,.4);">
+          <button type="button" id="iaRefSecClear" class="ia-ref-clear">✕ Quitar referencia de sección</button>
+        </div>
+      </div>
+
+      <!-- Fidelidad (aplica a cualquier referencia activa) -->
+      <div class="ia-ref-strength" id="iaRefStrength">
+        <label for="iaStrengthSelect">Fidelidad a la referencia</label>
+        <select id="iaStrengthSelect">
+          <option value="0.60">Alta — muy parecida a la foto</option>
+          <option value="0.75" selected>Balanceada — respeta el producto + mejora</option>
+          <option value="0.90">Creativa — inspirada en la foto</option>
+        </select>
       </div>
 
       <!-- Prompt -->
@@ -2836,47 +2856,83 @@
       finally { btn.textContent = orig; btn.disabled = false; }
     });
 
-    // ── Referencia del producto ───────────────────────────────────────────────
-    let referenciaUrl = null;
+    // ── Referencias: global + por sección ────────────────────────────────────
+    let referenciaGlobalUrl  = null;
+    let referenciaSeccionUrl = null;
 
-    const refFile    = document.getElementById('iaRefFile');
-    const refPreview = document.getElementById('iaRefPreview');
-    const refBadge   = document.getElementById('iaRefBadge');
-    const refStrength= document.getElementById('iaRefStrength');
-    const refBody    = document.getElementById('iaRefBody');
-
-    refFile.addEventListener('change', async () => {
-      const file = refFile.files[0];
-      if (!file) return;
-
-      refBadge.textContent = '⏳ Subiendo...';
-      refBadge.style.display = 'inline';
-
+    async function uploadRef(file, onSuccess, onError, badgeEl) {
+      badgeEl.textContent = '⏳ Subiendo...';
+      badgeEl.style.display = 'inline';
       const fd = new FormData();
       fd.append('referencia', file);
       try {
         const res  = await fetch(BASE + '/AdminLanding/subirReferencia', { method: 'POST', body: fd });
         const data = await res.json();
-        if (!data.ok) { setError(data.error || 'Error subiendo la referencia.'); refBadge.style.display='none'; return; }
+        if (!data.ok) { setError(data.error || 'Error subiendo imagen.'); badgeEl.style.display='none'; onError && onError(); return; }
+        badgeEl.textContent = '✅ Cargada';
+        onSuccess(data.url);
+      } catch(e) { setError('Error: ' + e.message); badgeEl.style.display='none'; onError && onError(); }
+    }
 
-        referenciaUrl = data.url;
-        document.getElementById('iaRefPreviewImg').src = data.url;
-        refPreview.style.display  = 'block';
-        refStrength.style.display = 'block';
-        refBody.style.display     = 'none';
-        refBadge.textContent = '✅ Cargada';
-        refBadge.style.display = 'inline';
-      } catch(e) { setError('Error subiendo la referencia: ' + e.message); refBadge.style.display='none'; }
+    // Global
+    const refFile    = document.getElementById('iaRefFile');
+    const refBadge   = document.getElementById('iaRefBadge');
+    const refPreview = document.getElementById('iaRefPreview');
+    const refBody    = document.getElementById('iaRefBody');
+
+    refFile.addEventListener('change', async () => {
+      const file = refFile.files[0];
+      if (!file) return;
+      await uploadRef(file, (url) => {
+        referenciaGlobalUrl = url;
+        document.getElementById('iaRefPreviewImg').src = url;
+        refPreview.style.display = 'block';
+        refBody.style.display    = 'none';
+      }, null, refBadge);
     });
-
     document.getElementById('iaRefClear').addEventListener('click', () => {
-      referenciaUrl = null;
+      referenciaGlobalUrl = null;
       refFile.value = '';
-      refPreview.style.display  = 'none';
-      refStrength.style.display = 'none';
-      refBody.style.display     = '';
-      refBadge.style.display    = 'none';
+      refPreview.style.display = 'none';
+      refBody.style.display    = '';
+      refBadge.style.display   = 'none';
     });
+
+    // Por sección
+    const refSecFile    = document.getElementById('iaRefSecFile');
+    const refSecBadge   = document.getElementById('iaRefSecBadge');
+    const refSecPreview = document.getElementById('iaRefSecPreview');
+    const refSecBody    = document.getElementById('iaRefSecBody');
+
+    refSecFile.addEventListener('change', async () => {
+      const file = refSecFile.files[0];
+      if (!file) return;
+      await uploadRef(file, (url) => {
+        referenciaSeccionUrl = url;
+        document.getElementById('iaRefSecPreviewImg').src = url;
+        refSecPreview.style.display = 'block';
+        refSecBody.style.display    = 'none';
+      }, null, refSecBadge);
+    });
+    document.getElementById('iaRefSecClear').addEventListener('click', () => {
+      referenciaSeccionUrl = null;
+      refSecFile.value = '';
+      refSecPreview.style.display = 'none';
+      refSecBody.style.display    = '';
+      refSecBadge.style.display   = 'none';
+    });
+
+    // Resetear referencia de sección al abrir otro panel
+    const _origOpenPanel = openPanel;
+    openPanel = function(triggerBtn, section, fileInput) {
+      referenciaSeccionUrl = null;
+      refSecFile.value = '';
+      refSecPreview.style.display = 'none';
+      refSecBody.style.display    = '';
+      refSecBadge.style.display   = 'none';
+      document.getElementById('iaRefSecLabel').textContent = sectionLabels[section] || section;
+      _origOpenPanel(triggerBtn, section, fileInput);
+    };
 
     // ── Guardar key Replicate si se ingresó ──────────────────────────────────
     async function saveReplicateKeyIfNeeded() {
@@ -2908,11 +2964,12 @@
       showPreview(null);
 
       try {
-        const strength = document.getElementById('iaStrengthSelect')?.value || '0.75';
+        const strength    = document.getElementById('iaStrengthSelect')?.value || '0.75';
+        const refActiva   = referenciaSeccionUrl || referenciaGlobalUrl || '';
         const body = new URLSearchParams({
           prompt,
-          seccion: currentSection,
-          referencia_url:  referenciaUrl || '',
+          seccion:         currentSection,
+          referencia_url:  refActiva,
           prompt_strength: strength,
         });
         const res  = await fetch(BASE + '/AdminLanding/generarImagenIA', {
