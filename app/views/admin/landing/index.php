@@ -2360,6 +2360,335 @@
   })();
   </script>
 
+  <!-- ===== PANEL FLOTANTE: GENERACIÓN DE IMÁGENES IA ====================== -->
+  <?php $tieneReplicateKey = (new AppSettings())->hasKey('replicate_api_key'); ?>
+
+  <div id="iaImgPanel" class="ia-img-panel" style="display:none;" aria-hidden="true">
+    <div class="ia-img-panel__header">
+      <span id="iaImgPanelTitle">✨ Generar imagen</span>
+      <button type="button" id="iaImgClose" class="ia-img-panel__close" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="ia-img-panel__body">
+
+      <!-- Replicate key (solo si no está guardada) -->
+      <?php if (!$tieneReplicateKey): ?>
+      <div class="ia-img-key-section" id="iaImgKeySection">
+        <div class="ia-img-key-label">
+          <i class="fas fa-key"></i> API Key de Replicate
+          <a href="https://replicate.com/account/api-tokens" target="_blank" rel="noopener">Obtener →</a>
+        </div>
+        <input type="password" id="ia_replicate_key" placeholder="r8_...">
+        <small>Solo la ingresas una vez. Se guarda en tu BD.</small>
+      </div>
+      <?php else: ?>
+      <div id="iaImgKeySection" style="display:none;">
+        <input type="password" id="ia_replicate_key" placeholder="r8_...">
+      </div>
+      <div class="ia-img-key-saved">
+        <i class="fas fa-circle-check"></i> Replicate configurado
+        <button type="button" class="ia-modal__key-change" id="btnCambiarReplicate">Cambiar</button>
+      </div>
+      <?php endif; ?>
+
+      <!-- Prompt -->
+      <div class="ia-img-panel__field">
+        <div class="ia-img-panel__field-header">
+          <label for="iaImgPrompt">Prompt de imagen</label>
+          <button type="button" id="iaImgSugerir" class="ia-img-sugerir">✨ Sugerir con IA</button>
+        </div>
+        <textarea id="iaImgPrompt" rows="4" placeholder="Describe la imagen en inglés...&#10;Ej: Professional photo of a leather handbag, studio lighting, white background, high detail..."></textarea>
+      </div>
+
+      <div id="iaImgError" class="ia-img-error" style="display:none;"></div>
+
+      <button type="button" id="iaImgGenerar" class="ia-img-btn-generar">🎨 Generar imagen</button>
+
+      <!-- Loading -->
+      <div id="iaImgLoading" style="display:none; text-align:center; padding:20px 0;">
+        <div class="ia-spinner"></div>
+        <p style="margin:12px 0 4px; font-size:14px; font-weight:600;">Generando imagen...</p>
+        <small style="color:var(--tx-secondary,#888);">Flux 1.1 Pro · ~15-30 segundos · WebP optimizado</small>
+      </div>
+
+      <!-- Preview + acciones -->
+      <div id="iaImgPreviewWrap" style="display:none;">
+        <img id="iaImgPreviewImg" src="" alt="Imagen generada"
+             style="width:100%; border-radius:8px; margin-top:12px; border:1px solid var(--bd-default,#2a2a3a);">
+        <div class="ia-img-preview-actions">
+          <button type="button" id="iaImgUsar" class="ia-img-btn-usar">✅ Usar esta imagen</button>
+          <button type="button" id="iaImgRegen" class="ia-img-btn-regen">🔄 Regenerar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    const BASE   = '<?= BASE_URL ?>';
+    const panel  = document.getElementById('iaImgPanel');
+    const titulo = document.getElementById('iaImgPanelTitle');
+
+    // Map: input name → section ID
+    const sectionMap = {
+      'hero_media_file':             'hero',
+      'benefits_media_file':         'benefits',
+      'gallery_1_file':              'gallery_1',
+      'gallery_2_file':              'gallery_2',
+      'gallery_3_file':              'gallery_3',
+      'gallery_4_file':              'gallery_4',
+      'caract1_media_file':          'caract1',
+      'caract2_media_file':          'caract2',
+      'caract3_media_file':          'caract3',
+      'caract4_media_file':          'caract4',
+      'porque_media_file':           'porque',
+      'comparison_img_without_file': 'comparison_without',
+      'comparison_img_with_file':    'comparison_with',
+      'test1_banner_file':           'test1_banner',
+      'test2_banner_file':           'test2_banner',
+      'test3_banner_file':           'test3_banner',
+    };
+    // Map: section ID → hidden _actual field name
+    const actualMap = {
+      'hero':               'hero_media_path_actual',
+      'benefits':           'benefits_media_path_actual',
+      'gallery_1':          'gallery_1_path_actual',
+      'gallery_2':          'gallery_2_path_actual',
+      'gallery_3':          'gallery_3_path_actual',
+      'gallery_4':          'gallery_4_path_actual',
+      'caract1':            'caract1_media_path_actual',
+      'caract2':            'caract2_media_path_actual',
+      'caract3':            'caract3_media_path_actual',
+      'caract4':            'caract4_media_path_actual',
+      'porque':             'porque_media_path_actual',
+      'comparison_without': 'comparison_img_without_path_actual',
+      'comparison_with':    'comparison_img_with_path_actual',
+      'test1_banner':       'test1_banner_path_actual',
+      'test2_banner':       'test2_banner_path_actual',
+      'test3_banner':       'test3_banner_path_actual',
+    };
+    const sectionLabels = {
+      'hero': 'Hero', 'benefits': 'Beneficios',
+      'gallery_1': 'Galería 1', 'gallery_2': 'Galería 2',
+      'gallery_3': 'Galería 3', 'gallery_4': 'Galería 4',
+      'caract1': 'Característica 1', 'caract2': 'Característica 2',
+      'caract3': 'Característica 3', 'caract4': 'Característica 4',
+      'porque': '¿Por qué?',
+      'comparison_without': 'Comparativa — Sin', 'comparison_with': 'Comparativa — Con',
+      'test1_banner': 'Banner Testimonio 1', 'test2_banner': 'Banner Testimonio 2',
+      'test3_banner': 'Banner Testimonio 3',
+    };
+
+    let currentSection  = null;
+    let currentFileInput = null;
+
+    // ── Inject "✨ IA" buttons next to matching file inputs ──────────────────
+    Object.keys(sectionMap).forEach(inputName => {
+      const input = document.querySelector(`input[name="${inputName}"]`);
+      if (!input) return;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ia-img-trigger';
+      btn.innerHTML = '✨ IA';
+      btn.title = 'Generar imagen con IA';
+      btn.dataset.section = sectionMap[inputName];
+      btn.dataset.inputName = inputName;
+      input.insertAdjacentElement('afterend', btn);
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openPanel(btn, sectionMap[inputName], input);
+      });
+    });
+
+    // ── Open panel near the trigger button ──────────────────────────────────
+    function openPanel(triggerBtn, section, fileInput) {
+      currentSection   = section;
+      currentFileInput = fileInput;
+      titulo.textContent = '✨ Generar imagen — ' + (sectionLabels[section] || section);
+
+      // Reset state
+      setError('');
+      setLoading(false);
+      showPreview(null);
+      document.getElementById('iaImgPrompt').value = '';
+
+      // Position panel near trigger
+      const rect = triggerBtn.getBoundingClientRect();
+      panel.style.display = 'block';
+      panel.setAttribute('aria-hidden', 'false');
+
+      // Ensure panel is visible in viewport
+      const panelW = 380;
+      let left = rect.left + window.scrollX;
+      let top  = rect.bottom + window.scrollY + 8;
+      if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
+      if (left < 8) left = 8;
+      panel.style.left = left + 'px';
+      panel.style.top  = top  + 'px';
+    }
+
+    // ── Close ────────────────────────────────────────────────────────────────
+    document.getElementById('iaImgClose').addEventListener('click', closePanel);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+    document.addEventListener('click', e => {
+      if (panel.style.display !== 'none' && !panel.contains(e.target) && !e.target.classList.contains('ia-img-trigger')) {
+        closePanel();
+      }
+    });
+    function closePanel() {
+      panel.style.display = 'none';
+      panel.setAttribute('aria-hidden', 'true');
+    }
+
+    // ── Cambiar key Replicate ────────────────────────────────────────────────
+    const btnCambiarR = document.getElementById('btnCambiarReplicate');
+    const keySectionEl = document.getElementById('iaImgKeySection');
+    if (btnCambiarR && keySectionEl) {
+      btnCambiarR.addEventListener('click', () => {
+        keySectionEl.style.display = keySectionEl.style.display === 'none' ? '' : 'none';
+      });
+    }
+
+    // ── Helpers UI ───────────────────────────────────────────────────────────
+    function setError(msg) {
+      const el = document.getElementById('iaImgError');
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+    function setLoading(on) {
+      document.getElementById('iaImgLoading').style.display  = on ? 'block' : 'none';
+      document.getElementById('iaImgGenerar').style.display  = on ? 'none'  : 'block';
+      document.getElementById('iaImgSugerir').disabled = on;
+    }
+    function showPreview(url) {
+      const wrap = document.getElementById('iaImgPreviewWrap');
+      if (!url) { wrap.style.display = 'none'; return; }
+      document.getElementById('iaImgPreviewImg').src = url;
+      wrap.style.display = 'block';
+    }
+
+    // ── Get product context from form ────────────────────────────────────────
+    function getProductoCtx() {
+      return {
+        producto:    (document.querySelector('[name="hero_title"]')?.value || '<?= htmlspecialchars($producto['nombre'] ?? '') ?>').trim(),
+        descripcion: (document.querySelector('[name="hero_subtitle"]')?.value || document.querySelector('[name="porque_text"]')?.value || '').trim(),
+      };
+    }
+
+    // ── Sugerir prompt con Claude ────────────────────────────────────────────
+    document.getElementById('iaImgSugerir').addEventListener('click', async () => {
+      setError('');
+      const btn = document.getElementById('iaImgSugerir');
+      const orig = btn.textContent;
+      btn.textContent = '...'; btn.disabled = true;
+
+      try {
+        const ctx = getProductoCtx();
+        const promptActual = document.getElementById('iaImgPrompt').value.trim();
+        const body = new URLSearchParams({
+          producto: ctx.producto, descripcion: ctx.descripcion,
+          seccion: currentSection, prompt_actual: promptActual,
+        });
+        const res  = await fetch(BASE + '/AdminLanding/sugerirPrompt', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('iaImgPrompt').value = data.text;
+        } else {
+          setError(data.error === 'no_claude_key' ? 'Configura primero la API key de Claude en "✨ Generar con IA".' : (data.error || 'Error al sugerir prompt.'));
+        }
+      } catch(e) { setError('Error de red: ' + e.message); }
+      finally { btn.textContent = orig; btn.disabled = false; }
+    });
+
+    // ── Guardar key Replicate si se ingresó ──────────────────────────────────
+    async function saveReplicateKeyIfNeeded() {
+      const keyInput = document.getElementById('ia_replicate_key');
+      const key = keyInput ? keyInput.value.trim() : '';
+      if (!key) return true;
+      const res  = await fetch(BASE + '/AdminLanding/guardarApiKey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ tipo: 'replicate', api_key: key }),
+      });
+      const data = await res.json();
+      if (!data.ok) { setError(data.error || 'Error guardando la key de Replicate.'); return false; }
+      if (keyInput) keyInput.value = '';
+      return true;
+    }
+
+    // ── Generar imagen ───────────────────────────────────────────────────────
+    let lastGeneratedUrl = null;
+
+    async function doGenerate() {
+      setError('');
+      const prompt = document.getElementById('iaImgPrompt').value.trim();
+      if (!prompt) { setError('Escribe o sugiere un prompt primero.'); return; }
+
+      if (!await saveReplicateKeyIfNeeded()) return;
+
+      setLoading(true);
+      showPreview(null);
+
+      try {
+        const res  = await fetch(BASE + '/AdminLanding/generarImagenIA', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ prompt, seccion: currentSection }),
+        });
+        const data = await res.json();
+        setLoading(false);
+        if (!data.ok) {
+          if (data.error === 'no_replicate_key') {
+            setError('Ingresa tu API key de Replicate arriba.');
+            if (keySectionEl) keySectionEl.style.display = '';
+          } else {
+            setError(data.error || 'Error generando la imagen.');
+          }
+          return;
+        }
+        lastGeneratedUrl = data.url;
+        showPreview(data.url);
+      } catch(e) { setLoading(false); setError('Error de red: ' + e.message); }
+    }
+
+    document.getElementById('iaImgGenerar').addEventListener('click', doGenerate);
+    document.getElementById('iaImgRegen').addEventListener('click', doGenerate);
+
+    // ── Usar imagen generada ─────────────────────────────────────────────────
+    document.getElementById('iaImgUsar').addEventListener('click', () => {
+      if (!lastGeneratedUrl || !currentSection) return;
+
+      // Update hidden _actual field
+      const actualName = actualMap[currentSection];
+      if (actualName) {
+        const hidden = document.querySelector(`[name="${actualName}"]`);
+        if (hidden) hidden.value = lastGeneratedUrl;
+      }
+
+      // Update nearest .media-preview
+      const container = currentFileInput?.closest('.admin-form-group, .gallery-card, .mini-card');
+      const previewParent = container?.closest('div')?.querySelector('.media-preview')
+                         || currentFileInput?.closest('form')?.querySelector(`#${currentSection.replace('_','-')}-preview`)
+                         || null;
+
+      // Find the media-preview in the same section-block
+      const sectionBlock = currentFileInput?.closest('.section-block, .mini-card, .gallery-card');
+      const mediaPreview = sectionBlock?.querySelector('.media-preview');
+      if (mediaPreview) {
+        mediaPreview.innerHTML = `<img src="${lastGeneratedUrl}" alt="Imagen IA" style="max-width:100%;border-radius:6px;">`;
+      }
+
+      // Clear the file input so the hidden _actual takes precedence
+      if (currentFileInput) currentFileInput.value = '';
+
+      closePanel();
+    });
+  })();
+  </script>
+
 </body>
 
 </html>

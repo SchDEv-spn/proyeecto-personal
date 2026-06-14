@@ -471,7 +471,7 @@ class AdminLandingController extends Controller
         exit;
     }
 
-    // ── Guarda la API key de Claude en app_settings ──────────────────────────
+    // ── Guarda API keys (Claude o Replicate) en app_settings ─────────────────
     public function guardarApiKey()
     {
         $this->requireLogin();
@@ -482,14 +482,129 @@ class AdminLandingController extends Controller
             return;
         }
 
-        $key = trim($_POST['api_key'] ?? '');
-        if (!$key || !str_starts_with($key, 'sk-ant-')) {
-            echo json_encode(['ok' => false, 'error' => 'La API key debe empezar con sk-ant-']);
+        $tipo = trim($_POST['tipo'] ?? 'claude');
+        $key  = trim($_POST['api_key'] ?? '');
+
+        if ($tipo === 'replicate') {
+            if (!$key || !str_starts_with($key, 'r8_')) {
+                echo json_encode(['ok' => false, 'error' => 'La API key de Replicate debe empezar con r8_']);
+                return;
+            }
+            (new AppSettings())->set('replicate_api_key', $key);
+        } else {
+            if (!$key || !str_starts_with($key, 'sk-ant-')) {
+                echo json_encode(['ok' => false, 'error' => 'La API key de Claude debe empezar con sk-ant-']);
+                return;
+            }
+            (new AppSettings())->set('claude_api_key', $key);
+        }
+
+        echo json_encode(['ok' => true]);
+    }
+
+    // ── Sugiere un prompt de imagen usando Claude ─────────────────────────────
+    public function sugerirPrompt()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
             return;
         }
 
-        (new AppSettings())->set('claude_api_key', $key);
-        echo json_encode(['ok' => true]);
+        $apiKey = (new AppSettings())->get('claude_api_key');
+        if (!$apiKey) { echo json_encode(['ok' => false, 'error' => 'no_claude_key']); return; }
+
+        $producto     = trim($_POST['producto']      ?? '');
+        $descripcion  = trim($_POST['descripcion']   ?? '');
+        $seccion      = trim($_POST['seccion']        ?? 'hero');
+        $promptActual = trim($_POST['prompt_actual']  ?? '');
+
+        $ctxMap = [
+            'hero'                => 'hero image of the product for a landing page, professional product photography, perfect studio lighting, clean elegant background',
+            'benefits'            => 'lifestyle photo showing the product benefit in use, happy person using the product, warm natural light',
+            'gallery_1'           => 'detailed product shot showing quality and finish, studio lighting, clean white or gradient background',
+            'gallery_2'           => 'product from a different angle, showing unique design details, professional photography',
+            'gallery_3'           => 'product in real-life use context, lifestyle photography',
+            'gallery_4'           => 'product with packaging and accessories, flat lay or arranged composition',
+            'caract1'             => 'image illustrating the first key feature of the product, close-up detail',
+            'caract2'             => 'image illustrating the second feature, showing functionality',
+            'caract3'             => 'image illustrating the third feature, elegant product shot',
+            'caract4'             => 'image illustrating the fourth feature, lifestyle or detail photo',
+            'porque'              => 'emotional image showing positive transformation the product brings, satisfied smiling person',
+            'comparison_without'  => 'image showing the uncomfortable or problematic situation WITHOUT the product, subtle expression of frustration or inconvenience',
+            'comparison_with'     => 'image showing the ideal situation WITH the product, happy satisfied person, warm light',
+            'test1_banner'        => 'photo of a satisfied Colombian customer holding or using the product, genuine smile, natural setting',
+            'test2_banner'        => 'another happy Colombian customer with the product, different setting',
+            'test3_banner'        => 'third customer showing the received product, unboxing or in-use moment',
+        ];
+
+        $ctx = $ctxMap[$seccion] ?? 'professional product image for e-commerce landing page';
+
+        if ($promptActual) {
+            $msg = "Improve and expand this Flux AI image prompt: \"{$promptActual}\"\n\nProduct: {$producto}. {$descripcion}\nSection context: {$ctx}\n\nReturn ONLY the improved prompt in English, detailed, professional, optimized for Flux 1.1 Pro. No explanations, no quotes, just the prompt. Max 150 words.";
+        } else {
+            $msg = "Write an English prompt for Flux 1.1 Pro AI image generator for this landing page section:\n\nProduct: {$producto}\nDescription: {$descripcion}\nImage context: {$ctx}\n\nThe prompt must be: photorealistic, professional commercial photography style, high quality e-commerce. Describe lighting, composition, photographic style, mood.\n\nReturn ONLY the prompt in English. No explanations, no quotes, just the prompt. Max 120 words.";
+        }
+
+        $result = $this->callClaudeText($apiKey, $msg);
+        echo json_encode($result);
+    }
+
+    // ── Genera imagen con Replicate Flux 1.1 Pro + optimiza a WebP ───────────
+    public function generarImagenIA()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            return;
+        }
+
+        $replicateKey = (new AppSettings())->get('replicate_api_key');
+        if (!$replicateKey) { echo json_encode(['ok' => false, 'error' => 'no_replicate_key']); return; }
+
+        $prompt  = trim($_POST['prompt']  ?? '');
+        $seccion = trim($_POST['seccion'] ?? 'hero');
+        if (!$prompt) { echo json_encode(['ok' => false, 'error' => 'El prompt es requerido']); return; }
+
+        $aspectos = [
+            'hero'               => '2:3',
+            'benefits'           => '3:2',
+            'gallery_1'          => '1:1',  'gallery_2' => '1:1',
+            'gallery_3'          => '1:1',  'gallery_4' => '1:1',
+            'caract1'            => '1:1',  'caract2'   => '1:1',
+            'caract3'            => '1:1',  'caract4'   => '1:1',
+            'porque'             => '3:2',
+            'comparison_without' => '2:3',  'comparison_with' => '2:3',
+            'test1_banner'       => '16:9', 'test2_banner'    => '16:9',
+            'test3_banner'       => '16:9',
+        ];
+        $maxDims = [
+            'hero'               => [800, 1200],
+            'benefits'           => [900,  600],
+            'gallery_1'          => [800,  800],  'gallery_2' => [800, 800],
+            'gallery_3'          => [800,  800],  'gallery_4' => [800, 800],
+            'caract1'            => [600,  600],  'caract2'   => [600, 600],
+            'caract3'            => [600,  600],  'caract4'   => [600, 600],
+            'porque'             => [900,  600],
+            'comparison_without' => [500,  700],  'comparison_with' => [500, 700],
+            'test1_banner'       => [800,  400],  'test2_banner'    => [800, 400],
+            'test3_banner'       => [800,  400],
+        ];
+
+        $aspectRatio = $aspectos[$seccion]  ?? '1:1';
+        $dims        = $maxDims[$seccion]   ?? [800, 800];
+
+        $imageUrl = $this->callReplicateFlux($replicateKey, $prompt, $aspectRatio);
+        if (is_array($imageUrl)) { echo json_encode(['ok' => false, 'error' => $imageUrl['error']]); return; }
+
+        $publicUrl = $this->downloadAndOptimizeImage($imageUrl, $seccion, $dims);
+        if (!$publicUrl) { echo json_encode(['ok' => false, 'error' => 'Error procesando la imagen generada']); return; }
+
+        echo json_encode(['ok' => true, 'url' => $publicUrl]);
     }
 
     // ── Genera el contenido de la landing con Claude ──────────────────────────
@@ -721,5 +836,140 @@ PROMPT;
         }
 
         return ['ok' => true, 'fields' => $parsed];
+    }
+
+    // ── Claude: respuesta de texto plano (para prompts) ───────────────────────
+    private function callClaudeText(string $apiKey, string $prompt): array
+    {
+        $payload = json_encode([
+            'model'      => 'claude-haiku-4-5-20251001',
+            'max_tokens' => 300,
+            'messages'   => [['role' => 'user', 'content' => $prompt]],
+        ]);
+
+        $ch = curl_init('https://api.anthropic.com/v1/messages');
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'x-api-key: ' . $apiKey,
+                'anthropic-version: 2023-06-01',
+            ],
+            CURLOPT_TIMEOUT => 30,
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if (!$response) return ['ok' => false, 'error' => 'Error de conexión con Claude'];
+        $data = json_decode($response, true);
+        if ($httpCode !== 200) return ['ok' => false, 'error' => $data['error']['message'] ?? 'Error API'];
+
+        return ['ok' => true, 'text' => trim($data['content'][0]['text'] ?? '')];
+    }
+
+    // ── Replicate: llama a Flux 1.1 Pro ──────────────────────────────────────
+    private function callReplicateFlux(string $apiKey, string $prompt, string $aspectRatio): string|array
+    {
+        $payload = json_encode([
+            'input' => [
+                'prompt'           => $prompt,
+                'aspect_ratio'     => $aspectRatio,
+                'output_format'    => 'webp',
+                'output_quality'   => 85,
+                'safety_tolerance' => 2,
+            ],
+        ]);
+
+        $ch = curl_init('https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions');
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey,
+                'Prefer: wait',
+            ],
+            CURLOPT_TIMEOUT => 120,
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if (!$response) return ['error' => 'Error de conexión con Replicate: ' . $curlErr];
+
+        $data = json_decode($response, true);
+        if ($httpCode !== 200 && $httpCode !== 201) {
+            return ['error' => 'Error Replicate: ' . ($data['detail'] ?? $data['error'] ?? 'Error desconocido')];
+        }
+
+        $output = $data['output'] ?? null;
+        if (is_array($output)) $output = $output[0] ?? null;
+
+        if (!$output) {
+            $id = $data['id'] ?? null;
+            return $id ? $this->pollReplicatePrediction($apiKey, $id) : ['error' => 'Sin URL de imagen'];
+        }
+
+        return $output;
+    }
+
+    // ── Replicate: polling si Prefer:wait no resolvió ─────────────────────────
+    private function pollReplicatePrediction(string $apiKey, string $id): string|array
+    {
+        for ($i = 0; $i < 20; $i++) {
+            sleep(3);
+            $ch = curl_init("https://api.replicate.com/v1/predictions/{$id}");
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey],
+                CURLOPT_TIMEOUT        => 10,
+            ]);
+            $data   = json_decode(curl_exec($ch), true);
+            curl_close($ch);
+            $status = $data['status'] ?? '';
+            if ($status === 'succeeded') {
+                $out = $data['output'] ?? null;
+                return is_array($out) ? ($out[0] ?? ['error' => 'Sin URL']) : ($out ?: ['error' => 'Sin URL']);
+            }
+            if ($status === 'failed') return ['error' => $data['error'] ?? 'Generación fallida'];
+        }
+        return ['error' => 'Timeout: la imagen tardó demasiado'];
+    }
+
+    // ── Descarga imagen, la redimensiona y guarda como WebP ──────────────────
+    private function downloadAndOptimizeImage(string $url, string $seccion, array $maxDims): ?string
+    {
+        $raw = @file_get_contents($url);
+        if (!$raw) return null;
+
+        $src = @imagecreatefromstring($raw);
+        if (!$src) return null;
+
+        [$maxW, $maxH] = $maxDims;
+        $srcW = imagesx($src);
+        $srcH = imagesy($src);
+        $ratio = min($maxW / $srcW, $maxH / $srcH, 1.0);
+        $newW  = (int)round($srcW * $ratio);
+        $newH  = (int)round($srcH * $ratio);
+
+        $dst = imagecreatetruecolor($newW, $newH);
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
+        imagedestroy($src);
+
+        $uploadDir = __DIR__ . '/../../public/uploads/landing/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+        $filename = 'ia_' . $seccion . '_' . time() . '_' . mt_rand(1000, 9999) . '.webp';
+        imagewebp($dst, $uploadDir . $filename, 82);
+        imagedestroy($dst);
+
+        return file_exists($uploadDir . $filename)
+            ? BASE_URL . '/public/uploads/landing/' . $filename
+            : null;
     }
 }
