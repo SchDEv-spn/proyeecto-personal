@@ -4,29 +4,41 @@ class AppSettings extends Model
 {
     public function get(string $key, ?string $default = null): ?string
     {
-        $stmt = $this->db->prepare(
-            'SELECT value FROM app_settings WHERE `key` = ? LIMIT 1'
-        );
-        $stmt->execute([$key]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return ($row !== false) ? $row['value'] : $default;
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT value FROM app_settings WHERE `key` = ? LIMIT 1'
+            );
+            $stmt->execute([$key]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return ($row !== false) ? $row['value'] : $default;
+        } catch (\Throwable $e) {
+            return $default;
+        }
     }
 
     public function set(string $key, ?string $value): void
     {
-        $stmt = $this->db->prepare(
-            'INSERT INTO app_settings (`key`, `value`) VALUES (?, ?)
-             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), updated_at = NOW()'
-        );
-        $stmt->execute([$key, $value]);
+        try {
+            $stmt = $this->db->prepare(
+                'INSERT INTO app_settings (`key`, `value`) VALUES (?, ?)
+                 ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), updated_at = NOW()'
+            );
+            $stmt->execute([$key, $value]);
+        } catch (\Throwable $e) {
+            // tabla no existe aún — silencioso hasta que se corra la migración
+        }
     }
 
     public function hasKey(string $key): bool
     {
-        $stmt = $this->db->prepare(
-            'SELECT 1 FROM app_settings WHERE `key` = ? AND value IS NOT NULL AND value != "" LIMIT 1'
-        );
-        $stmt->execute([$key]);
-        return (bool)$stmt->fetchColumn();
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT 1 FROM app_settings WHERE `key` = ? AND value IS NOT NULL AND value != "" LIMIT 1'
+            );
+            $stmt->execute([$key]);
+            return (bool)$stmt->fetchColumn();
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }

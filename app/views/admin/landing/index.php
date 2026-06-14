@@ -107,9 +107,7 @@
             </div>
 
             <!-- IA: Botón generar -->
-            <?php
-            $tieneApiKey = (new AppSettings())->hasKey('claude_api_key');
-            ?>
+            <?php $tieneApiKey = $tiene_api_key ?? false; ?>
             <div class="ia-banner">
               <div class="ia-banner__left">
                 <span class="ia-banner__icon">✨</span>
@@ -2361,7 +2359,7 @@
   </script>
 
   <!-- ===== PANEL FLOTANTE: GENERACIÓN DE IMÁGENES IA ====================== -->
-  <?php $tieneReplicateKey = (new AppSettings())->hasKey('replicate_api_key'); ?>
+  <?php $tieneReplicateKey = $tiene_replicate_key ?? false; ?>
 
   <div id="iaImgPanel" class="ia-img-panel" style="display:none;" aria-hidden="true">
     <div class="ia-img-panel__header">

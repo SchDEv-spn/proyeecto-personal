@@ -35,12 +35,15 @@ class AdminLandingController extends Controller
             unset($_SESSION['admin_landing_success']);
         }
 
+        $settings = new AppSettings();
         $this->view('admin/landing/index', [
-            'config'      => $config,
-            'success'     => $success,
-            'producto_id' => $productoId,
-            'productos'   => $productos,
-            'producto'    => $productoActual,
+            'config'             => $config,
+            'success'            => $success,
+            'producto_id'        => $productoId,
+            'productos'          => $productos,
+            'producto'           => $productoActual,
+            'tiene_api_key'      => $settings->hasKey('claude_api_key'),
+            'tiene_replicate_key'=> $settings->hasKey('replicate_api_key'),
         ]);
     }
 
@@ -808,7 +811,7 @@ PROMPT;
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlErr  = curl_error($ch);
-        curl_close($ch);
+        unset($ch);
 
         if (!$response) {
             return ['ok' => false, 'error' => 'Error de conexión: ' . $curlErr];
@@ -861,7 +864,7 @@ PROMPT;
         ]);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        unset($ch);
 
         if (!$response) return ['ok' => false, 'error' => 'Error de conexión con Claude'];
         $data = json_decode($response, true);
@@ -898,7 +901,7 @@ PROMPT;
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlErr  = curl_error($ch);
-        curl_close($ch);
+        unset($ch);
 
         if (!$response) return ['error' => 'Error de conexión con Replicate: ' . $curlErr];
 
@@ -930,7 +933,7 @@ PROMPT;
                 CURLOPT_TIMEOUT        => 10,
             ]);
             $data   = json_decode(curl_exec($ch), true);
-            curl_close($ch);
+            unset($ch);
             $status = $data['status'] ?? '';
             if ($status === 'succeeded') {
                 $out = $data['output'] ?? null;
@@ -959,14 +962,14 @@ PROMPT;
 
         $dst = imagecreatetruecolor($newW, $newH);
         imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
-        imagedestroy($src);
+        unset($src);
 
         $uploadDir = __DIR__ . '/../../public/uploads/landing/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
         $filename = 'ia_' . $seccion . '_' . time() . '_' . mt_rand(1000, 9999) . '.webp';
         imagewebp($dst, $uploadDir . $filename, 82);
-        imagedestroy($dst);
+        unset($dst);
 
         return file_exists($uploadDir . $filename)
             ? BASE_URL . '/public/uploads/landing/' . $filename
