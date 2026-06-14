@@ -202,5 +202,16 @@ ALTER TABLE landing_config
     ADD COLUMN IF NOT EXISTS test2_city TEXT NULL,
     ADD COLUMN IF NOT EXISTS test3_city TEXT NULL;
 
+-- ── app_settings: tabla global de configuración (API keys, etc.) ──
+CREATE TABLE IF NOT EXISTS app_settings (
+    id         INT(11)      NOT NULL AUTO_INCREMENT,
+    `key`      VARCHAR(100) NOT NULL,
+    `value`    TEXT         NULL,
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_key (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- ── Fin de migración ──
 SELECT 'Migración completada OK' AS resultado;

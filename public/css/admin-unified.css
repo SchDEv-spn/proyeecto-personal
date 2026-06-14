@@ -2897,3 +2897,247 @@ body.modal-open { overflow: hidden; }
   font-variant-numeric: tabular-nums;
   transition: color 0.2s;
 }
+
+/* ============================================================
+   IA GENERATOR — banner + modal
+   ============================================================ */
+
+/* Banner */
+.ia-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(93,104,255,.12), rgba(201,168,76,.10));
+  border: 1px solid rgba(93,104,255,.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.ia-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ia-banner__icon { font-size: 28px; line-height: 1; }
+.ia-banner__left strong { display: block; font-size: 14px; color: var(--tx-primary, #e0e0f0); }
+.ia-banner__left p { margin: 2px 0 0; font-size: 12px; color: var(--tx-secondary, #888); }
+.ia-banner__btn {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 20px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #5d68ff, #7c5dff);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s, transform .12s;
+  white-space: nowrap;
+}
+.ia-banner__btn:hover { opacity: .9; transform: translateY(-1px); }
+
+/* Modal overlay */
+.ia-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.ia-modal-overlay.is-open { display: flex; }
+
+/* Modal card */
+.ia-modal {
+  background: var(--bg-overlay, #1e1e2e);
+  border: 1px solid var(--bd-strong, #3a3a4a);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.ia-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--bd-default, #2a2a3a);
+}
+.ia-modal__header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tx-primary, #e0e0f0);
+  margin: 0;
+}
+.ia-modal__close {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: var(--bg-elevated, #161622);
+  color: var(--tx-secondary, #888);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background .15s;
+}
+.ia-modal__close:hover { background: var(--bd-strong, #3a3a4a); color: var(--tx-primary, #e0e0f0); }
+
+.ia-modal__body { padding: 20px 24px; }
+
+.ia-modal__hint {
+  font-size: 13px;
+  color: var(--tx-secondary, #888);
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+.ia-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.ia-modal__field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx-secondary, #888);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.ia-req { color: #f87171; }
+.ia-modal__field input,
+.ia-modal__field textarea {
+  background: var(--bg-elevated, #161622);
+  border: 1px solid var(--bd-default, #2a2a3a);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--tx-primary, #e0e0f0);
+  font-size: 13px;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color .15s;
+  resize: vertical;
+}
+.ia-modal__field input:focus,
+.ia-modal__field textarea:focus { border-color: #5d68ff; }
+.ia-modal__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* API key section */
+.ia-modal__key-section {
+  background: rgba(201,168,76,.06);
+  border: 1px solid rgba(201,168,76,.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+.ia-modal__key-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold, #C9A84C);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ia-modal__key-link { color: var(--gold, #C9A84C); text-decoration: underline; font-weight: 400; }
+.ia-modal__key-section input {
+  width: 100%;
+  background: var(--bg-elevated, #161622);
+  border: 1px solid var(--bd-default, #2a2a3a);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--tx-primary, #e0e0f0);
+  font-size: 12px;
+  font-family: monospace;
+  outline: none;
+  box-sizing: border-box;
+}
+.ia-modal__key-section small {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--tx-secondary, #888);
+}
+.ia-modal__key-saved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #4ade80;
+  margin-bottom: 14px;
+}
+.ia-modal__key-change {
+  background: none;
+  border: none;
+  color: var(--tx-secondary, #888);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* Submit */
+.ia-modal__submit {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #5d68ff, #7c5dff);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: opacity .15s;
+}
+.ia-modal__submit:hover { opacity: .9; }
+
+/* Error */
+.ia-modal__error {
+  background: rgba(248,113,113,.1);
+  border: 1px solid rgba(248,113,113,.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #f87171;
+  margin-bottom: 12px;
+}
+
+/* Loading */
+.ia-modal__loading {
+  text-align: center;
+  padding: 48px 24px;
+}
+.ia-modal__loading p {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx-primary, #e0e0f0);
+  margin: 16px 0 6px;
+}
+.ia-modal__loading small { color: var(--tx-secondary, #888); font-size: 12px; }
+.ia-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--bd-default, #2a2a3a);
+  border-top-color: #5d68ff;
+  border-radius: 50%;
+  animation: ia-spin .8s linear infinite;
+  margin: 0 auto;
+}
+@keyframes ia-spin { to { transform: rotate(360deg); } }
+
+/* Success */
+.ia-modal__success { text-align: center; padding: 40px 24px; }
+.ia-success-icon { font-size: 48px; margin-bottom: 12px; }
+.ia-modal__success h3 { font-size: 18px; margin: 0 0 8px; color: var(--tx-primary, #e0e0f0); }
+.ia-modal__success p { font-size: 13px; color: var(--tx-secondary, #888); margin: 0 0 20px; }

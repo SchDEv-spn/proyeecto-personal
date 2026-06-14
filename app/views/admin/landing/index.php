@@ -106,6 +106,23 @@
               </div>
             </div>
 
+            <!-- IA: Botón generar -->
+            <?php
+            $tieneApiKey = (new AppSettings())->hasKey('claude_api_key');
+            ?>
+            <div class="ia-banner">
+              <div class="ia-banner__left">
+                <span class="ia-banner__icon">✨</span>
+                <div>
+                  <strong>Generar landing completa con IA</strong>
+                  <p>Claude escribe todos los textos optimizados para conversión colombiana en segundos.</p>
+                </div>
+              </div>
+              <button type="button" class="ia-banner__btn" id="btnAbrirIA">
+                ✨ Generar con IA
+              </button>
+            </div>
+
             <!-- FORM PRINCIPAL -->
             <div class="form-card">
               <div class="form-card-header">
@@ -2129,6 +2146,219 @@
   <!-- JS del índice lateral -->
   <script src="<?= BASE_URL ?>/public/js/admin-landing-toc.js"></script>
   <script src="<?= BASE_URL ?>/public/js/ux-improvements.js"></script>
+
+  <!-- ===== MODAL IA ===================================================== -->
+  <div class="ia-modal-overlay" id="iaModalOverlay" aria-hidden="true">
+    <div class="ia-modal" role="dialog" aria-labelledby="iaModalTitle" aria-modal="true">
+
+      <div class="ia-modal__header">
+        <h2 id="iaModalTitle">✨ Generar landing con IA</h2>
+        <button type="button" class="ia-modal__close" id="iaModalClose" aria-label="Cerrar">✕</button>
+      </div>
+
+      <!-- Paso 1: Datos del producto -->
+      <div class="ia-modal__body" id="iaStep1">
+        <p class="ia-modal__hint">
+          Describe tu producto y Claude genera <strong>todos los textos</strong> optimizados para convertir en Colombia.
+          El proceso toma ~20 segundos.
+        </p>
+
+        <div class="ia-modal__field">
+          <label for="ia_nombre">Nombre del producto <span class="ia-req">*</span></label>
+          <input type="text" id="ia_nombre" placeholder="Ej: Bolso Hobo de cuero sintético"
+                 value="<?= htmlspecialchars($producto['nombre'] ?? '') ?>">
+        </div>
+
+        <div class="ia-modal__field">
+          <label for="ia_descripcion">¿Qué hace o qué problema resuelve? <span class="ia-req">*</span></label>
+          <textarea id="ia_descripcion" rows="3"
+                    placeholder="Ej: Bolso espacioso para mujer con múltiples compartimentos, correa ajustable, cierre magnético y diseño elegante que combina con cualquier outfit. Perfecto para uso diario."></textarea>
+        </div>
+
+        <div class="ia-modal__row">
+          <div class="ia-modal__field">
+            <label for="ia_publico">Público objetivo</label>
+            <input type="text" id="ia_publico" placeholder="Ej: Mujeres colombianas de 25-45 años">
+          </div>
+          <div class="ia-modal__field">
+            <label for="ia_precio">Precio (COP)</label>
+            <input type="text" id="ia_precio" placeholder="Ej: 89.900">
+          </div>
+        </div>
+
+        <?php if (!$tieneApiKey): ?>
+        <div class="ia-modal__key-section" id="iaKeySection">
+          <div class="ia-modal__key-label">
+            <i class="fas fa-key"></i> API Key de Claude
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" class="ia-modal__key-link">
+              Obtener key →
+            </a>
+          </div>
+          <input type="password" id="ia_api_key" placeholder="sk-ant-api03-...">
+          <small>Se guarda de forma segura en tu base de datos. Solo la ingresas una vez.</small>
+        </div>
+        <?php else: ?>
+        <div class="ia-modal__key-saved">
+          <i class="fas fa-circle-check"></i> API Key configurada
+          <button type="button" class="ia-modal__key-change" id="btnCambiarKey">Cambiar</button>
+        </div>
+        <div class="ia-modal__key-section" id="iaKeySection" style="display:none;">
+          <input type="password" id="ia_api_key" placeholder="sk-ant-api03-...">
+        </div>
+        <?php endif; ?>
+
+        <div class="ia-modal__error" id="iaError" style="display:none;"></div>
+
+        <button type="button" class="ia-modal__submit" id="iaBtnGenerar">
+          ✨ Generar landing completa
+        </button>
+      </div>
+
+      <!-- Paso 2: Cargando -->
+      <div class="ia-modal__body ia-modal__loading" id="iaStep2" style="display:none;">
+        <div class="ia-spinner"></div>
+        <p>Claude está escribiendo tu landing...</p>
+        <small>Generando ~60 textos optimizados para el mercado colombiano. Espera ~20-30 segundos.</small>
+      </div>
+
+      <!-- Paso 3: Éxito -->
+      <div class="ia-modal__body ia-modal__success" id="iaStep3" style="display:none;">
+        <div class="ia-success-icon">✅</div>
+        <h3>¡Landing generada!</h3>
+        <p id="iaSuccessMsg">Todos los textos fueron rellenados. Revisa, ajusta lo que quieras y guarda.</p>
+        <button type="button" class="ia-modal__submit" id="iaBtnCerrarOk">Revisar y guardar →</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    const overlay   = document.getElementById('iaModalOverlay');
+    const btnAbrir  = document.getElementById('btnAbrirIA');
+    const btnCerrar = document.getElementById('iaModalClose');
+    const btnGen    = document.getElementById('iaBtnGenerar');
+    const btnCerrarOk = document.getElementById('iaBtnCerrarOk');
+    const step1     = document.getElementById('iaStep1');
+    const step2     = document.getElementById('iaStep2');
+    const step3     = document.getElementById('iaStep3');
+    const errEl     = document.getElementById('iaError');
+    const btnCambiarKey = document.getElementById('btnCambiarKey');
+    const keySection    = document.getElementById('iaKeySection');
+
+    const openModal  = () => { overlay.classList.add('is-open'); overlay.setAttribute('aria-hidden','false'); };
+    const closeModal = () => { overlay.classList.remove('is-open'); overlay.setAttribute('aria-hidden','true'); showStep(1); };
+
+    const showStep = (n) => {
+      step1.style.display = n === 1 ? '' : 'none';
+      step2.style.display = n === 2 ? '' : 'none';
+      step3.style.display = n === 3 ? '' : 'none';
+    };
+
+    if (btnAbrir)    btnAbrir.addEventListener('click', openModal);
+    if (btnCerrar)   btnCerrar.addEventListener('click', closeModal);
+    if (btnCerrarOk) btnCerrarOk.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    if (btnCambiarKey && keySection) {
+      btnCambiarKey.addEventListener('click', () => {
+        keySection.style.display = keySection.style.display === 'none' ? '' : 'none';
+      });
+    }
+
+    const setError = (msg) => {
+      errEl.textContent = msg;
+      errEl.style.display = msg ? 'block' : 'none';
+    };
+
+    if (btnGen) {
+      btnGen.addEventListener('click', async () => {
+        setError('');
+        const nombre      = document.getElementById('ia_nombre').value.trim();
+        const descripcion = document.getElementById('ia_descripcion').value.trim();
+        const publico     = document.getElementById('ia_publico').value.trim();
+        const precio      = document.getElementById('ia_precio').value.trim();
+        const apiKeyInput = document.getElementById('ia_api_key');
+        const apiKey      = apiKeyInput ? apiKeyInput.value.trim() : '';
+
+        if (!nombre || !descripcion) {
+          setError('El nombre y la descripción del producto son obligatorios.');
+          return;
+        }
+
+        // Guardar key si se ingresó una nueva
+        if (apiKey) {
+          try {
+            const r = await fetch('<?= BASE_URL ?>/AdminLanding/guardarApiKey', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({ api_key: apiKey }),
+            });
+            const d = await r.json();
+            if (!d.ok) { setError(d.error || 'Error al guardar la API key.'); return; }
+          } catch {
+            setError('Error de red al guardar la API key.');
+            return;
+          }
+        }
+
+        showStep(2);
+
+        try {
+          const body = new URLSearchParams({ nombre, descripcion, publico, precio });
+          const res  = await fetch('<?= BASE_URL ?>/AdminLanding/generarConIA', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body,
+          });
+          const data = await res.json();
+
+          if (!data.ok) {
+            showStep(1);
+            if (data.error === 'no_key') {
+              setError('Primero ingresa tu API key de Claude.');
+            } else {
+              setError(data.error || 'Error desconocido. Intenta de nuevo.');
+            }
+            return;
+          }
+
+          // Rellenar todos los campos del formulario
+          const fields = data.fields || {};
+          let filled = 0;
+          Object.entries(fields).forEach(([key, val]) => {
+            if (!val) return;
+            // Inputs
+            const input = document.querySelector(`input[name="${key}"]`);
+            if (input && input.type !== 'hidden' && input.type !== 'file' && input.type !== 'checkbox' && input.type !== 'radio') {
+              input.value = val;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              filled++;
+              return;
+            }
+            // Textareas
+            const ta = document.querySelector(`textarea[name="${key}"]`);
+            if (ta) {
+              ta.value = val;
+              ta.dispatchEvent(new Event('input', { bubbles: true }));
+              filled++;
+            }
+          });
+
+          document.getElementById('iaSuccessMsg').textContent =
+            `${filled} campos rellenados con copy optimizado para Colombia. Revisa, ajusta lo que quieras y guarda.`;
+
+          showStep(3);
+
+        } catch (err) {
+          showStep(1);
+          setError('Error de red: ' + err.message);
+        }
+      });
+    }
+  })();
+  </script>
 
 </body>
 

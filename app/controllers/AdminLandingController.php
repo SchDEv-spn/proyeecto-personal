@@ -470,4 +470,256 @@ class AdminLandingController extends Controller
         header("Location: " . BASE_URL . "/AdminLanding/index?producto_id=" . $productoId);
         exit;
     }
+
+    // ── Guarda la API key de Claude en app_settings ──────────────────────────
+    public function guardarApiKey()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            return;
+        }
+
+        $key = trim($_POST['api_key'] ?? '');
+        if (!$key || !str_starts_with($key, 'sk-ant-')) {
+            echo json_encode(['ok' => false, 'error' => 'La API key debe empezar con sk-ant-']);
+            return;
+        }
+
+        (new AppSettings())->set('claude_api_key', $key);
+        echo json_encode(['ok' => true]);
+    }
+
+    // ── Genera el contenido de la landing con Claude ──────────────────────────
+    public function generarConIA()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            return;
+        }
+
+        $settings = new AppSettings();
+        $apiKey   = $settings->get('claude_api_key');
+
+        if (!$apiKey) {
+            echo json_encode(['ok' => false, 'error' => 'no_key']);
+            return;
+        }
+
+        $nombre      = trim($_POST['nombre']      ?? '');
+        $descripcion = trim($_POST['descripcion'] ?? '');
+        $publico     = trim($_POST['publico']     ?? 'adultos colombianos');
+        $precio      = trim($_POST['precio']      ?? '');
+
+        if (!$nombre || !$descripcion) {
+            echo json_encode(['ok' => false, 'error' => 'El nombre y la descripción son requeridos']);
+            return;
+        }
+
+        $prompt = $this->buildColombianPrompt($nombre, $descripcion, $publico, $precio);
+        $result = $this->callClaudeApi($apiKey, $prompt);
+
+        echo json_encode($result);
+    }
+
+    // ── Prompt optimizado para conversión colombiana ──────────────────────────
+    private function buildColombianPrompt(string $nombre, string $descripcion, string $publico, string $precio): string
+    {
+        $precioLine = $precio ? "- Precio: $precio COP" : '';
+
+        return <<<PROMPT
+Eres el mejor copywriter de e-commerce colombiano. Tu especialidad es escribir textos que VENDEN para dropshipping en Colombia. Tu copy convierte porque habla exactamente como el colombiano real: cálido, directo, con urgencia genuina.
+
+PRODUCTO A TRABAJAR:
+- Nombre: {$nombre}
+- Descripción: {$descripcion}
+- Público objetivo: {$publico}
+{$precioLine}
+
+REGLAS OBLIGATORIAS DE ESTILO (romperlas es inaceptable):
+1. Español colombiano 100% natural. Tuteo informal. NADA de "usted" en CTAs o textos de urgencia.
+2. Cada texto habla al DOLOR o DESEO del cliente, nunca a características técnicas.
+3. PAGO CONTRAENTREGA es el argumento de confianza #1. Mencionarlo en hero_note, FAQ y testimonios.
+4. Urgencia real: "quedan pocas unidades", "solo por hoy", "la oferta termina pronto".
+5. Testimonios con nombres colombianos auténticos y ciudades colombianas reales (Bogotá, Medellín, Cali, Barranquilla, Bucaramanga, Pereira, Manizales, Santa Marta, Ibagué, Cúcuta, Cartagena).
+6. Mensajes de WhatsApp ultra-naturales: como si fueran copiados del celular de un cliente feliz (emojis reales, ortografía casi perfecta pero informal).
+7. FAQ siempre incluye: pago contraentrega, tiempo de envío (3-7 días hábiles), garantía, devoluciones.
+8. Hero title: máximo 8 palabras. Promesa de transformación o resultado.
+9. Comparativa: TRANSFORMACIÓN EMOCIONAL antes/después (no listas de specs).
+10. CTAs: cortos, con verbo de acción + urgencia. Ej: "¡Lo quiero ahora!" / "Pedir el mío →" / "Aprovechar oferta".
+
+Devuelve ÚNICAMENTE el siguiente JSON válido. Sin markdown, sin bloques de código, sin texto antes o después. Solo el JSON:
+
+{
+  "hero_title": "",
+  "hero_subtitle": "",
+  "hero_button_text": "",
+  "hero_note": "",
+  "hero_badge_customers": "",
+  "benefits_title": "",
+  "benefit_1": "",
+  "benefit_2": "",
+  "benefit_3": "",
+  "benefit_4": "",
+  "caract_section_title": "",
+  "caract1_title": "",
+  "caract1_text": "",
+  "caract2_title": "",
+  "caract2_text": "",
+  "caract3_title": "",
+  "caract3_text": "",
+  "caract4_title": "",
+  "caract4_text": "",
+  "countdown_title": "",
+  "countdown_text": "",
+  "porque_title": "",
+  "porque_text": "",
+  "porque_bullet1": "",
+  "porque_bullet2": "",
+  "porque_bullet3": "",
+  "comparison_title": "",
+  "comparison_label_without": "Sin el producto",
+  "comparison_label_with": "Con el producto",
+  "comparison_1_without": "",
+  "comparison_1_with": "",
+  "comparison_2_without": "",
+  "comparison_2_with": "",
+  "comparison_3_without": "",
+  "comparison_3_with": "",
+  "comparison_4_without": "",
+  "comparison_4_with": "",
+  "comparison_5_without": "",
+  "comparison_5_with": "",
+  "test1_name": "",
+  "test1_city": "",
+  "test1_text": "",
+  "test2_name": "",
+  "test2_city": "",
+  "test2_text": "",
+  "test3_name": "",
+  "test3_city": "",
+  "test3_text": "",
+  "para_quien_si_1": "",
+  "para_quien_si_2": "",
+  "para_quien_si_3": "",
+  "para_quien_si_4": "",
+  "para_quien_no_1": "",
+  "para_quien_no_2": "",
+  "para_quien_no_3": "",
+  "wa_title": "",
+  "wa_subtitle": "",
+  "wa_footer_note": "",
+  "wa1_name": "",
+  "wa1_time": "",
+  "wa1_text": "",
+  "wa2_name": "",
+  "wa2_time": "",
+  "wa2_text": "",
+  "wa3_name": "",
+  "wa3_time": "",
+  "wa3_text": "",
+  "wa4_name": "",
+  "wa4_time": "",
+  "wa4_text": "",
+  "wa5_name": "",
+  "wa5_time": "",
+  "wa5_text": "",
+  "faq1_q": "",
+  "faq1_a": "",
+  "faq2_q": "",
+  "faq2_a": "",
+  "faq3_q": "",
+  "faq3_a": "",
+  "faq4_q": "",
+  "faq4_a": "",
+  "faq5_q": "",
+  "faq5_a": "",
+  "faq6_q": "",
+  "faq6_a": "",
+  "authority_title": "",
+  "authority_years": "",
+  "authority_deliveries": "",
+  "authority_rating": "4.9",
+  "authority_guarantee": "",
+  "cta_benefits_text": "",
+  "cta_benefits_button": "",
+  "cta_gallery_text": "",
+  "cta_gallery_button": "",
+  "cta_porque_text": "",
+  "cta_porque_button": "",
+  "cta_testimonials_text": "",
+  "cta_testimonials_button": "",
+  "cta_faq_text": "",
+  "cta_faq_button": "",
+  "cta_como_funciona_text": "",
+  "cta_como_funciona_button": "",
+  "cta_comparison_button": "",
+  "cta_para_quien_button": "",
+  "cta_wa_testimonios_button": "",
+  "cta_sticky_mobile_text": ""
+}
+PROMPT;
+    }
+
+    // ── Llama a la API de Claude y devuelve array resultado ───────────────────
+    private function callClaudeApi(string $apiKey, string $prompt): array
+    {
+        $payload = json_encode([
+            'model'      => 'claude-sonnet-4-6',
+            'max_tokens' => 4096,
+            'messages'   => [
+                ['role' => 'user', 'content' => $prompt],
+            ],
+        ]);
+
+        $ch = curl_init('https://api.anthropic.com/v1/messages');
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'x-api-key: ' . $apiKey,
+                'anthropic-version: 2023-06-01',
+            ],
+            CURLOPT_TIMEOUT        => 90,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if (!$response) {
+            return ['ok' => false, 'error' => 'Error de conexión: ' . $curlErr];
+        }
+
+        $data = json_decode($response, true);
+
+        if ($httpCode !== 200) {
+            $msg = $data['error']['message'] ?? 'Error desconocido de la API';
+            return ['ok' => false, 'error' => $msg];
+        }
+
+        $text = $data['content'][0]['text'] ?? '';
+
+        // Extraer JSON de la respuesta (por si Claude añade texto extra)
+        $parsed = json_decode($text, true);
+        if (!$parsed) {
+            if (preg_match('/\{[\s\S]*\}/u', $text, $m)) {
+                $parsed = json_decode($m[0], true);
+            }
+        }
+
+        if (!$parsed) {
+            return ['ok' => false, 'error' => 'No se pudo procesar la respuesta de la IA. Intenta de nuevo.'];
+        }
+
+        return ['ok' => true, 'fields' => $parsed];
+    }
 }
