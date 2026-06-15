@@ -199,7 +199,7 @@ class AdminLandingController extends Controller
             'comparison_5_with'    => trim($_POST['comparison_5_with']    ?? ''),
 
             // ===== Autoridad =====
-            'authority_enabled'    => isset($_POST['authority_enabled']) ? 1 : 0,
+            'authority_enabled'    => (int)($_POST['authority_enabled'] ?? 0),
             'authority_title'      => trim($_POST['authority_title']      ?? ''),
             'authority_years'      => trim($_POST['authority_years']      ?? ''),
             'authority_deliveries' => trim($_POST['authority_deliveries'] ?? ''),
