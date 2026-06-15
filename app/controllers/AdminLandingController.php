@@ -1038,7 +1038,7 @@ PROMPT;
             $input = [
                 'prompt'           => $prompt,
                 'input_image'      => $imageUrl,
-                'output_format'    => 'webp',
+                'output_format'    => 'jpg',
                 'safety_tolerance' => 2,
                 'aspect_ratio'     => $aspectRatio,
             ];
