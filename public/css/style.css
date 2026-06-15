@@ -4361,7 +4361,7 @@ img[loading="lazy"].loaded {
 
 .comparison-col__img {
     width: 100%;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 8.5 / 11;
     object-fit: cover;
     display: block;
     margin: 0;
