@@ -10,6 +10,16 @@ class AdminLandingController extends Controller
         }
     }
 
+    // Ruta física del directorio de uploads (igual que serve-upload.php y guardar())
+    private function uploadDir(): string
+    {
+        $persistent = rtrim(dirname(dirname(dirname($_SERVER['DOCUMENT_ROOT']))), '/') . '/uploads/landing/';
+        $local      = dirname(__DIR__, 2) . '/public/uploads/landing/';
+        $dir        = is_dir(dirname($persistent)) ? $persistent : $local;
+        if (!is_dir($dir)) mkdir($dir, 0755, true);
+        return $dir;
+    }
+
     public function index()
     {
         $this->requireLogin();
@@ -653,8 +663,7 @@ class AdminLandingController extends Controller
             return;
         }
 
-        $uploadDir = __DIR__ . '/../../public/uploads/landing/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+        $uploadDir = $this->uploadDir();
 
         $ext      = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','image/gif'=>'gif'][$mime];
         $filename = 'ref_' . time() . '_' . mt_rand(1000,9999) . '.' . $ext;
@@ -1132,21 +1141,24 @@ PROMPT;
         imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
         unset($src);
 
-        $uploadDir = __DIR__ . '/../../public/uploads/landing/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+        $uploadDir = $this->uploadDir();
 
         $useWebp  = function_exists('imagewebp');
         $ext      = $useWebp ? 'webp' : 'jpg';
         $filename = 'ia_' . $seccion . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
         $path     = $uploadDir . $filename;
 
-        if ($useWebp) {
-            imagewebp($dst, $path, 82);
-        } else {
-            imagejpeg($dst, $path, 85);
+        $saved = $useWebp ? imagewebp($dst, $path, 82) : imagejpeg($dst, $path, 85);
+
+        // imagewebp puede existir pero fallar si GD no tiene soporte WebP compilado
+        if (!$saved && $useWebp) {
+            $ext      = 'jpg';
+            $filename = 'ia_' . $seccion . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
+            $path     = $uploadDir . $filename;
+            $saved    = imagejpeg($dst, $path, 85);
         }
         unset($dst);
 
-        return file_exists($path) ? BASE_URL . '/public/uploads/landing/' . $filename : null;
+        return ($saved && file_exists($path)) ? BASE_URL . '/public/uploads/landing/' . $filename : null;
     }
 }
