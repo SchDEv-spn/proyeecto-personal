@@ -2725,7 +2725,9 @@
           <label for="iaImgPrompt">Prompt de imagen</label>
           <button type="button" id="iaImgSugerir" class="ia-img-sugerir">✨ Sugerir con IA</button>
         </div>
-        <textarea id="iaImgPrompt" rows="4" placeholder="Describe la imagen en inglés...&#10;Ej: Professional photo of a leather handbag, studio lighting, white background, high detail..."></textarea>
+        <textarea id="iaImgPrompt" rows="4"
+          id="iaImgPrompt"
+          placeholder="Sin referencia: describe la imagen completa en inglés.&#10;Con referencia: escribe qué hacer con el producto.&#10;Ej: Place this watch on a marble surface with soft golden lighting"></textarea>
       </div>
 
       <div id="iaImgError" class="ia-img-error" style="display:none;"></div>

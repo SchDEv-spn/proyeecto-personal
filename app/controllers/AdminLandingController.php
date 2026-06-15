@@ -1029,28 +1029,34 @@ PROMPT;
         return ['ok' => true, 'text' => trim($data['content'][0]['text'] ?? '')];
     }
 
-    // ── Replicate: llama a Flux 1.1 Pro (texto o img2img) ────────────────────
+    // ── Replicate: Kontext Pro (con referencia) o Flux 1.1 Pro (sin referencia) ─
     private function callReplicateFlux(string $apiKey, string $prompt, string $aspectRatio, ?string $imageUrl = null, float $promptStrength = 0.80): string|array
     {
-        $input = [
-            'prompt'           => $prompt,
-            'output_format'    => 'webp',
-            'output_quality'   => 85,
-            'safety_tolerance' => 2,
-        ];
-
         if ($imageUrl) {
-            // img2img: referencia del producto real
-            $input['image']           = $imageUrl;
-            $input['prompt_strength'] = $promptStrength;
+            // Flux Kontext Pro: edita preservando la identidad del producto
+            $endpoint = 'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions';
+            $input = [
+                'prompt'           => $prompt,
+                'input_image'      => $imageUrl,
+                'output_format'    => 'webp',
+                'safety_tolerance' => 2,
+                'aspect_ratio'     => $aspectRatio,
+            ];
         } else {
-            // text2img: sin referencia, usar aspect_ratio
-            $input['aspect_ratio'] = $aspectRatio;
+            // Flux 1.1 Pro: text-to-image puro sin referencia
+            $endpoint = 'https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions';
+            $input = [
+                'prompt'           => $prompt,
+                'aspect_ratio'     => $aspectRatio,
+                'output_format'    => 'webp',
+                'output_quality'   => 85,
+                'safety_tolerance' => 2,
+            ];
         }
 
         $payload = json_encode(['input' => $input]);
 
-        $ch = curl_init('https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions');
+        $ch = curl_init($endpoint);
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
