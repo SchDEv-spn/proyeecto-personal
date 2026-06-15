@@ -2797,8 +2797,15 @@ body.modal-open { overflow: hidden; }
 @media (max-width: 767px) {
   .form-card-body { padding: 16px; }
   .section-block h2 { font-size: 16px; }
-  .admin-form-actions { justify-content: stretch; }
-  .btn-estado { width: 100%; }
+  .admin-form-actions {
+    justify-content: stretch;
+    padding: 12px 16px;
+    margin-top: 0;
+    background: var(--bg-root);
+    border-top: 1px solid var(--bd-subtle);
+    box-shadow: 0 -4px 16px rgba(0,0,0,.18);
+  }
+  .btn-estado { width: 100%; justify-content: center; }
   .toc-card { padding: 12px; }
   .sections-toggle-grid { grid-template-columns: 1fr 1fr; }
   .img-preview { flex-direction: column; }
@@ -3215,6 +3222,7 @@ body.modal-open { overflow: hidden; }
 /* "✨ IA" button injected next to file inputs */
 .ia-img-trigger {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
   gap: 4px;
   margin-top: 6px;
@@ -3351,3 +3359,1399 @@ body.modal-open { overflow: hidden; }
   cursor: pointer; transition: border-color .15s;
 }
 .ia-img-btn-regen:hover { border-color: var(--bd-strong,#5a5a6a); color: var(--tx-primary,#e0e0f0); }
+
+/* ============================================================
+   LANDING EDITOR — RESPONSIVE ADDITIONS
+   ============================================================ */
+
+/* --- Mobile TOC jump bar ------------------------------------ */
+.toc-mobile-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  position: sticky;
+  top: var(--header-h, 64px);
+  z-index: 20;
+  background: var(--bg-elevated, #1e1e2e);
+  border: 1px solid var(--bd-subtle, #2a2a3a);
+  border-radius: var(--r-md, 10px);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.3);
+}
+.toc-mobile-bar__icon {
+  color: var(--gold, #C9A84C);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.toc-mobile-bar__select {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  background: var(--bg-root, #0a0a0a);
+  border: 1px solid var(--bd-default, #2a2a3a);
+  border-radius: var(--r-sm, 6px);
+  color: var(--tx-primary, #e0e0f0);
+  font-size: 13px;
+  padding: 0 10px;
+  cursor: pointer;
+  outline: none;
+}
+.toc-mobile-bar__select:focus {
+  border-color: rgba(201,168,76,.5);
+}
+
+@media (max-width: 991px) {
+  .toc-mobile-bar { display: flex; }
+}
+
+/* --- TOC card: prevent scroll leak ------------------------- */
+.landing-editor-toc .toc-card { overscroll-behavior: contain; }
+
+/* --- Mobile adjustments (≤767px) --------------------------- */
+@media (max-width: 767px) {
+
+  /* Sections toggle: 1 columna (override al 1fr 1fr existente) */
+  .sections-toggle-grid { grid-template-columns: 1fr; }
+
+  /* IA banner: apila botón en fila propia en pantallas angostas */
+  .ia-banner { flex-wrap: wrap; }
+  .ia-banner__btn { flex: 1 1 100%; justify-content: center; }
+
+  /* IA modal: bottom sheet */
+  .ia-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .ia-modal {
+    border-radius: 20px 20px 0 0;
+    max-height: 92vh;
+    max-width: 100%;
+  }
+
+  /* IA modal row (público + precio): una sola columna */
+  .ia-modal__row { grid-template-columns: 1fr; }
+
+  /* Paneles flotantes IA (imágenes y texto): bottom sheet */
+  .ia-img-panel {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -8px 40px rgba(0,0,0,.55);
+    max-height: 88vh;
+  }
+  .ia-img-panel::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bd-strong, #3a3a4a);
+    margin: 10px auto 0;
+  }
+  .ia-img-panel__header { border-radius: 18px 18px 0 0; }
+  .ia-img-panel__body   { max-height: 68vh; }
+}
+
+/* ============================================================
+   LANDING EDITOR — DESKTOP POLISH
+   ============================================================ */
+
+/* 1. Header colapsado: comprime el padding inferior
+      (la separación visual la da el siguiente punto) */
+.sec-toggle-header[aria-expanded="false"] {
+  padding-bottom: 8px;
+}
+
+/* 2. Header abierto: fondo dorado suave — ancla visual de la sección activa */
+.sec-toggle-header[aria-expanded="true"] {
+  background: var(--gold-ghost);
+  border-radius: var(--r-md);
+}
+.sec-toggle-header[aria-expanded="true"]:hover {
+  background: rgba(201,168,76,.13);
+}
+
+/* 3. Separador entre dos secciones colapsadas: casi invisible (ahorra espacio) */
+@supports (selector(:has(*))) {
+  .section-block:not(:has(.sec-body--open)) + .section-hr {
+    margin: 4px 0;
+    opacity: 0.18;
+  }
+  /* La sección abierta en sí: fondo muy sutil para anclaje visual en desktop */
+  @media (min-width: 992px) {
+    .section-block:has(.sec-body--open) {
+      background: rgba(201,168,76,.025);
+      border-radius: var(--r-md);
+      padding: 4px 10px 6px;
+      margin: 0 -10px;
+    }
+    .section-block:has(.sec-body--open) + .section-hr {
+      margin: 16px 0;
+      opacity: 1;
+    }
+  }
+}
+
+/* 4. "¿Para quién?" en dos columnas en desktop (Sí / No lado a lado) */
+@media (min-width: 768px) {
+  #sec-paraquien .stack-cards {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+/* 5. Sections con campos cortos: 3 columnas en desktop */
+@media (min-width: 960px) {
+  #sec-announcement .form-grid,
+  #sec-hero-trust .form-grid,
+  #sec-titulos .form-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+/* 6. FAQs: 2 columnas en desktop (más eficiente verticalmente) */
+@media (min-width: 960px) {
+  #sec-faq .stack-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+  /* Dentro de cada FAQ card: forzar 1 columna para evitar col vacía */
+  #sec-faq .mini-card .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 7. Botón guardar en desktop: anchura mínima para que no parezca un botón chico */
+@media (min-width: 768px) {
+  .btn-estado { min-width: 180px; }
+}
+
+/* ============================================================
+   MINI-CARD GRIDS — 2/3 columnas en secciones con múltiples items
+   ============================================================ */
+
+/* Regla base (sin panel CMS o en pantallas ≥768px sin panel) */
+@media (min-width: 768px) {
+
+  /* Características: 2 tarjetas por fila — media + texto más compactos */
+  #sec-caracteristicas .stack-cards {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  /* CTAs: 2 por fila — las cards son compactas (texto + botón) */
+  #sec-ctas .stack-cards {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  /* Comparativa: 2 filas por fila (sin/con son pares) */
+  #sec-comparison .stack-cards {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  /* Cómo funciona: exactamente 3 pasos → una sola fila */
+  #sec-comofunciona-content .stack-cards {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+  }
+}
+
+/* Con panel CMS fijo (≥992px), el espacio disponible se reduce.
+   En pantallas angostas (992-1279px) el panel + sidebar consumen ~500px:
+   volvemos a 1 col para evitar tarjetas de ~200px de ancho. */
+@media (min-width: 992px) and (max-width: 1279px) {
+  .cms-editor #sec-caracteristicas .stack-cards,
+  .cms-editor #sec-ctas .stack-cards,
+  .cms-editor #sec-comparison .stack-cards { grid-template-columns: 1fr; }
+
+  .cms-editor #sec-comofunciona-content .stack-cards { grid-template-columns: 1fr 1fr; }
+}
+
+/* ============================================================
+   CMS EDITOR — PANEL IZQUIERDO (Shopify-style)
+   ============================================================ */
+
+/* ── Layout base ──────────────────────────────────────────── */
+.cms-editor {
+  display: block;
+  min-height: calc(100vh - var(--header-h));
+}
+
+/* ── Panel fijo izquierdo ─────────────────────────────────── */
+.cms-panel {
+  display: none; /* oculto en mobile */
+}
+
+@media (min-width: 992px) {
+  .cms-panel {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: var(--sidebar-w, 264px);
+    top: var(--header-h, 68px);
+    width: 240px;
+    height: calc(100vh - var(--header-h, 68px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 30;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--bd-subtle);
+    box-shadow: 2px 0 16px rgba(0,0,0,.18);
+    scrollbar-width: thin;
+    scrollbar-color: var(--bd-strong) transparent;
+  }
+  /* TOC mobile-bar (select) oculto en desktop CMS */
+  .cms-editor .toc-mobile-bar { display: none !important; }
+  /* Ocultar el botón de guardar del form (panel tiene el suyo) */
+  .cms-editor .admin-form-actions { display: none !important; }
+  /* Ocultar ux-expand-bar (panel controla esto) */
+  .cms-editor .ux-expand-bar { display: none !important; }
+  /* La sección "Secciones visibles" queda oculta (panel la reemplaza visualmente) */
+  .cms-editor #sec-secciones { display: none !important; }
+}
+
+/* ── Cabecera del panel ───────────────────────────────────── */
+.cms-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 14px 12px;
+  border-bottom: 1px solid var(--bd-subtle);
+  flex-shrink: 0;
+}
+.cms-panel__product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.cms-panel__product-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+}
+.cms-panel__product-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+.cms-panel__preview-link {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--bd-default);
+  background: var(--bg-elevated);
+  color: var(--tx-secondary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.cms-panel__preview-link:hover {
+  background: var(--gold-ghost);
+  border-color: rgba(201,168,76,.3);
+  color: var(--gold);
+}
+
+/* ── Botón IA ─────────────────────────────────────────────── */
+.cms-panel__ia-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 10px 10px 0;
+  padding: 0 14px;
+  height: 34px;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(93,104,255,.35);
+  background: rgba(93,104,255,.09);
+  color: #a8b0ff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.cms-panel__ia-btn:hover {
+  background: rgba(93,104,255,.18);
+  border-color: rgba(93,104,255,.55);
+}
+
+/* ── Barra de progreso ────────────────────────────────────── */
+.cms-panel__progress {
+  padding: 10px 14px 8px;
+  flex-shrink: 0;
+}
+.cms-panel__prog-bar {
+  height: 3px;
+  background: var(--bg-elevated);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+.cms-panel__prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), #e8c96a);
+  border-radius: 999px;
+  width: 0%;
+  transition: width .4s cubic-bezier(.4,0,.2,1);
+}
+.cms-panel__prog-label {
+  font-size: 10px;
+  color: var(--tx-muted);
+  letter-spacing: .02em;
+}
+
+/* ── Separador de grupos ──────────────────────────────────── */
+.cms-panel__sep {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+  padding: 14px 14px 6px;
+  flex-shrink: 0;
+}
+
+/* ── Lista de secciones (scrolleable) ────────────────────── */
+.cms-panel__sections {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 6px 8px;
+  scrollbar-width: none;
+}
+.cms-panel__sections::-webkit-scrollbar { display: none; }
+
+/* ── Item de sección ──────────────────────────────────────── */
+.cms-section-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background .12s, border-color .12s;
+  min-height: 38px;
+  user-select: none;
+}
+.cms-section-item:hover {
+  background: var(--bg-elevated);
+  border-color: var(--bd-subtle);
+}
+.cms-section-item.is-active {
+  background: var(--gold-ghost);
+  border-color: rgba(201,168,76,.22);
+}
+.cms-section-item.is-active .cms-si__name {
+  color: var(--gold);
+  font-weight: 600;
+}
+.cms-section-item.cms-si--locked { cursor: default; opacity: .5; }
+.cms-section-item.cms-si--off { opacity: .45; }
+.cms-section-item.cms-si--off .cms-si__name { text-decoration: line-through; }
+
+.cms-si__dot { flex-shrink: 0; }
+.cms-si__icon { font-size: 14px; flex-shrink: 0; line-height: 1; }
+.cms-si__name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tx-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color .12s;
+}
+
+/* Toggle del panel (controla show/hide de la sección) */
+.cms-si__toggle-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.cms-si__toggle-btn .toggle-track { transition: background .2s; }
+.cms-si__toggle-btn .toggle-track.is-on { background: var(--gold); }
+.cms-si__toggle-btn .toggle-track:not(.is-on) { background: var(--bg-overlay); }
+.cms-si__toggle-btn .toggle-track.is-on .toggle-thumb { left: 19px; }
+
+/* ── Footer: guardar ──────────────────────────────────────── */
+.cms-panel__footer {
+  flex-shrink: 0;
+  padding: 10px 10px 12px;
+  border-top: 1px solid var(--bd-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cms-panel__dirty {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--warn);
+  letter-spacing: .03em;
+  text-align: center;
+}
+.cms-panel__save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  border-radius: var(--r-md);
+  border: none;
+  background: var(--gold);
+  color: #000;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: opacity .15s, box-shadow .15s;
+}
+.cms-panel__save:hover { opacity: .9; box-shadow: 0 4px 14px rgba(201,168,76,.4); }
+.cms-panel__save.is-dirty {
+  background: var(--err);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(248,113,113,.35);
+  animation: ux-save-pulse 2.4s ease infinite;
+}
+
+/* ============================================================
+   TOC HORIZONTAL — DESKTOP (reemplaza sidebar vertical)
+   ============================================================ */
+
+/* Mobile: ocultar el TOC lateral (se usa el <select> en su lugar) */
+@media (max-width: 991px) {
+  .landing-editor-toc { display: none; }
+}
+
+@media (min-width: 992px) {
+  /* 1. Layout: una sola columna, el form ocupa todo el ancho */
+  .landing-editor-layout {
+    display: block !important;
+    position: static !important;
+  }
+  .landing-editor-main { margin-right: 0 !important; }
+
+  /* 2. Barra sticky horizontal debajo del header */
+  .landing-editor-toc {
+    position: sticky;
+    top: var(--header-h, 68px);
+    z-index: 25;
+    width: 100%;
+    margin-top: 0;
+    margin-bottom: 14px;
+  }
+  .landing-editor-toc .toc-card {
+    position: static;
+    max-height: unset;
+    overflow: hidden;
+    padding: 0 10px;
+    border-radius: var(--r-lg);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  }
+  /* Ocultar título y footer (no aplican en modo horizontal) */
+  .toc-title,
+  .toc-footer { display: none !important; }
+
+  /* 3. Nav: fila de chips scrolleable */
+  .toc-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 7px 0;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+  }
+  .toc-nav::-webkit-scrollbar { display: none; }
+  .toc-nav a {
+    min-height: 28px;
+    padding: 4px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border-radius: 999px;
+    font-size: 11px;
+    letter-spacing: .02em;
+  }
+  .toc-dot { width: 6px; height: 6px; }
+
+  /* 4. Botón "Ver todo / Colapsar" */
+  .toc-ver-todo {
+    flex-shrink: 0;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--bd-default);
+    background: var(--bg-elevated);
+    color: var(--tx-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    letter-spacing: .03em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .toc-ver-todo:hover {
+    background: var(--gold-ghost);
+    border-color: rgba(201,168,76,.30);
+    color: var(--gold);
+  }
+
+  /* 5. Ocultar el ux-expand-bar (su función la cumple "Ver todo") */
+  .ux-expand-bar { display: none !important; }
+}
+
+/* ============================================================
+   AUDIT IMPROVEMENTS — Batch completo
+   ============================================================ */
+
+/* C3: Ocultar elementos redundantes en modo CMS desktop */
+@media (min-width: 992px) {
+  .cms-editor .ia-banner,
+  .cms-editor .ux-progress-wrap      { display: none !important; }
+  .cms-editor .form-card--product-selector { display: none !important; }
+}
+
+/* I1: Clases de texto de apoyo (reemplazan inline styles) */
+.field-section-desc {
+  font-size: 13px;
+  color: var(--tx-muted);
+  line-height: 1.55;
+  margin: 0 0 16px;
+}
+.field-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--tx-muted);
+  line-height: 1.45;
+  margin-top: 5px;
+}
+.field-note {
+  display: block;
+  font-size: 11px;
+  color: var(--warn);
+  line-height: 1.45;
+  margin-top: 5px;
+}
+
+/* I2: Inputs/selects — focus ring dorado + arrow custom + textarea resize */
+.admin-form-group input[type="text"]:focus,
+.admin-form-group input[type="number"]:focus,
+.admin-form-group input[type="password"]:focus,
+.admin-form-group textarea:focus {
+  border-color: var(--gold-dim) !important;
+  box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+  outline: none;
+}
+.admin-form-group select:focus,
+.admin-select:focus {
+  border-color: var(--gold-dim) !important;
+  box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+  outline: none;
+}
+/* Custom select arrow */
+.admin-form-group select,
+.admin-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px !important;
+}
+/* Textarea resize controlado */
+.admin-form-group textarea {
+  resize: vertical;
+  min-height: 56px;
+  max-height: 340px;
+}
+/* Color picker: swatch sin borde feo */
+.color-picker-wrap input[type="color"] { padding: 2px !important; cursor: pointer; }
+.color-picker-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.color-picker-wrap input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+
+/* I3: Loading state al guardar */
+.cms-panel__save.is-loading {
+  opacity: .75;
+  pointer-events: none;
+}
+
+/* I4: Ocultar form-card-header principal en cms-editor */
+@media (min-width: 992px) {
+  .cms-editor .form-card--main > .form-card-header { display: none !important; }
+  .cms-editor .form-card--main > .form-card-body   { padding-top: 12px; }
+}
+
+/* I5: Ocultar badges de estado de sección en cms-editor (duplican los puntos del panel) */
+@media (min-width: 992px) {
+  .cms-editor .sec-badge { display: none !important; }
+}
+
+/* C1: Breadcrumb de sección activa */
+.cms-section-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--bd-subtle);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--tx-muted);
+}
+.cms-section-breadcrumb__sep  { color: var(--bd-strong); font-size: 14px; }
+.cms-section-breadcrumb__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx-primary);
+}
+.cms-section-breadcrumb__status {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.cms-bc-complete { background: var(--ok-bg);    color: var(--ok);   border-color: var(--ok-bd); }
+.cms-bc-partial  { background: var(--warn-bg);  color: var(--warn); border-color: var(--warn-bd); }
+.cms-bc-empty    { background: var(--bg-overlay); color: var(--tx-muted); border-color: var(--bd-subtle); }
+
+/* C2: Todas las secciones siempre visibles en CMS desktop */
+@media (min-width: 992px) {
+  .cms-editor .section-block {
+    display: block !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .cms-editor .section-block.cms-section--entering {
+    opacity: 1 !important;
+    transform: none !important;
+  .cms-editor .section-block.cms-section--visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* C4: Drag handles en panel */
+.cms-si__handle {
+  flex-shrink: 0;
+  color: var(--tx-muted);
+  opacity: 0;
+  cursor: grab;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 3px;
+  transition: opacity .15s;
+}
+.cms-section-item:hover .cms-si__handle { opacity: .45; }
+.cms-section-item[draggable].dragging { opacity: .35; }
+.cms-section-item[draggable].drag-over-top    { border-top:    2px solid var(--gold-dim); }
+.cms-section-item[draggable].drag-over-bottom { border-bottom: 2px solid var(--gold-dim); }
+
+/* D2: Banner "sección desactivada" */
+.cms-disabled-banner {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  background: rgba(248,113,113,.07);
+  border: 1px solid rgba(248,113,113,.22);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--err);
+  font-weight: 500;
+}
+.cms-disabled-banner.is-visible { display: flex; }
+.cms-disabled-banner__btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(248,113,113,.35);
+  background: rgba(248,113,113,.1);
+  color: var(--err);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background .15s;
+}
+.cms-disabled-banner__btn:hover { background: rgba(248,113,113,.2); }
+
+/* R2: Overlay "Cambiar imagen" más fino */
+@supports (selector(:has(*))) {
+  .media-preview:has(img, video)::after {
+    content: '📷  Cambiar';
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .05em;
+  }
+}
+
+/* Panel: product selector compacto */
+.cms-panel__product-form { padding: 0 10px 8px; border-bottom: 1px solid var(--bd-subtle); margin-bottom: 2px; }
+.cms-panel__product-select {
+  width: 100%;
+  height: 30px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--bd-default);
+  border-radius: var(--r-sm);
+  color: var(--tx-primary);
+  font-size: 11px;
+  padding: 0 22px 0 8px;
+  cursor: pointer;
+  outline: none;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+}
+.cms-panel__product-select:focus {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 0 2px rgba(201,168,76,.12);
+}
+
+/* Toggle con etiqueta de texto inline */
+.toggle-label--row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-label--row .toggle-label-text {
+  font-size: 13px;
+  color: var(--tx-secondary);
+  line-height: 1.3;
+}
+
+/* ============================================================
+   MEDIA PREVIEWS — REDESIGN COMPLETO
+   ============================================================ */
+
+/* 1. Base: sin tablero de ajedrez, borde sólido, object-fit cover */
+.media-preview {
+  background: var(--bg-overlay);
+  background-image: none;
+  border-style: solid;
+  border-color: var(--bd-subtle);
+  min-height: unset;
+  max-height: unset;
+  height: 220px;
+}
+/* img y video llenan el contenedor absoluto */
+.media-preview img,
+.media-preview video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  max-height: unset;
+  border-radius: inherit;
+}
+/* media-empty: ocupa todo el espacio */
+.media-empty {
+  position: absolute;
+  inset: 0;
+  height: unset;
+  min-height: unset;
+}
+/* Con media cargada: borde invisible y cursor pointer */
+.media-preview:has(img, video) {
+  border-color: transparent;
+  cursor: pointer;
+}
+.media-preview:has(img, video):hover {
+  border-color: var(--gold-dim);
+}
+
+/* 2. Overlay "↑ Reemplazar" al hover */
+@supports (selector(:has(*))) {
+  .media-preview:has(img, video)::after {
+    content: '↑ Reemplazar';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.48);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity .18s;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .media-preview:has(img, video):hover::after { opacity: 1; }
+}
+
+/* 3. Alturas específicas por sección */
+/* Banner wide: Hero, Beneficios, ¿Por qué? */
+#sec-hero .media-preview,
+#sec-beneficios .media-preview,
+#sec-porque .media-preview    { height: 280px; }
+
+/* Galería — cuadrado compacto */
+.gallery-card .media-preview  { height: 200px; }
+
+/* Características carousel */
+#sec-caracteristicas .media-preview { height: 200px; }
+
+/* Comparativa con/sin */
+#sec-comparison .media-preview { height: 240px; }
+
+/* Testimonio banner panorámico */
+.media-preview--banner { height: 160px; }
+
+/* WhatsApp screenshots — retrato de móvil, centrado */
+#sec-wa .media-preview {
+  height: 280px;
+  max-width: 160px;
+  margin-inline: auto;
+}
+
+/* 4. Avatar de perfil — círculo compacto */
+.media-preview--avatar {
+  height: 72px !important;
+  width: 72px;
+  min-width: 72px;
+  max-width: 72px;
+  border-radius: 50% !important;
+  flex-shrink: 0;
+}
+.media-preview--avatar .media-empty {
+  border-radius: 50%;
+  padding: 8px;
+  gap: 0;
+}
+.media-preview--avatar .media-empty span { display: none; }
+.media-preview--avatar .media-empty i   { font-size: 20px; }
+
+/* Fila file-input + avatar inline */
+.upload-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.upload-avatar-row > :first-child { flex: 1; min-width: 0; }
+
+/* ============================================================
+   SECCIONES REDISEÑADAS
+   ============================================================ */
+
+/* ── Drop zone compacta dentro de benefit-card (fallback) ───── */
+.benefit-card__upload .ux-dropzone {
+  min-height: unset !important;
+  height: auto !important;
+  padding: 6px 8px !important;
+}
+.benefit-card__upload .ux-dropzone-inner {
+  flex-direction: row !important;
+  gap: 6px !important;
+  font-size: 11px !important;
+}
+.benefit-card__upload .ux-dropzone-icon { font-size: 14px !important; }
+.benefit-card__upload .ux-dropzone-hint { display: none !important; }
+
+/* ── BENEFICIOS: grilla 2×2 ─────────────────────────────────── */
+.benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+@media (max-width: 639px) {
+  .benefits-grid { grid-template-columns: 1fr; }
+}
+
+.benefit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 18px 16px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--bd-subtle);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025), 0 2px 8px rgba(0,0,0,.2);
+}
+
+.benefit-card__num {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.benefit-card .admin-form-group { gap: 0; }
+.benefit-card .admin-form-group input {
+  background: var(--bg-root);
+  border-color: var(--bd-subtle);
+}
+
+.benefit-card__media {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--bd-subtle);
+  margin-top: auto;
+}
+
+.benefit-card__thumb {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--bd-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.benefit-card__thumb:hover {
+  border-color: var(--gold-dim);
+  box-shadow: 0 0 0 2px rgba(201,168,76,.12);
+}
+.benefit-card__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.benefit-card__thumb .media-empty {
+  width: 100%;
+  height: 100%;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.benefit-card__thumb i {
+  font-size: 18px;
+  color: var(--tx-muted);
+}
+
+.benefit-card__upload {
+  flex: 1;
+  min-width: 0;
+  gap: 4px !important;
+}
+.benefit-card__upload label {
+  font-size: 9px !important;
+  letter-spacing: .1em;
+  color: var(--tx-muted);
+}
+
+/* ── PARA QUIÉN: dos columnas lado a lado ────────────────────── */
+.paraquien-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 639px) {
+  .paraquien-grid { grid-template-columns: 1fr; }
+}
+.paraquien-grid .mini-card { height: 100%; }
+
+/* ── FAQ: grilla 2 columnas ─────────────────────────────────── */
+.faq-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 767px) {
+  .faq-grid { grid-template-columns: 1fr; }
+}
+.faq-grid .mini-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.faq-grid .mini-card .admin-form-group { gap: 6px; }
+
+/* ── ¿POR QUÉ? bullets en fila ──────────────────────────────── */
+.bullets-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 767px) {
+  .bullets-row { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   PREMIUM REDESIGN — LANDING CMS EDITOR
+   Jerarquía: bg-root → section-card → inner-card → inputs
+   ============================================================ */
+
+/* ── 1. Wrapper externo: sin card en CMS desktop ─────────────── */
+@media (min-width: 992px) {
+  .cms-editor .form-card--main {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .cms-editor .form-card--main > .form-card-body {
+    padding: 0 0 48px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  /* HR entre secciones innecesario — las cards dan separación */
+  .cms-editor .section-hr { display: none; }
+}
+
+/* ── 2. Section-blocks: cards elevadas con borde frío ────────── */
+@media (min-width: 992px) {
+  .cms-editor .section-block {
+    padding: 32px 36px 36px;
+    background: var(--bg-surface);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--bd-subtle);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.03) inset,
+      0 2px 6px rgba(0,0,0,.45),
+      0 10px 30px rgba(0,0,0,.18);
+  }
+}
+
+/* ── 3. h2: Montserrat 700 + barra dorada izquierda ─────────── */
+.cms-editor .section-block h2 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--tx-primary);
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  padding-left: 14px;
+  border-bottom: 1px solid var(--bd-subtle);
+  border-left: 3px solid var(--gold);
+}
+
+/* ── 4. Descripción de sección: más aire antes de los fields ─── */
+.cms-editor .field-section-desc,
+.cms-editor .section-hint {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--tx-secondary);
+  margin: -16px 0 24px;
+  max-width: 62ch;
+}
+
+/* ── 5. Form-grid: columnas con más aire ─────────────────────── */
+.cms-editor .form-grid {
+  gap: 20px;
+}
+.cms-editor .admin-form-group {
+  gap: 8px;
+}
+
+/* ── 6. Labels: más espacio, opacidad controlada ─────────────── */
+.cms-editor .admin-form-group label,
+.cms-editor .form-group > label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+}
+
+/* ── 7. Inputs/textarea/select: fondo más profundo que la card ─ */
+.cms-editor .admin-form-group input[type="text"],
+.cms-editor .admin-form-group input[type="number"],
+.cms-editor .admin-form-group input[type="password"],
+.cms-editor .admin-form-group textarea {
+  background: var(--bg-root);
+  border-color: var(--bd-subtle);
+}
+.cms-editor .admin-form-group select {
+  background-color: var(--bg-root);
+  border-color: var(--bd-subtle);
+}
+
+/* ── 8. Mini-cards: nivel intermedio + título uppercase ──────── */
+.cms-editor .mini-card {
+  padding: 20px 22px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--bd-subtle);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.03) inset,
+    0 2px 8px rgba(0,0,0,.25);
+}
+.cms-editor .mini-card-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bd-subtle);
+}
+.cms-editor .mini-card-title i { color: var(--gold); }
+
+/* ── 9. Gallery-cards: igual que mini-cards ─────────────────── */
+.cms-editor .gallery-card {
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--bd-subtle);
+  box-shadow: 0 1px 0 rgba(255,255,255,.03) inset;
+}
+
+/* ── 10. Stack-cards: más aire entre items ───────────────────── */
+.cms-editor .stack-cards { gap: 10px; }
+
+/* ── 11. Breadcrumb: minimal — solo borde dorado izquierdo ───── */
+@media (min-width: 992px) {
+  .cms-section-breadcrumb {
+    background: transparent;
+    border: none;
+    border-left: 2px solid var(--gold);
+    border-radius: 0;
+    padding: 4px 0 4px 14px;
+    margin-bottom: 24px;
+    gap: 6px;
+  }
+  .cms-section-breadcrumb__path { font-size: 11px; color: var(--tx-muted); }
+  .cms-section-breadcrumb__sep  { color: var(--tx-muted); opacity: .4; }
+  .cms-section-breadcrumb__name { font-size: 14px; font-weight: 700; letter-spacing: .01em; }
+}
+
+/* ── 12. Panel — item activo: borde izquierdo dorado ─────────── */
+.cms-section-item {
+  transition: background .12s, border-color .12s, padding-left .12s;
+}
+.cms-section-item.is-active {
+  background: rgba(201,168,76,.07);
+  border-color: rgba(201,168,76,.18);
+  border-left: 2px solid var(--gold);
+  padding-left: 6px;
+}
+.cms-section-item.is-active .cms-si__name {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* ── 13. Panel sep "Configuración": más presencia ────────────── */
+.cms-panel__sep {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+  padding: 18px 14px 6px;
+  opacity: .6;
+}
+
+/* ── 14. Disabled banner: fondo más visible ──────────────────── */
+.cms-disabled-banner {
+  border-radius: var(--r-md);
+  border: 1px solid rgba(251,191,36,.18);
+  background: rgba(251,191,36,.05);
+}
+
+/* ── 15. Media-preview vacía: fondo consistente con nueva jerarquía */
+.cms-editor .media-empty {
+  background: var(--bg-overlay);
+}
+
+/* ── 16. Gallery-title uppercase premium ──────────────────────── */
+.cms-editor .gallery-title {
+  font-size: 9px;
+  letter-spacing: .1em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+}
+
+/* ── 17. field-section-desc debajo del h2: no solapar con border-bottom */
+.cms-editor .section-block h2 + .field-section-desc,
+.cms-editor .section-block h2 + p.field-section-desc {
+  margin-top: 0;
+}
+
+/* ============================================================
+   TOC RAIL DERECHO — CMS EDITOR (≥1200px)
+   Layout final: [app-sidebar][cms-panel][content][toc-rail]
+   ============================================================ */
+
+/* ============================================================
+   TOC RAIL DERECHO — layout limpio sin panel CMS
+   ≥1200px: rail fijo vertical · 992-1199px: barra horizontal
+   ============================================================ */
+
+/* ── Cabecera del TOC (global, aplica en ambos layouts) ──────── */
+.toc-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid var(--bd-subtle);
+  flex-shrink: 0;
+}
+.toc-card__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+}
+
+/* ── ≥1200px: TOC vertical fijo en la derecha ────────────────── */
+@media (min-width: 1200px) {
+  /* Landing-editor-main deja espacio al TOC */
+  .landing-editor-main { margin-right: 0 !important; }
+
+  /* TOC: fijo en la derecha, columna completa */
+  .landing-editor-toc {
+    position: fixed !important;
+    top: var(--header-h, 68px) !important;
+    right: 0 !important;
+    width: var(--landing-toc-w, 248px) !important;
+    height: calc(100vh - var(--header-h, 68px)) !important;
+    max-height: none !important;
+    margin: 0 !important;
+    z-index: 28 !important;
+    background: var(--bg-surface);
+    border-left: 1px solid var(--bd-subtle);
+    overflow: hidden;
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  /* toc-card: columna completa, vertical */
+  .landing-editor-toc .toc-card {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100%;
+    height: 100%;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: hidden;
+    align-items: stretch !important;
+  }
+
+  /* toc-ver-todo: botón compacto */
+  .landing-editor-toc .toc-ver-todo {
+    flex-shrink: 0;
+    height: auto !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    border: 1px solid var(--bd-subtle) !important;
+    background: transparent !important;
+    color: var(--tx-muted);
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .landing-editor-toc .toc-ver-todo:hover {
+    background: var(--gold-ghost) !important;
+    border-color: rgba(201,168,76,.25) !important;
+    color: var(--gold);
+  }
+
+  /* toc-nav: columna vertical scrolleable */
+  .landing-editor-toc .toc-nav {
+    flex-direction: column !important;
+    flex: 1;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 6px 6px 12px !important;
+    gap: 1px !important;
+    scrollbar-width: none;
+  }
+  .landing-editor-toc .toc-nav::-webkit-scrollbar { display: none; }
+
+  /* Links: compactos y verticales */
+  .landing-editor-toc .toc-nav a {
+    display: flex !important;
+    align-items: center;
+    gap: 7px;
+    min-height: 28px !important;
+    padding: 5px 8px !important;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--tx-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid transparent;
+    text-decoration: none;
+    flex-shrink: 0 !important;
+    transition: background .12s, color .12s;
+  }
+  .landing-editor-toc .toc-nav a:hover {
+    background: var(--bg-elevated);
+    color: var(--tx-secondary);
+  }
+  .landing-editor-toc .toc-nav a.active,
+  .landing-editor-toc .toc-nav a.is-active {
+    background: var(--gold-ghost);
+    color: var(--gold);
+    font-weight: 600;
+    border-color: rgba(201,168,76,.15);
+  }
+  .landing-editor-toc .toc-dot {
+    width: 5px;
+    height: 5px;
+    flex-shrink: 0;
+  }
+
+  /* Compensar el ancho del TOC en el layout */
+  .landing-editor-layout {
+    display: block !important;
+    position: relative;
+  }
+  .landing-editor-main {
+    margin-right: calc(var(--landing-toc-w, 248px) + 20px) !important;
+  }
+}
+
+/* ── 992-1199px: barra horizontal (cabecera oculta) ─────────── */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .landing-editor-toc .toc-card__head { display: none; }
+  /* El TOC horizontal usa los estilos existentes de .toc-nav flex-direction:row */
+}

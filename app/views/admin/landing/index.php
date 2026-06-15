@@ -62,6 +62,18 @@
 
   <div class="sidebar-overlay" aria-hidden="true"></div>
 
+  <!-- Mini diálogo de confirmación accesible (reemplaza confirm() nativo) -->
+  <div id="confirmDialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmDialogMsg"
+       style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-surface,#1a1a2e);border:1px solid var(--bd-default,#2a2a3a);border-radius:12px;padding:24px 28px;max-width:380px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.5);">
+      <p id="confirmDialogMsg" style="margin:0 0 20px;font-size:14px;color:var(--tx-primary,#e0e0f0);line-height:1.5;"></p>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button id="confirmDialogCancel" style="padding:8px 18px;border-radius:8px;border:1px solid var(--bd-default,#2a2a3a);background:var(--bg-elevated,#222236);color:var(--tx-secondary,#888);cursor:pointer;font-size:13px;">Cancelar</button>
+        <button id="confirmDialogOk" style="padding:8px 18px;border-radius:8px;border:none;background:var(--gold,#c9a84c);color:#000;cursor:pointer;font-size:13px;font-weight:700;">Continuar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app-shell">
 
     <!-- Sidebar (partial) -->
@@ -81,10 +93,44 @@
 
         <!-- Layout con índice lateral -->
         <div class="landing-editor-layout">
+
           <div class="landing-editor-main">
 
+            <!-- Barra de navegación rápida — solo visible en mobile (<992px) -->
+            <nav class="toc-mobile-bar" aria-label="Navegar por secciones">
+              <i class="fas fa-list toc-mobile-bar__icon" aria-hidden="true"></i>
+              <select id="tocJumpSelect" class="toc-mobile-bar__select" aria-label="Ir a sección">
+                <option value="">Ir a sección…</option>
+                <option value="sec-secciones">Secciones visibles</option>
+                <option value="sec-hero">Hero</option>
+                <option value="sec-beneficios">Beneficios</option>
+                <option value="sec-galeria">Galería</option>
+                <option value="sec-caracteristicas">Características</option>
+                <option value="sec-contador">Contador / Oferta</option>
+                <option value="sec-porque">¿Por qué?</option>
+                <option value="sec-comparison">Tabla comparativa</option>
+                <option value="sec-testimonios">Testimonios</option>
+                <option value="sec-paraquien">¿Para quién?</option>
+                <option value="sec-wa">Testimonios WhatsApp</option>
+                <option value="sec-faq">Preguntas frecuentes</option>
+                <option value="sec-autoridad">Autoridad</option>
+                <option value="sec-ctas">CTAs</option>
+                <option value="sec-combo">Modo Combo</option>
+                <option value="sec-colores">Colores</option>
+                <option value="sec-titulos">Títulos</option>
+                <option value="sec-announcement">Barra anuncios</option>
+                <option value="sec-hero-trust">Confianza hero</option>
+                <option value="sec-comofunciona-content">Cómo funciona</option>
+                <option value="sec-garantia">Garantía</option>
+                <option value="sec-transportadoras">Transportadoras</option>
+                <option value="sec-form-header">Formulario</option>
+                <option value="sec-regalo">Regalo</option>
+                <option value="sec-footer">Footer</option>
+              </select>
+            </nav>
+
             <!-- Selector producto -->
-            <div class="form-card">
+            <div class="form-card form-card--product-selector">
               <div class="form-card-header">
                 <h3>Seleccionar producto</h3>
               </div>
@@ -94,7 +140,8 @@
                     <label for="producto_id_select">Producto</label>
                     <select name="producto_id" id="producto_id_select"
                     data-current="<?= htmlspecialchars((string)$producto_id) ?>"
-                    onchange="if(window.formDirty && !confirm('Tienes cambios sin guardar en la landing actual. ¿Cambiar de producto de todas formas?')) { this.value = this.dataset.current; return; } this.form.submit()">
+                    class="js-product-switcher"
+                    data-confirm="Tienes cambios sin guardar en la landing actual. ¿Cambiar de producto de todas formas?">
                       <?php foreach ($productos as $prod): ?>
                         <option value="<?= htmlspecialchars($prod['id']) ?>" <?= ($prod['id'] == $producto_id) ? 'selected' : '' ?>>
                           <?= htmlspecialchars($prod['nombre']) ?>
@@ -122,13 +169,28 @@
             </div>
 
             <!-- FORM PRINCIPAL -->
-            <div class="form-card">
+            <div class="form-card form-card--main">
               <div class="form-card-header">
                 <h3>Configuración de la landing</h3>
               </div>
 
               <div class="form-card-body">
-                <form action="<?= BASE_URL ?>/AdminLanding/guardar" method="POST" class="admin-form" enctype="multipart/form-data">
+                <!-- Breadcrumb de sección activa (actualizado por JS en modo CMS) -->
+                <div class="cms-section-breadcrumb" id="cmsBreadcrumb" style="display:none">
+                  <span class="cms-section-breadcrumb__path">Landing</span>
+                  <span class="cms-section-breadcrumb__sep">›</span>
+                  <span class="cms-section-breadcrumb__name" id="cmsBcName">—</span>
+                  <span class="cms-section-breadcrumb__status cms-bc-empty" id="cmsBcStatus"></span>
+                </div>
+
+                <!-- Banner "sección desactivada" -->
+                <div class="cms-disabled-banner" id="cmsDisabledBannerEl">
+                  <i class="fas fa-eye-slash"></i>
+                  <span>Esta sección está <strong>desactivada</strong> en la landing pública.</span>
+                  <button type="button" class="cms-disabled-banner__btn" id="cmsActivateSection">Activar ahora</button>
+                </div>
+
+                <form id="formLanding" action="<?= BASE_URL ?>/AdminLanding/guardar" method="POST" class="admin-form" enctype="multipart/form-data">
                   <?= csrf_field() ?>
                   <input type="hidden" name="producto_id" value="<?= htmlspecialchars($producto_id) ?>">
 
@@ -177,14 +239,15 @@
                         $checked = isset($config[$name]) ? (int)$config[$name] : 1;
                       ?>
                         <div class="section-toggle-item" draggable="true" data-key="<?= $sec ?>">
-                          <span class="drag-handle" title="Arrastrar para reordenar">⠿</span>
+                          <span class="drag-handle" title="Arrastrar para reordenar"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
                           <span class="section-toggle-pos"><?= $i + 1 ?></span>
                           <span class="section-toggle-icon"><?= $icon ?></span>
                           <span class="section-toggle-name"><?= $lbl ?></span>
                           <label class="toggle-label">
                             <input type="hidden"   name="<?= $name ?>" value="0">
                             <input type="checkbox" name="<?= $name ?>" value="1"
-                                   class="toggle-cb" <?= $checked ? 'checked' : '' ?>>
+                                   class="toggle-cb" <?= $checked ? 'checked' : '' ?>
+                                   aria-label="<?= htmlspecialchars($lbl) ?>">
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                           </label>
                         </div>
@@ -217,7 +280,8 @@
                           <label class="toggle-label">
                             <input type="hidden"   name="<?= $fname ?>" value="0">
                             <input type="checkbox" name="<?= $fname ?>" value="1"
-                                   class="toggle-cb" <?= $fchecked ? 'checked' : '' ?>>
+                                   class="toggle-cb" <?= $fchecked ? 'checked' : '' ?>
+                                   aria-label="<?= htmlspecialchars($fdata['label']) ?>">
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                           </label>
                         </div>
@@ -256,15 +320,17 @@
                       <div class="admin-form-group">
                         <label for="hero_badge_stars">Badge — Calificación (ej. 4.9)</label>
                         <input type="text" id="hero_badge_stars" name="hero_badge_stars"
-                          value="<?= htmlspecialchars($config['hero_badge_stars'] ?? '4.9') ?>">
-                        <small>Número de estrellas que aparece en el badge flotante sobre la imagen.</small>
+                          value="<?= htmlspecialchars($config['hero_badge_stars'] ?? '4.9') ?>"
+                          aria-describedby="hero_badge_stars_hint">
+                        <small id="hero_badge_stars_hint">Número de estrellas que aparece en el badge flotante sobre la imagen.</small>
                       </div>
 
                       <div class="admin-form-group">
                         <label for="hero_badge_customers">Badge — Texto clientes</label>
                         <input type="text" id="hero_badge_customers" name="hero_badge_customers"
-                          value="<?= htmlspecialchars($config['hero_badge_customers'] ?? '+3.200 clientes felices') ?>">
-                        <small>Ej: +3.200 clientes felices</small>
+                          value="<?= htmlspecialchars($config['hero_badge_customers'] ?? '+3.200 clientes felices') ?>"
+                          aria-describedby="hero_badge_customers_hint">
+                        <small id="hero_badge_customers_hint">Ej: +3.200 clientes felices</small>
                       </div>
 
                       <div class="admin-form-group">
@@ -329,95 +395,50 @@
                           value="<?= htmlspecialchars($config['benefits_title'] ?? 'Beneficios clave para ti') ?>">
                       </div>
 
+                    </div><!-- /form-grid título -->
+
+                    <!-- Grilla 2×2 de beneficios -->
+                    <div class="benefits-grid">
                       <?php for ($bi = 1; $bi <= 4; $bi++): ?>
-                      <div class="admin-form-group admin-form-group--full">
-                        <label>Beneficio <?= $bi ?></label>
-                        <input type="text" name="benefit_<?= $bi ?>"
-                          value="<?= htmlspecialchars($config['benefit_' . $bi] ?? '') ?>"
-                          placeholder="Texto del beneficio <?= $bi ?>">
-                        <div style="display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap;">
-                          <div>
-                            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Foto del beneficio (opcional)</label>
+                      <div class="benefit-card">
+                        <div class="benefit-card__num">Beneficio <?= $bi ?></div>
+
+                        <div class="admin-form-group">
+                          <input type="text" name="benefit_<?= $bi ?>"
+                            value="<?= htmlspecialchars($config['benefit_' . $bi] ?? '') ?>"
+                            placeholder="Describe el beneficio <?= $bi ?>…"
+                            aria-label="Texto del beneficio <?= $bi ?>">
+                        </div>
+
+                        <div class="benefit-card__media">
+                          <!-- Thumb clickable → abre el file input asociado -->
+                          <div class="benefit-card__thumb media-preview"
+                               id="benefit_thumb_<?= $bi ?>">
+                            <?php if (!empty($config['benefit_' . $bi . '_img'])): ?>
+                              <img src="<?= htmlspecialchars($config['benefit_' . $bi . '_img']) ?>"
+                                   alt="Foto beneficio <?= $bi ?>">
+                            <?php else: ?>
+                              <div class="media-empty">
+                                <i class="fas fa-image" aria-hidden="true"></i>
+                              </div>
+                            <?php endif; ?>
+                          </div>
+                          <div class="admin-form-group benefit-card__upload">
+                            <label>Foto <small>(opcional)</small></label>
+                            <!-- data-no-dropzone evita que ux-improvements.js
+                                 convierta este input en una zona grande -->
                             <input type="file" name="benefit_<?= $bi ?>_img_file"
                               accept="image/jpeg,image/png,image/webp,image/gif"
-                              style="font-size:13px;">
+                              data-no-dropzone="1">
                           </div>
-                          <?php if (!empty($config['benefit_' . $bi . '_img'])): ?>
-                          <div style="position:relative;">
-                            <img src="<?= htmlspecialchars($config['benefit_' . $bi . '_img']) ?>"
-                              alt="Foto beneficio <?= $bi ?>"
-                              style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border-color);">
-                          </div>
-                          <?php endif; ?>
                         </div>
+
                         <input type="hidden" name="benefit_<?= $bi ?>_img_actual"
                           value="<?= htmlspecialchars($config['benefit_' . $bi . '_img'] ?? '') ?>">
                       </div>
                       <?php endfor; ?>
-
-                      <!-- ── TIPO DE MEDIO ─────────────────────────────────── -->
-                      <div class="admin-form-group">
-                        <label for="benefits_media_type">Tipo de medio</label>
-                        <select name="benefits_media_type" id="benefits_media_type"
-                          onchange="toggleMediaPreview('benefits', this.value)">
-                          <option value="imagen"
-                            <?= ($config['benefits_media_type'] ?? 'imagen') === 'imagen' ? 'selected' : '' ?>>
-                            Imagen (JPG, PNG, WEBP)
-                          </option>
-                          <option value="gif"
-                            <?= ($config['benefits_media_type'] ?? '') === 'gif' ? 'selected' : '' ?>>
-                            GIF animado
-                          </option>
-                          <option value="video"
-                            <?= ($config['benefits_media_type'] ?? '') === 'video' ? 'selected' : '' ?>>
-                            Video (MP4, MOV, WEBM)
-                          </option>
-                        </select>
-                      </div>
-
-                      <!-- ── SUBIR ARCHIVO ─────────────────────────────────── -->
-                      <div class="admin-form-group">
-                        <label for="benefits_media_file">Subir nuevo archivo</label>
-                        <input type="file"
-                          id="benefits_media_file"
-                          name="benefits_media_file"
-                          accept="<?= ($config['benefits_media_type'] ?? 'imagen') === 'video'
-                                    ? 'video/mp4,video/quicktime,video/webm'
-                                    : (($config['benefits_media_type'] ?? 'imagen') === 'gif'
-                                      ? 'image/gif'
-                                      : 'image/jpeg,image/png,image/webp') ?>">
-                        <small>Máx. recomendado: imágenes 2MB · videos 10MB</small>
-                      </div>
-
-                      <!-- ── PREVIEW ACTUAL ────────────────────────────────── -->
-                      <div class="admin-form-group admin-form-group--full">
-                        <label>Media actual</label>
-                        <div class="media-preview" id="benefits_preview">
-                          <?php if (!empty($config['benefits_media_path'])): ?>
-                            <?php
-                            $ext = strtolower(pathinfo($config['benefits_media_path'], PATHINFO_EXTENSION));
-                            $isVideo = in_array($ext, ['mp4', 'mov', 'webm']);
-                            ?>
-                            <?php if ($isVideo): ?>
-                              <video src="<?= htmlspecialchars($config['benefits_media_path']) ?>"
-                                muted loop controls
-                                style="max-width:100%; border-radius:6px;"></video>
-                            <?php else: ?>
-                              <img src="<?= htmlspecialchars($config['benefits_media_path']) ?>"
-                                alt="Beneficios">
-                            <?php endif; ?>
-                          <?php else: ?>
-                            <div class="media-empty">
-                              <i class="fas fa-photo-video"></i>
-                              <span>No hay media configurada.</span>
-                            </div>
-                          <?php endif; ?>
-                        </div>
-
-                        <input type="hidden" name="benefits_media_path_actual"
-                          value="<?= htmlspecialchars($config['benefits_media_path'] ?? '') ?>">
-                      </div>
                     </div>
+
                   </div>
 
                   <hr class="section-hr">
@@ -463,7 +484,7 @@
                   <!-- CARACTERÍSTICAS -->
                   <div class="section-block" id="sec-caracteristicas" data-toc="Características">
                     <h2>Características del producto</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Carousel de hasta 4 tarjetas. Cada una puede tener imagen, video o gif, título y descripción.</p>
+                    <p class="field-section-desc">Carousel de hasta 4 tarjetas. Cada una puede tener imagen, video o gif, título y descripción.</p>
 
                     <div class="admin-form-group" style="margin-bottom:20px;">
                       <label for="caract_section_title">Título de la sección</label>
@@ -479,7 +500,7 @@
                     ?>
                     <div class="mini-card">
                       <div class="mini-card-title" style="display:flex;align-items:center;justify-content:space-between;">
-                        <span><i class="fas fa-layer-group"></i> Característica <?= $cn ?></span>
+                        <span><i class="fas fa-layer-group" aria-hidden="true"></i> Característica <?= $cn ?></span>
                         <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;">
                           <input type="hidden" name="caract<?= $cn ?>_active" value="0">
                           <input type="checkbox" name="caract<?= $cn ?>_active" value="1" <?= $cActive ? 'checked' : '' ?>>
@@ -556,16 +577,16 @@
                         <label for="countdown_minutes">Duración del countdown (minutos)</label>
                         <input type="number" id="countdown_minutes" name="countdown_minutes"
                           value="<?= htmlspecialchars($config['countdown_minutes'] ?? '25') ?>"
-                          min="1" max="1440">
-                        <small>El timer persiste entre recargas vía sessionStorage. Cambiarlo aquí reinicia el contador para nuevas sesiones.</small>
+                          min="1" max="1440" aria-describedby="countdown_minutes_hint">
+                        <small id="countdown_minutes_hint">El timer persiste entre recargas vía sessionStorage. Cambiarlo aquí reinicia el contador para nuevas sesiones.</small>
                       </div>
 
                       <div class="admin-form-group">
                         <label for="urgency_stock">Stock inicial (unidades)</label>
                         <input type="number" id="urgency_stock" name="urgency_stock"
                           value="<?= htmlspecialchars($config['urgency_stock'] ?? '12') ?>"
-                          min="1" max="999">
-                        <small>Número de unidades que aparece en el hero. Decrece automáticamente y se marca crítico al llegar a ≤ 3.</small>
+                          min="1" max="999" aria-describedby="urgency_stock_hint">
+                        <small id="urgency_stock_hint">Número de unidades que aparece en el hero. Decrece automáticamente y se marca crítico al llegar a ≤ 3.</small>
                       </div>
                     </div>
                   </div>
@@ -588,17 +609,21 @@
                         <textarea id="porque_text" name="porque_text" rows="4"><?= htmlspecialchars($config['porque_text'] ?? '') ?></textarea>
                       </div>
 
-                      <div class="admin-form-group">
-                        <label>Bullet 1</label>
-                        <input type="text" name="porque_bullet1" value="<?= htmlspecialchars($config['porque_bullet1'] ?? '') ?>">
-                      </div>
-                      <div class="admin-form-group">
-                        <label>Bullet 2</label>
-                        <input type="text" name="porque_bullet2" value="<?= htmlspecialchars($config['porque_bullet2'] ?? '') ?>">
-                      </div>
-                      <div class="admin-form-group">
-                        <label>Bullet 3</label>
-                        <input type="text" name="porque_bullet3" value="<?= htmlspecialchars($config['porque_bullet3'] ?? '') ?>">
+                      <div class="admin-form-group admin-form-group--full">
+                        <div class="bullets-row">
+                          <div class="admin-form-group">
+                            <label>Punto 1</label>
+                            <input type="text" name="porque_bullet1" value="<?= htmlspecialchars($config['porque_bullet1'] ?? '') ?>" placeholder="Ventaja clave…">
+                          </div>
+                          <div class="admin-form-group">
+                            <label>Punto 2</label>
+                            <input type="text" name="porque_bullet2" value="<?= htmlspecialchars($config['porque_bullet2'] ?? '') ?>" placeholder="Ventaja clave…">
+                          </div>
+                          <div class="admin-form-group">
+                            <label>Punto 3</label>
+                            <input type="text" name="porque_bullet3" value="<?= htmlspecialchars($config['porque_bullet3'] ?? '') ?>" placeholder="Ventaja clave…">
+                          </div>
+                        </div>
                       </div>
 
                       <!-- ── TIPO DE MEDIO ─────────────────────────────────── -->
@@ -671,7 +696,7 @@
                   <!-- TABLA COMPARATIVA -->
                   <div class="section-block" id="sec-comparison" data-toc="Comparativa">
                     <h2>Tabla Comparativa (Con / Sin)</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">
+                    <p class="field-section-desc">
                       Muestra la diferencia entre tener y no tener el producto. Solo aparece si hay al menos 1 fila completa.
                     </p>
 
@@ -728,7 +753,7 @@
                       ?>
                         <div class="mini-card">
                           <div class="mini-card-title">
-                            <i class="fas fa-arrows-left-right"></i> Fila <?= $i ?>
+                            <i class="fas fa-arrows-left-right" aria-hidden="true"></i> Fila <?= $i ?>
                           </div>
                           <div class="form-grid">
                             <div class="admin-form-group">
@@ -769,7 +794,7 @@
                       ?>
                         <div class="mini-card">
                           <div class="mini-card-title">
-                            <i class="fas fa-comment-dots"></i> Testimonio <?= $i ?>
+                            <i class="fas fa-comment-dots" aria-hidden="true"></i> Testimonio <?= $i ?>
                           </div>
 
                           <div class="form-grid">
@@ -804,7 +829,7 @@
 
                             <div class="admin-form-group admin-form-group--full">
                               <label>Banner actual</label>
-                              <div class="media-preview">
+                              <div class="media-preview media-preview--banner">
                                 <?php if (!empty($config[$bannerKey])): ?>
                                   <img src="<?= htmlspecialchars($config[$bannerKey]) ?>" alt="Banner testimonio <?= $i ?>">
                                 <?php else: ?>
@@ -817,25 +842,20 @@
                               <input type="hidden" name="<?= $bannerActual ?>" value="<?= htmlspecialchars($config[$bannerKey] ?? '') ?>">
                             </div>
 
-                            <!-- Foto de perfil (opcional) -->
-                            <div class="admin-form-group">
-                              <label for="<?= $photoInput ?>">Foto de perfil <small>(opcional)</small></label>
-                              <input type="file" id="<?= $photoInput ?>" name="<?= $photoInput ?>" accept="image/*">
-                            </div>
-
-                            <div class="admin-form-group admin-form-group--full">
-                              <label>Foto de perfil actual</label>
-                              <div class="media-preview">
+                            <!-- Foto de perfil — avatar circular inline -->
+                            <div class="admin-form-group admin-form-group--full upload-avatar-row">
+                              <div>
+                                <label for="<?= $photoInput ?>">Foto de perfil <small>(opcional)</small></label>
+                                <input type="file" id="<?= $photoInput ?>" name="<?= $photoInput ?>" accept="image/*">
+                                <input type="hidden" name="<?= $photoActual ?>" value="<?= htmlspecialchars($config[$photoKey] ?? '') ?>">
+                              </div>
+                              <div class="media-preview media-preview--avatar">
                                 <?php if (!empty($config[$photoKey])): ?>
                                   <img src="<?= htmlspecialchars($config[$photoKey]) ?>" alt="Testimonio <?= $i ?>">
                                 <?php else: ?>
-                                  <div class="media-empty">
-                                    <i class="fas fa-user"></i>
-                                    <span>Sin foto</span>
-                                  </div>
+                                  <div class="media-empty"><i class="fas fa-user"></i></div>
                                 <?php endif; ?>
                               </div>
-                              <input type="hidden" name="<?= $photoActual ?>" value="<?= htmlspecialchars($config[$photoKey] ?? '') ?>">
                             </div>
                           </div>
                         </div>
@@ -848,12 +868,12 @@
                   <!-- PARA QUIÉN ES -->
                   <div class="section-block" id="sec-paraquien" data-toc="¿Para quién?">
                     <h2>¿Para quién es?</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Dos columnas que ayudan al visitante a auto-identificarse. Deja en blanco los ítems que no uses.</p>
+                    <p class="field-section-desc">Deja en blanco los ítems que no uses.</p>
 
-                    <div class="stack-cards">
+                    <div class="paraquien-grid">
                       <div class="mini-card">
                         <div class="mini-card-title">
-                          <i class="fas fa-circle-check" style="color:var(--ok)"></i> Sí es para ti si…
+                          <i class="fas fa-circle-check" style="color:var(--ok)" aria-hidden="true"></i> Sí es para ti si…
                         </div>
                         <div class="form-grid">
                           <div class="admin-form-group">
@@ -881,7 +901,7 @@
 
                       <div class="mini-card">
                         <div class="mini-card-title">
-                          <i class="fas fa-circle-xmark" style="color:var(--err)"></i> No es para ti si…
+                          <i class="fas fa-circle-xmark" style="color:var(--err)" aria-hidden="true"></i> No es para ti si…
                         </div>
                         <div class="form-grid">
                           <div class="admin-form-group">
@@ -901,7 +921,7 @@
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </div><!-- /paraquien-grid -->
                   </div>
 
                   <hr class="section-hr">
@@ -941,7 +961,7 @@
                       ?>
                         <div class="mini-card">
                           <div class="mini-card-title">
-                            <i class="fab fa-whatsapp"></i> WhatsApp <?= $i ?>
+                            <i class="fab fa-whatsapp" aria-hidden="true"></i> WhatsApp <?= $i ?>
                           </div>
 
                           <div class="form-grid">
@@ -996,27 +1016,25 @@
                   <div class="section-block" id="sec-faq" data-toc="FAQ">
                     <h2>Preguntas frecuentes</h2>
 
-                    <div class="stack-cards">
+                    <div class="faq-grid">
                       <?php for ($i = 1; $i <= 6; $i++):
                         $qKey = "faq{$i}_q";
                         $aKey = "faq{$i}_a";
                       ?>
                         <div class="mini-card">
                           <div class="mini-card-title">
-                            <i class="fas fa-circle-question"></i> FAQ <?= $i ?>
-                            <?php if ($i > 3): ?><small style="opacity:.6;">(opcional)</small><?php endif; ?>
+                            <i class="fas fa-circle-question" aria-hidden="true"></i>
+                            Pregunta <?= $i ?>
+                            <?php if ($i > 3): ?><small style="opacity:.45;font-weight:400;text-transform:none;letter-spacing:0;">(opcional)</small><?php endif; ?>
                           </div>
 
-                          <div class="form-grid">
-                            <div class="admin-form-group">
-                              <label>Pregunta</label>
-                              <input type="text" name="<?= $qKey ?>" value="<?= htmlspecialchars($config[$qKey] ?? '') ?>">
-                            </div>
-
-                            <div class="admin-form-group admin-form-group--full">
-                              <label>Respuesta</label>
-                              <textarea name="<?= $aKey ?>" rows="2"><?= htmlspecialchars($config[$aKey] ?? '') ?></textarea>
-                            </div>
+                          <div class="admin-form-group">
+                            <label>Pregunta</label>
+                            <input type="text" name="<?= $qKey ?>" value="<?= htmlspecialchars($config[$qKey] ?? '') ?>">
+                          </div>
+                          <div class="admin-form-group">
+                            <label>Respuesta</label>
+                            <textarea name="<?= $aKey ?>" rows="3"><?= htmlspecialchars($config[$aKey] ?? '') ?></textarea>
                           </div>
                         </div>
                       <?php endfor; ?>
@@ -1028,14 +1046,16 @@
                   <!-- AUTORIDAD / CREDIBILIDAD -->
                   <div class="section-block" id="sec-autoridad" data-toc="Autoridad">
                     <h2>Sección de Autoridad / Credibilidad</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">4 estadísticas que generan confianza justo antes del formulario. Actívala cuando tengas números reales.</p>
+                    <p class="field-section-desc">4 estadísticas que generan confianza justo antes del formulario. Actívala cuando tengas números reales.</p>
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
-                        <label style="display:flex; gap:10px; align-items:center;">
-                          <input type="checkbox" name="authority_enabled" value="1"
+                        <label class="toggle-label--row">
+                          <input type="hidden"   name="authority_enabled" value="0">
+                          <input type="checkbox" name="authority_enabled" value="1" class="toggle-cb"
                             <?= !empty($config['authority_enabled']) ? 'checked' : '' ?>>
-                          Activar sección de autoridad
+                          <span class="toggle-track<?= !empty($config['authority_enabled']) ? ' is-on' : '' ?>"><span class="toggle-thumb"></span></span>
+                          <span class="toggle-label-text">Activar sección de autoridad</span>
                         </label>
                       </div>
 
@@ -1104,7 +1124,8 @@
                           <label class="toggle-label" style="margin:0;">
                             <input type="hidden"   name="<?= $showField ?>" value="0">
                             <input type="checkbox" name="<?= $showField ?>" value="1"
-                                   class="toggle-cb" <?= $isOn ? 'checked' : '' ?>>
+                                   class="toggle-cb" <?= $isOn ? 'checked' : '' ?>
+                                   aria-label="Mostrar <?= htmlspecialchars($ctaData['label']) ?>">
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                           </label>
                         </div>
@@ -1125,7 +1146,7 @@
                       <?php endforeach; ?>
 
                       <div class="mini-card">
-                        <div class="mini-card-title"><i class="fas fa-mobile-screen"></i> CTA fija móvil</div>
+                        <div class="mini-card-title"><i class="fas fa-mobile-screen" aria-hidden="true"></i> CTA fija móvil</div>
                         <div class="form-grid">
                           <div class="admin-form-group admin-form-group--full">
                             <label for="cta_sticky_mobile_text">Texto del botón fijo inferior</label>
@@ -1136,14 +1157,15 @@
                       </div>
 
                       <div class="mini-card">
-                        <div class="mini-card-title"><i class="fab fa-whatsapp" style="color:#25D366;"></i> Botón flotante de WhatsApp</div>
+                        <div class="mini-card-title"><i class="fab fa-whatsapp" style="color:#25D366;" aria-hidden="true"></i> Botón flotante de WhatsApp</div>
                         <div class="form-grid">
                           <div class="admin-form-group admin-form-group--full">
                             <label for="wa_phone">Número de WhatsApp (solo dígitos, con código de país)</label>
                             <input type="text" id="wa_phone" name="wa_phone"
                               value="<?= htmlspecialchars($config['wa_phone'] ?? '573023959721') ?>"
-                              placeholder="ej. 573001234567">
-                            <small>Formato: código de país + número sin + ni espacios. Ej: 573001234567</small>
+                              placeholder="ej. 573001234567"
+                              aria-describedby="wa_phone_hint">
+                            <small id="wa_phone_hint">Formato: código de país + número sin + ni espacios. Ej: 573001234567</small>
                           </div>
                         </div>
                       </div>
@@ -1163,13 +1185,15 @@
 
                     <div class="stack-cards">
                       <div class="mini-card">
-                        <div class="mini-card-title"><i class="fas fa-boxes"></i> Configuración</div>
+                        <div class="mini-card-title"><i class="fas fa-boxes" aria-hidden="true"></i> Configuración</div>
 
                         <div class="form-grid">
                           <div class="admin-form-group admin-form-group--full">
-                            <label style="display:flex; gap:10px; align-items:center;">
-                              <input type="checkbox" name="combo_enabled" value="1" <?= $comboEnabled === 1 ? 'checked' : '' ?>>
-                              Activar Combo x2 en la landing
+                            <label class="toggle-label--row">
+                              <input type="hidden"   name="combo_enabled" value="0">
+                              <input type="checkbox" name="combo_enabled" value="1" class="toggle-cb" <?= $comboEnabled === 1 ? 'checked' : '' ?>>
+                              <span class="toggle-track<?= $comboEnabled === 1 ? ' is-on' : '' ?>"><span class="toggle-thumb"></span></span>
+                              <span class="toggle-label-text">Activar Combo x2 en la landing</span>
                             </label>
                             <small class="help">Activa esta opción para mostrar el selector “x2” en la landing.</small>
                           </div>
@@ -1178,8 +1202,8 @@
                             <label for="combo_price_2">Precio Combo x2 (COP)</label>
                             <input type="number" id="combo_price_2" name="combo_price_2"
                               value="<?= htmlspecialchars((string)$comboPrice2) ?>"
-                              min="0" step="1000">
-                            <small class="help">Ej: 115000.</small>
+                              min="0" step="1000" aria-describedby="combo_price_2_hint">
+                            <small id="combo_price_2_hint" class="help">Ej: 115000.</small>
                           </div>
                         </div>
                       </div>
@@ -1495,7 +1519,7 @@
                   <!-- TÍTULOS DE SECCIÓN -->
                   <div class="section-block" id="sec-titulos" data-toc="Títulos">
                     <h2>Títulos de sección</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Personaliza los encabezados de cada sección visible en la landing.</p>
+                    <p class="field-section-desc">Personaliza los encabezados de cada sección visible en la landing.</p>
 
                     <div class="form-grid">
                       <div class="admin-form-group">
@@ -1526,7 +1550,7 @@
                   <!-- ANNOUNCEMENT BAR -->
                   <div class="section-block" id="sec-announcement" data-toc="Barra">
                     <h2>Barra de anuncios</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Ítems del ticker superior. Deja en blanco los que no uses — se usan los defaults si todos están vacíos.</p>
+                    <p class="field-section-desc">Ítems del ticker superior. Deja en blanco los que no uses — se usan los defaults si todos están vacíos.</p>
 
                     <div class="form-grid">
                       <?php for ($i = 1; $i <= 6; $i++): $k = "announcement_item_{$i}"; ?>
@@ -1545,7 +1569,7 @@
                   <!-- HERO TRUST ROW -->
                   <div class="section-block" id="sec-hero-trust" data-toc="Confianza hero">
                     <h2>Íconos de confianza del hero</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Tres ítems que aparecen debajo del botón principal del hero.</p>
+                    <p class="field-section-desc">Tres ítems que aparecen debajo del botón principal del hero.</p>
 
                     <div class="form-grid">
                       <div class="admin-form-group">
@@ -1571,7 +1595,7 @@
                   <!-- CÓMO FUNCIONA — CONTENIDO -->
                   <div class="section-block" id="sec-comofunciona-content" data-toc="Cómo funciona">
                     <h2>Cómo funciona — Pasos</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Título y contenido de los 3 pasos del proceso de compra. La visibilidad se controla desde "Secciones visibles".</p>
+                    <p class="field-section-desc">Título y contenido de los 3 pasos del proceso de compra. La visibilidad se controla desde "Secciones visibles".</p>
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
@@ -1591,7 +1615,9 @@
                       foreach ($cfSteps as $n => $def):
                       ?>
                       <div class="mini-card">
-                        <div class="mini-card-title">Paso <?= $n ?></div>
+                        <div class="mini-card-title">
+                          <i class="fas fa-circle-<?= $n ?>" style="color:var(--gold)" aria-hidden="true"></i> Paso <?= $n ?>
+                        </div>
                         <div class="form-grid">
                           <div class="admin-form-group">
                             <label>Ícono (emoji)</label>
@@ -1619,7 +1645,7 @@
                   <!-- GARANTÍA -->
                   <div class="section-block" id="sec-garantia" data-toc="Garantía">
                     <h2>Banner de Garantía</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Banda de confianza que aparece antes del formulario. Actívala o desactívala según necesites.</p>
+                    <p class="field-section-desc">Banda de confianza que aparece antes del formulario. Actívala o desactívala según necesites.</p>
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
@@ -1661,15 +1687,17 @@
                   <!-- TRANSPORTADORAS -->
                   <div class="section-block" id="sec-transportadoras" data-toc="Transportadoras">
                     <h2>Transportadoras</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Banda con logos de las transportadoras. Aparece justo antes del formulario de pedido.</p>
+                    <p class="field-section-desc">Banda con logos de las transportadoras. Aparece justo antes del formulario de pedido.</p>
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
-                        <label style="display:flex; gap:10px; align-items:center;">
-                          <input type="hidden" name="show_trust_strip" value="0">
-                          <input type="checkbox" name="show_trust_strip" value="1"
-                            <?= !isset($config['show_trust_strip']) || !empty($config['show_trust_strip']) ? 'checked' : '' ?>>
-                          Mostrar logos de transportadoras
+                        <?php $showTrustStrip = !isset($config['show_trust_strip']) || !empty($config['show_trust_strip']); ?>
+                        <label class="toggle-label--row">
+                          <input type="hidden"   name="show_trust_strip" value="0">
+                          <input type="checkbox" name="show_trust_strip" value="1" class="toggle-cb"
+                            <?= $showTrustStrip ? 'checked' : '' ?>>
+                          <span class="toggle-track<?= $showTrustStrip ? ' is-on' : '' ?>"><span class="toggle-thumb"></span></span>
+                          <span class="toggle-label-text">Mostrar logos de transportadoras</span>
                         </label>
                         <small>Interrapidísimo · Envía · Coordinadora</small>
                       </div>
@@ -1681,7 +1709,7 @@
                   <!-- FORMULARIO — CABECERA -->
                   <div class="section-block" id="sec-form-header" data-toc="Form. pedido">
                     <h2>Formulario — Cabecera</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Título y subtítulo que aparecen sobre el formulario de pedido.</p>
+                    <p class="field-section-desc">Título y subtítulo que aparecen sobre el formulario de pedido.</p>
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
@@ -1702,7 +1730,7 @@
                   <!-- REGALO / BONUS -->
                   <div class="section-block" id="sec-regalo" data-toc="Regalo">
                     <h2>Regalo incluido 🎁</h2>
-                    <p style="opacity:.8; margin-bottom:16px;">Imagen del artículo de regalo que se muestra en el resumen de oferta antes del formulario. Déjala vacía si no ofreces regalo.</p>
+                    <p class="field-section-desc">Imagen del artículo de regalo que se muestra en el resumen de oferta antes del formulario. Déjala vacía si no ofreces regalo.</p>
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
@@ -1735,11 +1763,13 @@
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
-                        <label style="display:flex; gap:10px; align-items:center;">
-                          <input type="hidden" name="show_footer" value="0">
-                          <input type="checkbox" name="show_footer" value="1"
-                            <?= !isset($config['show_footer']) || !empty($config['show_footer']) ? 'checked' : '' ?>>
-                          Mostrar footer
+                        <?php $showFooter = !isset($config['show_footer']) || !empty($config['show_footer']); ?>
+                        <label class="toggle-label--row">
+                          <input type="hidden"   name="show_footer" value="0">
+                          <input type="checkbox" name="show_footer" value="1" class="toggle-cb"
+                            <?= $showFooter ? 'checked' : '' ?>>
+                          <span class="toggle-track<?= $showFooter ? ' is-on' : '' ?>"><span class="toggle-thumb"></span></span>
+                          <span class="toggle-label-text">Mostrar footer</span>
                         </label>
                       </div>
                       <div class="admin-form-group admin-form-group--full">
@@ -1761,15 +1791,17 @@
               </div>
             </div>
 
-          </div>
+          </div><!-- /landing-editor-main -->
 
-          <!-- Índice lateral -->
+          <!-- TOC: rail derecho en ≥1200px, horizontal en ≥992px, oculto en mobile -->
           <aside class="landing-editor-toc" aria-label="Índice de secciones">
             <div class="toc-card">
-              <div class="toc-title">
-                <i class="fas fa-list"></i> Secciones
+              <div class="toc-card__head">
+                <span class="toc-card__label">Secciones</span>
+                <button type="button" id="tocVerTodo" class="toc-ver-todo"
+                        title="Expandir o colapsar todas las secciones"
+                        aria-label="Colapsar todas las secciones">Colapsar todo</button>
               </div>
-
               <nav class="toc-nav" id="landingToc">
                 <a href="#sec-secciones" data-target="sec-secciones">Secciones</a>
                 <a href="#sec-hero" data-target="sec-hero">Hero</a>
@@ -1785,26 +1817,24 @@
                 <a href="#sec-faq" data-target="sec-faq">FAQ</a>
                 <a href="#sec-autoridad" data-target="sec-autoridad">Autoridad</a>
                 <a href="#sec-ctas" data-target="sec-ctas">CTAs</a>
-                <a href="#sec-combo" data-target="sec-combo">Modo Combo</a>
+                <a href="#sec-combo" data-target="sec-combo">Combo</a>
                 <a href="#sec-colores" data-target="sec-colores">Colores</a>
                 <a href="#sec-titulos" data-target="sec-titulos">Títulos</a>
                 <a href="#sec-announcement" data-target="sec-announcement">Barra</a>
-                <a href="#sec-hero-trust" data-target="sec-hero-trust">Confianza hero</a>
+                <a href="#sec-hero-trust" data-target="sec-hero-trust">Confianza</a>
                 <a href="#sec-comofunciona-content" data-target="sec-comofunciona-content">Cómo funciona</a>
                 <a href="#sec-garantia" data-target="sec-garantia">Garantía</a>
                 <a href="#sec-transportadoras" data-target="sec-transportadoras">Transportadoras</a>
-                <a href="#sec-form-header" data-target="sec-form-header">Form. pedido</a>
+                <a href="#sec-form-header" data-target="sec-form-header">Formulario</a>
+                <a href="#sec-regalo" data-target="sec-regalo">Regalo</a>
                 <a href="#sec-footer" data-target="sec-footer">Footer</a>
               </nav>
-
-              <div class="toc-footer">
-                <a class="toc-top" href="#top"><i class="fas fa-arrow-up"></i> Arriba</a>
-              </div>
             </div>
           </aside>
-        </div>
 
-      </section>
+        </div><!-- /landing-editor-layout -->
+
+      </section><!-- /material-content -->
     </main>
   </div><!-- /app-shell -->
 
@@ -1845,6 +1875,28 @@
           if (pos) pos.textContent = idx + 1;
         });
       }
+
+      // Alternativa de teclado para los drag handles
+      grid.querySelectorAll('.drag-handle').forEach(function(handle) {
+        handle.setAttribute('tabindex', '0');
+        handle.setAttribute('role', 'button');
+        handle.setAttribute('aria-label', 'Mover sección. Usa flechas arriba/abajo para reordenar');
+        handle.addEventListener('keydown', function(e) {
+          if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+          e.preventDefault();
+          const item = handle.closest('.section-toggle-item[data-key]');
+          if (!item) return;
+          const items = Array.from(grid.querySelectorAll('.section-toggle-item[data-key]'));
+          const idx = items.indexOf(item);
+          if (e.key === 'ArrowUp' && idx > 0) {
+            grid.insertBefore(item, items[idx - 1]);
+          } else if (e.key === 'ArrowDown' && idx < items.length - 1) {
+            grid.insertBefore(items[idx + 1], item);
+          }
+          saveOrder();
+          handle.focus();
+        });
+      });
 
       grid.addEventListener('dragstart', function(e) {
         const item = e.target.closest('.section-toggle-item[data-key]');
@@ -1959,11 +2011,12 @@
 
     // Aviso de cambios sin guardar al salir
     let formDirty = false;
-    const editorForm = document.querySelector('form');
+    // BUG FIX: usar getElementById para evitar capturar el form del panel
+    const editorForm = document.getElementById('formLanding');
     if (editorForm) {
-      editorForm.addEventListener('input', function() { formDirty = true; });
-      editorForm.addEventListener('change', function() { formDirty = true; });
-      editorForm.addEventListener('submit', function() { formDirty = false; });
+      editorForm.addEventListener('input',  function() { formDirty = true;  window.formDirty = true; });
+      editorForm.addEventListener('change', function() { formDirty = true;  window.formDirty = true; });
+      editorForm.addEventListener('submit', function() { formDirty = false; window.formDirty = false; });
     }
     window.addEventListener('beforeunload', function(e) {
       if (!formDirty) return;
@@ -2187,7 +2240,7 @@
         <?php if (!$tieneApiKey): ?>
         <div class="ia-modal__key-section" id="iaKeySection">
           <div class="ia-modal__key-label">
-            <i class="fas fa-key"></i> API Key de Claude
+            <i class="fas fa-key" aria-hidden="true"></i> API Key de Claude
             <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" class="ia-modal__key-link">
               Obtener key →
             </a>
@@ -2197,7 +2250,7 @@
         </div>
         <?php else: ?>
         <div class="ia-modal__key-saved">
-          <i class="fas fa-circle-check"></i> API Key configurada
+          <i class="fas fa-circle-check" aria-hidden="true"></i> API Key configurada
           <button type="button" class="ia-modal__key-change" id="btnCambiarKey">Cambiar</button>
         </div>
         <div class="ia-modal__key-section" id="iaKeySection" style="display:none;">
@@ -2244,8 +2297,20 @@
     const btnCambiarKey = document.getElementById('btnCambiarKey');
     const keySection    = document.getElementById('iaKeySection');
 
-    const openModal  = () => { overlay.classList.add('is-open'); overlay.setAttribute('aria-hidden','false'); };
-    const closeModal = () => { overlay.classList.remove('is-open'); overlay.setAttribute('aria-hidden','true'); showStep(1); };
+    let _modalOpener = null;
+    const openModal  = (triggerEl) => {
+      _modalOpener = triggerEl || document.activeElement;
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+      const firstFocusable = overlay.querySelector('input:not([type="hidden"]), textarea, button, [tabindex]');
+      if (firstFocusable) firstFocusable.focus();
+    };
+    const closeModal = () => {
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      showStep(1);
+      if (_modalOpener) { _modalOpener.focus(); _modalOpener = null; }
+    };
 
     const showStep = (n) => {
       step1.style.display = n === 1 ? '' : 'none';
@@ -2253,7 +2318,7 @@
       step3.style.display = n === 3 ? '' : 'none';
     };
 
-    if (btnAbrir)    btnAbrir.addEventListener('click', openModal);
+    if (btnAbrir)    btnAbrir.addEventListener('click', (e) => openModal(e.currentTarget));
     if (btnCerrar)   btnCerrar.addEventListener('click', closeModal);
     if (btnCerrarOk) btnCerrarOk.addEventListener('click', closeModal);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
@@ -2291,7 +2356,7 @@
             const r = await fetch('<?= BASE_URL ?>/AdminLanding/guardarApiKey', {
               method: 'POST',
               headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: new URLSearchParams({ api_key: apiKey }),
+              body: new URLSearchParams({ api_key: apiKey, csrf_token: window.__CSRF__ || '' }),
             });
             const d = await r.json();
             if (!d.ok) { setError(d.error || 'Error al guardar la API key.'); return; }
@@ -2304,7 +2369,7 @@
         showStep(2);
 
         try {
-          const body = new URLSearchParams({ nombre, descripcion, publico, precio });
+          const body = new URLSearchParams({ nombre, descripcion, publico, precio, csrf_token: window.__CSRF__ || '' });
           const res  = await fetch('<?= BASE_URL ?>/AdminLanding/generarConIA', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -2430,8 +2495,9 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'ia-txt-trigger';
-        btn.innerHTML = '✨ IA';
+        btn.innerHTML = '<span aria-hidden="true">✨</span> IA';
         btn.title = 'Generar texto de esta sección con IA';
+        btn.setAttribute('aria-label', 'Generar texto con IA para ' + (sectionLabels[sectionKeyMap[blockId]] || blockId));
         btn.dataset.section = sectionKeyMap[blockId];
         titleSpan.insertAdjacentElement('afterend', btn);
 
@@ -2446,24 +2512,31 @@
     document.addEventListener('ux:sections-ready', injectTxtButtons, { once: true });
 
     // ── Open panel ───────────────────────────────────────────────────────────
+    let _txtPanelOpener = null;
     function openTxtPanel(triggerBtn, section) {
+      _txtPanelOpener = triggerBtn;
       currentSection = section;
       titulo.textContent = '✨ Generar — ' + (sectionLabels[section] || section);
       setTxtError('');
       setTxtLoading(false);
       document.getElementById('iaTxtExtra').value = '';
 
-      const rect = triggerBtn.getBoundingClientRect();
       panel.style.display = 'block';
       panel.setAttribute('aria-hidden', 'false');
 
-      const panelW = 360;
-      let left = rect.left + window.scrollX;
-      let top  = rect.bottom + window.scrollY + 8;
-      if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
-      if (left < 8) left = 8;
-      panel.style.left = left + 'px';
-      panel.style.top  = top  + 'px';
+      if (window.innerWidth >= 768) {
+        const rect = triggerBtn.getBoundingClientRect();
+        const panelW = 360;
+        let left = rect.left + window.scrollX;
+        let top  = rect.bottom + window.scrollY + 8;
+        if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
+        if (left < 8) left = 8;
+        panel.style.left = left + 'px';
+        panel.style.top  = top  + 'px';
+      }
+
+      const firstFocusable = panel.querySelector('textarea, input, button');
+      if (firstFocusable) firstFocusable.focus();
     }
 
     // ── Close ────────────────────────────────────────────────────────────────
@@ -2479,6 +2552,7 @@
     function closeTxtPanel() {
       panel.style.display = 'none';
       panel.setAttribute('aria-hidden', 'true');
+      if (_txtPanelOpener) { _txtPanelOpener.focus(); _txtPanelOpener = null; }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -2533,6 +2607,7 @@
         const body = new URLSearchParams({
           seccion: currentSection, nombre: ctx.nombre,
           descripcion: ctx.descripcion, extra,
+          csrf_token: window.__CSRF__ || '',
         });
         const res  = await fetch(BASE + '/AdminLanding/generarSeccionIA', {
           method: 'POST',
@@ -2582,7 +2657,7 @@
       <?php if (!$tieneReplicateKey): ?>
       <div class="ia-img-key-section" id="iaImgKeySection">
         <div class="ia-img-key-label">
-          <i class="fas fa-key"></i> API Key de Replicate
+          <i class="fas fa-key" aria-hidden="true"></i> API Key de Replicate
           <a href="https://replicate.com/account/api-tokens" target="_blank" rel="noopener">Obtener →</a>
         </div>
         <input type="password" id="ia_replicate_key" placeholder="r8_...">
@@ -2593,7 +2668,7 @@
         <input type="password" id="ia_replicate_key" placeholder="r8_...">
       </div>
       <div class="ia-img-key-saved">
-        <i class="fas fa-circle-check"></i> Replicate configurado
+        <i class="fas fa-circle-check" aria-hidden="true"></i> Replicate configurado
         <button type="button" class="ia-modal__key-change" id="btnCambiarReplicate">Cambiar</button>
       </div>
       <?php endif; ?>
@@ -2744,8 +2819,9 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'ia-img-trigger';
-      btn.innerHTML = '✨ IA';
+      btn.innerHTML = '<span aria-hidden="true">✨</span> IA';
       btn.title = 'Generar imagen con IA';
+      btn.setAttribute('aria-label', 'Generar imagen con IA para ' + (sectionLabels[sectionMap[inputName]] || inputName));
       btn.dataset.section = sectionMap[inputName];
       btn.dataset.inputName = inputName;
       input.insertAdjacentElement('afterend', btn);
@@ -2757,7 +2833,9 @@
     });
 
     // ── Open panel near the trigger button ──────────────────────────────────
+    let _imgPanelOpener = null;
     function openPanel(triggerBtn, section, fileInput) {
+      _imgPanelOpener  = triggerBtn;
       currentSection   = section;
       currentFileInput = fileInput;
       titulo.textContent = '✨ Generar imagen — ' + (sectionLabels[section] || section);
@@ -2768,19 +2846,22 @@
       showPreview(null);
       document.getElementById('iaImgPrompt').value = '';
 
-      // Position panel near trigger
-      const rect = triggerBtn.getBoundingClientRect();
       panel.style.display = 'block';
       panel.setAttribute('aria-hidden', 'false');
 
-      // Ensure panel is visible in viewport
-      const panelW = 380;
-      let left = rect.left + window.scrollX;
-      let top  = rect.bottom + window.scrollY + 8;
-      if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
-      if (left < 8) left = 8;
-      panel.style.left = left + 'px';
-      panel.style.top  = top  + 'px';
+      if (window.innerWidth >= 768) {
+        const rect = triggerBtn.getBoundingClientRect();
+        const panelW = 380;
+        let left = rect.left + window.scrollX;
+        let top  = rect.bottom + window.scrollY + 8;
+        if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
+        if (left < 8) left = 8;
+        panel.style.left = left + 'px';
+        panel.style.top  = top  + 'px';
+      }
+
+      const firstFocusable = panel.querySelector('input:not([type="hidden"]), textarea, button');
+      if (firstFocusable) firstFocusable.focus();
     }
 
     // ── Close ────────────────────────────────────────────────────────────────
@@ -2794,6 +2875,7 @@
     function closePanel() {
       panel.style.display = 'none';
       panel.setAttribute('aria-hidden', 'true');
+      if (_imgPanelOpener) { _imgPanelOpener.focus(); _imgPanelOpener = null; }
     }
 
     // ── Cambiar key Replicate ────────────────────────────────────────────────
@@ -2819,7 +2901,9 @@
     function showPreview(url) {
       const wrap = document.getElementById('iaImgPreviewWrap');
       if (!url) { wrap.style.display = 'none'; return; }
-      document.getElementById('iaImgPreviewImg').src = url;
+      const img = document.getElementById('iaImgPreviewImg');
+      img.onerror = () => { wrap.style.display = 'none'; setError('La imagen se generó pero no pudo cargarse. Revisa la consola.'); };
+      img.src = url;
       wrap.style.display = 'block';
     }
 
@@ -2844,6 +2928,7 @@
         const body = new URLSearchParams({
           producto: ctx.producto, descripcion: ctx.descripcion,
           seccion: currentSection, prompt_actual: promptActual,
+          csrf_token: window.__CSRF__ || '',
         });
         const res  = await fetch(BASE + '/AdminLanding/sugerirPrompt', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
         const data = await res.json();
@@ -2865,6 +2950,7 @@
       badgeEl.style.display = 'inline';
       const fd = new FormData();
       fd.append('referencia', file);
+      fd.append('csrf_token', window.__CSRF__ || '');
       try {
         const res  = await fetch(BASE + '/AdminLanding/subirReferencia', { method: 'POST', body: fd });
         const data = await res.json();
@@ -2942,7 +3028,7 @@
       const res  = await fetch(BASE + '/AdminLanding/guardarApiKey', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ tipo: 'replicate', api_key: key }),
+        body: new URLSearchParams({ tipo: 'replicate', api_key: key, csrf_token: window.__CSRF__ || '' }),
       });
       const data = await res.json();
       if (!data.ok) { setError(data.error || 'Error guardando la key de Replicate.'); return false; }
@@ -2971,6 +3057,7 @@
           seccion:         currentSection,
           referencia_url:  refActiva,
           prompt_strength: strength,
+          csrf_token:      window.__CSRF__ || '',
         });
         const res  = await fetch(BASE + '/AdminLanding/generarImagenIA', {
           method: 'POST',
@@ -3024,6 +3111,594 @@
       if (currentFileInput) currentFileInput.value = '';
 
       closePanel();
+    });
+  })();
+  </script>
+
+  <script>
+  /* ── Funciones de soporte sin panel CMS ─────────────────── */
+  (function () {
+
+    // ── Dirty tracking ────────────────────────────────────────
+    var editorForm = document.getElementById('formLanding');
+    if (editorForm) {
+      editorForm.addEventListener('input',  function () { window.formDirty = true; });
+      editorForm.addEventListener('change', function () { window.formDirty = true; });
+      editorForm.addEventListener('submit', function () { window.formDirty = false; });
+    }
+
+    // ── Ctrl+S / Cmd+S ────────────────────────────────────────
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        var form = document.getElementById('formLanding');
+        if (form) form.submit();
+      }
+    });
+
+    // ── Validación countdown_minutes ─────────────────────────
+    document.addEventListener('ux:sections-ready', function () {
+      var input = document.getElementById('countdown_minutes');
+      if (!input) return;
+      input.addEventListener('change', function () {
+        var val = parseInt(this.value, 10);
+        var existingErr = this.parentNode.querySelector('.field-err-msg');
+        if (isNaN(val) || val < 1 || val > 1440) {
+          this.style.borderColor = 'var(--err)';
+          this.style.boxShadow   = '0 0 0 3px rgba(248,113,113,.12)';
+          if (!existingErr) {
+            var msg = document.createElement('span');
+            msg.className = 'field-note field-err-msg';
+            msg.textContent = 'Debe ser entre 1 y 1440 minutos.';
+            this.parentNode.appendChild(msg);
+          }
+        } else {
+          this.style.borderColor = '';
+          this.style.boxShadow   = '';
+          if (existingErr) existingErr.remove();
+        }
+      });
+    });
+
+  })();
+  </script>
+
+  <script>
+  /* STUB: referencias al panel CMS eliminado — sale inmediatamente */
+  (function () {
+    if (!document.getElementById('cmsPanel')) return;
+
+    var allSectionBlocks = [];
+    var panelItems       = [];
+    var activeSectionId  = null;
+    var hideTimeouts     = {}; // race-condition guard para fade-out
+
+    /* ── Etiquetas de sección para el breadcrumb ─────────────── */
+    var sectionLabels = {
+      'sec-hero':               'Hero',
+      'sec-beneficios':         'Beneficios',
+      'sec-galeria':            'Galería',
+      'sec-caracteristicas':    'Características',
+      'sec-comofunciona-content':'Cómo funciona',
+      'sec-contador':           'Contador',
+      'sec-porque':             '¿Por qué?',
+      'sec-comparison':         'Comparativa',
+      'sec-paraquien':          'Para quién',
+      'sec-testimonios':        'Testimonios',
+      'sec-faq':                'FAQs',
+      'sec-wa':                 'WhatsApp',
+      'sec-garantia':           'Garantía',
+      'sec-regalo':             'Regalo',
+      'sec-autoridad':          'Autoridad',
+      'sec-ctas':               'CTAs',
+      'sec-combo':              'Modo Combo',
+      'sec-colores':            'Colores',
+      'sec-titulos':            'Títulos',
+      'sec-announcement':       'Barra anuncios',
+      'sec-hero-trust':         'Confianza hero',
+      'sec-transportadoras':    'Transportadoras',
+      'sec-form-header':        'Formulario',
+      'sec-footer':             'Footer',
+    };
+
+    /* ── C1: Breadcrumb de sección activa ────────────────────── */
+    function updateBreadcrumb(sectionId) {
+      var bc = document.getElementById('cmsBreadcrumb');
+      if (!bc) return;
+      if (window.innerWidth < 992) { bc.style.display = 'none'; return; }
+      bc.style.display = '';
+
+      var nameEl   = document.getElementById('cmsBcName');
+      var statusEl = document.getElementById('cmsBcStatus');
+      if (nameEl) nameEl.textContent = sectionLabels[sectionId] || sectionId;
+
+      // Estado: leer del punto del panel
+      if (statusEl) {
+        var dot = document.getElementById('cps-' + sectionId);
+        statusEl.className = 'cms-section-breadcrumb__status';
+        statusEl.textContent = '';
+        if (dot) {
+          if (dot.classList.contains('toc-dot--complete')) {
+            statusEl.classList.add('cms-bc-complete'); statusEl.textContent = 'Completo';
+          } else if (dot.classList.contains('toc-dot--partial')) {
+            statusEl.classList.add('cms-bc-partial'); statusEl.textContent = 'Incompleto';
+          } else {
+            statusEl.classList.add('cms-bc-empty'); statusEl.textContent = 'Vacío';
+          }
+        }
+      }
+    }
+
+    /* ── D2: Banner sección desactivada ─────────────────────── */
+    function updateDisabledBanner(sectionId) {
+      var banner = document.getElementById('cmsDisabledBannerEl');
+      if (!banner) return;
+      var item  = document.querySelector('.cms-section-item[data-section="' + sectionId + '"]');
+      var isOff = item && item.classList.contains('cms-si--off');
+      banner.classList.toggle('is-visible', !!isOff);
+      if (isOff && item) banner.dataset.key = item.dataset.showKey || '';
+    }
+
+    var activateBtn = document.getElementById('cmsActivateSection');
+    if (activateBtn) {
+      activateBtn.addEventListener('click', function () {
+        var banner = document.getElementById('cmsDisabledBannerEl');
+        var key    = banner && banner.dataset.key;
+        if (!key) return;
+        var cb = document.querySelector('input[type="checkbox"][name="' + key + '"]');
+        if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+        var item = document.querySelector('.cms-section-item[data-show-key="' + key + '"]');
+        if (item) {
+          var track = item.querySelector('.toggle-track');
+          if (track) track.classList.add('is-on');
+          item.classList.remove('cms-si--off');
+        }
+        banner.classList.remove('is-visible');
+      });
+    }
+
+    /* ── C2: Scroll a sección + highlight en panel ──────────── */
+    function activateSection(sectionId) {
+      if (window.innerWidth < 992) return;
+
+      activeSectionId = sectionId;
+
+      // Asegurar que la sección esté expandida (acordeón)
+      var target = document.getElementById(sectionId);
+      if (target && typeof target._uxToggle === 'function') target._uxToggle(true);
+
+      // Scroll suave a la sección
+      if (target) {
+        var headerH = parseInt(
+          getComputedStyle(document.documentElement).getPropertyValue('--header-h')
+        ) || 68;
+        var top = target.getBoundingClientRect().top + window.scrollY - headerH - 20;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      }
+
+      // Item activo en el panel
+      panelItems.forEach(function (item) {
+        item.classList.toggle('is-active', item.dataset.section === sectionId);
+      });
+
+      // Sincronizar TOC
+      document.dispatchEvent(new CustomEvent('cms:section-activated', { detail: { id: sectionId } }));
+
+      // Banner de sección desactivada
+      updateDisabledBanner(sectionId);
+    }
+
+    /* ── Clics en items del panel ───────────────────────────── */
+    function bindPanelItems() {
+      panelItems = Array.from(document.querySelectorAll('.cms-section-item[data-section]'));
+      panelItems.forEach(function (item) {
+        item.addEventListener('click', function (e) {
+          if (e.target.closest('.cms-si__toggle-btn') || e.target.closest('.cms-si__handle')) return;
+          activateSection(item.dataset.section);
+        });
+      });
+    }
+
+    /* ── Sync toggle panel → checkbox real del form ─────────── */
+    function bindPanelToggles() {
+      panelItems.forEach(function (item) {
+        var btn = item.querySelector('.cms-si__toggle-btn');
+        var key = item.dataset.showKey;
+        if (!btn || !key) return;
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var cb = document.querySelector('input[type="checkbox"][name="' + key + '"]');
+          if (!cb) return;
+          cb.checked = !cb.checked;
+          cb.dispatchEvent(new Event('change', { bubbles: true }));
+          var track = btn.querySelector('.toggle-track');
+          if (track) track.classList.toggle('is-on', cb.checked);
+          item.classList.toggle('cms-si--off', !cb.checked);
+          // Si es la sección activa, actualizar el banner
+          if (item.dataset.section === activeSectionId) {
+            updateDisabledBanner(activeSectionId);
+          }
+        });
+      });
+    }
+
+    /* ── C4: Drag reorder en el panel ───────────────────────── */
+    function initPanelDrag() {
+      var container  = document.getElementById('cmsPanelSections');
+      var orderInput = document.getElementById('section_order_input');
+      if (!container || !orderInput) return;
+
+      var dragged = null;
+
+      container.addEventListener('dragstart', function (e) {
+        var item = e.target.closest('.cms-section-item[data-order-key]');
+        if (!item) return;
+        dragged = item;
+        setTimeout(function () { item.classList.add('dragging'); }, 0);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      container.addEventListener('dragend', function () {
+        if (dragged) dragged.classList.remove('dragging');
+        container.querySelectorAll('.drag-over-top,.drag-over-bottom').forEach(function (el) {
+          el.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+        savePanelOrder();
+        dragged = null;
+      });
+
+      container.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        var item = e.target.closest('.cms-section-item[data-order-key]');
+        if (!item || item === dragged) return;
+        container.querySelectorAll('.drag-over-top,.drag-over-bottom').forEach(function (el) {
+          el.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+        var rect = item.getBoundingClientRect();
+        item.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
+      });
+
+      container.addEventListener('dragleave', function (e) {
+        var item = e.target.closest('.cms-section-item[data-order-key]');
+        if (item) item.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+
+      container.addEventListener('drop', function (e) {
+        e.preventDefault();
+        var target = e.target.closest('.cms-section-item[data-order-key]');
+        if (!target || !dragged || target === dragged) return;
+        target.classList.remove('drag-over-top', 'drag-over-bottom');
+        var rect = target.getBoundingClientRect();
+        if (e.clientY < rect.top + rect.height / 2) {
+          container.insertBefore(dragged, target);
+        } else {
+          container.insertBefore(dragged, target.nextSibling);
+        }
+        savePanelOrder();
+      });
+
+      function savePanelOrder() {
+        var items = container.querySelectorAll('.cms-section-item[data-order-key]');
+        orderInput.value = Array.from(items).map(function (el) { return el.dataset.orderKey; }).join(',');
+      }
+
+      // Alternativa de teclado para los handles del panel
+      container.querySelectorAll('.cms-si__handle').forEach(function(handle) {
+        handle.setAttribute('tabindex', '0');
+        handle.setAttribute('role', 'button');
+        handle.setAttribute('aria-label', 'Mover sección. Usa flechas arriba/abajo para reordenar');
+        handle.addEventListener('keydown', function(e) {
+          if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+          e.preventDefault();
+          var item = handle.closest('.cms-section-item[data-order-key]');
+          if (!item) return;
+          var items = Array.from(container.querySelectorAll('.cms-section-item[data-order-key]'));
+          var idx = items.indexOf(item);
+          if (e.key === 'ArrowUp' && idx > 0) {
+            container.insertBefore(item, items[idx - 1]);
+          } else if (e.key === 'ArrowDown' && idx < items.length - 1) {
+            container.insertBefore(items[idx + 1], item);
+          }
+          savePanelOrder();
+          handle.focus();
+        });
+      });
+    }
+
+    /* ── Sync puntos de estado: TOC → panel ─────────────────── */
+    function syncDot(sectionId) {
+      var tocLink  = document.querySelector('#landingToc a[data-target="' + sectionId + '"]');
+      var panelDot = document.getElementById('cps-' + sectionId);
+      if (!tocLink || !panelDot) return;
+      var tocDot = tocLink.querySelector('.toc-dot');
+      if (tocDot) panelDot.className = tocDot.className;
+    }
+    function syncAllDots() {
+      document.querySelectorAll('#landingToc a[data-target]').forEach(function (a) { syncDot(a.dataset.target); });
+    }
+    function observeDots() {
+      var tocLinks = document.querySelectorAll('#landingToc a[data-target]');
+      if (!tocLinks.length || typeof MutationObserver === 'undefined') return;
+      var mo = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+          var link = m.target.closest('a[data-target]');
+          if (link) {
+            syncDot(link.dataset.target);
+            // Si es la sección activa, actualizar el breadcrumb
+            if (link.dataset.target === activeSectionId) updateBreadcrumb(activeSectionId);
+          }
+        });
+      });
+      tocLinks.forEach(function (link) {
+        var dot = link.querySelector('.toc-dot');
+        if (dot) mo.observe(dot, { attributes: true, attributeFilter: ['class'] });
+      });
+    }
+
+    /* ── Progreso en el panel ───────────────────────────────── */
+    function syncProgress() {
+      var masterFill  = document.getElementById('ux-prog-fill');
+      var masterLabel = document.getElementById('ux-prog-label');
+      var panelFill   = document.getElementById('cmsProgFill');
+      var panelLabel  = document.getElementById('cmsProgLabel');
+      if (masterFill && panelFill)   panelFill.style.width   = masterFill.style.width;
+      if (masterLabel && panelLabel) panelLabel.textContent   = masterLabel.textContent;
+    }
+    function observeProgress() {
+      var masterFill = document.getElementById('ux-prog-fill');
+      if (!masterFill || typeof MutationObserver === 'undefined') return;
+      new MutationObserver(syncProgress).observe(masterFill, { attributes: true, attributeFilter: ['style'] });
+    }
+
+    /* ── I3: Botón guardar — loading state ───────────────────── */
+    function bindSaveBtn() {
+      var saveBtn = document.getElementById('cmsPanelSave');
+      var formEl  = document.getElementById('formLanding');
+      if (!saveBtn || !formEl) return;
+
+      saveBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        saveBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando…';
+        saveBtn.disabled = true;
+        saveBtn.classList.remove('is-dirty');
+        // BUG FIX: dispatch submit event para que formDirty se limpie
+        // antes de que beforeunload pueda dispararse al navegar
+        formEl.dispatchEvent(new Event('submit', { bubbles: true, cancelable: false }));
+        window.formDirty = false;
+        setTimeout(function () { formEl.submit(); }, 80);
+      });
+    }
+
+    /* ── "Sin guardar" indicador ──────────────────────────────── */
+    function bindDirty() {
+      var form      = document.getElementById('formLanding');
+      var dirtyPill = document.getElementById('cmsDirtyPill');
+      var saveBtn   = document.getElementById('cmsPanelSave');
+      if (!form) return;
+      function markDirty() {
+        if (dirtyPill) dirtyPill.style.display = '';
+        if (saveBtn && !saveBtn.disabled) saveBtn.classList.add('is-dirty');
+      }
+      form.addEventListener('input',  markDirty);
+      form.addEventListener('change', markDirty);
+    }
+
+    /* ── D1: Ctrl+S / Cmd+S ──────────────────────────────────── */
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        var saveBtn = document.getElementById('cmsPanelSave');
+        if (saveBtn && !saveBtn.disabled) saveBtn.click();
+        else {
+          var form = document.getElementById('formLanding');
+          if (form) form.submit();
+        }
+      }
+    });
+
+    /* ── D3: Validación visual countdown_minutes ─────────────── */
+    function bindCountdownValidation() {
+      var input = document.getElementById('countdown_minutes');
+      if (!input) return;
+      input.addEventListener('change', function () {
+        var val = parseInt(this.value, 10);
+        var existingErr = this.parentNode.querySelector('.field-err-msg');
+        if (isNaN(val) || val < 1 || val > 1440) {
+          this.style.borderColor = 'var(--err)';
+          this.style.boxShadow   = '0 0 0 3px rgba(248,113,113,.12)';
+          if (!existingErr) {
+            var msg = document.createElement('span');
+            msg.className = 'field-note field-err-msg';
+            msg.textContent = 'Debe ser entre 1 y 1440 minutos.';
+            this.parentNode.appendChild(msg);
+          }
+        } else {
+          this.style.borderColor = '';
+          this.style.boxShadow   = '';
+          if (existingErr) existingErr.remove();
+        }
+      });
+    }
+
+    /* ── Botón IA del panel → botón real ─────────────────────── */
+    function bindIA() {
+      var cmsBtnIA  = document.getElementById('cmsBtnIA');
+      var realBtnIA = document.getElementById('btnAbrirIA');
+      if (cmsBtnIA && realBtnIA) cmsBtnIA.addEventListener('click', function () { realBtnIA.click(); });
+    }
+
+    /* ── C5: Ajustar left del panel al sidebar ───────────────── */
+    function syncPanelLeft() {
+      var panel = document.querySelector('.cms-panel');
+      var sidebar = document.querySelector('.sidebar, .admin-sidebar, [class*="sidebar"]');
+      if (!panel) return;
+      var sidebarW = sidebar ? sidebar.getBoundingClientRect().width : 0;
+      if (sidebarW > 0) panel.style.left = sidebarW + 'px';
+    }
+
+    /* ── INIT ────────────────────────────────────────────────── */
+    document.addEventListener('ux:sections-ready', function () {
+      allSectionBlocks = Array.from(document.querySelectorAll('.section-block[id]'));
+      bindPanelItems();
+      bindPanelToggles();
+      initPanelDrag();
+      observeDots();
+      observeProgress();
+      bindDirty();
+      bindSaveBtn();
+      bindIA();
+      bindCountdownValidation();
+      syncPanelLeft();
+
+      // Observa cambios de ancho del sidebar (colapso/expansión)
+      var sidebarEl = document.querySelector('.sidebar, .admin-sidebar, [class*="sidebar"]');
+      if (sidebarEl && typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(syncPanelLeft).observe(sidebarEl);
+      }
+
+      if (window.innerWidth >= 992 && panelItems.length) {
+        setTimeout(function () {
+          syncAllDots();
+          syncProgress();
+          // Destacar el primer item sin scroll (todas las secciones ya son visibles)
+          if (panelItems[0]) panelItems[0].classList.add('is-active');
+        }, 80);
+      }
+    });
+
+  })();
+  </script>
+
+  <script>
+  // Previews clickables: clic en una imagen cargada abre el selector de archivo
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.media-preview').forEach(function(preview) {
+      // Cursor pointer en JS como fallback para navegadores sin :has()
+      if (preview.querySelector('img, video')) preview.style.cursor = 'pointer';
+
+      preview.addEventListener('click', function() {
+        if (!preview.querySelector('img, video')) return;
+
+        // Busca el input[type="file"] en el contenedor más cercano primero
+        var candidates = [
+          preview.closest('.upload-avatar-row'),
+          preview.closest('.gallery-card'),
+          preview.closest('.mini-card'),
+          preview.closest('.admin-form-group'),
+          preview.closest('.form-grid'),
+          preview.closest('.section-block'),
+        ];
+        for (var ci = 0; ci < candidates.length; ci++) {
+          var c = candidates[ci];
+          if (!c) continue;
+          var inp = c.querySelector('input[type="file"]');
+          if (inp) { inp.click(); return; }
+        }
+      });
+    });
+  });
+  </script>
+
+  <script>
+  // ── Mini diálogo de confirmación accesible ─────────────────────────────
+  (function() {
+    const dialog   = document.getElementById('confirmDialog');
+    const msgEl    = document.getElementById('confirmDialogMsg');
+    const btnOk    = document.getElementById('confirmDialogOk');
+    const btnCancel= document.getElementById('confirmDialogCancel');
+    let _resolve   = null;
+    let _opener    = null;
+
+    function openConfirm(msg, openerEl) {
+      return new Promise(function(resolve) {
+        _resolve = resolve;
+        _opener  = openerEl || document.activeElement;
+        msgEl.textContent = msg;
+        dialog.style.display = 'flex';
+        btnOk.focus();
+      });
+    }
+
+    btnOk.addEventListener('click', function() {
+      dialog.style.display = 'none';
+      if (_opener) { _opener.focus(); _opener = null; }
+      if (_resolve) { _resolve(true); _resolve = null; }
+    });
+    btnCancel.addEventListener('click', function() {
+      dialog.style.display = 'none';
+      if (_opener) { _opener.focus(); _opener = null; }
+      if (_resolve) { _resolve(false); _resolve = null; }
+    });
+    document.addEventListener('keydown', function(e) {
+      if (dialog.style.display === 'flex' && e.key === 'Escape') {
+        btnCancel.click();
+      }
+    });
+
+    // Maneja los selectores de producto con data-confirm
+    document.querySelectorAll('.js-product-switcher').forEach(function(sel) {
+      sel.addEventListener('change', async function() {
+        if (!window.formDirty) { this.form.submit(); return; }
+        const ok = await openConfirm(this.dataset.confirm || '¿Continuar?', this);
+        if (ok) { this.form.submit(); }
+        else    { this.value = this.dataset.current; }
+      });
+    });
+  })();
+  </script>
+
+  <script>
+  // ── Acordeón: guardar estado antes de guardar, restaurar al volver ──
+  (function() {
+    var STATE_KEY = 'landing_sec_state_<?= (int)$producto_id ?>';
+
+    // Restaurar estado guardado justo después de que ux-improvements
+    // inicialice los acordeones
+    document.addEventListener('ux:sections-ready', function() {
+      var raw = sessionStorage.getItem(STATE_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(STATE_KEY);
+      try {
+        var state = JSON.parse(raw);
+        Object.keys(state).forEach(function(id) {
+          var block = document.getElementById(id);
+          if (block && typeof block._uxToggle === 'function') {
+            block._uxToggle(!!state[id]);
+          }
+        });
+      } catch(e) {}
+    });
+
+    // Guardar estado de cada sección justo antes del submit
+    var form = document.getElementById('formLanding');
+    if (form) {
+      form.addEventListener('submit', function() {
+        var state = {};
+        document.querySelectorAll('.section-block[id]').forEach(function(block) {
+          state[block.id] = !!block.querySelector('.sec-body--open');
+        });
+        sessionStorage.setItem(STATE_KEY, JSON.stringify(state));
+      });
+    }
+  })();
+  </script>
+
+  <script>
+  // Mobile TOC jump bar: navega a la sección y la abre si está colapsada
+  (function() {
+    var sel = document.getElementById('tocJumpSelect');
+    if (!sel) return;
+    sel.addEventListener('change', function() {
+      var id = this.value;
+      if (!id) return;
+      var el = document.getElementById(id);
+      if (el) {
+        if (typeof el._uxToggle === 'function') el._uxToggle(true);
+        var headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 64;
+        var top = el.getBoundingClientRect().top + window.scrollY - headerH - 16;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      }
+      this.value = '';
     });
   })();
   </script>

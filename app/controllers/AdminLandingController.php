@@ -577,6 +577,20 @@ class AdminLandingController extends Controller
 
         if (!$prompt) { echo json_encode(['ok' => false, 'error' => 'El prompt es requerido']); return; }
 
+        // Si la URL de referencia apunta al servidor local, convertir a base64
+        // para que Replicate pueda accederla (no puede resolver localhost)
+        if ($referenciaUrl && str_starts_with($referenciaUrl, BASE_URL)) {
+            $relativePath = substr($referenciaUrl, strlen(BASE_URL));
+            $localFile    = __DIR__ . '/../../public' . $relativePath;
+            if (file_exists($localFile)) {
+                $finfo        = new finfo(FILEINFO_MIME_TYPE);
+                $mime         = $finfo->file($localFile);
+                $referenciaUrl = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($localFile));
+            } else {
+                $referenciaUrl = '';
+            }
+        }
+
         $aspectos = [
             'hero'               => '2:3',
             'benefits'           => '3:2',
@@ -609,7 +623,7 @@ class AdminLandingController extends Controller
         if (is_array($imageUrl)) { echo json_encode(['ok' => false, 'error' => $imageUrl['error']]); return; }
 
         $publicUrl = $this->downloadAndOptimizeImage($imageUrl, $seccion, $dims);
-        if (!$publicUrl) { echo json_encode(['ok' => false, 'error' => 'Error procesando la imagen generada']); return; }
+        if (!$publicUrl) { echo json_encode(['ok' => false, 'error' => 'Imagen generada pero no se pudo descargar del CDN de Replicate. Revisa que el servidor tenga acceso a Internet y soporte GD.']); return; }
 
         echo json_encode(['ok' => true, 'url' => $publicUrl]);
     }
@@ -1086,18 +1100,30 @@ PROMPT;
         return ['error' => 'Timeout: la imagen tardó demasiado'];
     }
 
-    // ── Descarga imagen, la redimensiona y guarda como WebP ──────────────────
+    // ── Descarga imagen, la redimensiona y guarda (WebP si está disponible, sino JPEG) ──
     private function downloadAndOptimizeImage(string $url, string $seccion, array $maxDims): ?string
     {
-        $raw = @file_get_contents($url);
-        if (!$raw) return null;
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT        => 60,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; TiendaIA/1.0)',
+        ]);
+        $raw      = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if (!$raw || $curlErr || $httpCode !== 200) return null;
 
         $src = @imagecreatefromstring($raw);
         if (!$src) return null;
 
         [$maxW, $maxH] = $maxDims;
-        $srcW = imagesx($src);
-        $srcH = imagesy($src);
+        $srcW  = imagesx($src);
+        $srcH  = imagesy($src);
         $ratio = min($maxW / $srcW, $maxH / $srcH, 1.0);
         $newW  = (int)round($srcW * $ratio);
         $newH  = (int)round($srcH * $ratio);
@@ -1109,12 +1135,18 @@ PROMPT;
         $uploadDir = __DIR__ . '/../../public/uploads/landing/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
-        $filename = 'ia_' . $seccion . '_' . time() . '_' . mt_rand(1000, 9999) . '.webp';
-        imagewebp($dst, $uploadDir . $filename, 82);
+        $useWebp  = function_exists('imagewebp');
+        $ext      = $useWebp ? 'webp' : 'jpg';
+        $filename = 'ia_' . $seccion . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
+        $path     = $uploadDir . $filename;
+
+        if ($useWebp) {
+            imagewebp($dst, $path, 82);
+        } else {
+            imagejpeg($dst, $path, 85);
+        }
         unset($dst);
 
-        return file_exists($uploadDir . $filename)
-            ? BASE_URL . '/public/uploads/landing/' . $filename
-            : null;
+        return file_exists($path) ? BASE_URL . '/public/uploads/landing/' . $filename : null;
     }
 }

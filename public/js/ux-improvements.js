@@ -324,6 +324,7 @@
   function initDropzones() {
     qsa('input[type="file"]').forEach(function (input) {
       if (input.dataset.uxDrop) return;
+      if (input.dataset.noDropzone) return; // excluir inputs compactos
       input.dataset.uxDrop = '1';
 
       /* Contenedor drag & drop */
