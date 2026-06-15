@@ -2917,6 +2917,24 @@
       };
     }
 
+    // ── Extrae título y texto del campo de la sección activa ────────────────
+    function getSectionContent(section) {
+      const fieldMap = {
+        'hero':    { titulo: 'hero_title',    texto: 'hero_subtitle' },
+        'porque':  { titulo: 'porque_title',  texto: 'porque_text'  },
+        'caract1': { titulo: 'caract1_title', texto: 'caract1_text' },
+        'caract2': { titulo: 'caract2_title', texto: 'caract2_text' },
+        'caract3': { titulo: 'caract3_title', texto: 'caract3_text' },
+        'caract4': { titulo: 'caract4_title', texto: 'caract4_text' },
+      };
+      const f = fieldMap[section];
+      if (!f) return { titulo: '', texto: '' };
+      return {
+        titulo: document.querySelector(`[name="${f.titulo}"]`)?.value?.trim() || '',
+        texto:  document.querySelector(`[name="${f.texto}"]`)?.value?.trim()  || '',
+      };
+    }
+
     // ── Sugerir prompt con Claude ────────────────────────────────────────────
     document.getElementById('iaImgSugerir').addEventListener('click', async () => {
       setError('');
@@ -2926,10 +2944,12 @@
 
       try {
         const ctx = getProductoCtx();
+        const sec = getSectionContent(currentSection);
         const promptActual = document.getElementById('iaImgPrompt').value.trim();
         const body = new URLSearchParams({
           producto: ctx.producto, descripcion: ctx.descripcion,
           seccion: currentSection, prompt_actual: promptActual,
+          seccion_titulo: sec.titulo, seccion_texto: sec.texto,
           csrf_token: window.__CSRF__ || '',
         });
         const res  = await fetch(BASE + '/AdminLanding/sugerirPrompt', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });

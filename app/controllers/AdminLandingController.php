@@ -529,36 +529,40 @@ class AdminLandingController extends Controller
         $apiKey = (new AppSettings())->get('claude_api_key');
         if (!$apiKey) { echo json_encode(['ok' => false, 'error' => 'no_claude_key']); return; }
 
-        $producto     = trim($_POST['producto']      ?? '');
-        $descripcion  = trim($_POST['descripcion']   ?? '');
-        $seccion      = trim($_POST['seccion']        ?? 'hero');
-        $promptActual = trim($_POST['prompt_actual']  ?? '');
+        $producto       = trim($_POST['producto']        ?? '');
+        $descripcion    = trim($_POST['descripcion']     ?? '');
+        $seccion        = trim($_POST['seccion']          ?? 'hero');
+        $promptActual   = trim($_POST['prompt_actual']    ?? '');
+        $seccionTitulo  = trim($_POST['seccion_titulo']   ?? '');
+        $seccionTexto   = trim($_POST['seccion_texto']    ?? '');
 
+        // Contexto fallback por sección (se usa solo si no hay título/texto reales)
         $ctxMap = [
-            'hero'                => 'hero image of the product for a landing page, professional product photography, perfect studio lighting, clean elegant background',
-            'benefits'            => 'lifestyle photo showing the product benefit in use, happy person using the product, warm natural light',
-            'gallery_1'           => 'detailed product shot showing quality and finish, studio lighting, clean white or gradient background',
-            'gallery_2'           => 'product from a different angle, showing unique design details, professional photography',
-            'gallery_3'           => 'product in real-life use context, lifestyle photography',
-            'gallery_4'           => 'product with packaging and accessories, flat lay or arranged composition',
-            'caract1'             => 'image illustrating the first key feature of the product, close-up detail',
-            'caract2'             => 'image illustrating the second feature, showing functionality',
-            'caract3'             => 'image illustrating the third feature, elegant product shot',
-            'caract4'             => 'image illustrating the fourth feature, lifestyle or detail photo',
-            'porque'              => 'emotional image showing positive transformation the product brings, satisfied smiling person',
-            'comparison_without'  => 'image showing the uncomfortable or problematic situation WITHOUT the product, subtle expression of frustration or inconvenience',
-            'comparison_with'     => 'image showing the ideal situation WITH the product, happy satisfied person, warm light',
-            'test1_banner'        => 'photo of a satisfied Colombian customer holding or using the product, genuine smile, natural setting',
-            'test2_banner'        => 'another happy Colombian customer with the product, different setting',
-            'test3_banner'        => 'third customer showing the received product, unboxing or in-use moment',
+            'hero'               => 'hero image of the product, professional studio photography, clean elegant background',
+            'benefits'           => 'lifestyle photo showing the product benefit in use, warm natural light',
+            'gallery_1'          => 'detailed product shot showing quality and finish, studio lighting',
+            'gallery_2'          => 'product from a different angle, showing unique design details',
+            'gallery_3'          => 'product in real-life use context, lifestyle photography',
+            'gallery_4'          => 'product with packaging and accessories, flat lay composition',
+            'porque'             => 'emotional image showing positive transformation the product brings',
+            'comparison_without' => 'situation WITHOUT the product, subtle frustration or inconvenience',
+            'comparison_with'    => 'ideal situation WITH the product, happy satisfied person, warm light',
+            'test1_banner'       => 'satisfied Colombian customer holding or using the product, genuine smile',
+            'test2_banner'       => 'happy Colombian customer with the product, different setting',
+            'test3_banner'       => 'customer showing the received product, unboxing or in-use moment',
         ];
 
-        $ctx = $ctxMap[$seccion] ?? 'professional product image for e-commerce landing page';
+        // Si tenemos el contenido real de la sección, úsalo como contexto principal
+        if ($seccionTitulo || $seccionTexto) {
+            $ctx = "section titled \"{$seccionTitulo}\": {$seccionTexto}";
+        } else {
+            $ctx = $ctxMap[$seccion] ?? 'professional product image for e-commerce landing page';
+        }
 
         if ($promptActual) {
-            $msg = "Improve and expand this Flux AI image prompt: \"{$promptActual}\"\n\nProduct: {$producto}. {$descripcion}\nSection context: {$ctx}\n\nReturn ONLY the improved prompt in English, detailed, professional, optimized for Flux 1.1 Pro. No explanations, no quotes, just the prompt. Max 150 words.";
+            $msg = "Improve this Flux AI image prompt: \"{$promptActual}\"\n\nProduct: {$producto}. {$descripcion}\nSection: {$ctx}\n\nReturn ONLY the improved prompt in English, detailed, professional. No explanations, no quotes. Max 150 words.";
         } else {
-            $msg = "Write an English prompt for Flux 1.1 Pro AI image generator for this landing page section:\n\nProduct: {$producto}\nDescription: {$descripcion}\nImage context: {$ctx}\n\nThe prompt must be: photorealistic, professional commercial photography style, high quality e-commerce. Describe lighting, composition, photographic style, mood.\n\nReturn ONLY the prompt in English. No explanations, no quotes, just the prompt. Max 120 words.";
+            $msg = "Write an English image prompt for Flux AI for this landing page section:\n\nProduct: {$producto}\nProduct description: {$descripcion}\nSection: {$ctx}\n\nThe prompt must describe: photorealistic commercial photography, lighting, composition, mood. If a reference photo of the product will be used, write the prompt as an EDIT INSTRUCTION (e.g. 'Place this product on...', 'Show this product...').\n\nReturn ONLY the prompt in English. No explanations, no quotes. Max 120 words.";
         }
 
         $result = $this->callClaudeText($apiKey, $msg);
