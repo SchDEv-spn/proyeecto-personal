@@ -587,14 +587,13 @@ class AdminLandingController extends Controller
 
         if (!$prompt) { echo json_encode(['ok' => false, 'error' => 'El prompt es requerido']); return; }
 
-        // Si la URL de referencia apunta al servidor local, convertir a base64
-        // para que Replicate pueda accederla (no puede resolver localhost)
+        // Convertir referencia local a base64 para que Replicate pueda accederla
         if ($referenciaUrl && str_starts_with($referenciaUrl, BASE_URL)) {
-            $relativePath = substr($referenciaUrl, strlen(BASE_URL));
-            $localFile    = __DIR__ . '/../../public' . $relativePath;
-            if (file_exists($localFile)) {
-                $finfo        = new finfo(FILEINFO_MIME_TYPE);
-                $mime         = $finfo->file($localFile);
+            $filename  = basename(parse_url($referenciaUrl, PHP_URL_PATH));
+            $localFile = $this->uploadDir() . $filename;
+            if ($filename && file_exists($localFile)) {
+                $finfo         = new finfo(FILEINFO_MIME_TYPE);
+                $mime          = $finfo->file($localFile);
                 $referenciaUrl = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($localFile));
             } else {
                 $referenciaUrl = '';
