@@ -2919,20 +2919,55 @@
 
     // ── Extrae título y texto del campo de la sección activa ────────────────
     function getSectionContent(section) {
-      const fieldMap = {
-        'hero':    { titulo: 'hero_title',    texto: 'hero_subtitle' },
-        'porque':  { titulo: 'porque_title',  texto: 'porque_text'  },
-        'caract1': { titulo: 'caract1_title', texto: 'caract1_text' },
-        'caract2': { titulo: 'caract2_title', texto: 'caract2_text' },
-        'caract3': { titulo: 'caract3_title', texto: 'caract3_text' },
-        'caract4': { titulo: 'caract4_title', texto: 'caract4_text' },
+      const v = n => document.querySelector(`[name="${n}"]`)?.value?.trim() || '';
+
+      // Secciones con título + texto propios
+      const simple = {
+        'hero':    { titulo: v('hero_title'),    texto: v('hero_subtitle') },
+        'porque':  { titulo: v('porque_title'),  texto: v('porque_text')  },
+        'caract1': { titulo: v('caract1_title'), texto: v('caract1_text') },
+        'caract2': { titulo: v('caract2_title'), texto: v('caract2_text') },
+        'caract3': { titulo: v('caract3_title'), texto: v('caract3_text') },
+        'caract4': { titulo: v('caract4_title'), texto: v('caract4_text') },
       };
-      const f = fieldMap[section];
-      if (!f) return { titulo: '', texto: '' };
-      return {
-        titulo: document.querySelector(`[name="${f.titulo}"]`)?.value?.trim() || '',
-        texto:  document.querySelector(`[name="${f.texto}"]`)?.value?.trim()  || '',
+      if (simple[section]) return simple[section];
+
+      // Galería: producto + hint de posición
+      const galleryHints = {
+        'gallery_1': 'Main product shot — full product, professional studio lighting, clean background',
+        'gallery_2': 'Angle or detail shot — different perspective showing design quality',
+        'gallery_3': 'Lifestyle — product being used in real-life context',
+        'gallery_4': 'Packaging — product with its original box, case or accessories',
       };
+      if (galleryHints[section]) {
+        return { titulo: v('hero_title'), texto: galleryHints[section] };
+      }
+
+      // Testimonios: nombre, ciudad y texto del cliente
+      const testNum = { 'test1_banner': '1', 'test2_banner': '2', 'test3_banner': '3' }[section];
+      if (testNum) {
+        const name = v(`test${testNum}_name`);
+        const city = v(`test${testNum}_city`);
+        const text = v(`test${testNum}_text`);
+        return {
+          titulo: name ? `Customer testimonial — ${name}${city ? ', ' + city : ''}` : 'Customer testimonial',
+          texto:  text || '',
+        };
+      }
+
+      // Comparativa: label de columna + filas
+      if (section === 'comparison_without') {
+        const label = v('comparison_label_without') || 'Without the product';
+        const rows  = [1,2,3].map(i => v(`comparison_${i}_without`)).filter(Boolean).join('. ');
+        return { titulo: label, texto: rows };
+      }
+      if (section === 'comparison_with') {
+        const label = v('comparison_label_with') || 'With the product';
+        const rows  = [1,2,3].map(i => v(`comparison_${i}_with`)).filter(Boolean).join('. ');
+        return { titulo: label, texto: rows };
+      }
+
+      return { titulo: '', texto: '' };
     }
 
     // ── Sugerir prompt con Claude ────────────────────────────────────────────
