@@ -540,6 +540,10 @@ class AdminLandingController extends Controller
         $ctxMap = [
             'hero'               => 'hero image of the product, professional studio photography, clean elegant background',
             'benefits'           => 'lifestyle photo showing the product benefit in use, warm natural light',
+            'benefit_1'          => 'image illustrating this product benefit, clean lifestyle photo',
+            'benefit_2'          => 'image illustrating this product benefit, clean lifestyle photo',
+            'benefit_3'          => 'image illustrating this product benefit, clean lifestyle photo',
+            'benefit_4'          => 'image illustrating this product benefit, clean lifestyle photo',
             'gallery_1'          => 'detailed product shot showing quality and finish, studio lighting',
             'gallery_2'          => 'product from a different angle, showing unique design details',
             'gallery_3'          => 'product in real-life use context, lifestyle photography',
@@ -607,6 +611,8 @@ class AdminLandingController extends Controller
         $aspectos = [
             'hero'               => '2:3',
             'benefits'           => '3:2',
+            'benefit_1'          => '1:1',  'benefit_2' => '1:1',
+            'benefit_3'          => '1:1',  'benefit_4' => '1:1',
             'gallery_1'          => '1:1',  'gallery_2' => '1:1',
             'gallery_3'          => '1:1',  'gallery_4' => '1:1',
             'caract1'            => '1:1',  'caract2'   => '1:1',
@@ -619,6 +625,8 @@ class AdminLandingController extends Controller
         $maxDims = [
             'hero'               => [800, 1200],
             'benefits'           => [900,  600],
+            'benefit_1'          => [600,  600],  'benefit_2' => [600, 600],
+            'benefit_3'          => [600,  600],  'benefit_4' => [600, 600],
             'gallery_1'          => [800,  800],  'gallery_2' => [800, 800],
             'gallery_3'          => [800,  800],  'gallery_4' => [800, 800],
             'caract1'            => [600,  600],  'caract2'   => [600, 600],

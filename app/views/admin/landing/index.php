@@ -2764,6 +2764,10 @@
     const sectionMap = {
       'hero_media_file':             'hero',
       'benefits_media_file':         'benefits',
+      'benefit_1_img_file':          'benefit_1',
+      'benefit_2_img_file':          'benefit_2',
+      'benefit_3_img_file':          'benefit_3',
+      'benefit_4_img_file':          'benefit_4',
       'gallery_1_file':              'gallery_1',
       'gallery_2_file':              'gallery_2',
       'gallery_3_file':              'gallery_3',
@@ -2783,6 +2787,10 @@
     const actualMap = {
       'hero':               'hero_media_path_actual',
       'benefits':           'benefits_media_path_actual',
+      'benefit_1':          'benefit_1_img_actual',
+      'benefit_2':          'benefit_2_img_actual',
+      'benefit_3':          'benefit_3_img_actual',
+      'benefit_4':          'benefit_4_img_actual',
       'gallery_1':          'gallery_1_path_actual',
       'gallery_2':          'gallery_2_path_actual',
       'gallery_3':          'gallery_3_path_actual',
@@ -2800,6 +2808,8 @@
     };
     const sectionLabels = {
       'hero': 'Hero', 'benefits': 'Beneficios',
+      'benefit_1': 'Beneficio 1', 'benefit_2': 'Beneficio 2',
+      'benefit_3': 'Beneficio 3', 'benefit_4': 'Beneficio 4',
       'gallery_1': 'Galería 1', 'gallery_2': 'Galería 2',
       'gallery_3': 'Galería 3', 'gallery_4': 'Galería 4',
       'caract1': 'Característica 1', 'caract2': 'Característica 2',
@@ -2931,6 +2941,12 @@
         'caract4': { titulo: v('caract4_title'), texto: v('caract4_text') },
       };
       if (simple[section]) return simple[section];
+
+      // Benefits: texto del beneficio como contexto
+      const benefitNum = { 'benefit_1':'1','benefit_2':'2','benefit_3':'3','benefit_4':'4' }[section];
+      if (benefitNum) {
+        return { titulo: v('hero_title'), texto: v(`benefit_${benefitNum}`) };
+      }
 
       // Galería: producto + hint de posición
       const galleryHints = {
@@ -3157,8 +3173,8 @@
                          || currentFileInput?.closest('form')?.querySelector(`#${currentSection.replace('_','-')}-preview`)
                          || null;
 
-      // Find the media-preview in the same section-block
-      const sectionBlock = currentFileInput?.closest('.section-block, .mini-card, .gallery-card');
+      // Find the media-preview in the same card/block (benefit-card first to evitar coger el primero de la sección)
+      const sectionBlock = currentFileInput?.closest('.benefit-card, .mini-card, .gallery-card, .section-block');
       const mediaPreview = sectionBlock?.querySelector('.media-preview');
       if (mediaPreview) {
         mediaPreview.innerHTML = `<img src="${lastGeneratedUrl}" alt="Imagen IA" style="max-width:100%;border-radius:6px;">`;
