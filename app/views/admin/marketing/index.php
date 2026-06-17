@@ -554,42 +554,42 @@ $showSearch      = false;
 
             // Cargar imagen (puede ser la generada por Replicate o la original)
             const imgSrc = ad.imageUrl || fallbackSrc;
-            loadImage(imgSrc).then(img => {
+            function paintCanvas(img) {
                 const wrap = card.querySelector('.mkt-ad-card__canvas-wrap');
                 wrap.innerHTML = '';
-
                 const canvas = document.createElement('canvas');
                 canvas.width = canvas.height = 1080;
                 drawAd(canvas, img, ad, precio);
                 wrap.appendChild(canvas);
-
                 const dlBtn = card.querySelector('.btn-download');
                 dlBtn.disabled = false;
                 dlBtn.addEventListener('click', () => {
                     const a = document.createElement('a');
                     a.download = `anuncio-${ad.angulo || ad.tema}-${Date.now()}.png`;
-                    a.href = canvas.toDataURL('image/png');
+                    try {
+                        a.href = canvas.toDataURL('image/png');
+                    } catch (e) {
+                        alert('No se puede descargar: la imagen es cross-origin sin CORS. Contacta al soporte.');
+                        return;
+                    }
                     a.click();
                 });
-            }).catch(() => {
-                // Si falla la imagen IA, usar original como fallback
-                loadImage(fallbackSrc).then(img => {
-                    const wrap = card.querySelector('.mkt-ad-card__canvas-wrap');
-                    wrap.innerHTML = '';
-                    const canvas = document.createElement('canvas');
-                    canvas.width = canvas.height = 1080;
-                    drawAd(canvas, img, ad, precio);
-                    wrap.appendChild(canvas);
-                    const dlBtn = card.querySelector('.btn-download');
-                    dlBtn.disabled = false;
-                    dlBtn.addEventListener('click', () => {
-                        const a = document.createElement('a');
-                        a.download = `anuncio-${ad.angulo || ad.tema}-${Date.now()}.png`;
-                        a.href = canvas.toDataURL('image/png');
-                        a.click();
-                    });
+            }
+
+            loadImage(imgSrc)
+                .then(paintCanvas)
+                .catch(err1 => {
+                    // Primer fallback: URL local de la foto subida
+                    loadImage(fallbackSrc)
+                        .then(paintCanvas)
+                        .catch(err2 => {
+                            // Mostrar error en la card
+                            const wrap = card.querySelector('.mkt-ad-card__canvas-wrap');
+                            wrap.innerHTML = `<div style="padding:20px;font-size:12px;color:#dc2626;text-align:center;">
+                                Error cargando imagen.<br>${err1.message}<br>${err2.message}
+                            </div>`;
+                        });
                 });
-            });
         }
 
         resultsEl.style.display = 'block';
@@ -599,8 +599,13 @@ $showSearch      = false;
     function loadImage(src) {
         return new Promise((resolve, reject) => {
             const img = new Image();
+            // Imágenes cross-origin (Replicate CDN) necesitan crossOrigin para canvas
+            // Imágenes same-origin (uploads propios) NO necesitan crossOrigin
+            const isCrossOrigin = src.startsWith('http') &&
+                !src.startsWith(window.location.origin);
+            if (isCrossOrigin) img.crossOrigin = 'anonymous';
             img.onload  = () => resolve(img);
-            img.onerror = () => reject(new Error('No se pudo cargar: ' + src));
+            img.onerror = () => reject(new Error('img-error: ' + src.slice(0, 80)));
             img.src = src;
         });
     }

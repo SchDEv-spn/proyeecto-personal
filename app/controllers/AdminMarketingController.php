@@ -105,23 +105,20 @@ class AdminMarketingController extends Controller
 
             $generatedImages = $this->callReplicateMulti($replicateKey, $imageData, $stylePrompts, $nombre);
 
-            // Descargar y guardar cada imagen generada localmente
+            // Devolver URL pública de Replicate CDN directamente (tiene CORS habilitado)
             foreach ($ads as $i => $ad) {
-                $tema = $ad['tema'] ?? 'oscuro';
+                $tema      = $ad['tema'] ?? 'oscuro';
                 $remoteUrl = $generatedImages[$tema] ?? null;
-                if ($remoteUrl && !isset($remoteUrl['error'])) {
-                    $saved = $this->downloadImage($remoteUrl, 'gen_' . $tema);
-                    if ($saved) {
-                        $ads[$i]['imageUrl'] = BASE_URL . '/public/uploads/marketing/' . $saved;
-                    }
+                if ($remoteUrl && is_string($remoteUrl) && str_starts_with($remoteUrl, 'http')) {
+                    $ads[$i]['imageUrl'] = $remoteUrl; // URL de Replicate CDN
                 }
             }
         }
 
-        // Si algún anuncio no tiene imagen generada, usa la original
+        // Si algún anuncio no tiene imagen generada, usa la original subida
         foreach ($ads as $i => $ad) {
             if (empty($ad['imageUrl'])) {
-                $ads[$i]['imageUrl'] = $imageUrl;
+                $ads[$i]['imageUrl'] = $imageUrl; // URL local de la foto subida
             }
         }
 
