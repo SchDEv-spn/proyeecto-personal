@@ -1526,7 +1526,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <p class="order-modal-product-bar__name" id="orderModalProductName">
                             <?= htmlspecialchars($producto['nombre'] ?? '') ?>
                         </p>
-                        <p class="order-modal-product-bar__price">
+                        <p class="order-modal-product-bar__price" id="modalBarPrice">
                             $<?= number_format($precio_venta, 0, ',', '.') ?>
                         </p>
                     </div>
@@ -2001,12 +2001,33 @@ $colorBorder     = $cfg['color_border']     ?? null;
             }
 
             function updateFloatingTotal() {
-                if (!floatingAmt) return;
                 setTimeout(() => {
                     const summaryTotal = document.getElementById('summaryTotal');
                     const pricePreview = document.getElementById('pricePreviewAmt');
                     const src = summaryTotal?.textContent?.trim() || pricePreview?.textContent?.trim() || '';
-                    if (src) floatingAmt.textContent = src;
+                    if (!src) return;
+
+                    if (floatingAmt) floatingAmt.textContent = src;
+
+                    // Actualizar precio en la barra del producto (header del modal)
+                    const barPrice = document.getElementById('modalBarPrice');
+                    if (barPrice) barPrice.textContent = src;
+
+                    // Actualizar texto del botón de confirmar (preserva el ícono SVG)
+                    const submitText = document.getElementById('btnSubmitText');
+                    if (submitText) {
+                        // El span contiene un SVG + texto — reemplazamos solo el texto final
+                        const svgEl = submitText.querySelector('svg');
+                        if (svgEl) {
+                            // Remover nodos de texto y mantener el SVG
+                            Array.from(submitText.childNodes).forEach(n => {
+                                if (n.nodeType === Node.TEXT_NODE) n.remove();
+                            });
+                            submitText.appendChild(document.createTextNode(' Confirmar mi pedido — pago ' + src + ' al recibirlo'));
+                        } else {
+                            submitText.textContent = '✓ Confirmar mi pedido — pago ' + src + ' al recibirlo';
+                        }
+                    }
                 }, 0);
             }
 
@@ -2091,6 +2112,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     if (qty >= 3) total += (qty - 2) * unit * (1 - d3 / 100);
                 }
                 amtEl.textContent = '$' + Math.round(total).toLocaleString('es-CO');
+                // Notificar para que updateFloatingTotal() sincronice barra y botón submit
+                document.dispatchEvent(new Event('landing:recalc'));
             }
 
             function initColorRow(row) {
