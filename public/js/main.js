@@ -270,7 +270,7 @@ function initAccordion() {
 
 
 /* ══════════════════════════════════════════════════════════════
-   GALERÍA — swap + estado activo + zoom lightbox + swipe
+   GALERÍA — swap + estado activo + swipe
    ══════════════════════════════════════════════════════════════ */
 function initGallery() {
     const mainFigure = document.querySelector('.product-gallery__main');
@@ -279,7 +279,6 @@ function initGallery() {
 
     if (!mainImg || !thumbs.length) return;
 
-    // Lista completa de srcs: [imagen principal, ...miniaturas]
     let allSrcs = [mainImg.src, ...thumbs.map(t => t.dataset.src || t.getAttribute('data-src') || '')];
     let currentIdx = 0;
 
@@ -290,18 +289,15 @@ function initGallery() {
             t.classList.toggle('active',    on);
             t.classList.toggle('is-active', on);
             const ti = t.querySelector('img');
-            if (ti) ti.style.opacity = on ? '1' : '0.7';
+            if (ti) ti.style.opacity = on ? '1' : '0.65';
         });
     }
 
     function navigateTo(idx) {
         if (idx < 0 || idx >= allSrcs.length || idx === currentIdx) return;
-        mainImg.style.opacity = '0.5';
-        setTimeout(() => {
-            mainImg.src = allSrcs[idx];
-            mainImg.style.opacity = '1';
-        }, 150);
+        mainImg.src = allSrcs[idx];
         setActive(idx);
+        stopThumbPulse();
     }
 
     // Permite que código externo (pills de color) reinicie las fuentes tras swap de DOM
@@ -314,6 +310,15 @@ function initGallery() {
     // Estado inicial: primera miniatura resaltada visualmente
     setActive(1);
 
+    // ── Pulse en miniaturas para invitar al usuario ────────────
+    function stopThumbPulse() {
+        thumbs.forEach(t => t.classList.remove('thumb-pulse'));
+    }
+    // Arrancar el pulse después de 1.2 s y detenerlo al primer clic
+    setTimeout(() => {
+        thumbs.forEach(t => t.classList.add('thumb-pulse'));
+    }, 1200);
+
     // Click en miniatura
     thumbs.forEach((thumb, i) => {
         thumb.addEventListener('click', () => navigateTo(i + 1));
@@ -323,38 +328,21 @@ function initGallery() {
     let swipeX = 0, swipeY = 0, didSwipe = false;
 
     mainFigure.addEventListener('touchstart', e => {
-        if (mainFigure.classList.contains('zoomed')) return;
         swipeX   = e.touches[0].clientX;
         swipeY   = e.touches[0].clientY;
         didSwipe = false;
     }, { passive: true });
 
     mainFigure.addEventListener('touchend', e => {
-        if (mainFigure.classList.contains('zoomed')) return;
         const dx = e.changedTouches[0].clientX - swipeX;
         const dy = e.changedTouches[0].clientY - swipeY;
         if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
         didSwipe = true;
+        stopThumbPulse();
         navigateTo(dx < 0
-            ? Math.min(currentIdx + 1, allSrcs.length - 1)  // izquierda → siguiente
-            : Math.max(currentIdx - 1, 0));                  // derecha   → anterior
+            ? Math.min(currentIdx + 1, allSrcs.length - 1)
+            : Math.max(currentIdx - 1, 0));
     }, { passive: true });
-
-    // ── Zoom lightbox — solo si no fue un swipe ────────────────
-    mainFigure.addEventListener('click', e => {
-        if (e.target.closest('.product-gallery__thumb')) return;
-        if (didSwipe) { didSwipe = false; return; }
-        mainFigure.classList.toggle('zoomed');
-        document.body.style.overflow = mainFigure.classList.contains('zoomed') ? 'hidden' : '';
-    });
-
-    // Cerrar zoom con Escape
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && mainFigure.classList.contains('zoomed')) {
-            mainFigure.classList.remove('zoomed');
-            document.body.style.overflow = '';
-        }
-    });
 
     // Marcar imágenes loaded (skeleton CSS)
     document.querySelectorAll('[data-product-gallery] img').forEach(img => {
