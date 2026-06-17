@@ -161,7 +161,7 @@ class AdminMarketingController extends Controller
             $imagePath       = trim($_POST['image_path']      ?? '');
 
             $tipoDesc = [
-                'hero'      => 'Hero shot — el producto como protagonista absoluto (80% del frame) sobre fondo de estudio dramático, sin personas, spotlight lateral, gotas de agua, reflejo perfecto, macro extremo de texturas',
+                'hero'      => 'Hero shot — el producto como protagonista absoluto (80% del frame) sobre fondo de estudio dramático, sin personas. ANALIZA EL COLOR DEL PRODUCTO: si es oscuro/negro usa fondo blanco/perla con rim lights que dibujen los bordes (técnica contraluz doble); si es claro/blanco/dorado usa fondo negro velvet con spotlight dramático. Siempre: gotas de agua, reflejo perfecto, macro extremo de texturas, 8K',
                 'lifestyle' => 'Lifestyle PLANO MEDIO — persona real de cintura a cabeza usando/llevando el producto en contexto natural. El producto ocupa máximo 15-20% del frame, correctamente proporcionado a escala real. 50mm lens, f/2.8, luz natural, persona en foco con el entorno desfocado suavemente',
                 'flatlay'   => 'Macro de detalles — primer plano extremo del producto mostrando materiales, texturas, costuras, acabados, cristales, hardware. El producto ocupa 90% del frame. Luz de estudio suave y pareja. Ultra-sharp 8K macro photography',
             ][$tipo] ?? 'Hero shot';
@@ -308,7 +308,10 @@ Reglas CRÍTICAS para los prompts:
 - Describe ÚNICAMENTE el entorno, iluminación, composición y contexto — NUNCA menciones cambios al producto.
 - Sé muy específico al tipo de producto que ves en la foto (bolsa, reloj, ropa, etc.).
 - Para "lifestyle" (PLANO MEDIO): muestra la persona desde la cintura hasta la cabeza usando/llevando el producto en un entorno natural. El producto ocupa máximo 15-20% del frame — NO es el elemento dominante. Instrucciones obligatorias: "medium shot showing person from waist to head, product correctly proportioned at true real-world scale, NOT enlarged, product is a natural accessory in the scene" + cámara: "50mm lens, f/2.8, natural light, photorealistic, hyperrealistic skin and fabric textures, shot on Sony A7R IV".
-- Para "hero": producto solo sobre fondo de estudio dramático. "extreme close-up hero shot, product fills 80% of frame, single dramatic spotlight, water droplets, perfect mirror reflection, ultra-sharp macro detail on textures and surfaces, 8K commercial product photography".
+- Para "hero": producto solo sobre fondo de estudio dramático. Analiza el COLOR DOMINANTE del producto en la foto y aplica la técnica correcta:
+  * Si el producto es OSCURO/NEGRO/GRIS OSCURO: usa fondo blanco/gris perla o técnica rim light — "product on pearl white curved seamless background, two rim lights from 45° behind creating bright glowing edge highlights that separate the product from background, soft front fill light, specular surface reflections, product mirror reflection on polished white acrylic surface below"
+  * Si el producto es CLARO/BLANCO/DORADO/PLATEADO: usa fondo negro/oscuro — "pitch-black velvet background, single dramatic overhead spotlight, hard shadows, perfect mirror reflection on dark surface below"
+  * En todos los casos: "extreme close-up hero shot, product fills 80% of frame, water droplets catching light, ultra-sharp macro detail on every texture and surface, 8K commercial product photography"
 - Para "flatlay" (DETALLES): macro extremo del producto mostrando materiales, texturas y acabados. "extreme macro detail shot, product fills 90% of frame, ultra-sharp focus revealing material textures, surface finishes, stitching/hardware/crystal details, soft even studio light, 8K macro product photography".
 - Termina SIEMPRE con: "Photorealistic. Do not alter the product in any way. No text. No watermarks."
 
