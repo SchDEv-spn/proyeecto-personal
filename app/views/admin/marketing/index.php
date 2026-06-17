@@ -482,6 +482,9 @@ $showSearch      = false;
         resultsEl.style.display = 'none';
         cardsEl.innerHTML = '';
 
+        // Guardar blob URL antes del fetch (la imagen local del usuario)
+        const localBlobSrc = previewImg.src;
+
         const fd = new FormData();
         fd.append('foto',     fotoInput.files[0]);
         fd.append('nombre',   nombre);
@@ -499,7 +502,7 @@ $showSearch      = false;
                 return;
             }
             if (!data.ok) return showError(data.error || 'Error al generar');
-            await renderResults(data);
+            await renderResults(data, localBlobSrc);
         } catch (err) {
             showError('Error de red: ' + (err?.message || 'intenta de nuevo'));
         } finally {
@@ -514,11 +517,11 @@ $showSearch      = false;
     }
 
     /* ── Render cards ───────────────────────────────────────────── */
-    async function renderResults({ imageUrl, ads, precio, hasReplicate }) {
+    async function renderResults({ imageUrl, ads, precio, hasReplicate }, localBlobSrc) {
         cardsEl.innerHTML = '';
 
-        // Cargamos todas las imágenes (cada ad puede tener su propia URL de Replicate)
-        const fallbackSrc = imageUrl || previewImg.src;
+        // Fallback: primero intenta URL del servidor, luego el blob local
+        const fallbackSrc = imageUrl || localBlobSrc;
 
         const angleConfig = {
             dolor:         { label: 'Dolor',         icon: 'fa-heart-crack',  cls: 'angle-badge--dolor' },
@@ -596,9 +599,8 @@ $showSearch      = false;
     function loadImage(src) {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.crossOrigin = 'anonymous';
             img.onload  = () => resolve(img);
-            img.onerror = reject;
+            img.onerror = () => reject(new Error('No se pudo cargar: ' + src));
             img.src = src;
         });
     }
