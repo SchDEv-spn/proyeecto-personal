@@ -4,102 +4,33 @@
     <meta charset="UTF-8">
     <title>Marketing IA — Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="<?= BASE_URL ?>/public/manifest.php">
+    <meta name="theme-color" content="#1A3D2E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        /* ── Marketing IA page ───────────────────────────────────── */
-        .mkt-wrap {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 0 0 60px;
-        }
+        /* ── Marketing IA ─────────────────────────────────────────── */
+        .mkt-wrap { max-width: 980px; margin: 0 auto; }
 
-        .mkt-header {
-            margin-bottom: 28px;
-        }
-        .mkt-header h1 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--text-primary, #f0e8d6);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 0 0 4px;
-        }
-        .mkt-header h1 i { color: var(--gold, #c8a85b); font-size: 1.3rem; }
-        .mkt-header p {
-            color: var(--text-secondary, #a89070);
-            font-size: 14px;
-            margin: 0;
-        }
-
-        /* ── Form card ────────────────────────────────────────────── */
-        .mkt-form-card {
-            background: var(--surface, #1e1a14);
-            border: 1px solid var(--border, rgba(200,168,91,0.2));
-            border-radius: 16px;
-            padding: 28px;
-            margin-bottom: 32px;
-        }
-
-        .mkt-form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        @media (max-width: 620px) {
-            .mkt-form-grid { grid-template-columns: 1fr; }
-        }
-
-        .mkt-field label {
-            display: block;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-secondary, #a89070);
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            margin-bottom: 6px;
-        }
-        .mkt-field input,
-        .mkt-field textarea {
-            width: 100%;
-            background: var(--bg-input, rgba(255,255,255,0.05));
-            border: 1.5px solid var(--border, rgba(200,168,91,0.2));
-            border-radius: 10px;
-            color: var(--text-primary, #f0e8d6);
-            font-size: 15px;
-            padding: 11px 14px;
-            outline: none;
-            font-family: inherit;
-            transition: border-color 0.18s;
-            box-sizing: border-box;
-        }
-        .mkt-field input:focus,
-        .mkt-field textarea:focus {
-            border-color: var(--gold, #c8a85b);
-        }
-        .mkt-field textarea { resize: vertical; min-height: 72px; }
-
-        /* ── Upload zona ──────────────────────────────────────────── */
+        /* ── Zona de upload ───────────────────────────────────────── */
         .mkt-upload-zone {
-            border: 2px dashed var(--border, rgba(200,168,91,0.25));
-            border-radius: 14px;
-            padding: 32px 20px;
+            border: 2px dashed var(--border-strong);
+            border-radius: var(--r-xl);
+            padding: 36px 20px;
             text-align: center;
             cursor: pointer;
-            transition: border-color 0.2s, background 0.2s;
-            background: var(--bg-input, rgba(255,255,255,0.03));
-            margin-bottom: 16px;
+            transition: border-color var(--t), background var(--t);
+            background: var(--surface-2);
+            margin-bottom: 20px;
             position: relative;
         }
         .mkt-upload-zone:hover,
         .mkt-upload-zone.drag-over {
-            border-color: var(--gold, #c8a85b);
-            background: rgba(200,168,91,0.06);
+            border-color: var(--green-dark);
+            background: var(--green-soft);
         }
         .mkt-upload-zone input[type="file"] {
             position: absolute;
@@ -110,40 +41,37 @@
             height: 100%;
         }
         .mkt-upload-zone__icon {
-            font-size: 2.4rem;
-            color: var(--gold, #c8a85b);
-            opacity: 0.7;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            color: var(--green-dark);
+            opacity: 0.5;
+            margin-bottom: 8px;
         }
         .mkt-upload-zone__label {
             font-size: 15px;
             font-weight: 600;
-            color: var(--text-primary, #f0e8d6);
-            margin-bottom: 4px;
+            color: var(--tx);
+            margin-bottom: 3px;
         }
-        .mkt-upload-zone__hint {
-            font-size: 12px;
-            color: var(--text-secondary, #a89070);
-        }
+        .mkt-upload-zone__hint { font-size: 12px; color: var(--tx-muted); }
+
         .mkt-upload-preview {
             display: none;
             position: relative;
-            border-radius: 12px;
+            border-radius: var(--r-lg);
             overflow: hidden;
-            max-height: 200px;
+            margin-bottom: 20px;
         }
         .mkt-upload-preview img {
             width: 100%;
             height: 200px;
             object-fit: cover;
             display: block;
-            border-radius: 12px;
         }
         .mkt-upload-preview__remove {
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.55);
             border: none;
             border-radius: 50%;
             width: 30px;
@@ -153,8 +81,44 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 13px;
         }
+
+        /* ── Form fields ──────────────────────────────────────────── */
+        .mkt-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        @media (max-width: 560px) { .mkt-form-grid { grid-template-columns: 1fr; } }
+
+        .mkt-field label {
+            display: block;
+            font-size: var(--text-xs);
+            font-weight: 700;
+            color: var(--tx-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 5px;
+        }
+        .mkt-field input,
+        .mkt-field textarea {
+            width: 100%;
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            color: var(--tx);
+            font-size: var(--text-base);
+            padding: 10px 13px;
+            outline: none;
+            font-family: var(--font);
+            transition: border-color var(--t);
+            box-sizing: border-box;
+        }
+        .mkt-field input:focus,
+        .mkt-field textarea:focus { border-color: var(--green-dark); }
+        .mkt-field textarea { resize: vertical; min-height: 68px; }
 
         /* ── Botón generar ────────────────────────────────────────── */
         .btn-generar {
@@ -163,289 +127,332 @@
             justify-content: center;
             gap: 8px;
             width: 100%;
-            padding: 14px 24px;
-            background: linear-gradient(135deg, var(--gold, #c8a85b), #e2b96a);
-            color: #1a1208;
-            font-size: 15px;
-            font-weight: 800;
+            padding: 13px 24px;
+            background: var(--green-dark);
+            color: #fff;
+            font-size: var(--text-base);
+            font-weight: 700;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--r-md);
             cursor: pointer;
-            letter-spacing: 0.03em;
-            transition: opacity 0.18s, transform 0.1s;
-            margin-top: 4px;
+            transition: background var(--t), transform 0.1s;
+            margin-top: 6px;
         }
-        .btn-generar:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+        .btn-generar:hover:not(:disabled) { background: var(--green-dark-h); transform: translateY(-1px); }
         .btn-generar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-generar .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(0,0,0,0.25);
-            border-top-color: #1a1208;
+            width: 15px; height: 15px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
             border-radius: 50%;
-            animation: spin 0.7s linear infinite;
+            animation: mkt-spin 0.7s linear infinite;
             display: none;
+            flex-shrink: 0;
         }
         .btn-generar.loading .spinner { display: block; }
         .btn-generar.loading .btn-icon { display: none; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes mkt-spin { to { transform: rotate(360deg); } }
 
-        /* ── Error banner ─────────────────────────────────────────── */
+        /* ── Error ────────────────────────────────────────────────── */
         .mkt-error {
-            background: rgba(239,68,68,0.12);
-            border: 1px solid rgba(239,68,68,0.35);
-            border-radius: 10px;
-            padding: 12px 16px;
-            color: #fca5a5;
-            font-size: 14px;
-            margin-top: 12px;
+            background: var(--soft-red);
+            border: 1px solid #fca5a5;
+            border-radius: var(--r-md);
+            padding: 10px 14px;
+            color: var(--red);
+            font-size: var(--text-sm);
+            margin-top: 10px;
             display: none;
         }
+
+        /* ── Tips ─────────────────────────────────────────────────── */
+        .mkt-tips {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .mkt-tip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--soft-green);
+            border-radius: var(--r-full);
+            padding: 5px 12px;
+            font-size: var(--text-xs);
+            color: var(--green);
+            font-weight: 600;
+        }
+        .mkt-tip i { font-size: 10px; }
 
         /* ── Resultados ───────────────────────────────────────────── */
-        .mkt-results {
-            display: none;
+        .mkt-results { display: none; }
+
+        .mkt-results-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
         }
-        .mkt-results__title {
-            font-size: 1.1rem;
+        .mkt-results-head h3 {
+            font-size: var(--text-lg);
             font-weight: 700;
-            color: var(--text-primary, #f0e8d6);
-            margin: 0 0 16px;
+            color: var(--tx);
+            margin: 0;
         }
+        .mkt-results-head p {
+            font-size: var(--text-sm);
+            color: var(--tx-muted);
+            margin: 2px 0 0;
+        }
+
         .mkt-cards {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            gap: 18px;
         }
         @media (max-width: 780px) {
-            .mkt-cards { grid-template-columns: 1fr; max-width: 380px; }
+            .mkt-cards {
+                grid-template-columns: 1fr;
+                max-width: 360px;
+            }
         }
 
         /* ── Ad card ──────────────────────────────────────────────── */
         .mkt-ad-card {
-            border-radius: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
             overflow: hidden;
-            border: 1px solid var(--border, rgba(200,168,91,0.2));
-            background: var(--surface, #1e1a14);
+            box-shadow: var(--shadow-xs);
+            transition: box-shadow var(--t);
         }
-        .mkt-ad-card__canvas-wrap {
-            position: relative;
-            aspect-ratio: 1 / 1;
-        }
-        .mkt-ad-card canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+        .mkt-ad-card:hover { box-shadow: var(--shadow-md); }
+
+        .mkt-ad-card__canvas-wrap { aspect-ratio: 1 / 1; }
+        .mkt-ad-card canvas { width: 100%; height: 100%; display: block; }
+
         .mkt-ad-card__footer {
             padding: 12px 14px;
+            border-top: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 8px;
         }
-        .mkt-ad-card__tema {
-            font-size: 11px;
+        .mkt-ad-card__meta { min-width: 0; }
+        .mkt-ad-card__angle {
+            font-size: var(--text-xs);
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: var(--text-secondary, #a89070);
+            color: var(--green-dark);
+            margin-bottom: 1px;
+        }
+        .mkt-ad-card__tema {
+            font-size: 11px;
+            color: var(--tx-dim);
         }
         .btn-download {
             display: inline-flex;
             align-items: center;
             gap: 5px;
             padding: 6px 14px;
-            border-radius: 8px;
-            background: var(--gold, #c8a85b);
-            color: #1a1208;
-            font-size: 12px;
+            border-radius: var(--r-md);
+            background: var(--green-dark);
+            color: #fff;
+            font-size: var(--text-xs);
             font-weight: 700;
             border: none;
             cursor: pointer;
-            transition: opacity 0.15s;
+            transition: background var(--t);
+            flex-shrink: 0;
         }
-        .btn-download:hover { opacity: 0.85; }
+        .btn-download:hover { background: var(--green-dark-h); }
 
-        /* ── No key notice ────────────────────────────────────────── */
+        /* ── No key ───────────────────────────────────────────────── */
         .mkt-no-key {
-            background: rgba(200,168,91,0.08);
-            border: 1px solid var(--gold-border, rgba(200,168,91,0.25));
-            border-radius: 12px;
-            padding: 20px;
+            background: var(--soft-orange);
+            border: 1px solid #fcd34d;
+            border-radius: var(--r-xl);
+            padding: 28px;
             text-align: center;
-            color: var(--text-secondary, #a89070);
-            font-size: 14px;
+            color: var(--orange);
         }
-        .mkt-no-key a {
-            color: var(--gold, #c8a85b);
-            font-weight: 600;
-        }
+        .mkt-no-key i { font-size: 1.8rem; margin-bottom: 10px; display: block; }
+        .mkt-no-key a { color: var(--green-dark); font-weight: 700; }
 
-        /* ── Tips row ─────────────────────────────────────────────── */
-        .mkt-tips {
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-        .mkt-tip {
-            background: rgba(200,168,91,0.07);
-            border: 1px solid var(--border, rgba(200,168,91,0.15));
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 12px;
-            color: var(--text-secondary, #a89070);
-            display: flex;
+        /* ── Ángulo badge ─────────────────────────────────────────── */
+        .angle-badge {
+            display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: var(--r-full);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
-        .mkt-tip i { color: var(--gold, #c8a85b); }
+        .angle-badge--dolor     { background: var(--soft-red);    color: var(--red); }
+        .angle-badge--urgencia  { background: var(--soft-orange);  color: var(--orange); }
+        .angle-badge--transformacion { background: var(--soft-purple); color: var(--purple); }
     </style>
 </head>
 <body>
 <?php
-$usuarioNombre   = $_SESSION['usuario_nombre'] ?? 'Admin';
-$usuarioEmail    = $_SESSION['usuario_email']  ?? '';
+$usuarioNombre       = $_SESSION['usuario_nombre'] ?? 'Admin';
+$usuarioEmail        = $_SESSION['usuario_email']  ?? '';
 $tiene_claude_key    = $tiene_claude_key    ?? false;
 $tiene_replicate_key = $tiene_replicate_key ?? false;
+
+// Variables para _header.php
+$pageTitle       = '✨ Marketing IA';
+$pageSubtitle    = 'Genera creativos de anuncio listos para publicar en segundos';
+$showRangeFilter = false;
+$showSearch      = false;
 ?>
 
 <div class="sidebar-overlay" aria-hidden="true"></div>
 <div class="app-shell">
 
-    <?php include __DIR__ . '/../partials/_sidebar.php'; ?>
+    <?php require __DIR__ . '/../partials/_sidebar.php'; ?>
 
-    <main class="main-content">
-        <div class="topbar">
-            <button class="topbar-menu-btn" aria-label="Menú">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="topbar-title">Marketing IA</div>
-            <div class="topbar-user">
-                <span><?= htmlspecialchars($usuarioNombre) ?></span>
-                <i class="fas fa-user-circle" style="color:var(--gold,#c8a85b)"></i>
-            </div>
-        </div>
+    <main class="material-main">
+        <?php require __DIR__ . '/../partials/_header.php'; ?>
 
-        <div class="content-area">
+        <section class="material-content">
             <div class="mkt-wrap">
-
-                <div class="mkt-header">
-                    <h1><i class="fas fa-bullhorn"></i> Generador de Anuncios IA</h1>
-                    <p>Sube la foto de tu producto, ingresa el precio y la IA genera 3 creativos listos para publicar.</p>
-                </div>
 
                 <?php if (!$tiene_claude_key): ?>
                 <div class="mkt-no-key">
-                    <i class="fas fa-key" style="font-size:1.5rem;color:var(--gold,#c8a85b);display:block;margin-bottom:8px"></i>
-                    Necesitas configurar tu <strong>API key de Claude</strong> para usar esta herramienta.<br>
-                    <a href="<?= BASE_URL ?>/AdminLanding/index">Ir al editor de Landing → Configuración IA</a>
+                    <i class="fas fa-key"></i>
+                    <strong>Necesitas la API key de Claude</strong><br>
+                    Configúrala en el editor de Landing para activar esta herramienta.<br><br>
+                    <a href="<?= BASE_URL ?>/AdminLanding/index">Ir al editor → Configuración IA</a>
                 </div>
+
                 <?php else: ?>
 
-                <!-- Formulario -->
-                <div class="mkt-form-card">
-                    <div id="mktUploadZone" class="mkt-upload-zone">
-                        <input type="file" id="mktFoto" accept="image/jpeg,image/png,image/webp">
-                        <div class="mkt-upload-zone__icon"><i class="fas fa-image"></i></div>
-                        <div class="mkt-upload-zone__label">Sube la foto del producto</div>
-                        <div class="mkt-upload-zone__hint">JPG, PNG o WebP — arrastra aquí o haz clic</div>
+                <!-- ═══════════════════════════════════════════
+                     FORMULARIO
+                ═══════════════════════════════════════════ -->
+                <div class="panel" style="padding:0;overflow:hidden;">
+                    <div class="panel__head" style="padding:18px 22px 14px;">
+                        <h4 style="display:flex;align-items:center;gap:8px;">
+                            <i class="fas fa-camera" style="color:var(--green-dark)"></i>
+                            Datos del producto
+                        </h4>
+                        <span class="chip">Paso 1</span>
                     </div>
-                    <div class="mkt-upload-preview" id="mktPreviewWrap">
-                        <img id="mktPreviewImg" src="" alt="preview">
-                        <button type="button" class="mkt-upload-preview__remove" id="mktRemoveFoto" title="Quitar foto">
-                            <i class="fas fa-times"></i>
+                    <div class="panel__body" style="padding:0 22px 22px;">
+
+                        <div id="mktUploadZone" class="mkt-upload-zone">
+                            <input type="file" id="mktFoto" accept="image/jpeg,image/png,image/webp">
+                            <div class="mkt-upload-zone__icon"><i class="fas fa-image"></i></div>
+                            <div class="mkt-upload-zone__label">Arrastra la foto aquí o haz clic</div>
+                            <div class="mkt-upload-zone__hint">JPG, PNG, WebP — usa foto con fondo limpio para mejor resultado</div>
+                        </div>
+
+                        <div class="mkt-upload-preview" id="mktPreviewWrap">
+                            <img id="mktPreviewImg" src="" alt="preview">
+                            <button type="button" class="mkt-upload-preview__remove" id="mktRemoveFoto">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="mkt-form-grid">
+                            <div class="mkt-field">
+                                <label>Nombre del producto</label>
+                                <input type="text" id="mktNombre" placeholder="Ej: Sombrero Fedora Negro" maxlength="80">
+                            </div>
+                            <div class="mkt-field">
+                                <label>Precio (COP)</label>
+                                <input type="text" id="mktPrecio" placeholder="Ej: 115.000" maxlength="20">
+                            </div>
+                        </div>
+
+                        <div class="mkt-field">
+                            <label>¿Quién lo usa y para qué? <span style="font-weight:400;opacity:.6">(opcional pero potente)</span></label>
+                            <textarea id="mktContexto" placeholder="Ej: Hombres entre 25-45 años que quieren verse elegantes. Envío gratis. Stock limitado a 20 unidades."></textarea>
+                        </div>
+
+                        <button type="button" class="btn-generar" id="btnGenerar">
+                            <span class="btn-icon">✨</span>
+                            <span class="spinner"></span>
+                            Generar 3 anuncios con IA
                         </button>
-                    </div>
 
-                    <div class="mkt-form-grid">
-                        <div class="mkt-field">
-                            <label>Nombre del producto</label>
-                            <input type="text" id="mktNombre" placeholder="Ej: Sombrero Fedora Negro" maxlength="80">
+                        <div class="mkt-error" id="mktError"></div>
+
+                        <div class="mkt-tips">
+                            <span class="mkt-tip"><i class="fas fa-brain"></i> IA ataca el dolor del cliente</span>
+                            <span class="mkt-tip"><i class="fas fa-download"></i> PNG 1080×1080 listo para redes</span>
+                            <span class="mkt-tip"><i class="fas fa-redo"></i> Genera N veces, toma el mejor</span>
                         </div>
-                        <div class="mkt-field">
-                            <label>Precio (COP)</label>
-                            <input type="text" id="mktPrecio" placeholder="Ej: 115.000" maxlength="20">
-                        </div>
-                    </div>
-
-                    <div class="mkt-field">
-                        <label>Contexto adicional <span style="opacity:.5;font-weight:400">(opcional)</span></label>
-                        <textarea id="mktContexto" placeholder="Ej: Para hombres elegantes. Envío gratis. Edición limitada."></textarea>
-                    </div>
-
-                    <button type="button" class="btn-generar" id="btnGenerar">
-                        <span class="btn-icon">✨</span>
-                        <span class="spinner"></span>
-                        Generar anuncios con IA
-                    </button>
-
-                    <div class="mkt-error" id="mktError"></div>
-
-                    <div class="mkt-tips">
-                        <div class="mkt-tip"><i class="fas fa-lightbulb"></i> Foto con fondo limpio = mejores resultados</div>
-                        <div class="mkt-tip"><i class="fas fa-download"></i> Descarga cada anuncio como PNG listo para subir</div>
-                        <div class="mkt-tip"><i class="fas fa-redo"></i> Puedes generar varias veces para variantes distintas</div>
                     </div>
                 </div>
 
-                <!-- Resultados -->
+                <!-- ═══════════════════════════════════════════
+                     RESULTADOS
+                ═══════════════════════════════════════════ -->
                 <div class="mkt-results" id="mktResults">
-                    <p class="mkt-results__title">✅ Anuncios generados — elige el que más te guste</p>
+                    <div class="mkt-results-head">
+                        <div>
+                            <h3>Tus anuncios listos</h3>
+                            <p>3 ángulos psicológicos distintos — descarga el que más conecte con tu cliente</p>
+                        </div>
+                    </div>
                     <div class="mkt-cards" id="mktCards"></div>
                 </div>
 
                 <?php endif; ?>
             </div>
-        </div><!-- /.content-area -->
+        </section>
     </main>
-</div><!-- /.app-shell -->
+</div>
 
 <script src="<?= BASE_URL ?>/public/js/admin-sidebar.js"></script>
 <script>
 (function () {
     const BASE = '<?= BASE_URL ?>';
 
-    const fotoInput    = document.getElementById('mktFoto');
-    const uploadZone   = document.getElementById('mktUploadZone');
-    const previewWrap  = document.getElementById('mktPreviewWrap');
-    const previewImg   = document.getElementById('mktPreviewImg');
-    const removeBtn    = document.getElementById('mktRemoveFoto');
-    const btnGenerar   = document.getElementById('btnGenerar');
-    const errorEl      = document.getElementById('mktError');
-    const resultsEl    = document.getElementById('mktResults');
-    const cardsEl      = document.getElementById('mktCards');
+    const fotoInput   = document.getElementById('mktFoto');
+    const uploadZone  = document.getElementById('mktUploadZone');
+    const previewWrap = document.getElementById('mktPreviewWrap');
+    const previewImg  = document.getElementById('mktPreviewImg');
+    const removeBtn   = document.getElementById('mktRemoveFoto');
+    const btnGenerar  = document.getElementById('btnGenerar');
+    const errorEl     = document.getElementById('mktError');
+    const resultsEl   = document.getElementById('mktResults');
+    const cardsEl     = document.getElementById('mktCards');
 
-    if (!btnGenerar) return; // no claude key
+    if (!btnGenerar) return;
 
-    // ── Upload preview ──────────────────────────────────────────
+    /* ── Upload preview ─────────────────────────────────────────── */
     function showPreview(file) {
-        const url = URL.createObjectURL(file);
-        previewImg.src = url;
+        previewImg.src = URL.createObjectURL(file);
         previewWrap.style.display = 'block';
         uploadZone.style.display  = 'none';
     }
     function clearFoto() {
-        fotoInput.value      = '';
-        previewImg.src       = '';
+        fotoInput.value = '';
+        previewImg.src  = '';
         previewWrap.style.display = 'none';
         uploadZone.style.display  = '';
     }
 
-    fotoInput.addEventListener('change', () => {
-        if (fotoInput.files[0]) showPreview(fotoInput.files[0]);
-    });
+    fotoInput.addEventListener('change', () => { if (fotoInput.files[0]) showPreview(fotoInput.files[0]); });
     removeBtn.addEventListener('click', clearFoto);
 
-    // Drag & drop
     uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
     uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
     uploadZone.addEventListener('drop', e => {
         e.preventDefault();
         uploadZone.classList.remove('drag-over');
         const file = e.dataTransfer?.files?.[0];
-        if (file && file.type.startsWith('image/')) {
+        if (file?.type.startsWith('image/')) {
             const dt = new DataTransfer();
             dt.items.add(file);
             fotoInput.files = dt.files;
@@ -453,17 +460,16 @@ $tiene_replicate_key = $tiene_replicate_key ?? false;
         }
     });
 
-    // ── Generar ────────────────────────────────────────────────
+    /* ── Generar ────────────────────────────────────────────────── */
     btnGenerar.addEventListener('click', async () => {
         const nombre   = document.getElementById('mktNombre').value.trim();
         const precio   = document.getElementById('mktPrecio').value.trim();
         const contexto = document.getElementById('mktContexto').value.trim();
 
         errorEl.style.display = 'none';
-
-        if (!nombre) { showError('Ingresa el nombre del producto'); return; }
-        if (!precio)  { showError('Ingresa el precio'); return; }
-        if (!fotoInput.files[0]) { showError('Sube una foto del producto'); return; }
+        if (!nombre)            return showError('Ingresa el nombre del producto');
+        if (!precio)            return showError('Ingresa el precio');
+        if (!fotoInput.files[0]) return showError('Sube una foto del producto');
 
         btnGenerar.disabled = true;
         btnGenerar.classList.add('loading');
@@ -479,11 +485,9 @@ $tiene_replicate_key = $tiene_replicate_key ?? false;
         try {
             const res  = await fetch(BASE + '/AdminMarketing/generarAnuncios', { method: 'POST', body: fd });
             const data = await res.json();
-
-            if (!data.ok) { showError(data.error || 'Error al generar'); return; }
-
+            if (!data.ok) return showError(data.error || 'Error al generar');
             await renderResults(data);
-        } catch (err) {
+        } catch {
             showError('Error de conexión. Intenta de nuevo.');
         } finally {
             btnGenerar.disabled = false;
@@ -492,47 +496,51 @@ $tiene_replicate_key = $tiene_replicate_key ?? false;
     });
 
     function showError(msg) {
-        errorEl.textContent    = msg;
-        errorEl.style.display  = 'block';
+        errorEl.textContent   = msg;
+        errorEl.style.display = 'block';
     }
 
-    // ── Canvas rendering ────────────────────────────────────────
-    async function renderResults({ imageUrl, ads, nombre, precio }) {
+    /* ── Render cards ───────────────────────────────────────────── */
+    async function renderResults({ imageUrl, ads, precio }) {
         cardsEl.innerHTML = '';
-
-        // Cargar imagen
         const img = await loadImage(imageUrl || previewImg.src);
 
-        const temaLabels = { oscuro: 'Estilo Oscuro', dorado: 'Estilo Dorado', vibrante: 'Estilo Vibrante' };
+        const angleConfig = {
+            dolor:         { label: 'Dolor',         icon: 'fa-heart-crack',  cls: 'angle-badge--dolor' },
+            urgencia:      { label: 'Urgencia',       icon: 'fa-fire',         cls: 'angle-badge--urgencia' },
+            transformacion:{ label: 'Transformación', icon: 'fa-star',         cls: 'angle-badge--transformacion' },
+        };
+        const temaLabels = { oscuro: 'Tema oscuro', dorado: 'Tema dorado', vibrante: 'Tema vibrante' };
 
         for (const ad of ads) {
+            const aC = angleConfig[ad.angulo] || { label: ad.angulo || '?', icon: 'fa-circle', cls: 'angle-badge--dolor' };
+
             const card = document.createElement('div');
             card.className = 'mkt-ad-card';
 
             const canvasWrap = document.createElement('div');
             canvasWrap.className = 'mkt-ad-card__canvas-wrap';
-
             const canvas = document.createElement('canvas');
-            canvas.width  = 1080;
-            canvas.height = 1080;
-
+            canvas.width = canvas.height = 1080;
             drawAd(canvas, img, ad, precio);
-
             canvasWrap.appendChild(canvas);
 
             const footer = document.createElement('div');
             footer.className = 'mkt-ad-card__footer';
             footer.innerHTML = `
-                <span class="mkt-ad-card__tema">${temaLabels[ad.tema] || ad.tema}</span>
-                <button class="btn-download" data-tema="${ad.tema}">
-                    <i class="fas fa-download"></i> Descargar
-                </button>`;
+                <div class="mkt-ad-card__meta">
+                    <div class="mkt-ad-card__angle">
+                        <span class="angle-badge ${aC.cls}"><i class="fas ${aC.icon}"></i> ${aC.label}</span>
+                    </div>
+                    <div class="mkt-ad-card__tema">${temaLabels[ad.tema] || ad.tema}</div>
+                </div>
+                <button class="btn-download"><i class="fas fa-download"></i> PNG</button>`;
 
             footer.querySelector('.btn-download').addEventListener('click', () => {
-                const link  = document.createElement('a');
-                link.download = `anuncio-${ad.tema}-${Date.now()}.png`;
-                link.href     = canvas.toDataURL('image/png');
-                link.click();
+                const a = document.createElement('a');
+                a.download = `anuncio-${ad.angulo || ad.tema}-${Date.now()}.png`;
+                a.href = canvas.toDataURL('image/png');
+                a.click();
             });
 
             card.appendChild(canvasWrap);
@@ -550,154 +558,131 @@ $tiene_replicate_key = $tiene_replicate_key ?? false;
             img.crossOrigin = 'anonymous';
             img.onload  = () => resolve(img);
             img.onerror = reject;
-            img.src     = src;
+            img.src = src;
         });
     }
 
+    /* ── Canvas draw ────────────────────────────────────────────── */
     function drawAd(canvas, img, { headline, body, cta, tema }, precio) {
         const ctx = canvas.getContext('2d');
-        const W = canvas.width;
-        const H = canvas.height;
+        const W = canvas.width, H = canvas.height;
 
-        // ── Paletas por tema ─────────────────────────────────────
         const palettes = {
             oscuro: {
-                gradFrom: 'rgba(10,8,5,0)',
-                gradTo:   'rgba(10,8,5,0.92)',
+                overlay:  [{ stop: 0.25, color: 'rgba(8,6,3,0)' }, { stop: 1, color: 'rgba(8,6,3,0.93)' }],
                 headline: '#f0e8d6',
-                body:     'rgba(240,232,214,0.78)',
-                priceBg:  'rgba(200,168,91,0.95)',
-                priceText:'#1a1208',
+                body:     'rgba(240,232,214,0.80)',
+                priceBg:  'rgba(200,168,91,0.96)',
+                priceTx:  '#1a1208',
                 ctaBg:    '#c8a85b',
-                ctaText:  '#1a1208',
-                badge:    '#c8a85b',
+                ctaTx:    '#1a1208',
+                wmColor:  'rgba(255,255,255,0.20)',
             },
             dorado: {
-                gradFrom: 'rgba(26,18,8,0)',
-                gradTo:   'rgba(26,18,8,0.88)',
-                headline: '#f5dfa0',
-                body:     'rgba(245,223,160,0.8)',
-                priceBg:  'rgba(255,255,255,0.93)',
-                priceText:'#1a1208',
-                ctaBg:    '#e2b96a',
-                ctaText:  '#1a1208',
-                badge:    '#e2b96a',
+                overlay:  [{ stop: 0, color: 'rgba(26,18,8,0)' }, { stop: 1, color: 'rgba(26,18,8,0.90)' }],
+                headline: '#fef3c7',
+                body:     'rgba(254,243,199,0.82)',
+                priceBg:  'rgba(255,255,255,0.95)',
+                priceTx:  '#92400e',
+                ctaBg:    '#d97706',
+                ctaTx:    '#fff',
+                wmColor:  'rgba(255,255,255,0.22)',
             },
             vibrante: {
-                gradFrom: 'rgba(15,5,40,0)',
-                gradTo:   'rgba(15,5,40,0.90)',
+                overlay:  [{ stop: 0, color: 'rgba(15,5,40,0)' }, { stop: 1, color: 'rgba(15,5,40,0.92)' }],
                 headline: '#ffffff',
-                body:     'rgba(255,255,255,0.82)',
-                priceBg:  'rgba(139,92,246,0.95)',
-                priceText:'#ffffff',
-                ctaBg:    '#8b5cf6',
-                ctaText:  '#ffffff',
-                badge:    '#a78bfa',
+                body:     'rgba(255,255,255,0.84)',
+                priceBg:  'rgba(139,92,246,0.96)',
+                priceTx:  '#ffffff',
+                ctaBg:    '#7c3aed',
+                ctaTx:    '#fff',
+                wmColor:  'rgba(255,255,255,0.20)',
             },
         };
         const p = palettes[tema] || palettes.oscuro;
 
-        // 1. Foto de fondo (cover)
-        const scale  = Math.max(W / img.width, H / img.height);
-        const sw     = img.width  * scale;
-        const sh     = img.height * scale;
-        const sx     = (W - sw) / 2;
-        const sy     = (H - sh) / 2;
-        ctx.drawImage(img, sx, sy, sw, sh);
+        /* 1. Imagen de fondo (cover) */
+        const scale = Math.max(W / img.width, H / img.height);
+        ctx.drawImage(img, (W - img.width * scale) / 2, (H - img.height * scale) / 2, img.width * scale, img.height * scale);
 
-        // 2. Gradiente overlay (ocupa 65% inferior)
-        const grad = ctx.createLinearGradient(0, H * 0.32, 0, H);
-        grad.addColorStop(0, p.gradFrom);
-        grad.addColorStop(1, p.gradTo);
+        /* 2. Gradiente overlay */
+        const grad = ctx.createLinearGradient(0, H * 0.20, 0, H);
+        p.overlay.forEach(s => grad.addColorStop(s.stop, s.color));
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, W, H);
 
-        // 3. Precio — badge superior derecho
-        const priceText = '$' + precio.replace(/\./g, '.').trim() + ' COP';
-        ctx.font = 'bold 36px Inter, sans-serif';
-        const ptw = ctx.measureText(priceText).width;
-        const badgePad = 20;
-        const badgeW = ptw + badgePad * 2;
-        const badgeH = 56;
-        const badgeX = W - badgeW - 32;
-        const badgeY = 32;
-        roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 14, p.priceBg);
-        ctx.fillStyle = p.priceText;
-        ctx.textAlign  = 'center';
+        /* 3. Badge de precio (arriba derecha) */
+        ctx.font = 'bold 34px Inter,sans-serif';
+        const priceStr  = '$' + String(precio).trim() + ' COP';
+        const pw        = ctx.measureText(priceStr).width;
+        const bpad      = 22, bh = 54, bw = pw + bpad * 2;
+        const bx = W - bw - 30, by = 30;
+        rrect(ctx, bx, by, bw, bh, 14, p.priceBg);
+        ctx.fillStyle    = p.priceTx;
+        ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(priceText, badgeX + badgeW / 2, badgeY + badgeH / 2);
+        ctx.fillText(priceStr, bx + bw / 2, by + bh / 2);
 
-        // 4. Headline
+        /* 4. Headline */
+        const HL_SIZE = 66, HL_LH = 78;
         ctx.textAlign    = 'left';
         ctx.textBaseline = 'alphabetic';
         ctx.fillStyle    = p.headline;
-        ctx.font         = 'bold 68px Inter, sans-serif';
-        const headlineY  = H - 230;
-        wrapText(ctx, headline.toUpperCase(), 52, headlineY, W - 104, 80);
+        ctx.font         = `bold ${HL_SIZE}px Inter,sans-serif`;
+        const hlY        = H - 260;
+        const hlLines    = wrapText(ctx, headline.toUpperCase(), 50, hlY, W - 100, HL_LH);
 
-        // 5. Body
+        /* 5. Body */
+        const BODY_SIZE = 36, BODY_LH = 46;
         ctx.fillStyle = p.body;
-        ctx.font      = '400 38px Inter, sans-serif';
-        const bodyLines = wrapText(ctx, body, 52, headlineY + 100, W - 104, 48, true);
-        const bodyBottomY = headlineY + 100 + bodyLines * 48;
+        ctx.font      = `400 ${BODY_SIZE}px Inter,sans-serif`;
+        const bodyY   = hlY + hlLines * HL_LH + 16;
+        const bLines  = wrapText(ctx, body, 50, bodyY, W - 100, BODY_LH);
 
-        // 6. CTA pill
-        const ctaFont = 'bold 32px Inter, sans-serif';
-        ctx.font = ctaFont;
-        const ctaW = ctx.measureText(cta).width + 64;
-        const ctaH = 66;
-        const ctaX = 52;
-        const ctaY = bodyBottomY + 28;
-        roundRect(ctx, ctaX, ctaY, ctaW, ctaH, 33, p.ctaBg);
-        ctx.fillStyle    = p.ctaText;
+        /* 6. CTA pill */
+        const CTA_SIZE = 32;
+        ctx.font = `bold ${CTA_SIZE}px Inter,sans-serif`;
+        const ctaW   = ctx.measureText(cta).width + 60;
+        const ctaH   = 64;
+        const ctaX   = 50;
+        const ctaY   = bodyY + bLines * BODY_LH + 28;
+        rrect(ctx, ctaX, ctaY, ctaW, ctaH, 32, p.ctaBg);
+        ctx.fillStyle    = p.ctaTx;
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font         = ctaFont;
         ctx.fillText(cta, ctaX + ctaW / 2, ctaY + ctaH / 2);
 
-        // 7. Marca de agua discreta
-        ctx.fillStyle    = 'rgba(255,255,255,0.22)';
-        ctx.font         = '22px Inter, sans-serif';
+        /* 7. Marca de agua */
+        ctx.fillStyle    = p.wmColor;
+        ctx.font         = '22px Inter,sans-serif';
         ctx.textAlign    = 'right';
         ctx.textBaseline = 'alphabetic';
-        ctx.fillText('fedoramfb.com', W - 32, H - 24);
+        ctx.fillText('fedoramfb.com', W - 30, H - 22);
     }
 
-    function roundRect(ctx, x, y, w, h, r, fill) {
+    function rrect(ctx, x, y, w, h, r, fill) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        ctx.lineTo(x + r, y + h);
-        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-        ctx.lineTo(x, y + r);
-        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
         ctx.closePath();
         ctx.fillStyle = fill;
         ctx.fill();
     }
 
-    // Dibuja texto con wrapping; retorna líneas dibujadas
-    function wrapText(ctx, text, x, y, maxW, lineH, returnOnly = false) {
+    function wrapText(ctx, text, x, y, maxW, lh) {
         const words = text.split(' ');
-        let line  = '';
-        let lines = 0;
-        for (const word of words) {
-            const test = line ? line + ' ' + word : word;
+        let line = '', lines = 0;
+        for (const w of words) {
+            const test = line ? line + ' ' + w : w;
             if (ctx.measureText(test).width > maxW && line) {
-                if (!returnOnly) ctx.fillText(line, x, y + lines * lineH);
-                lines++;
-                line = word;
-            } else {
-                line = test;
-            }
+                ctx.fillText(line, x, y + lines * lh);
+                lines++; line = w;
+            } else { line = test; }
         }
-        if (line) {
-            if (!returnOnly) ctx.fillText(line, x, y + lines * lineH);
-            lines++;
-        }
+        if (line) { ctx.fillText(line, x, y + lines * lh); lines++; }
         return lines;
     }
 

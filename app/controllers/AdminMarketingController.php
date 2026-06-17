@@ -69,42 +69,48 @@ class AdminMarketingController extends Controller
             }
         }
 
-        $contextoLine = $contexto !== '' ? "\nContexto adicional: {$contexto}" : '';
+        $contextoLine = $contexto !== '' ? "\nDatos clave del público/producto: {$contexto}" : '';
         $prompt = <<<PROMPT
-Eres un experto en marketing digital para e-commerce en Colombia. Genera 3 variaciones de anuncio para este producto.
+Eres un copywriter experto en direct response marketing para e-commerce en Colombia. Tu especialidad es crear anuncios que atacan el DOLOR real del cliente y lo llevan a comprar impulsivamente.
 
 Producto: {$nombre}
 Precio: \${$precio} COP{$contextoLine}
 
-Responde ÚNICAMENTE con un JSON válido, sin texto adicional, siguiendo exactamente este formato:
-[
-  {
-    "headline": "Titular de máximo 7 palabras, impacto inmediato",
-    "body": "Propuesta de valor en 1 oración, máximo 15 palabras",
-    "cta": "Texto del botón de acción, máximo 5 palabras",
-    "tema": "oscuro"
-  },
-  {
-    "headline": "...",
-    "body": "...",
-    "cta": "...",
-    "tema": "dorado"
-  },
-  {
-    "headline": "...",
-    "body": "...",
-    "cta": "...",
-    "tema": "vibrante"
-  }
-]
+Genera EXACTAMENTE 3 variaciones de anuncio, una por cada ángulo psicológico. Responde SOLO con JSON válido, sin texto extra.
 
-Reglas:
-- Tono colombiano, informal pero premium
-- headline genera urgencia o deseo fuerte
-- body resuelve una objeción o destaca el beneficio clave
-- cta es accionable (Pídelo ya, Lo quiero, Obtén el tuyo, etc.)
-- Los temas son: "oscuro" (gradiente oscuro elegante), "dorado" (tono cálido dorado), "vibrante" (contraste fuerte)
-- No añadas texto fuera del JSON
+ÁNGULO 1 — "dolor" (tema: "oscuro")
+Ataca el dolor, la frustración o vergüenza que siente el cliente HOY sin el producto.
+El headline debe hacer que el cliente diga "¡eso me pasa a mí!".
+Ejemplo de estructura: "¿Cansado de [dolor concreto]?" o "[Situación dolorosa] tiene solución"
+body: amplía el dolor 1 segundo y luego ofrece el escape
+cta: acción de alivio ("Quiero salir de eso", "Sí, lo necesito ya")
+
+ÁNGULO 2 — "urgencia" (tema: "dorado")
+FOMO puro. El cliente siente que si no actúa HOY pierde algo real.
+Usa escasez, tiempo limitado, demanda alta — lo que aplique.
+headline: comunica la pérdida si no actúa ("Solo quedan X", "Hoy termina", "El que no pide hoy...")
+body: refuerza la escasez o el privilegio de actuar ahora
+cta: acción urgente ("Pídelo antes de que se acabe", "Lo quiero YA", "Reservar el mío")
+
+ÁNGULO 3 — "transformacion" (tema: "vibrante")
+Vende el "nuevo yo". Cómo se va a SENTIR, VER o VIVIR el cliente después de comprar.
+headline: la versión mejorada del cliente después del producto
+body: pinta el resultado concreto — emocional o social
+cta: aspiración ("Quiero ser esa versión", "Empezar el cambio", "Quiero verme así")
+
+Reglas de oro:
+- headline: máx 8 palabras. Específico, no genérico. Que duela o fascine.
+- body: máx 15 palabras. 1 oración. Concreto.
+- cta: máx 5 palabras. Que el dedo queme al verlo.
+- Tono colombiano real: cercano, directo, informal-premium. Nada de "increíble calidad" ni "el mejor".
+- El precio en el copy NUNCA lo menciones (ya aparece en la imagen).
+
+Formato JSON estricto:
+[
+  {"headline":"...","body":"...","cta":"...","tema":"oscuro","angulo":"dolor"},
+  {"headline":"...","body":"...","cta":"...","tema":"dorado","angulo":"urgencia"},
+  {"headline":"...","body":"...","cta":"...","tema":"vibrante","angulo":"transformacion"}
+]
 PROMPT;
 
         $result = $this->callClaude($apiKey, $prompt);
@@ -145,7 +151,7 @@ PROMPT;
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        unset($ch);
 
         if (!$response) return ['ok' => false, 'error' => 'Error de conexión con Claude'];
 
