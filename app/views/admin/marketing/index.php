@@ -900,12 +900,6 @@ $showSearch      = false;
         ctx.textBaseline = 'middle';
         ctx.fillText(priceStr, bx + bw / 2, by + bh / 2);
 
-        /* 3. Watermark discreto */
-        ctx.fillStyle    = 'rgba(255,255,255,0.18)';
-        ctx.font         = '20px Inter,sans-serif';
-        ctx.textAlign    = 'right';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText('fedoramfb.com', W - 26, H - 20);
     }
 
     function rrect(ctx, x, y, w, h, r, fill) {
