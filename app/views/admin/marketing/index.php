@@ -688,7 +688,7 @@ $showSearch      = false;
             urgencia:      { label: 'Urgencia',       icon: 'fa-fire',         cls: 'angle-badge--urgencia' },
             transformacion:{ label: 'Transformación', icon: 'fa-star',         cls: 'angle-badge--transformacion' },
         };
-        const temaLabels = { oscuro: 'Oscuro · IA', dorado: 'Dorado · IA', vibrante: 'Vibrante · IA' };
+        const temaLabels = { oscuro: 'Hero shot · IA', dorado: 'Lifestyle · IA', vibrante: 'Flat lay · IA' };
 
         for (const ad of ads) {
             const aC = angleConfig[ad.angulo] || { label: ad.angulo || '?', icon: 'fa-circle', cls: 'angle-badge--dolor' };
@@ -855,102 +855,57 @@ $showSearch      = false;
         });
     }
 
-    /* ── Canvas draw ────────────────────────────────────────────── */
-    function drawAd(canvas, img, { headline, body, cta, tema }, precio) {
+    /* ── Canvas draw — imagen limpia, solo badge de precio ─────── */
+    function drawAd(canvas, img, { tema }, precio) {
         const ctx = canvas.getContext('2d');
         const W = canvas.width, H = canvas.height;
 
-        const palettes = {
-            oscuro: {
-                overlay:  [{ stop: 0.25, color: 'rgba(8,6,3,0)' }, { stop: 1, color: 'rgba(8,6,3,0.93)' }],
-                headline: '#f0e8d6',
-                body:     'rgba(240,232,214,0.80)',
-                priceBg:  'rgba(200,168,91,0.96)',
-                priceTx:  '#1a1208',
-                ctaBg:    '#c8a85b',
-                ctaTx:    '#1a1208',
-                wmColor:  'rgba(255,255,255,0.20)',
-            },
-            dorado: {
-                overlay:  [{ stop: 0, color: 'rgba(26,18,8,0)' }, { stop: 1, color: 'rgba(26,18,8,0.90)' }],
-                headline: '#fef3c7',
-                body:     'rgba(254,243,199,0.82)',
-                priceBg:  'rgba(255,255,255,0.95)',
-                priceTx:  '#92400e',
-                ctaBg:    '#d97706',
-                ctaTx:    '#fff',
-                wmColor:  'rgba(255,255,255,0.22)',
-            },
-            vibrante: {
-                overlay:  [{ stop: 0, color: 'rgba(15,5,40,0)' }, { stop: 1, color: 'rgba(15,5,40,0.92)' }],
-                headline: '#ffffff',
-                body:     'rgba(255,255,255,0.84)',
-                priceBg:  'rgba(139,92,246,0.96)',
-                priceTx:  '#ffffff',
-                ctaBg:    '#7c3aed',
-                ctaTx:    '#fff',
-                wmColor:  'rgba(255,255,255,0.20)',
-            },
-        };
-        const p = palettes[tema] || palettes.oscuro;
-
         /* 1. Imagen de fondo (cover) */
         const scale = Math.max(W / img.width, H / img.height);
-        ctx.drawImage(img, (W - img.width * scale) / 2, (H - img.height * scale) / 2, img.width * scale, img.height * scale);
+        ctx.drawImage(
+            img,
+            (W - img.width  * scale) / 2,
+            (H - img.height * scale) / 2,
+            img.width  * scale,
+            img.height * scale
+        );
 
-        /* 2. Gradiente overlay */
-        const grad = ctx.createLinearGradient(0, H * 0.20, 0, H);
-        p.overlay.forEach(s => grad.addColorStop(s.stop, s.color));
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
+        /* 2. Badge de precio — esquina superior derecha */
+        const priceBadge = {
+            oscuro:   { bg: 'rgba(10,10,10,0.72)',    tx: '#f0e8d6', border: 'rgba(200,168,91,0.5)' },
+            dorado:   { bg: 'rgba(255,255,255,0.88)',  tx: '#78350f', border: 'rgba(217,119,6,0.4)' },
+            vibrante: { bg: 'rgba(139,92,246,0.88)',   tx: '#ffffff', border: 'rgba(255,255,255,0.3)' },
+        };
+        const pb = priceBadge[tema] || priceBadge.oscuro;
 
-        /* 3. Badge de precio (arriba derecha) */
-        ctx.font = 'bold 34px Inter,sans-serif';
-        const priceStr  = '$' + String(precio).trim() + ' COP';
-        const pw        = ctx.measureText(priceStr).width;
-        const bpad      = 22, bh = 54, bw = pw + bpad * 2;
-        const bx = W - bw - 30, by = 30;
-        rrect(ctx, bx, by, bw, bh, 14, p.priceBg);
-        ctx.fillStyle    = p.priceTx;
+        const priceStr = '$' + String(precio).trim() + ' COP';
+        ctx.font = 'bold 30px Inter,sans-serif';
+        const pw  = ctx.measureText(priceStr).width;
+        const bh  = 50, bpad = 20, bw = pw + bpad * 2, br = 12;
+        const bx  = W - bw - 28, by = 28;
+
+        // Fondo con blur visual (doble rect semitransparente)
+        rrect(ctx, bx - 2, by - 2, bw + 4, bh + 4, br + 2, 'rgba(0,0,0,0.15)');
+        rrect(ctx, bx, by, bw, bh, br, pb.bg);
+
+        // Borde sutil
+        ctx.strokeStyle = pb.border;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, bh, br);
+        ctx.stroke();
+
+        ctx.fillStyle    = pb.tx;
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(priceStr, bx + bw / 2, by + bh / 2);
 
-        /* 4. Headline */
-        const HL_SIZE = 66, HL_LH = 78;
-        ctx.textAlign    = 'left';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillStyle    = p.headline;
-        ctx.font         = `bold ${HL_SIZE}px Inter,sans-serif`;
-        const hlY        = H - 260;
-        const hlLines    = wrapText(ctx, headline.toUpperCase(), 50, hlY, W - 100, HL_LH);
-
-        /* 5. Body */
-        const BODY_SIZE = 36, BODY_LH = 46;
-        ctx.fillStyle = p.body;
-        ctx.font      = `400 ${BODY_SIZE}px Inter,sans-serif`;
-        const bodyY   = hlY + hlLines * HL_LH + 16;
-        const bLines  = wrapText(ctx, body, 50, bodyY, W - 100, BODY_LH);
-
-        /* 6. CTA pill */
-        const CTA_SIZE = 32;
-        ctx.font = `bold ${CTA_SIZE}px Inter,sans-serif`;
-        const ctaW   = ctx.measureText(cta).width + 60;
-        const ctaH   = 64;
-        const ctaX   = 50;
-        const ctaY   = bodyY + bLines * BODY_LH + 28;
-        rrect(ctx, ctaX, ctaY, ctaW, ctaH, 32, p.ctaBg);
-        ctx.fillStyle    = p.ctaTx;
-        ctx.textAlign    = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(cta, ctaX + ctaW / 2, ctaY + ctaH / 2);
-
-        /* 7. Marca de agua */
-        ctx.fillStyle    = p.wmColor;
-        ctx.font         = '22px Inter,sans-serif';
+        /* 3. Watermark discreto */
+        ctx.fillStyle    = 'rgba(255,255,255,0.18)';
+        ctx.font         = '20px Inter,sans-serif';
         ctx.textAlign    = 'right';
         ctx.textBaseline = 'alphabetic';
-        ctx.fillText('fedoramfb.com', W - 30, H - 22);
+        ctx.fillText('fedoramfb.com', W - 26, H - 20);
     }
 
     function rrect(ctx, x, y, w, h, r, fill) {
@@ -963,20 +918,6 @@ $showSearch      = false;
         ctx.closePath();
         ctx.fillStyle = fill;
         ctx.fill();
-    }
-
-    function wrapText(ctx, text, x, y, maxW, lh) {
-        const words = text.split(' ');
-        let line = '', lines = 0;
-        for (const w of words) {
-            const test = line ? line + ' ' + w : w;
-            if (ctx.measureText(test).width > maxW && line) {
-                ctx.fillText(line, x, y + lines * lh);
-                lines++; line = w;
-            } else { line = test; }
-        }
-        if (line) { ctx.fillText(line, x, y + lines * lh); lines++; }
-        return lines;
     }
 
 })();

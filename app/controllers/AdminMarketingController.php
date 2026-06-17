@@ -98,9 +98,14 @@ class AdminMarketingController extends Controller
             $imageData = 'data:image/' . ($ext ?? 'jpeg') . ';base64,' . base64_encode(file_get_contents($localPath));
 
             $stylePrompts = [
-                'oscuro'   => "Keep the exact same product, same shape, same details, same branding. Replace only the background: pitch-black velvet studio background, single dramatic side spotlight with crisp hard shadow, ultra-sharp focus on product, premium high-fashion editorial photography, cinematic contrast, no text, no watermarks",
-                'dorado'   => "Keep the exact same product, same shape, same details, same branding. Replace only the background: opulent gold and marble surface, warm candlelight bokeh, luxurious lifestyle setting like a high-end boutique, soft warm rim lighting, shallow depth of field, editorial magazine feel, no text, no watermarks",
-                'vibrante' => "Keep the exact same product, same shape, same details, same branding. Replace only the background: explosive neon gradient burst — electric magenta, cyan and violet rays radiating outward like a supernova, hyper-pop art direction, vivid saturated colors, dynamic diagonal energy lines, no text, no watermarks",
+                // HERO SHOT: el producto como protagonista absoluto
+                'oscuro'   => "Same product, preserve every detail, brand and color. Transform into a luxury hero studio shot: product centered floating above jet-black velvet, single dramatic overhead spotlight creating crisp specular highlights and hard shadow, fine water mist droplets catching the light, perfect mirror reflection on the surface below, ultra-sharp macro detail on textures and branding, premium watch advertising photography, no people, no text, no watermarks",
+
+                // LIFESTYLE / IN-USE: el cliente imaginándose usándolo
+                'dorado'   => "Same product now worn naturally on an elegant wrist with dark suit sleeve slightly rolled, person casually checking the time at a modern minimalist office desk, laptop and espresso cup softly blurred in background, shallow depth of field, warm soft window light from the left, authentic candid lifestyle moment, no text, no watermarks",
+
+                // FLAT LAY EDITORIAL: el producto dentro de un estilo de vida premium
+                'vibrante' => "Same product as centerpiece of a curated flat lay on white Italian Carrara marble surface, surrounded by complementary luxury accessories: slim dark leather bifold wallet, premium car key fob, aviator sunglasses, small espresso cup with saucer, arranged in a balanced geometric composition, 90-degree overhead shot, soft natural diffused light, editorial fashion magazine aesthetic, no text, no watermarks",
             ];
 
             $generatedImages = $this->callReplicateMulti($replicateKey, $imageData, $stylePrompts, $nombre);
