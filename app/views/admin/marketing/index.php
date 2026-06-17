@@ -387,9 +387,15 @@ $showSearch      = false;
                         <div class="mkt-error" id="mktError"></div>
 
                         <div class="mkt-tips">
-                            <span class="mkt-tip"><i class="fas fa-brain"></i> IA ataca el dolor del cliente</span>
+                            <span class="mkt-tip"><i class="fas fa-brain"></i> Claude genera copy que ataca el dolor</span>
+                            <?php if ($tiene_replicate_key): ?>
+                            <span class="mkt-tip"><i class="fas fa-wand-magic-sparkles"></i> Replicate estiliza la imagen por anuncio</span>
+                            <?php else: ?>
+                            <span class="mkt-tip" style="background:var(--soft-orange);color:var(--orange);">
+                                <i class="fas fa-image"></i> Sin key Replicate: se usa foto original
+                            </span>
+                            <?php endif; ?>
                             <span class="mkt-tip"><i class="fas fa-download"></i> PNG 1080×1080 listo para redes</span>
-                            <span class="mkt-tip"><i class="fas fa-redo"></i> Genera N veces, toma el mejor</span>
                         </div>
                     </div>
                 </div>
@@ -508,51 +514,79 @@ $showSearch      = false;
     }
 
     /* ── Render cards ───────────────────────────────────────────── */
-    async function renderResults({ imageUrl, ads, precio }) {
+    async function renderResults({ imageUrl, ads, precio, hasReplicate }) {
         cardsEl.innerHTML = '';
-        const img = await loadImage(imageUrl || previewImg.src);
+
+        // Cargamos todas las imágenes (cada ad puede tener su propia URL de Replicate)
+        const fallbackSrc = imageUrl || previewImg.src;
 
         const angleConfig = {
             dolor:         { label: 'Dolor',         icon: 'fa-heart-crack',  cls: 'angle-badge--dolor' },
             urgencia:      { label: 'Urgencia',       icon: 'fa-fire',         cls: 'angle-badge--urgencia' },
             transformacion:{ label: 'Transformación', icon: 'fa-star',         cls: 'angle-badge--transformacion' },
         };
-        const temaLabels = { oscuro: 'Tema oscuro', dorado: 'Tema dorado', vibrante: 'Tema vibrante' };
+        const temaLabels = { oscuro: 'Oscuro · IA', dorado: 'Dorado · IA', vibrante: 'Vibrante · IA' };
 
         for (const ad of ads) {
             const aC = angleConfig[ad.angulo] || { label: ad.angulo || '?', icon: 'fa-circle', cls: 'angle-badge--dolor' };
+            const isAiImage = !!ad.imageUrl && ad.imageUrl !== imageUrl;
 
+            // Crear placeholder mientras carga
             const card = document.createElement('div');
             card.className = 'mkt-ad-card';
-
-            const canvasWrap = document.createElement('div');
-            canvasWrap.className = 'mkt-ad-card__canvas-wrap';
-            const canvas = document.createElement('canvas');
-            canvas.width = canvas.height = 1080;
-            drawAd(canvas, img, ad, precio);
-            canvasWrap.appendChild(canvas);
-
-            const footer = document.createElement('div');
-            footer.className = 'mkt-ad-card__footer';
-            footer.innerHTML = `
-                <div class="mkt-ad-card__meta">
-                    <div class="mkt-ad-card__angle">
-                        <span class="angle-badge ${aC.cls}"><i class="fas ${aC.icon}"></i> ${aC.label}</span>
-                    </div>
-                    <div class="mkt-ad-card__tema">${temaLabels[ad.tema] || ad.tema}</div>
+            card.innerHTML = `
+                <div class="mkt-ad-card__canvas-wrap" style="background:#f1f3f5;display:flex;align-items:center;justify-content:center;">
+                    <span style="font-size:13px;color:#9ca3af;"><i class="fas fa-spinner fa-spin"></i> Cargando...</span>
                 </div>
-                <button class="btn-download"><i class="fas fa-download"></i> PNG</button>`;
-
-            footer.querySelector('.btn-download').addEventListener('click', () => {
-                const a = document.createElement('a');
-                a.download = `anuncio-${ad.angulo || ad.tema}-${Date.now()}.png`;
-                a.href = canvas.toDataURL('image/png');
-                a.click();
-            });
-
-            card.appendChild(canvasWrap);
-            card.appendChild(footer);
+                <div class="mkt-ad-card__footer">
+                    <div class="mkt-ad-card__meta">
+                        <div class="mkt-ad-card__angle">
+                            <span class="angle-badge ${aC.cls}"><i class="fas ${aC.icon}"></i> ${aC.label}</span>
+                        </div>
+                        <div class="mkt-ad-card__tema">${temaLabels[ad.tema] || ad.tema}${isAiImage ? ' ✨' : ''}</div>
+                    </div>
+                    <button class="btn-download" disabled><i class="fas fa-download"></i> PNG</button>
+                </div>`;
             cardsEl.appendChild(card);
+
+            // Cargar imagen (puede ser la generada por Replicate o la original)
+            const imgSrc = ad.imageUrl || fallbackSrc;
+            loadImage(imgSrc).then(img => {
+                const wrap = card.querySelector('.mkt-ad-card__canvas-wrap');
+                wrap.innerHTML = '';
+
+                const canvas = document.createElement('canvas');
+                canvas.width = canvas.height = 1080;
+                drawAd(canvas, img, ad, precio);
+                wrap.appendChild(canvas);
+
+                const dlBtn = card.querySelector('.btn-download');
+                dlBtn.disabled = false;
+                dlBtn.addEventListener('click', () => {
+                    const a = document.createElement('a');
+                    a.download = `anuncio-${ad.angulo || ad.tema}-${Date.now()}.png`;
+                    a.href = canvas.toDataURL('image/png');
+                    a.click();
+                });
+            }).catch(() => {
+                // Si falla la imagen IA, usar original como fallback
+                loadImage(fallbackSrc).then(img => {
+                    const wrap = card.querySelector('.mkt-ad-card__canvas-wrap');
+                    wrap.innerHTML = '';
+                    const canvas = document.createElement('canvas');
+                    canvas.width = canvas.height = 1080;
+                    drawAd(canvas, img, ad, precio);
+                    wrap.appendChild(canvas);
+                    const dlBtn = card.querySelector('.btn-download');
+                    dlBtn.disabled = false;
+                    dlBtn.addEventListener('click', () => {
+                        const a = document.createElement('a');
+                        a.download = `anuncio-${ad.angulo || ad.tema}-${Date.now()}.png`;
+                        a.href = canvas.toDataURL('image/png');
+                        a.click();
+                    });
+                });
+            });
         }
 
         resultsEl.style.display = 'block';
