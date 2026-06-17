@@ -8,6 +8,8 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
     $activeNav = 'productos';
 } elseif (strpos($currentPath, '/AdminPedidos/') !== false) {
     $activeNav = 'pedidos';
+} elseif (strpos($currentPath, '/AdminMarketing/') !== false) {
+    $activeNav = 'marketing';
 } elseif (strpos($currentPath, '/AdminPlantillasWa/') !== false) {
     $activeNav = 'plantillas';
 } elseif (strpos($currentPath, '/AdminPerfil/') !== false) {
@@ -41,6 +43,11 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
         </a>
 
         <span class="sidebar-section-label">Herramientas</span>
+
+        <a href="<?= BASE_URL ?>/AdminMarketing/index" class="<?= $activeNav === 'marketing' ? 'active' : '' ?>">
+            <i class="fas fa-bullhorn"></i>
+            <span>Marketing IA</span>
+        </a>
 
         <a href="<?= BASE_URL ?>/AdminPlantillasWa/index" class="<?= $activeNav === 'plantillas' ? 'active' : '' ?>">
             <i class="fab fa-whatsapp"></i>
