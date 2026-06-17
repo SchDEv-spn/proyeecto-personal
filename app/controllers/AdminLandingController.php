@@ -389,6 +389,26 @@ class AdminLandingController extends Controller
         // Regalo imagen actual
         $data['regalo_image_path'] = $_POST['regalo_image_path'] ?? null;
 
+        // Variantes de color — se construye un JSON desde los campos del form
+        // Los paths actuales vienen de hidden inputs; las subidas nuevas se procesan abajo
+        // y reemplazan los paths en el array antes de codificar a JSON
+        $colorVariantsRaw = [];
+        for ($ci = 1; $ci <= 4; $ci++) {
+            $cName = trim($_POST["cv{$ci}_name"] ?? '');
+            $cHex  = trim($_POST["cv{$ci}_hex"]  ?? '');
+            if ($cName === '' && $cHex === '') continue;
+            $colorVariantsRaw[$ci] = [
+                'name'   => $cName,
+                'hex'    => preg_match('/^#[0-9A-Fa-f]{6}$/', $cHex) ? $cHex : '#000000',
+                'images' => [
+                    $_POST["cv{$ci}_g1_actual"] ?? '',
+                    $_POST["cv{$ci}_g2_actual"] ?? '',
+                    $_POST["cv{$ci}_g3_actual"] ?? '',
+                    $_POST["cv{$ci}_g4_actual"] ?? '',
+                ],
+            ];
+        }
+
         // 4. Manejo de archivos
         $persistentBase = dirname(dirname(dirname($_SERVER['DOCUMENT_ROOT']))) . '/uploads';
         $uploadDir = is_dir($persistentBase)
@@ -440,6 +460,14 @@ class AdminLandingController extends Controller
             'regalo_image_file' => 'regalo_image_path',
         ];
 
+        // Archivos de variantes de color (cv1_g1_file … cv4_g4_file) — guardados en _tmp_cv_*
+        // para después inyectarlos en el JSON
+        for ($ci = 1; $ci <= 4; $ci++) {
+            for ($gi = 1; $gi <= 4; $gi++) {
+                $fileMap["cv{$ci}_g{$gi}_file"] = "_tmp_cv{$ci}_g{$gi}";
+            }
+        }
+
         $allowedExts  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'webm'];
         $allowedMimes = [
             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
@@ -475,6 +503,19 @@ class AdminLandingController extends Controller
                 }
             }
         }
+
+        // Inyectar paths de imágenes subidas en las variantes de color y guardar JSON
+        for ($ci = 1; $ci <= 4; $ci++) {
+            for ($gi = 1; $gi <= 4; $gi++) {
+                $tmpKey = "_tmp_cv{$ci}_g{$gi}";
+                if (!empty($data[$tmpKey]) && isset($colorVariantsRaw[$ci])) {
+                    $colorVariantsRaw[$ci]['images'][$gi - 1] = $data[$tmpKey];
+                }
+                unset($data[$tmpKey]);
+            }
+        }
+        $finalVariants = array_values(array_filter($colorVariantsRaw, fn($v) => trim($v['name']) !== ''));
+        $data['color_variants'] = empty($finalVariants) ? null : json_encode($finalVariants, JSON_UNESCAPED_UNICODE);
 
         $configModel = new LandingConfig();
         $configModel->guardarPorProducto($productoId, $data);

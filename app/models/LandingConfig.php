@@ -309,7 +309,9 @@ class LandingConfig extends Model
                 regalo_image_path = :regalo_image_path,
                 regalo_label      = :regalo_label,
                 show_regalo       = :show_regalo,
-                show_price_box    = :show_price_box
+                show_price_box    = :show_price_box,
+
+                color_variants    = :color_variants
 
             WHERE producto_id = :producto_id";
 
@@ -600,6 +602,7 @@ class LandingConfig extends Model
             ':regalo_label'      => $data['regalo_label']      ?? null,
             ':show_regalo'       => isset($data['show_regalo'])     ? (int)$data['show_regalo']     : 1,
             ':show_price_box'    => isset($data['show_price_box'])  ? (int)$data['show_price_box']  : 1,
+            ':color_variants'    => $data['color_variants'] ?? null,
 
             ':producto_id' => $productoId,
         ]);

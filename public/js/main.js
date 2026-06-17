@@ -280,7 +280,7 @@ function initGallery() {
     if (!mainImg || !thumbs.length) return;
 
     // Lista completa de srcs: [imagen principal, ...miniaturas]
-    const allSrcs = [mainImg.src, ...thumbs.map(t => t.dataset.src || t.getAttribute('data-src') || '')];
+    let allSrcs = [mainImg.src, ...thumbs.map(t => t.dataset.src || t.getAttribute('data-src') || '')];
     let currentIdx = 0;
 
     function setActive(idx) {
@@ -303,6 +303,13 @@ function initGallery() {
         }, 150);
         setActive(idx);
     }
+
+    // Permite que código externo (pills de color) reinicie las fuentes tras swap de DOM
+    window.galleryRefresh = function () {
+        allSrcs = [mainImg.src, ...thumbs.map(t => t.dataset.src || t.getAttribute('data-src') || '')];
+        currentIdx = 0;
+        setActive(1);
+    };
 
     // Estado inicial: primera miniatura resaltada visualmente
     setActive(1);

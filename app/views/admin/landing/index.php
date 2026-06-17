@@ -508,6 +508,90 @@
                         </div>
                       <?php endfor; ?>
                     </div>
+
+                    <!-- VARIANTES DE COLOR -->
+                    <?php
+                    $cvData = [];
+                    if (!empty($config['color_variants'])) {
+                        $cvDecoded = json_decode($config['color_variants'], true);
+                        if (is_array($cvDecoded)) $cvData = $cvDecoded;
+                    }
+                    // Rellenar hasta 4 slots vacíos
+                    while (count($cvData) < 4) $cvData[] = ['name' => '', 'hex' => '#000000', 'images' => ['', '', '', '']];
+                    ?>
+                    <div class="admin-form-group admin-form-group--full" style="margin-top:24px;">
+                      <label style="font-weight:700; font-size:1rem; display:block; margin-bottom:6px;">
+                        <i class="fas fa-palette" aria-hidden="true"></i> Variantes de color
+                      </label>
+                      <p style="font-size:0.85rem; opacity:0.7; margin-bottom:14px;">
+                        Define hasta 4 colores. Al activar uno en la landing, la galería mostrará sus imágenes.
+                        Deja el nombre en blanco para desactivar esa variante.
+                      </p>
+
+                      <div class="stack-cards stack-cards--4col" style="align-items:start;">
+                        <?php for ($ci = 1; $ci <= 4; $ci++):
+                          $cv     = $cvData[$ci - 1] ?? [];
+                          $cvName = htmlspecialchars($cv['name'] ?? '');
+                          $cvHex  = htmlspecialchars($cv['hex']  ?? '#000000');
+                          $cvImgs = array_pad($cv['images'] ?? [], 4, '');
+                        ?>
+                        <div class="mini-card">
+                          <div class="mini-card-title">
+                            <span><i class="fas fa-circle" aria-hidden="true" style="color:<?= htmlspecialchars($cv['hex'] ?? '#888') ?>"></i> Color <?= $ci ?></span>
+                          </div>
+
+                          <div class="admin-form-group" style="margin-bottom:8px;">
+                            <label for="cv<?= $ci ?>_name">Nombre</label>
+                            <input type="text" id="cv<?= $ci ?>_name" name="cv<?= $ci ?>_name"
+                              value="<?= $cvName ?>" placeholder="ej. Rojo, Azul marino…" style="font-size:0.9rem;">
+                          </div>
+
+                          <div class="admin-form-group" style="margin-bottom:12px;">
+                            <label for="cv<?= $ci ?>_hex">Color (hex)</label>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                              <input type="color" id="cv<?= $ci ?>_hex" name="cv<?= $ci ?>_hex"
+                                value="<?= $cvHex ?>" style="width:44px; height:36px; padding:2px; border-radius:6px; cursor:pointer; border:1px solid rgba(255,255,255,0.15);">
+                              <input type="text" value="<?= $cvHex ?>"
+                                style="font-size:0.85rem; font-family:monospace; width:90px; text-transform:uppercase;"
+                                oninput="document.getElementById('cv<?= $ci ?>_hex').value=this.value"
+                                onchange="document.getElementById('cv<?= $ci ?>_hex').value=this.value">
+                              <script>
+                              (function(){
+                                var cp = document.getElementById('cv<?= $ci ?>_hex');
+                                if (cp) cp.addEventListener('input', function(){
+                                  var txt = cp.closest('.admin-form-group').querySelector('input[type=text]');
+                                  if (txt) txt.value = cp.value.toUpperCase();
+                                });
+                              })();
+                              </script>
+                            </div>
+                          </div>
+
+                          <?php for ($gi = 1; $gi <= 4; $gi++):
+                            $gSrc    = htmlspecialchars($cvImgs[$gi - 1] ?? '');
+                            $gActual = "cv{$ci}_g{$gi}_actual";
+                            $gFile   = "cv{$ci}_g{$gi}_file";
+                          ?>
+                          <div class="admin-form-group" style="margin-bottom:8px;">
+                            <label style="font-size:0.8rem; opacity:0.75;">Imagen <?= $gi ?></label>
+                            <div class="media-preview" style="margin-bottom:4px; height:80px;">
+                              <?php if ($gSrc !== ''): ?>
+                                <img src="<?= $gSrc ?>" alt="Color <?= $ci ?> img <?= $gi ?>" style="height:100%; object-fit:cover; border-radius:6px;">
+                              <?php else: ?>
+                                <div class="media-empty" style="height:80px;">
+                                  <i class="fas fa-image"></i>
+                                </div>
+                              <?php endif; ?>
+                            </div>
+                            <input type="hidden" name="<?= $gActual ?>" value="<?= $gSrc ?>">
+                            <input type="file" name="<?= $gFile ?>" accept="image/*" style="font-size:0.8rem;">
+                          </div>
+                          <?php endfor; ?>
+                        </div>
+                        <?php endfor; ?>
+                      </div>
+                    </div>
+
                   </div>
 
                   <hr class="section-hr">
@@ -2896,6 +2980,8 @@
       'test1_banner_file':           'test1_banner',
       'test2_banner_file':           'test2_banner',
       'test3_banner_file':           'test3_banner',
+      // Variantes de color: cv1_g1_file … cv4_g4_file
+      ...Object.fromEntries([1,2,3,4].flatMap(ci => [1,2,3,4].map(gi => [`cv${ci}_g${gi}_file`, `cv${ci}_g${gi}`]))),
     };
     // Map: section ID → hidden _actual field name
     const actualMap = {
@@ -2919,6 +3005,8 @@
       'test1_banner':       'test1_banner_path_actual',
       'test2_banner':       'test2_banner_path_actual',
       'test3_banner':       'test3_banner_path_actual',
+      // Variantes de color
+      ...Object.fromEntries([1,2,3,4].flatMap(ci => [1,2,3,4].map(gi => [`cv${ci}_g${gi}`, `cv${ci}_g${gi}_actual`]))),
     };
     const sectionLabels = {
       'hero': 'Hero', 'benefits': 'Beneficios',
@@ -2932,6 +3020,8 @@
       'comparison_without': 'Comparativa — Sin', 'comparison_with': 'Comparativa — Con',
       'test1_banner': 'Banner Testimonio 1', 'test2_banner': 'Banner Testimonio 2',
       'test3_banner': 'Banner Testimonio 3',
+      // Variantes de color — el label se sobreescribe dinámicamente en openPanel()
+      ...Object.fromEntries([1,2,3,4].flatMap(ci => [1,2,3,4].map(gi => [`cv${ci}_g${gi}`, `Color ${ci} — Foto ${gi}`]))),
     };
 
     let currentSection  = null;
@@ -2966,7 +3056,17 @@
       _imgPanelOpener  = triggerBtn;
       currentSection   = section;
       currentFileInput = fileInput;
-      titulo.textContent = '✨ Generar imagen — ' + (sectionLabels[section] || section);
+
+      // Para variantes de color, mostrar nombre real del color en el título
+      let label = sectionLabels[section] || section;
+      const cvMatch = section.match(/^cv(\d)_g(\d)$/);
+      if (cvMatch) {
+        const ci = cvMatch[1];
+        const gi = cvMatch[2];
+        const colorName = document.querySelector(`[name="cv${ci}_name"]`)?.value?.trim() || `Color ${ci}`;
+        label = `${colorName} — Foto ${gi}`;
+      }
+      titulo.textContent = '✨ Generar imagen — ' + label;
 
       setError('');
       setLoading(false);
@@ -3083,6 +3183,24 @@
         const label = v('comparison_label_with') || 'With the product';
         const rows  = [1,2,3].map(i => v(`comparison_${i}_with`)).filter(Boolean).join('. ');
         return { titulo: label, texto: rows };
+      }
+
+      // Variantes de color — cv{ci}_g{gi}
+      const cvMatch = section.match(/^cv(\d)_g(\d)$/);
+      if (cvMatch) {
+        const ci = cvMatch[1];
+        const gi = parseInt(cvMatch[2], 10);
+        const colorName = document.querySelector(`[name="cv${ci}_name"]`)?.value?.trim() || `Color ${ci}`;
+        const shotHints = [
+          'Main product shot — full product visible, clean background',
+          'Different angle or detail — shows design and texture clearly',
+          'Lifestyle — product in real-life context or being worn/used',
+          'Flat lay or packaging — product with accessories, top-down view',
+        ];
+        return {
+          titulo: `${v('hero_title')} — color: ${colorName}`,
+          texto:  `${shotHints[gi - 1] || 'Product shot'} — color variant: ${colorName}`,
+        };
       }
 
       return { titulo: '', texto: '' };

@@ -61,6 +61,22 @@ for ($i = 1; $i <= 4; $i++) {
     }
 }
 
+// Variantes de color para la galería
+$colorVariants = [];
+if (!empty($cfg['color_variants'])) {
+    $decoded = json_decode($cfg['color_variants'], true);
+    if (is_array($decoded)) {
+        foreach ($decoded as $cv) {
+            $name = trim($cv['name'] ?? '');
+            $hex  = trim($cv['hex']  ?? '#000000');
+            $imgs = array_values(array_filter(array_map('trim', $cv['images'] ?? []), fn($s) => $s !== ''));
+            if ($name !== '' && !empty($imgs)) {
+                $colorVariants[] = ['name' => $name, 'hex' => $hex, 'images' => $imgs];
+            }
+        }
+    }
+}
+
 // ===== COUNTDOWN =====
 $countdownTitle = $cfg['countdown_title'] ?? 'La promoción termina en:';
 $countdownText  = $cfg['countdown_text']  ?? 'Después de que el contador llegue a cero, el precio puede volver a la normalidad.';
@@ -593,21 +609,42 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <h2 class="section-title"><?= htmlspecialchars($galleryTitle) ?></h2>
 
             <?php
-            // Si no hay imágenes configuradas, usa fallbacks (ahora con 4 elementos)
-            $gallery = $galleryPaths;
-            if (empty($gallery)) {
-                $gallery = [
+            if (!empty($colorVariants)) {
+                // Con variantes: la galería muestra las imágenes del primer color
+                $firstColor = $colorVariants[0];
+                $mainImg    = $firstColor['images'][0] ?? '';
+                $thumbImgs  = array_slice($firstColor['images'], 1, 3);
+            } else {
+                // Sin variantes: usa las fotos del editor (con fallback)
+                $gallery = !empty($galleryPaths) ? $galleryPaths : [
                     BASE_URL . '/public/img/producto/uso-1.jpg',
                     BASE_URL . '/public/img/producto/uso-1.jpg',
                     BASE_URL . '/public/img/producto/uso-1.jpg',
                     BASE_URL . '/public/img/producto/uso-1.jpg',
                 ];
+                $mainImg   = $gallery[0] ?? '';
+                $thumbImgs = array_slice($gallery, 1, 3);
             }
-
-            $mainImg   = $gallery[0] ?? '';
-            // Cambiado de 2 a 3 para obtener las 3 miniaturas que acompañan a la principal
-            $thumbImgs = array_slice($gallery, 1, 3);
             ?>
+
+            <?php if (!empty($colorVariants)): ?>
+            <div class="gallery-color-pills" role="group" aria-label="Colores disponibles">
+                <span class="gallery-color-pills__label">Color:</span>
+                <?php foreach ($colorVariants as $cIdx => $cv): ?>
+                <button
+                    type="button"
+                    class="color-pill <?= $cIdx === 0 ? 'is-active' : '' ?>"
+                    data-color-idx="<?= $cIdx ?>"
+                    data-color-images="<?= htmlspecialchars(json_encode($cv['images'], JSON_UNESCAPED_UNICODE)) ?>"
+                    aria-label="<?= htmlspecialchars($cv['name']) ?>"
+                    title="<?= htmlspecialchars($cv['name']) ?>"
+                    style="--cv-color:<?= htmlspecialchars($cv['hex']) ?>">
+                    <span class="color-pill__swatch" style="background:<?= htmlspecialchars($cv['hex']) ?>"></span>
+                    <span class="color-pill__name"><?= htmlspecialchars($cv['name']) ?></span>
+                </button>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
 
             <div class="product-gallery" data-product-gallery>
                 <figure class="product-gallery__main">
@@ -639,6 +676,51 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </div>
                 <?php endif; ?>
             </div>
+
+            <?php if (!empty($colorVariants)): ?>
+            <script>
+            (function () {
+                var pills   = document.querySelectorAll('.color-pill');
+                var gallery = document.querySelector('[data-product-gallery]');
+                if (!pills.length || !gallery) return;
+
+                function applyImages(images) {
+                    var mainImg   = gallery.querySelector('.product-gallery__main-img');
+                    var thumbBtns = Array.from(gallery.querySelectorAll('.product-gallery__thumb'));
+
+                    if (mainImg && images[0]) {
+                        mainImg.src = images[0];
+                    }
+                    thumbBtns.forEach(function (btn, i) {
+                        var img = btn.querySelector('img');
+                        var src = images[i + 1] || '';
+                        if (!src) {
+                            btn.style.display = 'none';
+                            return;
+                        }
+                        btn.style.display = '';
+                        btn.setAttribute('data-src', src);
+                        if (img) img.src = src;
+                    });
+
+                    // Notificar a initGallery() que reconstruya allSrcs desde el DOM actualizado
+                    // para que el swipe y el click en miniaturas usen las imágenes del color activo
+                    if (typeof window.galleryRefresh === 'function') {
+                        window.galleryRefresh();
+                    }
+                }
+
+                pills.forEach(function (pill) {
+                    pill.addEventListener('click', function () {
+                        pills.forEach(function (p) { p.classList.remove('is-active'); });
+                        pill.classList.add('is-active');
+                        var images = JSON.parse(pill.getAttribute('data-color-images') || '[]');
+                        applyImages(images);
+                    });
+                });
+            })();
+            </script>
+            <?php endif; ?>
 
             <?php if ($showCtaGallery): ?>
             <div class="section-cta">
