@@ -191,9 +191,10 @@ Genera UN prompt optimizado para Flux Kontext Pro (modelo img2img) para este tip
 REGLAS CRÍTICAS DEL PROMPT:
 1. Empieza SIEMPRE con: "Same product, preserve every detail, brand, color and shape EXACTLY."
 2. Describe SOLO el entorno, iluminación, composición y contexto — NUNCA alteres el producto.
-3. Sé muy específico para este producto (analiza la foto para entender qué es).
-4. Termina SIEMPRE con: "Do not alter the product in any way. No text. No watermarks."
-5. Máximo 80 palabras. En inglés.
+3. Sé muy específico para este producto (analiza la foto para entender qué es exactamente).
+4. PROPORCIONES: si es lifestyle (producto en uso), incluye: "product appears at its true real-world scale, correctly proportioned — NOT enlarged" + especificación de cámara: "85mm lens, medium close-up, f/2.0, photorealistic, hyperrealistic skin texture, shot on Sony A7R IV".
+5. CALIDAD: siempre termina con: "8K photorealistic. Do not alter the product in any way. No text. No watermarks."
+6. Máximo 90 palabras. En inglés.
 
 Responde SOLO con el prompt en texto plano. Sin explicaciones, sin comillas, sin prefijos.
 PROMPT;
@@ -306,7 +307,10 @@ Reglas CRÍTICAS para los prompts:
 - Empieza SIEMPRE con: "Same product, preserve every detail, brand, color and shape EXACTLY."
 - Describe ÚNICAMENTE el entorno, iluminación, composición y contexto — NUNCA menciones cambios al producto.
 - Sé muy específico al tipo de producto que ves en la foto (bolsa, reloj, ropa, etc.).
-- Termina SIEMPRE con: "Do not alter the product in any way. No text. No watermarks."
+- Para "lifestyle": incluye SIEMPRE instrucciones de escala y proporciones reales. Ejemplo: "product appears at its true real-world scale, correctly proportioned relative to the human body, NOT enlarged or zoomed in" + cámara específica ("85mm lens, medium close-up shot, f/2.0") + "photorealistic, hyperrealistic skin texture, 8K quality, shot on Sony A7R IV".
+- Para "hero": usa términos de fotografía de producto premium: "macro detail, water droplets, perfect mirror reflection, 8K, commercial product photography".
+- Para "flatlay": "90-degree overhead shot, natural diffused light, styled editorial flat lay, 8K".
+- Termina SIEMPRE con: "Photorealistic. Do not alter the product in any way. No text. No watermarks."
 
 ─────────────────────────────────────────
 3. "ads" — 3 variaciones de copy para Facebook Ads
@@ -410,8 +414,11 @@ PROMPT;
                     'prompt'           => $style . '. Product: ' . $nombre,
                     'input_image'      => $imageData,
                     'output_format'    => 'jpg',
+                    'output_quality'   => 95,
                     'safety_tolerance' => 2,
                     'aspect_ratio'     => '1:1',
+                    'steps'            => 35,
+                    'guidance'         => 3.5,
                 ],
             ]);
 
