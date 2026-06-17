@@ -49,18 +49,18 @@ class AdminMarketingController extends Controller
             return;
         }
 
-        $settings       = new AppSettings();
-        $claudeKey      = $settings->get('claude_api_key');
-        $replicateKey   = $settings->get('replicate_api_key');
+        $settings     = new AppSettings();
+        $claudeKey    = $settings->get('claude_api_key');
+        $replicateKey = $settings->get('replicate_api_key');
 
         if (!$claudeKey) {
             echo json_encode(['ok' => false, 'error' => 'Falta la API key de Claude']);
             return;
         }
 
-        $nombre   = trim($_POST['nombre']   ?? '');
-        $precio   = trim($_POST['precio']   ?? '');
-        $contexto = trim($_POST['contexto'] ?? '');
+        $nombre          = trim($_POST['nombre']          ?? '');
+        $precio          = trim($_POST['precio']          ?? '');
+        $caracteristicas = trim($_POST['caracteristicas'] ?? '');
 
         if ($nombre === '' || $precio === '') {
             echo json_encode(['ok' => false, 'error' => 'Nombre y precio son requeridos']);
@@ -70,6 +70,9 @@ class AdminMarketingController extends Controller
         // ── 1. Guardar foto subida ────────────────────────────────
         $localPath = '';
         $imageUrl  = '';
+        $ext       = 'jpeg';
+        $imageData = '';
+
         if (!empty($_FILES['foto']['tmp_name']) && is_uploaded_file($_FILES['foto']['tmp_name'])) {
             $ext = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
             if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
@@ -79,115 +82,180 @@ class AdminMarketingController extends Controller
             $filename  = 'mkt_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
             $localPath = $this->uploadDir() . $filename;
             if (move_uploaded_file($_FILES['foto']['tmp_name'], $localPath)) {
-                $imageUrl = BASE_URL . '/public/uploads/marketing/' . $filename;
+                $imageUrl  = BASE_URL . '/public/uploads/marketing/' . $filename;
+                $imageData = 'data:image/' . ($ext === 'jpg' ? 'jpeg' : $ext) . ';base64,' . base64_encode(file_get_contents($localPath));
             }
         }
 
-        // ── 2. Claude → 3 copies de texto ────────────────────────
+        // ── 2. Claude analiza foto + genera copy, prompts e audiencia ─
         set_time_limit(180);
 
-        $copyResult = $this->callClaude($claudeKey, $nombre, $precio, $contexto);
-        if (!$copyResult['ok']) {
-            echo json_encode($copyResult);
+        $claudeResult = $this->callClaude($claudeKey, $nombre, $precio, $caracteristicas, $imageData);
+        if (!$claudeResult['ok']) {
+            echo json_encode($claudeResult);
             return;
         }
-        $ads = $copyResult['ads'];
 
-        // ── 3. Replicate → 3 imágenes estilizadas (paralelo) ─────
-        if ($replicateKey && $localPath && file_exists($localPath)) {
-            $imageData = 'data:image/' . ($ext ?? 'jpeg') . ';base64,' . base64_encode(file_get_contents($localPath));
+        $ads           = $claudeResult['ads'];
+        $audiencia     = $claudeResult['audiencia']     ?? null;
+        $imagePrompts  = $claudeResult['imagePrompts']  ?? [];
 
+        // ── 3. Replicate → 3 imágenes (prompts de Claude) ────────
+        if ($replicateKey && $imageData) {
             $stylePrompts = [
-                // HERO SHOT: el producto como protagonista absoluto
-                'oscuro'   => "Same product, preserve every detail, brand and color. Transform into a luxury hero studio shot: product centered floating above jet-black velvet, single dramatic overhead spotlight creating crisp specular highlights and hard shadow, fine water mist droplets catching the light, perfect mirror reflection on the surface below, ultra-sharp macro detail on textures and branding, premium watch advertising photography, no people, no text, no watermarks",
-
-                // LIFESTYLE / IN-USE: el cliente imaginándose usándolo
-                'dorado'   => "Same product now worn naturally on an elegant wrist with dark suit sleeve slightly rolled, person casually checking the time at a modern minimalist office desk, laptop and espresso cup softly blurred in background, shallow depth of field, warm soft window light from the left, authentic candid lifestyle moment, no text, no watermarks",
-
-                // FLAT LAY EDITORIAL: el producto dentro de un estilo de vida premium
-                'vibrante' => "Same product as centerpiece of a curated flat lay on white Italian Carrara marble surface, surrounded by complementary luxury accessories: slim dark leather bifold wallet, premium car key fob, aviator sunglasses, small espresso cup with saucer, arranged in a balanced geometric composition, 90-degree overhead shot, soft natural diffused light, editorial fashion magazine aesthetic, no text, no watermarks",
+                'oscuro'   => $imagePrompts['hero']      ?? '',
+                'dorado'   => $imagePrompts['lifestyle'] ?? '',
+                'vibrante' => $imagePrompts['flatlay']   ?? '',
             ];
 
-            $generatedImages = $this->callReplicateMulti($replicateKey, $imageData, $stylePrompts, $nombre);
+            // Filtrar temas con prompt vacío
+            $stylePrompts = array_filter($stylePrompts, fn($p) => $p !== '');
 
-            // Devolver URL pública de Replicate CDN directamente (tiene CORS habilitado)
-            foreach ($ads as $i => $ad) {
-                $tema      = $ad['tema'] ?? 'oscuro';
-                $remoteUrl = $generatedImages[$tema] ?? null;
-                if ($remoteUrl && is_string($remoteUrl) && str_starts_with($remoteUrl, 'http')) {
-                    $ads[$i]['imageUrl'] = $remoteUrl; // URL de Replicate CDN
+            if (!empty($stylePrompts)) {
+                $generatedImages = $this->callReplicateMulti($replicateKey, $imageData, $stylePrompts, $nombre);
+
+                foreach ($ads as $i => $ad) {
+                    $tema      = $ad['tema'] ?? 'oscuro';
+                    $remoteUrl = $generatedImages[$tema] ?? null;
+                    if ($remoteUrl && is_string($remoteUrl) && str_starts_with($remoteUrl, 'http')) {
+                        $ads[$i]['imageUrl'] = $remoteUrl;
+                    }
                 }
             }
         }
 
-        // Si algún anuncio no tiene imagen generada, usa la original subida
         foreach ($ads as $i => $ad) {
-            if (empty($ad['imageUrl'])) {
-                $ads[$i]['imageUrl'] = $imageUrl; // URL local de la foto subida
-            }
+            if (empty($ad['imageUrl'])) $ads[$i]['imageUrl'] = $imageUrl;
         }
 
         echo json_encode([
-            'ok'            => true,
-            'imageUrl'      => $imageUrl,
-            'hasReplicate'  => (bool)($replicateKey),
-            'ads'           => $ads,
-            'nombre'        => $nombre,
-            'precio'        => $precio,
+            'ok'           => true,
+            'imageUrl'     => $imageUrl,
+            'imagePath'    => $filename ?? '',
+            'hasReplicate' => (bool)$replicateKey,
+            'ads'          => $ads,
+            'audiencia'    => $audiencia,
+            'imagePrompts' => $imagePrompts,
+            'nombre'       => $nombre,
+            'precio'       => $precio,
         ]);
     }
 
-    // ── Claude: genera 3 copies ───────────────────────────────────
-    private function callClaude(string $apiKey, string $nombre, string $precio, string $contexto): array
+    // AJAX: regenerar UNA imagen con prompt personalizado
+    public function regenerarImagen(): void
     {
-        $contextoLine = $contexto !== '' ? "\nDatos clave del público/producto: {$contexto}" : '';
+        $this->requireLogin();
+        while (ob_get_level()) ob_end_clean();
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            $settings     = new AppSettings();
+            $replicateKey = $settings->get('replicate_api_key');
+            $tema         = trim($_POST['tema']       ?? 'oscuro');
+            $prompt       = trim($_POST['prompt']     ?? '');
+            $imagePath    = trim($_POST['image_path'] ?? '');
+
+            if (!$replicateKey) { echo json_encode(['ok' => false, 'error' => 'Sin API key Replicate']); return; }
+            if (!$prompt)       { echo json_encode(['ok' => false, 'error' => 'Prompt vacío']); return; }
+
+            $localPath = $this->uploadDir() . basename($imagePath);
+            if (!file_exists($localPath)) { echo json_encode(['ok' => false, 'error' => 'Imagen original no encontrada']); return; }
+
+            $ext       = strtolower(pathinfo($localPath, PATHINFO_EXTENSION));
+            $imageData = 'data:image/' . ($ext === 'jpg' ? 'jpeg' : $ext) . ';base64,' . base64_encode(file_get_contents($localPath));
+
+            set_time_limit(120);
+            $results = $this->callReplicateMulti($replicateKey, $imageData, [$tema => $prompt], 'producto');
+            $url     = $results[$tema] ?? null;
+
+            if ($url && is_string($url) && str_starts_with($url, 'http')) {
+                echo json_encode(['ok' => true, 'imageUrl' => $url]);
+            } else {
+                echo json_encode(['ok' => false, 'error' => is_array($url) ? ($url['error'] ?? 'Error Replicate') : 'Sin respuesta']);
+            }
+        } catch (\Throwable $e) {
+            echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    // ── Claude: visión + copy + prompts de imagen + audiencia ───────
+    private function callClaude(string $apiKey, string $nombre, string $precio, string $caracteristicas, string $imageDataUri = ''): array
+    {
+        $caracLine = $caracteristicas !== '' ? "\nCaracterísticas: {$caracteristicas}" : '';
 
         $prompt = <<<PROMPT
-Eres un copywriter experto en direct response marketing para e-commerce en Colombia. Tu especialidad es crear anuncios que atacan el DOLOR real del cliente y lo llevan a comprar impulsivamente.
+Eres un experto en marketing digital, fotografía de producto y e-commerce colombiano.
 
-Producto: {$nombre}
-Precio: \${$precio} COP{$contextoLine}
+Analiza la imagen del producto adjunta y los siguientes datos:
+- Nombre: {$nombre}
+- Precio: \${$precio} COP{$caracLine}
 
-Genera EXACTAMENTE 3 variaciones de anuncio, una por cada ángulo psicológico. Responde SOLO con JSON válido, sin texto extra.
+Con base en el análisis visual y los datos, genera un objeto JSON con estas 3 claves:
 
-ÁNGULO 1 — "dolor" (tema: "oscuro")
-Ataca el dolor, la frustración o vergüenza que siente el cliente HOY sin el producto.
-El headline debe hacer que el cliente diga "¡eso me pasa a mí!".
-Ejemplo: "¿Cansado de [dolor concreto]?" o "[Situación dolorosa] tiene solución"
-body: amplía el dolor 1 segundo y luego ofrece el escape
-cta: acción de alivio ("Sí, lo necesito ya", "Quiero solucionar esto")
+─────────────────────────────────────────
+1. "audiencia" — segmentación para Facebook Ads
+─────────────────────────────────────────
+{
+  "edad": "rango de edad principal (ej: 25-40 años)",
+  "genero": "Masculino / Femenino / Ambos",
+  "intereses": ["interes1","interes2","interes3","interes4","interes5"],
+  "comportamientos": ["comportamiento1","comportamiento2","comportamiento3"],
+  "perfil": "1 oración: quién es el comprador ideal y qué busca"
+}
 
-ÁNGULO 2 — "urgencia" (tema: "dorado")
-FOMO puro. El cliente siente que si no actúa HOY pierde algo real.
-headline: comunica la pérdida si no actúa ("Solo quedan X", "Hoy termina", "El que no pide hoy...")
-body: refuerza la escasez o el privilegio de actuar ahora
-cta: acción urgente ("Lo quiero YA", "Reservar el mío", "Pídelo antes de que se acabe")
+─────────────────────────────────────────
+2. "imagePrompts" — prompts para Flux Kontext Pro (img2img)
+─────────────────────────────────────────
+Genera prompts específicos para ESTE producto (no genéricos).
+Cada prompt debe: preservar el producto exactamente, y transformar el entorno.
+{
+  "hero": "prompt para hero shot dramático específico para este producto",
+  "lifestyle": "prompt para foto lifestyle/in-use con persona real usando/llevando este producto específico",
+  "flatlay": "prompt para flat lay editorial con accesorios que conecten con el buyer de este producto"
+}
+Reglas para los prompts:
+- Siempre empieza con: "Same product, preserve every detail, brand and color."
+- Sé específico al producto: si es una bolsa, menciona la bolsa; si es un reloj, el reloj en la muñeca, etc.
+- Termina siempre con: "no text, no watermarks, no logos added"
 
-ÁNGULO 3 — "transformacion" (tema: "vibrante")
-Vende el "nuevo yo". Cómo se va a SENTIR, VER o VIVIR el cliente después de comprar.
-headline: la versión mejorada del cliente después del producto
-body: pinta el resultado concreto — emocional o social
-cta: aspiración ("Quiero verme así", "Empezar el cambio", "Quiero ser esa versión")
+─────────────────────────────────────────
+3. "ads" — 3 variaciones de copy para Facebook Ads
+─────────────────────────────────────────
+ÁNGULO 1 — "dolor" (tema: "oscuro"): ataca la frustración/vergüenza actual sin el producto
+ÁNGULO 2 — "urgencia" (tema: "dorado"): FOMO, pérdida si no actúa hoy
+ÁNGULO 3 — "transformacion" (tema: "vibrante"): el nuevo yo después de comprar
+Reglas: headline máx 8 palabras, body máx 15 palabras, cta máx 5 palabras.
+Tono colombiano: cercano, directo, informal-premium. NUNCA menciones el precio.
 
-Reglas de oro:
-- headline: máx 8 palabras. Específico. Que duela o fascine.
-- body: máx 15 palabras. 1 oración. Concreto.
-- cta: máx 5 palabras. Que el dedo queme al verlo.
-- Tono colombiano: cercano, directo, informal-premium.
-- NUNCA menciones el precio en el copy.
-
-Formato JSON estricto (solo esto, sin texto extra):
-[
-  {"headline":"...","body":"...","cta":"...","tema":"oscuro","angulo":"dolor"},
-  {"headline":"...","body":"...","cta":"...","tema":"dorado","angulo":"urgencia"},
-  {"headline":"...","body":"...","cta":"...","tema":"vibrante","angulo":"transformacion"}
-]
+─────────────────────────────────────────
+Responde SOLO con JSON válido. Sin texto extra antes ni después.
+─────────────────────────────────────────
+{
+  "audiencia": {...},
+  "imagePrompts": {"hero":"...","lifestyle":"...","flatlay":"..."},
+  "ads": [
+    {"headline":"...","body":"...","cta":"...","tema":"oscuro","angulo":"dolor"},
+    {"headline":"...","body":"...","cta":"...","tema":"dorado","angulo":"urgencia"},
+    {"headline":"...","body":"...","cta":"...","tema":"vibrante","angulo":"transformacion"}
+  ]
+}
 PROMPT;
+
+        // Construir content con o sin imagen
+        if ($imageDataUri !== '') {
+            [$mimePrefix] = explode(';', ltrim($imageDataUri, 'data:'));
+            $content = [
+                ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => $mimePrefix, 'data' => substr($imageDataUri, strpos($imageDataUri, ',') + 1)]],
+                ['type' => 'text', 'text' => $prompt],
+            ];
+        } else {
+            $content = $prompt;
+        }
 
         $payload = json_encode([
             'model'      => 'claude-sonnet-4-6',
-            'max_tokens' => 800,
-            'messages'   => [['role' => 'user', 'content' => $prompt]],
+            'max_tokens' => 1400,
+            'messages'   => [['role' => 'user', 'content' => $content]],
         ]);
 
         $ch = curl_init('https://api.anthropic.com/v1/messages');
@@ -217,16 +285,19 @@ PROMPT;
         $text   = $data['content'][0]['text'] ?? '';
         $parsed = json_decode($text, true);
         if (!is_array($parsed)) {
-            if (preg_match('/\[[\s\S]*\]/u', $text, $m)) {
-                $parsed = json_decode($m[0], true);
-            }
+            if (preg_match('/\{[\s\S]*\}/u', $text, $m)) $parsed = json_decode($m[0], true);
         }
 
-        if (!is_array($parsed) || count($parsed) < 1) {
-            return ['ok' => false, 'error' => 'No se pudo parsear la respuesta de Claude'];
+        if (!is_array($parsed) || empty($parsed['ads'])) {
+            return ['ok' => false, 'error' => 'Claude no devolvió el formato esperado'];
         }
 
-        return ['ok' => true, 'ads' => $parsed];
+        return [
+            'ok'           => true,
+            'ads'          => $parsed['ads'],
+            'audiencia'    => $parsed['audiencia']    ?? null,
+            'imagePrompts' => $parsed['imagePrompts'] ?? [],
+        ];
     }
 
     // ── Replicate: 3 llamadas en paralelo + polling paralelo ─────

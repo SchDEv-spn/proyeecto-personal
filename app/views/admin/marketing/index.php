@@ -445,6 +445,128 @@
         }
         .btn-copy-fb:hover { background: var(--green-dark); color: #fff; }
         .btn-copy-fb.copied { background: var(--green-dark); color: #fff; }
+
+        /* ── Prompt cards bajo cada imagen ───────────────────────── */
+        .mkt-prompt-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-top: -8px;
+            margin-bottom: 28px;
+        }
+        @media (max-width: 780px) { .mkt-prompt-cards { grid-template-columns: 1fr; } }
+
+        .mkt-prompt-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 12px 14px 10px;
+        }
+        .mkt-prompt-card__label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--tx-muted);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .mkt-prompt-card__label i { color: var(--green-dark); }
+        .mkt-prompt-textarea {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--tx);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            padding: 7px 9px;
+            resize: vertical;
+            min-height: 72px;
+            font-family: inherit;
+            margin-bottom: 7px;
+        }
+        .mkt-prompt-textarea:focus { outline: none; border-color: var(--green-dark); }
+        .btn-regen {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: var(--r-md);
+            background: transparent;
+            color: var(--green-dark);
+            border: 1.5px solid var(--green-dark);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background var(--t), color var(--t);
+        }
+        .btn-regen:hover:not(:disabled) { background: var(--green-dark); color: #fff; }
+        .btn-regen:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── Audience card ────────────────────────────────────────── */
+        .mkt-audience-card {
+            background: linear-gradient(135deg, #f0f7f4 0%, #e8f4ff 100%);
+            border: 1px solid #bcd4e6;
+            border-radius: var(--r-xl);
+            padding: 20px 24px;
+            margin-bottom: 28px;
+        }
+        .mkt-audience-card__head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .mkt-audience-card__head i { font-size: 1.2rem; color: #1877f2; }
+        .mkt-audience-card__head h4 { font-size: var(--text-base); font-weight: 700; color: var(--tx); margin: 0; }
+        .mkt-audience-card__head p { font-size: var(--text-sm); color: var(--tx-muted); margin: 2px 0 0; }
+
+        .audience-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        @media (max-width: 600px) { .audience-grid { grid-template-columns: 1fr; } }
+
+        .audience-item {
+            background: rgba(255,255,255,0.75);
+            border: 1px solid rgba(24,119,242,0.15);
+            border-radius: var(--r-md);
+            padding: 10px 13px;
+        }
+        .audience-item label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #1877f2;
+            margin-bottom: 4px;
+        }
+        .audience-item span {
+            font-size: 13px;
+            color: var(--tx);
+            line-height: 1.4;
+        }
+        .audience-intereses {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .audience-tag {
+            background: #1877f2;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: var(--r-full);
+        }
+        .audience-item--full { grid-column: 1 / -1; }
     </style>
 </head>
 <body>
@@ -521,8 +643,8 @@ $showSearch      = false;
                         </div>
 
                         <div class="mkt-field">
-                            <label>¿Quién lo usa y para qué? <span style="font-weight:400;opacity:.6">(opcional pero potente)</span></label>
-                            <textarea id="mktContexto" placeholder="Ej: Hombres entre 25-45 años que quieren verse elegantes. Envío gratis. Stock limitado a 20 unidades."></textarea>
+                            <label>Características <span style="font-weight:400;opacity:.6">(opcional — Claude analiza la foto y deduce el público)</span></label>
+                            <textarea id="mktCaracteristicas" placeholder="Ej: Material cuero genuino. Envío gratis. Stock limitado 20 unidades. Resistente al agua."></textarea>
                         </div>
 
                         <button type="button" class="btn-generar" id="btnGenerar">
@@ -558,6 +680,12 @@ $showSearch      = false;
                         </div>
                     </div>
                     <div class="mkt-cards" id="mktCards"></div>
+
+                    <!-- Prompt cards editables -->
+                    <div class="mkt-prompt-cards" id="mktPromptCards"></div>
+
+                    <!-- Audience Facebook -->
+                    <div id="mktAudienceWrap"></div>
 
                     <!-- Copy Facebook -->
                     <div class="mkt-fb-head">
@@ -627,7 +755,7 @@ $showSearch      = false;
     btnGenerar.addEventListener('click', async () => {
         const nombre   = document.getElementById('mktNombre').value.trim();
         const precio   = document.getElementById('mktPrecio').value.trim();
-        const contexto = document.getElementById('mktContexto').value.trim();
+        const caracteristicas = document.getElementById('mktCaracteristicas').value.trim();
 
         errorEl.style.display = 'none';
         if (!nombre)            return showError('Ingresa el nombre del producto');
@@ -646,7 +774,7 @@ $showSearch      = false;
         fd.append('foto',     fotoInput.files[0]);
         fd.append('nombre',   nombre);
         fd.append('precio',   precio);
-        fd.append('contexto', contexto);
+        fd.append('caracteristicas', caracteristicas);
 
         try {
             const res  = await fetch(BASE + '/AdminMarketing/generarAnuncios', { method: 'POST', body: fd });
@@ -660,6 +788,7 @@ $showSearch      = false;
             }
             if (!data.ok) return showError(data.error || 'Error al generar');
             await renderResults(data, localBlobSrc);
+            renderAudience(data.audiencia);
         } catch (err) {
             showError('Error de red: ' + (err?.message || 'intenta de nuevo'));
         } finally {
@@ -674,8 +803,9 @@ $showSearch      = false;
     }
 
     /* ── Render cards ───────────────────────────────────────────── */
-    async function renderResults({ imageUrl, ads, precio, hasReplicate }, localBlobSrc) {
+    async function renderResults({ imageUrl, imagePath, ads, precio, hasReplicate, imagePrompts }, localBlobSrc) {
         cardsEl.innerHTML = '';
+        document.getElementById('mktPromptCards').innerHTML = '';
 
         // Cadena de fallback separada en 3 niveles para evitar que fallen igual
         // fallback1: URL del servidor (foto subida)
@@ -762,12 +892,116 @@ $showSearch      = false;
             // Evitar duplicados en la cadena (si ad.imageUrl === serverImgUrl ya cayó)
             const srcChain = [...new Set([adImgSrc, serverImgUrl, blobImgUrl].filter(Boolean))];
             tryLoad(srcChain);
+
+            // Prompt card editable bajo la imagen
+            const promptKey = { oscuro: 'hero', dorado: 'lifestyle', vibrante: 'flatlay' }[ad.tema] || 'hero';
+            const promptLabel = { oscuro: 'Hero shot', dorado: 'Lifestyle', vibrante: 'Flat lay' }[ad.tema] || ad.tema;
+            renderPromptCard(ad.tema, promptLabel, (imagePrompts || {})[promptKey] || '', imagePath, card);
         }
 
         renderFbCopy(ads, precio);
 
         resultsEl.style.display = 'block';
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderPromptCard(tema, label, prompt, imagePath, siblingCard) {
+        const promptCards = document.getElementById('mktPromptCards');
+        const pc = document.createElement('div');
+        pc.className = 'mkt-prompt-card';
+        pc.dataset.tema = tema;
+        pc.innerHTML = `
+            <div class="mkt-prompt-card__label">
+                <i class="fas fa-wand-magic-sparkles"></i> Prompt — ${label}
+            </div>
+            <textarea class="mkt-prompt-textarea" rows="4">${escHtml(prompt)}</textarea>
+            <button class="btn-regen"><i class="fas fa-rotate"></i> Regenerar imagen</button>`;
+        promptCards.appendChild(pc);
+
+        pc.querySelector('.btn-regen').addEventListener('click', async function () {
+            const customPrompt = pc.querySelector('.mkt-prompt-textarea').value.trim();
+            if (!customPrompt) return;
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+
+            const wrap = siblingCard.querySelector('.mkt-ad-card__canvas-wrap');
+            wrap.innerHTML = '<span style="font-size:13px;color:#9ca3af;display:flex;align-items:center;gap:6px;height:100%;justify-content:center"><i class="fas fa-spinner fa-spin"></i> Regenerando...</span>';
+
+            const fd = new FormData();
+            fd.append('tema',       tema);
+            fd.append('prompt',     customPrompt);
+            fd.append('image_path', imagePath);
+
+            try {
+                const res  = await fetch(BASE + '/AdminMarketing/regenerarImagen', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.error || 'Error');
+
+                loadImage(data.imageUrl)
+                    .then(img => {
+                        wrap.innerHTML = '';
+                        const canvas = document.createElement('canvas');
+                        canvas.width = canvas.height = 1080;
+                        drawAd(canvas, img, { tema }, '');
+                        wrap.appendChild(canvas);
+                        const dlBtn = siblingCard.querySelector('.btn-download');
+                        dlBtn.disabled = false;
+                        dlBtn.onclick = () => {
+                            const a = document.createElement('a');
+                            a.download = `anuncio-${label}-${Date.now()}.png`;
+                            try { a.href = canvas.toDataURL('image/png'); } catch(e) { return; }
+                            a.click();
+                        };
+                    })
+                    .catch(() => { wrap.innerHTML = '<div style="padding:16px;color:#dc2626;font-size:12px">Error cargando imagen regenerada</div>'; });
+            } catch(e) {
+                wrap.innerHTML = `<div style="padding:16px;color:#dc2626;font-size:12px">${e.message}</div>`;
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-rotate"></i> Regenerar imagen';
+            }
+        });
+    }
+
+    function renderAudience(audiencia) {
+        const wrap = document.getElementById('mktAudienceWrap');
+        if (!wrap || !audiencia) { if (wrap) wrap.innerHTML = ''; return; }
+
+        const intereses = (audiencia.intereses || []).map(i => `<span class="audience-tag">${escHtml(i)}</span>`).join('');
+        const comportamientos = (audiencia.comportamientos || []).map(c => `<span class="audience-tag">${escHtml(c)}</span>`).join('');
+
+        wrap.innerHTML = `
+        <div class="mkt-audience-card">
+            <div class="mkt-audience-card__head">
+                <i class="fab fa-facebook"></i>
+                <div>
+                    <h4>Público sugerido para Facebook Ads</h4>
+                    <p>Basado en el análisis de la foto y los datos del producto</p>
+                </div>
+            </div>
+            <div class="audience-grid">
+                <div class="audience-item">
+                    <label><i class="fas fa-calendar-alt"></i> Edad</label>
+                    <span>${escHtml(audiencia.edad || '—')}</span>
+                </div>
+                <div class="audience-item">
+                    <label><i class="fas fa-user"></i> Género</label>
+                    <span>${escHtml(audiencia.genero || '—')}</span>
+                </div>
+                <div class="audience-item">
+                    <label><i class="fas fa-heart"></i> Intereses</label>
+                    <div class="audience-intereses">${intereses || '—'}</div>
+                </div>
+                <div class="audience-item">
+                    <label><i class="fas fa-mouse-pointer"></i> Comportamientos</label>
+                    <div class="audience-intereses">${comportamientos || '—'}</div>
+                </div>
+                <div class="audience-item audience-item--full">
+                    <label><i class="fas fa-bullseye"></i> Perfil del comprador ideal</label>
+                    <span>${escHtml(audiencia.perfil || '—')}</span>
+                </div>
+            </div>
+        </div>`;
     }
 
     function renderFbCopy(ads, precio) {
