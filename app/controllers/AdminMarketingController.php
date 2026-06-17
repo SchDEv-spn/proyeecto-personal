@@ -32,8 +32,19 @@ class AdminMarketingController extends Controller
     public function generarAnuncios(): void
     {
         $this->requireLogin();
+        // Limpiar cualquier output previo y garantizar JSON limpio
+        while (ob_get_level()) ob_end_clean();
         header('Content-Type: application/json; charset=utf-8');
 
+        try {
+            $this->_generarAnunciosCore();
+        } catch (\Throwable $e) {
+            echo json_encode(['ok' => false, 'error' => 'Error interno: ' . $e->getMessage()]);
+        }
+    }
+
+    private function _generarAnunciosCore(): void
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
             return;

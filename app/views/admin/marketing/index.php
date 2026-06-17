@@ -484,11 +484,18 @@ $showSearch      = false;
 
         try {
             const res  = await fetch(BASE + '/AdminMarketing/generarAnuncios', { method: 'POST', body: fd });
-            const data = await res.json();
+            let data;
+            try {
+                data = await res.json();
+            } catch {
+                const txt = await res.text().catch(() => '(sin respuesta)');
+                showError('El servidor devolvió una respuesta inesperada. Revisa los logs. Detalle: ' + txt.slice(0, 200));
+                return;
+            }
             if (!data.ok) return showError(data.error || 'Error al generar');
             await renderResults(data);
-        } catch {
-            showError('Error de conexión. Intenta de nuevo.');
+        } catch (err) {
+            showError('Error de red: ' + (err?.message || 'intenta de nuevo'));
         } finally {
             btnGenerar.disabled = false;
             btnGenerar.classList.remove('loading');
