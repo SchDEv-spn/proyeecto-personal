@@ -334,14 +334,14 @@
       var inner = document.createElement('div');
       inner.className = 'ux-dropzone-inner';
 
-      function renderLabel(icon, text, hint, ok) {
+      function renderLabel(faIcon, text, hint, ok) {
         inner.innerHTML =
-          '<em class="ux-dropzone-icon' + (ok ? ' ux-dropzone-icon--ok' : '') + '">' + icon + '</em>' +
+          '<i class="fas ' + faIcon + ' ux-dropzone-icon' + (ok ? ' ux-dropzone-icon--ok' : '') + '" aria-hidden="true"></i>' +
           '<span class="ux-dropzone-text">' + text + '</span>' +
           '<span class="ux-dropzone-hint">' + hint + '</span>';
       }
 
-      renderLabel('↑', 'Arrastra aquí o <u>haz clic</u>', getAcceptLabel(input.accept), false);
+      renderLabel('fa-cloud-arrow-up', 'Arrastra aquí o <u>haz clic para subir</u>', getAcceptLabel(input.accept), false);
       wrap.appendChild(inner);
 
       /* Inserta el wrap en lugar del input y mueve el input dentro */
@@ -379,7 +379,7 @@
         if (input.files && input.files.length) {
           var f    = input.files[0];
           var size = (f.size / 1024 / 1024).toFixed(1);
-          renderLabel('✓', f.name, size + ' MB · <u>Cambiar archivo</u>', true);
+          renderLabel('fa-circle-check', f.name, size + ' MB · <u>Cambiar archivo</u>', true);
           wrap.classList.add('ux-dropzone--filled');
         }
       });

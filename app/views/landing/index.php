@@ -458,8 +458,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <div class="hero-text">
             <h1><?= htmlspecialchars($heroTitle) ?></h1>
 
-            <p class="hero-subtitle"><?= htmlspecialchars($heroSubtitle) ?></p>
-
+            <?php foreach ($heroSubtitles as $sub): ?>
+            <p class="hero-subtitle"><?= htmlspecialchars($sub) ?></p>
+            <?php endforeach; ?>
 
         </div>
 
@@ -769,7 +770,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 /* after transition: if we're on a clone, jump silently to the real slide */
                 track.addEventListener('transitionend', function() {
                     /* detect if we slid to leading clone (visual pos 0) */
-                    var mat = new WebKitCSSMatrix(window.getComputedStyle(track).transform);
+                    var mat = new (window.DOMMatrix || window.WebKitCSSMatrix)(window.getComputedStyle(track).transform);
                     var x   = mat.m41;
                     var step = stepPx();
                     if (step === 0) return;
@@ -823,6 +824,19 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 /* init at real slide 0 (visual pos 1) */
                 setPos(1, false);
                 updateDots(0);
+
+                /* nudge — insinúa que hay más slides, se dispara una vez al cargar */
+                setTimeout(function () {
+                    var step = stepPx();
+                    if (step === 0) return;
+                    var base = -(1 * step);
+                    track.style.transition = 'transform 0.55s cubic-bezier(0.22,1,0.36,1)';
+                    track.style.transform  = 'translateX(' + (base + 32) + 'px)';
+                    setTimeout(function () {
+                        track.style.transform = 'translateX(' + base + 'px)';
+                        setTimeout(function () { track.style.transition = ''; }, 560);
+                    }, 480);
+                }, 900);
             })();
             </script>
         </section>
@@ -1104,6 +1118,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <?php endif; ?>
             </div>
         </section>
+        <script>
+        (function () {
+            var el = document.getElementById('waTickerScroll');
+            if (!el) return;
+            setTimeout(function () {
+                el.scrollTo({ left: 44, behavior: 'smooth' });
+                setTimeout(function () {
+                    el.scrollTo({ left: 0, behavior: 'smooth' });
+                }, 520);
+            }, 1200);
+        })();
+        </script>
         <?php endif; $sections['wa_testimonios'] = ob_get_clean(); ?>
 
         <?php ob_start(); if ($showFaqs): ?>

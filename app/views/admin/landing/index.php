@@ -7,6 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="manifest" href="<?= BASE_URL ?>/public/manifest.php">
   <meta name="theme-color" content="#C9A84C">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
@@ -41,11 +44,18 @@
       'href'  => BASE_URL . '/AdminProductos/index',
       'label' => '← Volver a productos',
       'class' => 'btn-detail',
-      'icon'  => '',
+      'icon'  => 'fa-arrow-left',
     ],
   ];
 
   if ($producto) {
+    $headerCtas[] = [
+      'href'    => 'javascript:void(0)',
+      'label'   => 'Preview',
+      'class'   => 'btn-detail btn-preview-trigger',
+      'icon'    => 'fa-eye',
+      'onclick' => 'window.openLandingPreview && window.openLandingPreview()',
+    ];
     $headerCtas[] = [
       'href'   => BASE_URL . '/Landing/index?producto_id=' . urlencode((string)$producto_id),
       'label'  => 'Ver landing',
@@ -64,7 +74,7 @@
 
   <!-- Mini diálogo de confirmación accesible (reemplaza confirm() nativo) -->
   <div id="confirmDialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmDialogMsg"
-       style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;">
+       style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
     <div style="background:var(--bg-surface,#1a1a2e);border:1px solid var(--bd-default,#2a2a3a);border-radius:12px;padding:24px 28px;max-width:380px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.5);">
       <p id="confirmDialogMsg" style="margin:0 0 20px;font-size:14px;color:var(--tx-primary,#e0e0f0);line-height:1.5;"></p>
       <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -84,12 +94,7 @@
 
       <section class="material-content" id="top">
 
-        <?php if (!empty($success)): ?>
-          <div class="admin-alert-success">
-            <i class="fas fa-circle-check"></i>
-            <span><?= htmlspecialchars($success) ?></span>
-          </div>
-        <?php endif; ?>
+        <?= alert_success($success) ?>
 
         <!-- Layout con índice lateral -->
         <div class="landing-editor-layout">
@@ -117,7 +122,6 @@
                 <option value="sec-ctas">CTAs</option>
                 <option value="sec-combo">Modo Combo</option>
                 <option value="sec-colores">Colores</option>
-                <option value="sec-titulos">Títulos</option>
                 <option value="sec-announcement">Barra anuncios</option>
                 <option value="sec-hero-trust">Confianza hero</option>
                 <option value="sec-comofunciona-content">Cómo funciona</option>
@@ -138,16 +142,20 @@
                 <form action="<?= BASE_URL ?>/AdminLanding/index" method="GET" class="admin-form admin-form--compact">
                   <div class="admin-form-group">
                     <label for="producto_id_select">Producto</label>
-                    <select name="producto_id" id="producto_id_select"
-                    data-current="<?= htmlspecialchars((string)$producto_id) ?>"
-                    class="js-product-switcher"
-                    data-confirm="Tienes cambios sin guardar en la landing actual. ¿Cambiar de producto de todas formas?">
-                      <?php foreach ($productos as $prod): ?>
-                        <option value="<?= htmlspecialchars($prod['id']) ?>" <?= ($prod['id'] == $producto_id) ? 'selected' : '' ?>>
-                          <?= htmlspecialchars($prod['nombre']) ?>
-                        </option>
-                      <?php endforeach; ?>
-                    </select>
+                    <div class="product-switcher-row">
+                      <select name="producto_id" id="producto_id_select"
+                        data-current="<?= htmlspecialchars((string)$producto_id) ?>">
+                        <?php foreach ($productos as $prod): ?>
+                          <option value="<?= htmlspecialchars($prod['id']) ?>" <?= ($prod['id'] == $producto_id) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($prod['nombre']) ?>
+                          </option>
+                        <?php endforeach; ?>
+                      </select>
+                      <button type="button" class="btn-switch-product"
+                        data-confirm="Tienes cambios sin guardar en la landing actual. ¿Cambiar de producto de todas formas?">
+                        <i class="fas fa-arrow-right-arrow-left" aria-hidden="true"></i> Cambiar
+                      </button>
+                    </div>
                   </div>
                 </form>
               </div>
@@ -201,26 +209,27 @@
                     <div class="sections-toggle-grid">
 
                       <div class="section-toggle-item section-toggle-item--locked">
-                        <span class="section-toggle-name">🦸 Hero</span>
+                        <i class="fas fa-star section-toggle-fa-icon" aria-hidden="true"></i>
+                        <span class="section-toggle-name">Hero</span>
                         <span class="section-toggle-badge">Siempre visible</span>
                       </div>
 
                       <?php
                       $toggles = [
-                        'show_benefits'        => ['icon' => '✨', 'label' => 'Beneficios'],
-                        'show_gallery'         => ['icon' => '🖼',  'label' => 'Galería'],
-                        'show_caracteristicas' => ['icon' => '✨', 'label' => 'Características'],
-                        'show_como_funciona'   => ['icon' => '📦', 'label' => 'Cómo funciona'],
-                        'show_countdown'       => ['icon' => '⏳', 'label' => 'Contador / Oferta'],
-                        'show_porque'          => ['icon' => '💡', 'label' => 'Por qué encantará'],
-                        'show_comparison'      => ['icon' => '⚖️', 'label' => 'Tabla comparativa'],
-                        'show_para_quien'      => ['icon' => '👥', 'label' => '¿Para quién es?'],
-                        'show_testimonios'     => ['icon' => '⭐', 'label' => 'Testimonios'],
-                        'show_faqs'            => ['icon' => '❓', 'label' => 'Preguntas frecuentes'],
-                        'show_wa_testimonios'  => ['icon' => '📱', 'label' => 'Testimonios WhatsApp'],
-                        'show_garantia'        => ['icon' => '🛡️', 'label' => 'Banner de garantía'],
-                        'show_regalo'          => ['icon' => '🎁', 'label' => 'Regalo incluido'],
-                        'show_price_box'       => ['icon' => '💰', 'label' => 'Caja de precio / CTA'],
+                        'show_benefits'        => ['icon' => 'fa-bolt',             'label' => 'Beneficios'],
+                        'show_gallery'         => ['icon' => 'fa-images',            'label' => 'Galería'],
+                        'show_caracteristicas' => ['icon' => 'fa-layer-group',       'label' => 'Características'],
+                        'show_como_funciona'   => ['icon' => 'fa-list-check',        'label' => 'Cómo funciona'],
+                        'show_countdown'       => ['icon' => 'fa-clock',             'label' => 'Contador / Oferta'],
+                        'show_porque'          => ['icon' => 'fa-heart',             'label' => 'Por qué encantará'],
+                        'show_comparison'      => ['icon' => 'fa-scale-balanced',    'label' => 'Tabla comparativa'],
+                        'show_para_quien'      => ['icon' => 'fa-user-check',        'label' => '¿Para quién es?'],
+                        'show_testimonios'     => ['icon' => 'fa-star',              'label' => 'Testimonios'],
+                        'show_faqs'            => ['icon' => 'fa-circle-question',   'label' => 'Preguntas frecuentes'],
+                        'show_wa_testimonios'  => ['icon' => 'fa-mobile-screen',     'label' => 'Testimonios WhatsApp'],
+                        'show_garantia'        => ['icon' => 'fa-shield-halved',     'label' => 'Banner de garantía'],
+                        'show_regalo'          => ['icon' => 'fa-gift',              'label' => 'Regalo incluido'],
+                        'show_price_box'       => ['icon' => 'fa-tag',               'label' => 'Caja de precio / CTA'],
                       ];
 
                       // Render toggles in saved order
@@ -241,7 +250,7 @@
                         <div class="section-toggle-item" draggable="true" data-key="<?= $sec ?>">
                           <span class="drag-handle" title="Arrastrar para reordenar"><i class="fas fa-grip-vertical" aria-hidden="true"></i></span>
                           <span class="section-toggle-pos"><?= $i + 1 ?></span>
-                          <span class="section-toggle-icon"><?= $icon ?></span>
+                          <i class="fas <?= htmlspecialchars($icon) ?> section-toggle-fa-icon" aria-hidden="true"></i>
                           <span class="section-toggle-name"><?= $lbl ?></span>
                           <label class="toggle-label">
                             <input type="hidden"   name="<?= $name ?>" value="0">
@@ -263,19 +272,19 @@
                     <div class="sections-toggle-grid">
                       <?php
                       $fixedToggles = [
-                        'show_sticky_bar'       => ['icon' => '📌', 'label' => 'Barra de precio sticky'],
-                        'show_announcement_bar' => ['icon' => '📢', 'label' => 'Barra de anuncios'],
-                        'show_resumen_oferta'   => ['icon' => '🏷️', 'label' => 'Resumen de oferta'],
-                        'show_cta_sticky'       => ['icon' => '📱', 'label' => 'CTA sticky mobile'],
-                        'show_whatsapp_btn'     => ['icon' => '💬', 'label' => 'Botón WhatsApp flotante'],
-                        'show_fomo'             => ['icon' => '🔔', 'label' => 'Notificaciones FOMO'],
-                        'show_exit_popup'       => ['icon' => '🚪', 'label' => 'Popup de salida'],
+                        'show_sticky_bar'       => ['icon' => 'fa-thumbtack',        'label' => 'Barra de precio sticky'],
+                        'show_announcement_bar' => ['icon' => 'fa-bullhorn',          'label' => 'Barra de anuncios'],
+                        'show_resumen_oferta'   => ['icon' => 'fa-receipt',           'label' => 'Resumen de oferta'],
+                        'show_cta_sticky'       => ['icon' => 'fa-mobile-screen',     'label' => 'CTA sticky mobile'],
+                        'show_whatsapp_btn'     => ['icon' => 'fa-comment-dots',      'label' => 'Botón WhatsApp flotante'],
+                        'show_fomo'             => ['icon' => 'fa-bell',              'label' => 'Notificaciones FOMO'],
+                        'show_exit_popup'       => ['icon' => 'fa-door-open',         'label' => 'Popup de salida'],
                       ];
                       foreach ($fixedToggles as $fname => $fdata):
                         $fchecked = isset($config[$fname]) ? (int)$config[$fname] : 1;
                       ?>
                         <div class="section-toggle-item">
-                          <span class="section-toggle-icon"><?= $fdata['icon'] ?></span>
+                          <i class="fas <?= htmlspecialchars($fdata['icon']) ?> section-toggle-fa-icon" aria-hidden="true"></i>
                           <span class="section-toggle-name"><?= $fdata['label'] ?></span>
                           <label class="toggle-label">
                             <input type="hidden"   name="<?= $fname ?>" value="0">
@@ -294,91 +303,100 @@
                   <div class="section-block" id="sec-hero" data-toc="Hero">
                     <h2>Sección Hero</h2>
 
-                    <div class="form-grid">
-                      <div class="admin-form-group">
-                        <label for="hero_title">Título principal</label>
-                        <input type="text" id="hero_title" name="hero_title"
-                          value="<?= htmlspecialchars($config['hero_title'] ?? '') ?>">
-                      </div>
+                    <div class="stack-cards stack-cards--2col">
 
-                      <div class="admin-form-group">
-                        <label for="hero_button_text">Texto del botón principal</label>
-                        <input type="text" id="hero_button_text" name="hero_button_text"
-                          value="<?= htmlspecialchars($config['hero_button_text'] ?? '¡Necesito el mío!') ?>">
-                      </div>
-
-                      <div class="admin-form-group admin-form-group--full">
-                        <label for="hero_subtitle">Subtítulo <small style="opacity:.65;font-weight:400">(frase 1 — siempre visible)</small></label>
-                        <textarea id="hero_subtitle" name="hero_subtitle" rows="2"><?= htmlspecialchars($config['hero_subtitle'] ?? '') ?></textarea>
-                      </div>
-                      <div class="admin-form-group admin-form-group--full">
-                        <label for="hero_note">Nota debajo del botón</label>
-                        <input type="text" id="hero_note" name="hero_note"
-                          value="<?= htmlspecialchars($config['hero_note'] ?? '') ?>">
-                      </div>
-
-                      <div class="admin-form-group">
-                        <label for="hero_badge_stars">Badge — Calificación (ej. 4.9)</label>
-                        <input type="text" id="hero_badge_stars" name="hero_badge_stars"
-                          value="<?= htmlspecialchars($config['hero_badge_stars'] ?? '4.9') ?>"
-                          aria-describedby="hero_badge_stars_hint">
-                        <small id="hero_badge_stars_hint">Número de estrellas que aparece en el badge flotante sobre la imagen.</small>
-                      </div>
-
-                      <div class="admin-form-group">
-                        <label for="hero_badge_customers">Badge — Texto clientes</label>
-                        <input type="text" id="hero_badge_customers" name="hero_badge_customers"
-                          value="<?= htmlspecialchars($config['hero_badge_customers'] ?? '+3.200 clientes felices') ?>"
-                          aria-describedby="hero_badge_customers_hint">
-                        <small id="hero_badge_customers_hint">Ej: +3.200 clientes felices</small>
-                      </div>
-
-                      <div class="admin-form-group">
-                        <label>Tipo de media en el hero</label>
-                        <?php $heroType = $config['hero_media_type'] ?? 'imagen'; ?>
-                        <select name="hero_media_type" onchange="toggleMediaPreview('hero', this.value)">
-                          <option value="imagen" <?= $heroType === 'imagen' ? 'selected' : '' ?>>Imagen</option>
-                          <option value="video" <?= $heroType === 'video'  ? 'selected' : '' ?>>Video</option>
-                        </select>
-                      </div>
-
-                      <div class="admin-form-group">
-                        <label for="hero_media_file">Subir nueva imagen/video</label>
-                        <input type="file" id="hero_media_file" name="hero_media_file" accept="image/*,video/*">
-                      </div>
-
-                      <div class="admin-form-group" id="hero-poster-group" style="<?= ($config['hero_media_type'] ?? 'imagen') !== 'video' ? 'display:none' : '' ?>">
-                        <label for="hero_poster_file">Thumbnail del video (portada)</label>
-                        <input type="file" id="hero_poster_file" name="hero_poster_file" accept="image/*">
-                        <?php if (!empty($config['hero_poster_path'])): ?>
-                          <div class="media-preview" style="margin-top:.5rem">
-                            <img src="<?= htmlspecialchars($config['hero_poster_path']) ?>" alt="Thumbnail actual">
-                          </div>
-                        <?php endif; ?>
-                        <input type="hidden" name="hero_poster_path_actual"
-                          value="<?= htmlspecialchars($config['hero_poster_path'] ?? '') ?>">
-                      </div>
-
-                      <div class="admin-form-group admin-form-group--full">
-                        <label>Media actual</label>
-                        <div class="media-preview">
-                          <?php if (!empty($config['hero_media_path'])): ?>
-                            <?php if ($heroType === 'video'): ?>
-                              <video src="<?= htmlspecialchars($config['hero_media_path']) ?>" controls></video>
-                            <?php else: ?>
-                              <img src="<?= htmlspecialchars($config['hero_media_path']) ?>" alt="Hero">
-                            <?php endif; ?>
-                          <?php else: ?>
-                            <div class="media-empty">
-                              <i class="fas fa-photo-film"></i>
-                              <span>No hay media configurada.</span>
-                            </div>
-                          <?php endif; ?>
+                      <!-- Textos -->
+                      <div class="mini-card">
+                        <div class="mini-card-title">
+                          <span><i class="fas fa-pencil" aria-hidden="true"></i> Textos</span>
                         </div>
-
-                        <input type="hidden" name="hero_media_path_actual"
-                          value="<?= htmlspecialchars($config['hero_media_path'] ?? '') ?>">
+                        <div class="form-grid">
+                          <div class="admin-form-group admin-form-group--full">
+                            <label for="hero_title">Título principal</label>
+                            <input type="text" id="hero_title" name="hero_title"
+                              value="<?= htmlspecialchars($config['hero_title'] ?? '') ?>">
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label for="hero_subtitle">Subtítulo</label>
+                            <textarea id="hero_subtitle" name="hero_subtitle" rows="2"><?= htmlspecialchars($config['hero_subtitle'] ?? '') ?></textarea>
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label for="hero_button_text">Texto del botón</label>
+                            <input type="text" id="hero_button_text" name="hero_button_text"
+                              value="<?= htmlspecialchars($config['hero_button_text'] ?? '¡Necesito el mío!') ?>">
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label for="hero_note">Nota debajo del botón</label>
+                            <input type="text" id="hero_note" name="hero_note"
+                              value="<?= htmlspecialchars($config['hero_note'] ?? '') ?>">
+                          </div>
+                          <div class="admin-form-group">
+                            <label for="hero_badge_stars">Badge — Calificación</label>
+                            <input type="text" id="hero_badge_stars" name="hero_badge_stars"
+                              value="<?= htmlspecialchars($config['hero_badge_stars'] ?? '4.9') ?>"
+                              placeholder="4.9">
+                          </div>
+                          <div class="admin-form-group">
+                            <label for="hero_badge_customers">Badge — Clientes</label>
+                            <input type="text" id="hero_badge_customers" name="hero_badge_customers"
+                              value="<?= htmlspecialchars($config['hero_badge_customers'] ?? '+3.200 clientes felices') ?>"
+                              placeholder="+3.200 clientes felices">
+                          </div>
+                        </div>
                       </div>
+
+                      <!-- Media -->
+                      <div class="mini-card">
+                        <div class="mini-card-title">
+                          <span><i class="fas fa-photo-film" aria-hidden="true"></i> Media</span>
+                        </div>
+                        <div class="form-grid">
+                          <?php $heroType = $config['hero_media_type'] ?? 'imagen'; ?>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label>Tipo de media</label>
+                            <select name="hero_media_type" onchange="toggleMediaPreview('hero', this.value)">
+                              <option value="imagen" <?= $heroType === 'imagen' ? 'selected' : '' ?>>Imagen</option>
+                              <option value="video"  <?= $heroType === 'video'  ? 'selected' : '' ?>>Video</option>
+                            </select>
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label for="hero_media_file">Subir imagen / video</label>
+                            <input type="file" id="hero_media_file" name="hero_media_file" accept="image/*,video/*">
+                          </div>
+                          <div class="admin-form-group admin-form-group--full" id="hero-poster-group"
+                               style="<?= $heroType !== 'video' ? 'display:none' : '' ?>">
+                            <label for="hero_poster_file">Thumbnail del video</label>
+                            <input type="file" id="hero_poster_file" name="hero_poster_file" accept="image/*">
+                            <?php if (!empty($config['hero_poster_path'])): ?>
+                              <div class="media-preview" style="margin-top:.5rem">
+                                <img src="<?= htmlspecialchars($config['hero_poster_path']) ?>" alt="Thumbnail actual">
+                              </div>
+                            <?php endif; ?>
+                            <input type="hidden" name="hero_poster_path_actual"
+                              value="<?= htmlspecialchars($config['hero_poster_path'] ?? '') ?>">
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label>Preview actual</label>
+                            <div class="media-preview">
+                              <?php if (!empty($config['hero_media_path'])): ?>
+                                <?php if ($heroType === 'video'): ?>
+                                  <video src="<?= htmlspecialchars($config['hero_media_path']) ?>" controls></video>
+                                <?php else: ?>
+                                  <img src="<?= htmlspecialchars($config['hero_media_path']) ?>" alt="Hero">
+                                <?php endif; ?>
+                              <?php else: ?>
+                                <div class="media-empty">
+                                  <i class="fas fa-photo-film"></i>
+                                  <span>Sin media configurada</span>
+                                </div>
+                              <?php endif; ?>
+                            </div>
+                            <input type="hidden" name="hero_media_path_actual"
+                              value="<?= htmlspecialchars($config['hero_media_path'] ?? '') ?>">
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
 
@@ -399,42 +417,45 @@
 
                     <!-- Grilla 2×2 de beneficios -->
                     <div class="benefits-grid">
-                      <?php for ($bi = 1; $bi <= 4; $bi++): ?>
+                      <?php for ($bi = 1; $bi <= 4; $bi++):
+                        $bImg = $config['benefit_' . $bi . '_img'] ?? '';
+                      ?>
                       <div class="benefit-card">
-                        <div class="benefit-card__num">Beneficio <?= $bi ?></div>
-
-                        <div class="admin-form-group">
-                          <input type="text" name="benefit_<?= $bi ?>"
-                            value="<?= htmlspecialchars($config['benefit_' . $bi] ?? '') ?>"
-                            placeholder="Describe el beneficio <?= $bi ?>…"
-                            aria-label="Texto del beneficio <?= $bi ?>">
+                        <div class="benefit-card__header">
+                          <span class="benefit-card__badge"><?= $bi ?></span>
+                          <span class="benefit-card__title">Beneficio <?= $bi ?></span>
                         </div>
+                        <div class="benefit-card__body">
+                          <div class="admin-form-group">
+                            <input type="text" name="benefit_<?= $bi ?>"
+                              value="<?= htmlspecialchars($config['benefit_' . $bi] ?? '') ?>"
+                              placeholder="Describe el beneficio <?= $bi ?>…"
+                              aria-label="Texto del beneficio <?= $bi ?>">
+                          </div>
 
-                        <div class="benefit-card__media">
-                          <!-- Thumb clickable → abre el file input asociado -->
-                          <div class="benefit-card__thumb media-preview"
-                               id="benefit_thumb_<?= $bi ?>">
-                            <?php if (!empty($config['benefit_' . $bi . '_img'])): ?>
-                              <img src="<?= htmlspecialchars($config['benefit_' . $bi . '_img']) ?>"
-                                   alt="Foto beneficio <?= $bi ?>">
+                          <div class="benefit-card__img-preview media-preview" id="benefit_thumb_<?= $bi ?>">
+                            <?php if (!empty($bImg)): ?>
+                              <img src="<?= htmlspecialchars($bImg) ?>" alt="Foto beneficio <?= $bi ?>">
                             <?php else: ?>
                               <div class="media-empty">
                                 <i class="fas fa-image" aria-hidden="true"></i>
+                                <span>Sin imagen</span>
                               </div>
                             <?php endif; ?>
                           </div>
-                          <div class="admin-form-group benefit-card__upload">
-                            <label>Foto <small>(opcional)</small></label>
-                            <!-- data-no-dropzone evita que ux-improvements.js
-                                 convierta este input en una zona grande -->
-                            <input type="file" name="benefit_<?= $bi ?>_img_file"
-                              accept="image/jpeg,image/png,image/webp,image/gif"
-                              data-no-dropzone="1">
-                          </div>
-                        </div>
 
-                        <input type="hidden" name="benefit_<?= $bi ?>_img_actual"
-                          value="<?= htmlspecialchars($config['benefit_' . $bi . '_img'] ?? '') ?>">
+                          <div class="admin-form-group">
+                            <label class="benefit-card__upload-label">
+                              <i class="fas fa-image" aria-hidden="true"></i> Foto
+                              <small>(opcional)</small>
+                            </label>
+                            <input type="file" name="benefit_<?= $bi ?>_img_file"
+                              accept="image/jpeg,image/png,image/webp,image/gif">
+                          </div>
+
+                          <input type="hidden" name="benefit_<?= $bi ?>_img_actual"
+                            value="<?= htmlspecialchars($bImg) ?>">
+                        </div>
                       </div>
                       <?php endfor; ?>
                     </div>
@@ -447,6 +468,14 @@
                   <div class="section-block" id="sec-galeria" data-toc="Galería">
                     <h2>Galería</h2>
 
+                    <div class="form-grid" style="margin-bottom:16px;">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="gallery_title">Título de la sección</label>
+                        <input type="text" id="gallery_title" name="gallery_title"
+                          value="<?= htmlspecialchars($config['gallery_title'] ?? 'Galería') ?>">
+                      </div>
+                    </div>
+
                     <div class="gallery-grid">
                       <?php
                       for ($i = 1; $i <= 4; $i++):
@@ -455,24 +484,26 @@
                         $actual    = "gallery_{$i}_path_actual";
                       ?>
                         <div class="gallery-card">
-                          <div class="gallery-title">Imagen <?= $i ?></div>
-
-                          <div class="media-preview">
-                            <?php if (!empty($config[$key])): ?>
-                              <img src="<?= htmlspecialchars($config[$key]) ?>" alt="Galería <?= $i ?>">
-                            <?php else: ?>
-                              <div class="media-empty">
-                                <i class="fas fa-image"></i>
-                                <span>Sin imagen</span>
-                              </div>
-                            <?php endif; ?>
+                          <div class="gallery-card__head">
+                            <i class="fas fa-image card-head-icon" aria-hidden="true"></i>
+                            <span class="gallery-title">Imagen <?= $i ?></span>
                           </div>
-
-                          <input type="hidden" name="<?= $actual ?>" value="<?= htmlspecialchars($config[$key] ?? '') ?>">
-
-                          <div class="admin-form-group">
-                            <label for="<?= $inputName ?>">Subir nueva</label>
-                            <input type="file" id="<?= $inputName ?>" name="<?= $inputName ?>" accept="image/*">
+                          <div class="gallery-card__body">
+                            <div class="media-preview">
+                              <?php if (!empty($config[$key])): ?>
+                                <img src="<?= htmlspecialchars($config[$key]) ?>" alt="Galería <?= $i ?>">
+                              <?php else: ?>
+                                <div class="media-empty">
+                                  <i class="fas fa-image"></i>
+                                  <span>Sin imagen</span>
+                                </div>
+                              <?php endif; ?>
+                            </div>
+                            <input type="hidden" name="<?= $actual ?>" value="<?= htmlspecialchars($config[$key] ?? '') ?>">
+                            <div class="admin-form-group">
+                              <label for="<?= $inputName ?>">Subir nueva</label>
+                              <input type="file" id="<?= $inputName ?>" name="<?= $inputName ?>" accept="image/*">
+                            </div>
                           </div>
                         </div>
                       <?php endfor; ?>
@@ -492,19 +523,21 @@
                         value="<?= htmlspecialchars($config['caract_section_title'] ?? 'Características del producto') ?>">
                     </div>
 
-                    <div class="stack-cards">
+                    <div class="stack-cards stack-cards--4col">
                     <?php for ($cn = 1; $cn <= 4; $cn++):
                       $cPath   = $config["caract{$cn}_media_path"] ?? '';
                       $cType   = $config["caract{$cn}_media_type"] ?? 'image';
                       $cActive = (int)($config["caract{$cn}_active"] ?? 1);
                     ?>
                     <div class="mini-card">
-                      <div class="mini-card-title" style="display:flex;align-items:center;justify-content:space-between;">
+                      <div class="mini-card-title">
                         <span><i class="fas fa-layer-group" aria-hidden="true"></i> Característica <?= $cn ?></span>
-                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:normal;cursor:pointer;">
+                        <label class="toggle-label card-vis-toggle">
                           <input type="hidden" name="caract<?= $cn ?>_active" value="0">
-                          <input type="checkbox" name="caract<?= $cn ?>_active" value="1" <?= $cActive ? 'checked' : '' ?>>
-                          Visible
+                          <input type="checkbox" name="caract<?= $cn ?>_active" value="1"
+                                 class="toggle-cb" <?= $cActive ? 'checked' : '' ?>>
+                          <span class="toggle-track<?= $cActive ? ' is-on' : '' ?>"><span class="toggle-thumb"></span></span>
+                          <span class="card-vis-text">VISIBLE</span>
                         </label>
                       </div>
 
@@ -597,97 +630,87 @@
                   <div class="section-block" id="sec-porque" data-toc="¿Por qué?">
                     <h2>¿Por qué te encantará?</h2>
 
-                    <div class="form-grid">
-                      <div class="admin-form-group">
-                        <label for="porque_title">Título</label>
-                        <input type="text" id="porque_title" name="porque_title"
-                          value="<?= htmlspecialchars($config['porque_title'] ?? '¿Por qué te encantará este producto?') ?>">
-                      </div>
+                    <div class="stack-cards stack-cards--2col">
 
-                      <div class="admin-form-group admin-form-group--full">
-                        <label for="porque_text">Texto principal</label>
-                        <textarea id="porque_text" name="porque_text" rows="4"><?= htmlspecialchars($config['porque_text'] ?? '') ?></textarea>
-                      </div>
-
-                      <div class="admin-form-group admin-form-group--full">
-                        <div class="bullets-row">
-                          <div class="admin-form-group">
+                      <!-- Textos -->
+                      <div class="mini-card">
+                        <div class="mini-card-title">
+                          <span><i class="fas fa-pencil" aria-hidden="true"></i> Textos</span>
+                        </div>
+                        <div class="form-grid">
+                          <div class="admin-form-group admin-form-group--full">
+                            <label for="porque_title">Título</label>
+                            <input type="text" id="porque_title" name="porque_title"
+                              value="<?= htmlspecialchars($config['porque_title'] ?? '¿Por qué te encantará este producto?') ?>">
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label for="porque_text">Texto principal</label>
+                            <textarea id="porque_text" name="porque_text" rows="4"><?= htmlspecialchars($config['porque_text'] ?? '') ?></textarea>
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
                             <label>Punto 1</label>
                             <input type="text" name="porque_bullet1" value="<?= htmlspecialchars($config['porque_bullet1'] ?? '') ?>" placeholder="Ventaja clave…">
                           </div>
-                          <div class="admin-form-group">
+                          <div class="admin-form-group admin-form-group--full">
                             <label>Punto 2</label>
                             <input type="text" name="porque_bullet2" value="<?= htmlspecialchars($config['porque_bullet2'] ?? '') ?>" placeholder="Ventaja clave…">
                           </div>
-                          <div class="admin-form-group">
+                          <div class="admin-form-group admin-form-group--full">
                             <label>Punto 3</label>
                             <input type="text" name="porque_bullet3" value="<?= htmlspecialchars($config['porque_bullet3'] ?? '') ?>" placeholder="Ventaja clave…">
                           </div>
                         </div>
                       </div>
 
-                      <!-- ── TIPO DE MEDIO ─────────────────────────────────── -->
-                      <div class="admin-form-group">
-                        <label for="porque_media_type">Tipo de medio</label>
-                        <select name="porque_media_type" id="porque_media_type"
-                          onchange="toggleMediaPreview('porque', this.value)">
-                          <option value="imagen"
-                            <?= ($config['porque_media_type'] ?? 'imagen') === 'imagen' ? 'selected' : '' ?>>
-                            Imagen (JPG, PNG, WEBP)
-                          </option>
-                          <option value="gif"
-                            <?= ($config['porque_media_type'] ?? '') === 'gif' ? 'selected' : '' ?>>
-                            GIF animado
-                          </option>
-                          <option value="video"
-                            <?= ($config['porque_media_type'] ?? '') === 'video' ? 'selected' : '' ?>>
-                            Video (MP4, MOV, WEBM)
-                          </option>
-                        </select>
-                      </div>
-
-                      <!-- ── SUBIR ARCHIVO ─────────────────────────────────── -->
-                      <div class="admin-form-group">
-                        <label for="porque_media_file">Subir nuevo archivo</label>
-                        <input type="file"
-                          id="porque_media_file"
-                          name="porque_media_file"
-                          accept="<?= ($config['porque_media_type'] ?? 'imagen') === 'video'
-                                    ? 'video/mp4,video/quicktime,video/webm'
-                                    : (($config['porque_media_type'] ?? 'imagen') === 'gif'
-                                      ? 'image/gif'
-                                      : 'image/jpeg,image/png,image/webp') ?>">
-                        <small>Máx. recomendado: imágenes 2MB · videos 10MB</small>
-                      </div>
-
-                      <!-- ── PREVIEW ACTUAL ────────────────────────────────── -->
-                      <div class="admin-form-group admin-form-group--full">
-                        <label>Media actual</label>
-                        <div class="media-preview" id="porque_preview">
-                          <?php if (!empty($config['porque_media_path'])): ?>
-                            <?php
-                            $ext     = strtolower(pathinfo($config['porque_media_path'], PATHINFO_EXTENSION));
-                            $isVideo = in_array($ext, ['mp4', 'mov', 'webm']);
-                            ?>
-                            <?php if ($isVideo): ?>
-                              <video src="<?= htmlspecialchars($config['porque_media_path']) ?>"
-                                muted loop controls
-                                style="max-width:100%; border-radius:6px;"></video>
-                            <?php else: ?>
-                              <img src="<?= htmlspecialchars($config['porque_media_path']) ?>"
-                                alt="Por qué te encantará">
-                            <?php endif; ?>
-                          <?php else: ?>
-                            <div class="media-empty">
-                              <i class="fas fa-photo-video"></i>
-                              <span>Sin media configurada.</span>
-                            </div>
-                          <?php endif; ?>
+                      <!-- Media -->
+                      <div class="mini-card">
+                        <div class="mini-card-title">
+                          <span><i class="fas fa-photo-film" aria-hidden="true"></i> Media</span>
                         </div>
-
-                        <input type="hidden" name="porque_media_path_actual"
-                          value="<?= htmlspecialchars($config['porque_media_path'] ?? '') ?>">
+                        <div class="form-grid">
+                          <?php $porqueType = $config['porque_media_type'] ?? 'imagen'; ?>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label for="porque_media_type">Tipo de medio</label>
+                            <select name="porque_media_type" id="porque_media_type"
+                              onchange="toggleMediaPreview('porque', this.value)">
+                              <option value="imagen" <?= $porqueType === 'imagen' ? 'selected' : '' ?>>Imagen (JPG, PNG, WEBP)</option>
+                              <option value="gif"    <?= $porqueType === 'gif'    ? 'selected' : '' ?>>GIF animado</option>
+                              <option value="video"  <?= $porqueType === 'video'  ? 'selected' : '' ?>>Video (MP4, MOV, WEBM)</option>
+                            </select>
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label for="porque_media_file">Subir archivo</label>
+                            <input type="file" id="porque_media_file" name="porque_media_file"
+                              accept="<?= $porqueType === 'video'
+                                        ? 'video/mp4,video/quicktime,video/webm'
+                                        : ($porqueType === 'gif' ? 'image/gif' : 'image/jpeg,image/png,image/webp') ?>">
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
+                            <label>Preview actual</label>
+                            <div class="media-preview" id="porque_preview">
+                              <?php if (!empty($config['porque_media_path'])): ?>
+                                <?php
+                                $ext     = strtolower(pathinfo($config['porque_media_path'], PATHINFO_EXTENSION));
+                                $isVideo = in_array($ext, ['mp4', 'mov', 'webm']);
+                                ?>
+                                <?php if ($isVideo): ?>
+                                  <video src="<?= htmlspecialchars($config['porque_media_path']) ?>" muted loop controls></video>
+                                <?php else: ?>
+                                  <img src="<?= htmlspecialchars($config['porque_media_path']) ?>" alt="Por qué te encantará">
+                                <?php endif; ?>
+                              <?php else: ?>
+                                <div class="media-empty">
+                                  <i class="fas fa-photo-film"></i>
+                                  <span>Sin media configurada</span>
+                                </div>
+                              <?php endif; ?>
+                            </div>
+                            <input type="hidden" name="porque_media_path_actual"
+                              value="<?= htmlspecialchars($config['porque_media_path'] ?? '') ?>">
+                          </div>
+                        </div>
                       </div>
+
                     </div>
                   </div>
 
@@ -723,26 +746,32 @@
                     <!-- Imágenes por columna -->
                     <div class="form-grid" style="margin-top:16px;">
                       <div class="admin-form-group">
-                        <label>🖼 Imagen columna "Sin el producto"</label>
-                        <?php if (!empty($config['comparison_img_without'])): ?>
-                          <img src="<?= htmlspecialchars($config['comparison_img_without']) ?>"
-                               style="width:100%; max-height:180px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
-                        <?php endif; ?>
-                        <input type="file" name="comparison_img_without_file"
-                               accept="image/*,video/mp4,video/webm">
+                        <label>Imagen columna "Sin el producto"</label>
+                        <div class="media-preview">
+                          <?php if (!empty($config['comparison_img_without'])): ?>
+                            <img src="<?= htmlspecialchars($config['comparison_img_without']) ?>" alt="Sin el producto">
+                          <?php else: ?>
+                            <div class="media-empty"><i class="fas fa-image"></i><span>Sin imagen</span></div>
+                          <?php endif; ?>
+                        </div>
                         <input type="hidden" name="comparison_img_without_path_actual"
                                value="<?= htmlspecialchars($config['comparison_img_without'] ?? '') ?>">
+                        <input type="file" name="comparison_img_without_file"
+                               accept="image/jpeg,image/png,image/webp,image/gif">
                       </div>
                       <div class="admin-form-group">
-                        <label>🖼 Imagen columna "Con el producto"</label>
-                        <?php if (!empty($config['comparison_img_with'])): ?>
-                          <img src="<?= htmlspecialchars($config['comparison_img_with']) ?>"
-                               style="width:100%; max-height:180px; object-fit:cover; border-radius:8px; margin-bottom:8px;">
-                        <?php endif; ?>
-                        <input type="file" name="comparison_img_with_file"
-                               accept="image/*,video/mp4,video/webm">
+                        <label>Imagen columna "Con el producto"</label>
+                        <div class="media-preview">
+                          <?php if (!empty($config['comparison_img_with'])): ?>
+                            <img src="<?= htmlspecialchars($config['comparison_img_with']) ?>" alt="Con el producto">
+                          <?php else: ?>
+                            <div class="media-empty"><i class="fas fa-image"></i><span>Sin imagen</span></div>
+                          <?php endif; ?>
+                        </div>
                         <input type="hidden" name="comparison_img_with_path_actual"
                                value="<?= htmlspecialchars($config['comparison_img_with'] ?? '') ?>">
+                        <input type="file" name="comparison_img_with_file"
+                               accept="image/jpeg,image/png,image/webp,image/gif">
                       </div>
                     </div>
 
@@ -780,7 +809,15 @@
                   <div class="section-block" id="sec-testimonios" data-toc="Testimonios">
                     <h2>Testimonios</h2>
 
-                    <div class="stack-cards">
+                    <div class="form-grid" style="margin-bottom:16px;">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="testimonios_title">Título de la sección</label>
+                        <input type="text" id="testimonios_title" name="testimonios_title"
+                          value="<?= htmlspecialchars($config['testimonios_title'] ?? 'Lo que cuentan nuestros clientes') ?>">
+                      </div>
+                    </div>
+
+                    <div class="stack-cards stack-cards--3col">
                       <?php for ($i = 1; $i <= 3; $i++):
                         $nameKey      = "test{$i}_name";
                         $cityKey      = "test{$i}_city";
@@ -816,45 +853,38 @@
                                 </span>
                               </label>
                               <textarea name="<?= $textKey ?>" rows="2" maxlength="100"
-                                oninput="document.getElementById('counter_<?= $textKey ?>').textContent=this.value.length+'/100'"
+                                data-char-counter="counter_<?= $textKey ?>"
                               ><?= htmlspecialchars($config[$textKey] ?? '') ?></textarea>
                             </div>
 
-                            <!-- Banner de la card -->
-                            <div class="admin-form-group">
-                              <label for="<?= $bannerInput ?>">Banner de la card <small>(imagen que aparece arriba)</small></label>
-                              <input type="file" id="<?= $bannerInput ?>" name="<?= $bannerInput ?>" accept="image/*">
-                            </div>
-                            <?php // maxlength ya definido en el textarea de arriba ?>
-
+                            <!-- Banner -->
                             <div class="admin-form-group admin-form-group--full">
-                              <label>Banner actual</label>
                               <div class="media-preview media-preview--banner">
                                 <?php if (!empty($config[$bannerKey])): ?>
                                   <img src="<?= htmlspecialchars($config[$bannerKey]) ?>" alt="Banner testimonio <?= $i ?>">
                                 <?php else: ?>
                                   <div class="media-empty">
-                                    <i class="fas fa-image"></i>
-                                    <span>Sin banner — usa imagen del producto</span>
+                                    <i class="fas fa-panorama"></i>
+                                    <span>Banner</span>
                                   </div>
                                 <?php endif; ?>
                               </div>
                               <input type="hidden" name="<?= $bannerActual ?>" value="<?= htmlspecialchars($config[$bannerKey] ?? '') ?>">
+                              <input type="file" id="<?= $bannerInput ?>" name="<?= $bannerInput ?>" accept="image/*">
                             </div>
 
-                            <!-- Foto de perfil — avatar circular inline -->
+                            <!-- Foto de perfil -->
                             <div class="admin-form-group admin-form-group--full upload-avatar-row">
-                              <div>
-                                <label for="<?= $photoInput ?>">Foto de perfil <small>(opcional)</small></label>
-                                <input type="file" id="<?= $photoInput ?>" name="<?= $photoInput ?>" accept="image/*">
-                                <input type="hidden" name="<?= $photoActual ?>" value="<?= htmlspecialchars($config[$photoKey] ?? '') ?>">
-                              </div>
                               <div class="media-preview media-preview--avatar">
                                 <?php if (!empty($config[$photoKey])): ?>
                                   <img src="<?= htmlspecialchars($config[$photoKey]) ?>" alt="Testimonio <?= $i ?>">
                                 <?php else: ?>
                                   <div class="media-empty"><i class="fas fa-user"></i></div>
                                 <?php endif; ?>
+                              </div>
+                              <div class="upload-avatar-row__dropzone">
+                                <input type="file" id="<?= $photoInput ?>" name="<?= $photoInput ?>" accept="image/*">
+                                <input type="hidden" name="<?= $photoActual ?>" value="<?= htmlspecialchars($config[$photoKey] ?? '') ?>">
                               </div>
                             </div>
                           </div>
@@ -868,6 +898,15 @@
                   <!-- PARA QUIÉN ES -->
                   <div class="section-block" id="sec-paraquien" data-toc="¿Para quién?">
                     <h2>¿Para quién es?</h2>
+
+                    <div class="form-grid" style="margin-bottom:16px;">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="para_quien_title">Título de la sección</label>
+                        <input type="text" id="para_quien_title" name="para_quien_title"
+                          value="<?= htmlspecialchars($config['para_quien_title'] ?? '¿Este producto es para ti?') ?>">
+                      </div>
+                    </div>
+
                     <p class="field-section-desc">Deja en blanco los ítems que no uses.</p>
 
                     <div class="paraquien-grid">
@@ -950,7 +989,7 @@
                       </div>
                     </div>
 
-                    <div class="stack-cards" style="margin-top: 14px;">
+                    <div class="stack-cards stack-cards--3col" style="margin-top: 14px;">
                       <?php for ($i = 1; $i <= 5; $i++):
                         $nameKey     = "wa{$i}_name";
                         $timeKey     = "wa{$i}_time";
@@ -1005,9 +1044,6 @@
                       <?php endfor; ?>
                     </div>
 
-                    <p style="margin-top:10px; opacity:.8;">
-                      Nota: Mantendremos siempre 5 testimonios para que tu JavaScript del slider no se rompa.
-                    </p>
                   </div>
 
                   <hr class="section-hr">
@@ -1015,6 +1051,14 @@
                   <!-- FAQ -->
                   <div class="section-block" id="sec-faq" data-toc="FAQ">
                     <h2>Preguntas frecuentes</h2>
+
+                    <div class="form-grid" style="margin-bottom:16px;">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="faq_title">Título de la sección</label>
+                        <input type="text" id="faq_title" name="faq_title"
+                          value="<?= htmlspecialchars($config['faq_title'] ?? 'Preguntas frecuentes') ?>">
+                      </div>
+                    </div>
 
                     <div class="faq-grid">
                       <?php for ($i = 1; $i <= 6; $i++):
@@ -1101,7 +1145,7 @@
                   <div class="section-block" id="sec-ctas" data-toc="CTAs">
                     <h2>Textos de llamadas a la acción</h2>
 
-                    <div class="stack-cards">
+                    <div class="stack-cards stack-cards--3col">
                       <?php
                       $sectionCtas = [
                         'benefits'        => ['icon' => 'fa-bullhorn',        'label' => 'CTA Beneficios',       'has_text' => true,  'text_default' => 'Ya sabes lo que hace. El siguiente paso es recibirlo en casa.', 'btn_default' => 'Quiero aprovechar la oferta'],
@@ -1119,7 +1163,7 @@
                         $isOn = (int)($config[$showField] ?? 1);
                       ?>
                       <div class="mini-card">
-                        <div class="mini-card-title" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="mini-card-title">
                           <span><i class="fas <?= $ctaData['icon'] ?>"></i> <?= $ctaData['label'] ?></span>
                           <label class="toggle-label" style="margin:0;">
                             <input type="hidden"   name="<?= $showField ?>" value="0">
@@ -1221,125 +1265,36 @@
                       <p class="theme-selector__label">Elige una base visual</p>
                       <div class="theme-selector__grid">
 
-                        <label class="theme-card <?= ($config['theme'] ?? 'dark-luxury') === 'dark-luxury' ? 'theme-card--active' : '' ?>">
-                          <input type="radio" name="theme" value="dark-luxury"
-                            <?= ($config['theme'] ?? 'dark-luxury') === 'dark-luxury' ? 'checked' : '' ?>
-                            onchange="applyThemePreview('dark-luxury')">
-                          <div class="theme-card__preview theme-card__preview--dark-luxury">
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
+                        <?php
+                        $themeCards = [
+                          'dark-luxury'    => ['name' => 'Dark Luxury',    'desc' => 'Negro · Dorado cálido · Premium'],
+                          'light-luxury'   => ['name' => 'Light Luxury',   'desc' => 'Crema · Borgoña · Femenino'],
+                          'bold-conversion'=> ['name' => 'Bold Conversion','desc' => 'Blanco · Naranja · Energético'],
+                          'minimal-clean'  => ['name' => 'Minimal Clean',  'desc' => 'Azul marino · Confianza · Tech'],
+                          'femme-rose'     => ['name' => 'Femme Rose',     'desc' => 'Rosa · Fucsia · Belleza'],
+                          'natural-sage'   => ['name' => 'Natural Sage',   'desc' => 'Verde · Orgánico · Salud'],
+                          'obsidian'       => ['name' => 'Obsidian',       'desc' => 'Negro · Plata · Ultra premium'],
+                          'blanc-luxe'     => ['name' => 'Blanc Luxe',     'desc' => 'Blanco · Oro · Alta elegancia'],
+                        ];
+                        $currentTheme = $config['theme'] ?? 'dark-luxury';
+                        foreach ($themeCards as $themeVal => $themeData):
+                        ?>
+                        <label class="theme-card <?= $currentTheme === $themeVal ? 'theme-card--active' : '' ?>">
+                          <input type="radio" name="theme" value="<?= $themeVal ?>"
+                            <?= $currentTheme === $themeVal ? 'checked' : '' ?>
+                            onchange="applyThemePreview('<?= $themeVal ?>')">
+                          <div class="theme-card__preview theme-card__preview--<?= $themeVal ?>">
+                            <span class="theme-card__mock-header"></span>
+                            <span class="theme-card__mock-line"></span>
+                            <span class="theme-card__mock-line theme-card__mock-line--short"></span>
+                            <span class="theme-card__mock-btn"></span>
                           </div>
                           <div class="theme-card__info">
-                            <strong>Dark Luxury</strong>
-                            <small>Negro · Dorado cálido · Premium</small>
+                            <strong><?= $themeData['name'] ?></strong>
+                            <small><?= $themeData['desc'] ?></small>
                           </div>
                         </label>
-
-                        <label class="theme-card <?= ($config['theme'] ?? '') === 'light-luxury' ? 'theme-card--active' : '' ?>">
-                          <input type="radio" name="theme" value="light-luxury"
-                            <?= ($config['theme'] ?? '') === 'light-luxury' ? 'checked' : '' ?>
-                            onchange="applyThemePreview('light-luxury')">
-                          <div class="theme-card__preview theme-card__preview--light-luxury">
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                          </div>
-                          <div class="theme-card__info">
-                            <strong>Light Luxury</strong>
-                            <small>Crema · Borgoña · Femenino</small>
-                          </div>
-                        </label>
-
-                        <label class="theme-card <?= ($config['theme'] ?? '') === 'bold-conversion' ? 'theme-card--active' : '' ?>">
-                          <input type="radio" name="theme" value="bold-conversion"
-                            <?= ($config['theme'] ?? '') === 'bold-conversion' ? 'checked' : '' ?>
-                            onchange="applyThemePreview('bold-conversion')">
-                          <div class="theme-card__preview theme-card__preview--bold-conversion">
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                          </div>
-                          <div class="theme-card__info">
-                            <strong>Bold Conversion</strong>
-                            <small>Blanco · Naranja · Energético</small>
-                          </div>
-                        </label>
-
-                        <label class="theme-card <?= ($config['theme'] ?? '') === 'minimal-clean' ? 'theme-card--active' : '' ?>">
-                          <input type="radio" name="theme" value="minimal-clean"
-                            <?= ($config['theme'] ?? '') === 'minimal-clean' ? 'checked' : '' ?>
-                            onchange="applyThemePreview('minimal-clean')">
-                          <div class="theme-card__preview theme-card__preview--minimal-clean">
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                          </div>
-                          <div class="theme-card__info">
-                            <strong>Minimal Clean</strong>
-                            <small>Azul marino · Confianza · Tech</small>
-                          </div>
-                        </label>
-
-                        <label class="theme-card <?= ($config['theme'] ?? '') === 'femme-rose' ? 'theme-card--active' : '' ?>">
-                          <input type="radio" name="theme" value="femme-rose"
-                            <?= ($config['theme'] ?? '') === 'femme-rose' ? 'checked' : '' ?>
-                            onchange="applyThemePreview('femme-rose')">
-                          <div class="theme-card__preview theme-card__preview--femme-rose">
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                          </div>
-                          <div class="theme-card__info">
-                            <strong>Femme Rose</strong>
-                            <small>Rosa · Fucsia · Belleza</small>
-                          </div>
-                        </label>
-
-                        <label class="theme-card <?= ($config['theme'] ?? '') === 'natural-sage' ? 'theme-card--active' : '' ?>">
-                          <input type="radio" name="theme" value="natural-sage"
-                            <?= ($config['theme'] ?? '') === 'natural-sage' ? 'checked' : '' ?>
-                            onchange="applyThemePreview('natural-sage')">
-                          <div class="theme-card__preview theme-card__preview--natural-sage">
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                          </div>
-                          <div class="theme-card__info">
-                            <strong>Natural Sage</strong>
-                            <small>Verde · Orgánico · Salud</small>
-                          </div>
-                        </label>
-
-                        <label class="theme-card <?= ($config['theme'] ?? '') === 'obsidian' ? 'theme-card--active' : '' ?>">
-                          <input type="radio" name="theme" value="obsidian"
-                            <?= ($config['theme'] ?? '') === 'obsidian' ? 'checked' : '' ?>
-                            onchange="applyThemePreview('obsidian')">
-                          <div class="theme-card__preview theme-card__preview--obsidian">
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                          </div>
-                          <div class="theme-card__info">
-                            <strong>Obsidian</strong>
-                            <small>Negro · Plata · Ultra premium</small>
-                          </div>
-                        </label>
-
-                        <label class="theme-card <?= ($config['theme'] ?? '') === 'blanc-luxe' ? 'theme-card--active' : '' ?>">
-                          <input type="radio" name="theme" value="blanc-luxe"
-                            <?= ($config['theme'] ?? '') === 'blanc-luxe' ? 'checked' : '' ?>
-                            onchange="applyThemePreview('blanc-luxe')">
-                          <div class="theme-card__preview theme-card__preview--blanc-luxe">
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                            <span class="theme-card__dot"></span>
-                          </div>
-                          <div class="theme-card__info">
-                            <strong>Blanc Luxe</strong>
-                            <small>Blanco · Oro · Alta elegancia</small>
-                          </div>
-                        </label>
+                        <?php endforeach; ?>
 
                       </div>
                     </div>
@@ -1498,52 +1453,61 @@
                       </div>
                     </div>
 
-                    <!-- ── PREVIEW BAR ───────────────────────────────────────── -->
-                    <div class="color-preview-bar" id="colorPreviewBar">
-                      <span id="prev_background_color" style="background:<?= htmlspecialchars($config['background_color'] ?? '#0a0a0a') ?>"></span>
-                      <span id="prev_text_color" style="background:<?= htmlspecialchars($config['text_color']       ?? '#f0ebe0') ?>"></span>
-                      <span id="prev_primary_color" style="background:<?= htmlspecialchars($config['primary_color']    ?? '#c9a84c') ?>"></span>
-                      <span id="prev_accent_color" style="background:<?= htmlspecialchars($config['accent_color']     ?? '#e8c96a') ?>"></span>
-                      <span id="prev_secondary_color" style="background:<?= htmlspecialchars($config['secondary_color']  ?? '#5c4a1e') ?>"></span>
-                      <span id="prev_color_gold" style="background:<?= htmlspecialchars($config['color_gold']       ?? '#c9a84c') ?>"></span>
-                      <span id="prev_color_success" style="background:<?= htmlspecialchars($config['color_success']    ?? '#4caf7d') ?>"></span>
-                      <span id="prev_color_countdown" style="background:<?= htmlspecialchars($config['color_countdown']  ?? '#e8c96a') ?>"></span>
+                    <!-- ── PALETTE PREVIEW ───────────────────────────────────── -->
+                    <div class="palette-preview" id="colorPreviewBar"
+                         style="background:<?= htmlspecialchars($config['background_color'] ?? '#0a0a0a') ?>">
+                      <p class="palette-preview__title"
+                         style="color:<?= htmlspecialchars($config['text_color'] ?? '#f0ebe0') ?>">
+                        Así se verá tu landing
+                      </p>
+                      <p class="palette-preview__body"
+                         style="color:<?= htmlspecialchars($config['text_color'] ?? '#f0ebe0') ?>; opacity:.7">
+                        Texto de ejemplo — subtítulo o descripción del producto.
+                      </p>
+                      <div class="palette-preview__actions">
+                        <button type="button" class="palette-preview__btn-primary"
+                                style="background:<?= htmlspecialchars($config['primary_color'] ?? '#c9a84c') ?>;color:<?= htmlspecialchars($config['background_color'] ?? '#0a0a0a') ?>">
+                          Comprar ahora
+                        </button>
+                        <span class="palette-preview__badge"
+                              style="color:<?= htmlspecialchars($config['color_success'] ?? '#4caf7d') ?>;border-color:<?= htmlspecialchars($config['color_success'] ?? '#4caf7d') ?>">
+                          ✔ Envío gratis
+                        </span>
+                        <span class="palette-preview__timer"
+                              style="color:<?= htmlspecialchars($config['color_countdown'] ?? '#e8c96a') ?>">
+                          ⏱ 12:34
+                        </span>
+                      </div>
+                      <div class="palette-preview__swatches">
+                        <span class="palette-preview__swatch" id="prev_background_color"
+                              style="background:<?= htmlspecialchars($config['background_color'] ?? '#0a0a0a') ?>"
+                              title="Fondo"></span>
+                        <span class="palette-preview__swatch" id="prev_text_color"
+                              style="background:<?= htmlspecialchars($config['text_color'] ?? '#f0ebe0') ?>"
+                              title="Texto"></span>
+                        <span class="palette-preview__swatch" id="prev_primary_color"
+                              style="background:<?= htmlspecialchars($config['primary_color'] ?? '#c9a84c') ?>"
+                              title="Principal"></span>
+                        <span class="palette-preview__swatch" id="prev_accent_color"
+                              style="background:<?= htmlspecialchars($config['accent_color'] ?? '#e8c96a') ?>"
+                              title="Acento"></span>
+                        <span class="palette-preview__swatch" id="prev_secondary_color"
+                              style="background:<?= htmlspecialchars($config['secondary_color'] ?? '#5c4a1e') ?>"
+                              title="Secundario"></span>
+                        <span class="palette-preview__swatch" id="prev_color_gold"
+                              style="background:<?= htmlspecialchars($config['color_gold'] ?? '#c9a84c') ?>"
+                              title="Dorado"></span>
+                        <span class="palette-preview__swatch" id="prev_color_success"
+                              style="background:<?= htmlspecialchars($config['color_success'] ?? '#4caf7d') ?>"
+                              title="Éxito"></span>
+                        <span class="palette-preview__swatch" id="prev_color_countdown"
+                              style="background:<?= htmlspecialchars($config['color_countdown'] ?? '#e8c96a') ?>"
+                              title="Countdown"></span>
+                      </div>
                     </div>
-                    <p class="color-preview-label">Vista previa de la paleta completa</p>
 
                   </div>
 
-
-                  <hr class="section-hr">
-
-                  <!-- TÍTULOS DE SECCIÓN -->
-                  <div class="section-block" id="sec-titulos" data-toc="Títulos">
-                    <h2>Títulos de sección</h2>
-                    <p class="field-section-desc">Personaliza los encabezados de cada sección visible en la landing.</p>
-
-                    <div class="form-grid">
-                      <div class="admin-form-group">
-                        <label for="gallery_title">Galería</label>
-                        <input type="text" id="gallery_title" name="gallery_title"
-                          value="<?= htmlspecialchars($config['gallery_title'] ?? 'Galería') ?>">
-                      </div>
-                      <div class="admin-form-group">
-                        <label for="testimonios_title">Testimonios</label>
-                        <input type="text" id="testimonios_title" name="testimonios_title"
-                          value="<?= htmlspecialchars($config['testimonios_title'] ?? 'Lo que cuentan nuestros clientes') ?>">
-                      </div>
-                      <div class="admin-form-group">
-                        <label for="para_quien_title">¿Para quién es?</label>
-                        <input type="text" id="para_quien_title" name="para_quien_title"
-                          value="<?= htmlspecialchars($config['para_quien_title'] ?? '¿Este producto es para ti?') ?>">
-                      </div>
-                      <div class="admin-form-group">
-                        <label for="faq_title">Preguntas frecuentes</label>
-                        <input type="text" id="faq_title" name="faq_title"
-                          value="<?= htmlspecialchars($config['faq_title'] ?? 'Preguntas frecuentes') ?>">
-                      </div>
-                    </div>
-                  </div>
 
                   <hr class="section-hr">
 
@@ -1780,10 +1744,11 @@
                     </div>
                   </div>
 
-                  <!-- Acciones sticky -->
-                  <div class="admin-form-actions">
+                  <!-- Acciones sticky — solo visible en mobile (en desktop el TOC tiene el botón) -->
+                  <div class="admin-form-actions admin-form-actions--mobile-only">
                     <button type="submit" class="btn-estado">
-                      <i class="fas fa-save"></i> Guardar cambios
+                      <i class="fas fa-save"></i>
+                      <span>Guardar cambios</span>
                     </button>
                   </div>
 
@@ -1819,7 +1784,6 @@
                 <a href="#sec-ctas" data-target="sec-ctas">CTAs</a>
                 <a href="#sec-combo" data-target="sec-combo">Combo</a>
                 <a href="#sec-colores" data-target="sec-colores">Colores</a>
-                <a href="#sec-titulos" data-target="sec-titulos">Títulos</a>
                 <a href="#sec-announcement" data-target="sec-announcement">Barra</a>
                 <a href="#sec-hero-trust" data-target="sec-hero-trust">Confianza</a>
                 <a href="#sec-comofunciona-content" data-target="sec-comofunciona-content">Cómo funciona</a>
@@ -1829,6 +1793,10 @@
                 <a href="#sec-regalo" data-target="sec-regalo">Regalo</a>
                 <a href="#sec-footer" data-target="sec-footer">Footer</a>
               </nav>
+              <button type="submit" form="formLanding" class="btn-estado toc-save-btn" id="btnGuardar">
+                <i class="fas fa-save" id="btnGuardarIcon"></i>
+                <span id="btnGuardarLabel">Guardar cambios</span>
+              </button>
             </div>
           </aside>
 
@@ -1837,6 +1805,110 @@
       </section><!-- /material-content -->
     </main>
   </div><!-- /app-shell -->
+
+  <!-- ===== PANEL DE PREVIEW IFRAME ======================================== -->
+  <div id="previewPanel" class="preview-panel" aria-hidden="true">
+    <div class="preview-panel__header">
+      <div class="preview-panel__title">
+        <i class="fas fa-eye" aria-hidden="true"></i> Vista previa
+      </div>
+      <div class="preview-panel__breakpoints" role="group" aria-label="Tamaño de pantalla">
+        <button type="button" class="preview-bp preview-bp--active" data-width="375" aria-label="Móvil">
+          <i class="fas fa-mobile-screen" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="preview-bp" data-width="768" aria-label="Tablet">
+          <i class="fas fa-tablet-screen-button" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="preview-bp" data-width="1280" aria-label="Desktop">
+          <i class="fas fa-desktop" aria-hidden="true"></i>
+        </button>
+      </div>
+      <button type="button" id="previewPanelClose" class="preview-panel__close" aria-label="Cerrar preview">
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="preview-panel__viewport" id="previewViewport">
+      <div class="preview-panel__iframe-wrap" id="previewIframeWrap">
+        <iframe id="previewIframe"
+                src=""
+                title="Vista previa de la landing"
+                loading="lazy"
+                sandbox="allow-scripts allow-same-origin allow-forms">
+        </iframe>
+      </div>
+    </div>
+    <div class="preview-panel__footer">
+      <span class="preview-panel__url" id="previewUrl"></span>
+      <a id="previewOpenTab" href="#" target="_blank" rel="noopener" class="preview-panel__open-tab">
+        <i class="fas fa-up-right-from-square" aria-hidden="true"></i> Abrir en nueva pestaña
+      </a>
+    </div>
+  </div>
+  <div id="previewPanelBackdrop" class="preview-panel__backdrop" style="display:none;" aria-hidden="true"></div>
+
+  <script>
+  (function() {
+    const LANDING_URL = '<?= BASE_URL ?>/Landing/index?producto_id=<?= (int)$producto_id ?>';
+    const panel    = document.getElementById('previewPanel');
+    const backdrop = document.getElementById('previewPanelBackdrop');
+    const iframe   = document.getElementById('previewIframe');
+    const wrap     = document.getElementById('previewIframeWrap');
+    const urlLabel = document.getElementById('previewUrl');
+    const openTab  = document.getElementById('previewOpenTab');
+
+    let loaded = false;
+
+    function openPreview() {
+      if (!loaded) {
+        iframe.src = LANDING_URL;
+        if (urlLabel) urlLabel.textContent = LANDING_URL;
+        if (openTab)  openTab.href = LANDING_URL;
+        loaded = true;
+      }
+      panel.classList.add('is-open');
+      panel.setAttribute('aria-hidden', 'false');
+      backdrop.style.display = 'block';
+      document.body.classList.add('preview-panel-open');
+    }
+
+    function closePreview() {
+      panel.classList.remove('is-open');
+      panel.setAttribute('aria-hidden', 'true');
+      backdrop.style.display = 'none';
+      document.body.classList.remove('preview-panel-open');
+    }
+
+    // Breakpoint buttons
+    document.querySelectorAll('.preview-bp').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.preview-bp').forEach(b => b.classList.remove('preview-bp--active'));
+        btn.classList.add('preview-bp--active');
+        const w = parseInt(btn.dataset.width, 10);
+        if (wrap) {
+          wrap.style.width  = w + 'px';
+          wrap.style.margin = '0 auto';
+        }
+      });
+    });
+
+    // Close
+    document.getElementById('previewPanelClose').addEventListener('click', closePreview);
+    backdrop.addEventListener('click', closePreview);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && panel.classList.contains('is-open')) closePreview();
+    });
+
+    // Reload iframe when form is saved — watch for success alert appearing
+    const successAlert = document.querySelector('.admin-alert-success');
+    if (successAlert) {
+      iframe.src = LANDING_URL;
+      loaded = true;
+    }
+
+    // Expose opener globally so the header CTA can use it
+    window.openLandingPreview = openPreview;
+  })();
+  </script>
 
   <script>
     function toggleMediaPreview(section, type) {
@@ -2016,12 +2088,40 @@
     if (editorForm) {
       editorForm.addEventListener('input',  function() { formDirty = true;  window.formDirty = true; });
       editorForm.addEventListener('change', function() { formDirty = true;  window.formDirty = true; });
-      editorForm.addEventListener('submit', function() { formDirty = false; window.formDirty = false; });
+      editorForm.addEventListener('submit', function() {
+        formDirty = false;
+        window.formDirty = false;
+        const btn   = document.getElementById('btnGuardar');
+        const icon  = document.getElementById('btnGuardarIcon');
+        const label = document.getElementById('btnGuardarLabel');
+        if (btn) {
+          btn.disabled = true;
+          if (icon)  icon.className  = 'fas fa-spinner fa-spin';
+          if (label) label.textContent = 'Guardando…';
+        }
+      });
     }
     window.addEventListener('beforeunload', function(e) {
       if (!formDirty) return;
       e.preventDefault();
       e.returnValue = '';
+    });
+
+    // Sync toggle-track .is-on class with checkbox state at runtime
+    document.querySelectorAll('.toggle-cb').forEach(function(cb) {
+      const track = cb.nextElementSibling;
+      if (!track || !track.classList.contains('toggle-track')) return;
+      cb.addEventListener('change', function() {
+        track.classList.toggle('is-on', cb.checked);
+      });
+    });
+
+    // Char counters: event delegation for [data-char-counter] textareas
+    document.addEventListener('input', function(e) {
+      const ta = e.target.closest('textarea[data-char-counter]');
+      if (!ta) return;
+      const counter = document.getElementById(ta.dataset.charCounter);
+      if (counter) counter.textContent = ta.value.length + '/' + (ta.maxLength || 100);
     });
   </script>
 
@@ -2041,7 +2141,7 @@
       }
     }
 
-    // Actualiza preview bar con los 8 colores principales
+    // Actualiza palette preview (mini-mockup + swatches)
     function updatePreviewBar() {
       const ids = [
         'background_color', 'text_color', 'primary_color',
@@ -2049,12 +2149,36 @@
         'color_success', 'color_countdown'
       ];
       ids.forEach(function(id) {
-        const picker = document.getElementById(id);
-        const preview = document.getElementById('prev_' + id);
-        if (picker && preview) {
-          preview.style.background = picker.value;
-        }
+        const picker  = document.getElementById(id);
+        const swatch  = document.getElementById('prev_' + id);
+        if (picker && swatch) swatch.style.background = picker.value;
       });
+
+      const bar = document.getElementById('colorPreviewBar');
+      if (!bar) return;
+
+      const get = (id, def) => { const el = document.getElementById(id); return el ? el.value : def; };
+      const bg      = get('background_color', '#0a0a0a');
+      const tx      = get('text_color',       '#f0ebe0');
+      const primary = get('primary_color',    '#c9a84c');
+      const success = get('color_success',    '#4caf7d');
+      const timer   = get('color_countdown',  '#e8c96a');
+
+      bar.style.background = bg;
+
+      const title = bar.querySelector('.palette-preview__title');
+      const body  = bar.querySelector('.palette-preview__body');
+      if (title) title.style.color = tx;
+      if (body)  body.style.color  = tx;
+
+      const btnP = bar.querySelector('.palette-preview__btn-primary');
+      if (btnP) { btnP.style.background = primary; btnP.style.color = bg; }
+
+      const badge = bar.querySelector('.palette-preview__badge');
+      if (badge) { badge.style.color = success; badge.style.borderColor = success; }
+
+      const timerEl = bar.querySelector('.palette-preview__timer');
+      if (timerEl) timerEl.style.color = timer;
     }
 
     // Aplica colores del tema al editor sin guardar
@@ -2423,8 +2547,9 @@
   })();
   </script>
 
-  <!-- ===== PANEL FLOTANTE: GENERACIÓN DE TEXTO POR SECCIÓN =============== -->
-  <div id="iaTxtPanel" class="ia-img-panel" style="display:none;" aria-hidden="true">
+  <!-- ===== MODAL: GENERACIÓN DE TEXTO POR SECCIÓN ========================= -->
+  <div id="iaTxtOverlay" class="ia-img-overlay" style="display:none;" aria-hidden="true">
+  <div id="iaTxtPanel" class="ia-img-panel ia-txt-panel" role="dialog" aria-labelledby="iaTxtPanelTitle" aria-modal="true">
     <div class="ia-img-panel__header">
       <span id="iaTxtPanelTitle">✨ Generar texto</span>
       <button type="button" id="iaTxtClose" class="ia-img-panel__close" aria-label="Cerrar">✕</button>
@@ -2449,12 +2574,14 @@
 
     </div>
   </div>
+  </div><!-- /#iaTxtOverlay -->
 
   <script>
   (() => {
-    const BASE   = '<?= BASE_URL ?>';
-    const panel  = document.getElementById('iaTxtPanel');
-    const titulo = document.getElementById('iaTxtPanelTitle');
+    const BASE    = '<?= BASE_URL ?>';
+    const overlay = document.getElementById('iaTxtOverlay');
+    const panel   = document.getElementById('iaTxtPanel');
+    const titulo  = document.getElementById('iaTxtPanelTitle');
 
     // Map: section-block id → section key for backend
     const sectionKeyMap = {
@@ -2521,39 +2648,24 @@
       setTxtLoading(false);
       document.getElementById('iaTxtExtra').value = '';
 
-      panel.style.display = 'block';
-      panel.setAttribute('aria-hidden', 'false');
+      overlay.style.display = 'flex';
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
 
-      if (window.innerWidth >= 768) {
-        const rect = triggerBtn.getBoundingClientRect();
-        const panelW = 360;
-        let left = rect.left + window.scrollX;
-        let top  = rect.bottom + window.scrollY + 8;
-        if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
-        if (left < 8) left = 8;
-        panel.style.left = left + 'px';
-        panel.style.top  = top  + 'px';
-      }
-
-      const firstFocusable = panel.querySelector('textarea, input, button');
-      if (firstFocusable) firstFocusable.focus();
+      const firstFocusable = panel.querySelector('textarea, button');
+      if (firstFocusable) setTimeout(() => firstFocusable.focus(), 50);
     }
 
     // ── Close ────────────────────────────────────────────────────────────────
-    document.getElementById('iaTxtClose').addEventListener('click', closeTxtPanel);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTxtPanel(); });
-    document.addEventListener('click', e => {
-      if (panel.style.display !== 'none'
-          && !panel.contains(e.target)
-          && !e.target.classList.contains('ia-txt-trigger')) {
-        closeTxtPanel();
-      }
-    });
     function closeTxtPanel() {
-      panel.style.display = 'none';
-      panel.setAttribute('aria-hidden', 'true');
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
       if (_txtPanelOpener) { _txtPanelOpener.focus(); _txtPanelOpener = null; }
     }
+    document.getElementById('iaTxtClose').addEventListener('click', closeTxtPanel);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.style.display !== 'none') closeTxtPanel(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeTxtPanel(); });
 
     // ── Helpers ──────────────────────────────────────────────────────────────
     function setTxtError(msg) {
@@ -2642,10 +2754,11 @@
   })();
   </script>
 
-  <!-- ===== PANEL FLOTANTE: GENERACIÓN DE IMÁGENES IA ====================== -->
+  <!-- ===== MODAL: GENERACIÓN DE IMÁGENES IA ================================ -->
   <?php $tieneReplicateKey = $tiene_replicate_key ?? false; ?>
 
-  <div id="iaImgPanel" class="ia-img-panel" style="display:none;" aria-hidden="true">
+  <div id="iaImgOverlay" class="ia-img-overlay" style="display:none;" aria-hidden="true">
+  <div id="iaImgPanel" class="ia-img-panel" role="dialog" aria-labelledby="iaImgPanelTitle" aria-modal="true">
     <div class="ia-img-panel__header">
       <span id="iaImgPanelTitle">✨ Generar imagen</span>
       <button type="button" id="iaImgClose" class="ia-img-panel__close" aria-label="Cerrar">✕</button>
@@ -2681,7 +2794,7 @@
         </div>
         <div class="ia-ref-body" id="iaRefBody">
           <input type="file" id="iaRefFile" accept="image/jpeg,image/png,image/webp"
-                 style="font-size:12px; width:100%;">
+                 data-no-dropzone style="font-size:12px; width:100%;">
           <small>Foto base de tu producto — aplica a <strong>todas</strong> las secciones.</small>
         </div>
         <div id="iaRefPreview" style="display:none; margin-top:8px;">
@@ -2699,7 +2812,7 @@
         </div>
         <div class="ia-ref-body" id="iaRefSecBody">
           <input type="file" id="iaRefSecFile" accept="image/jpeg,image/png,image/webp"
-                 style="font-size:12px; width:100%;">
+                 data-no-dropzone style="font-size:12px; width:100%;">
           <small>Foto específica para esta sección (ej: medidas, detalle, ángulo). <strong>Sobreescribe</strong> la global solo aquí. Se resetea al cambiar de sección.</small>
         </div>
         <div id="iaRefSecPreview" style="display:none; margin-top:8px;">
@@ -2726,7 +2839,6 @@
           <button type="button" id="iaImgSugerir" class="ia-img-sugerir">✨ Sugerir con IA</button>
         </div>
         <textarea id="iaImgPrompt" rows="4"
-          id="iaImgPrompt"
           placeholder="Sin referencia: describe la imagen completa en inglés.&#10;Con referencia: escribe qué hacer con el producto.&#10;Ej: Place this watch on a marble surface with soft golden lighting"></textarea>
       </div>
 
@@ -2753,12 +2865,14 @@
 
     </div>
   </div>
+  </div><!-- /#iaImgOverlay -->
 
   <script>
   (() => {
-    const BASE   = '<?= BASE_URL ?>';
-    const panel  = document.getElementById('iaImgPanel');
-    const titulo = document.getElementById('iaImgPanelTitle');
+    const BASE    = '<?= BASE_URL ?>';
+    const overlay = document.getElementById('iaImgOverlay');
+    const panel   = document.getElementById('iaImgPanel');
+    const titulo  = document.getElementById('iaImgPanelTitle');
 
     // Map: input name → section ID
     const sectionMap = {
@@ -2836,7 +2950,9 @@
       btn.setAttribute('aria-label', 'Generar imagen con IA para ' + (sectionLabels[sectionMap[inputName]] || inputName));
       btn.dataset.section = sectionMap[inputName];
       btn.dataset.inputName = inputName;
-      input.insertAdjacentElement('afterend', btn);
+      // Si el input ya fue envuelto por initDropzones(), insertar después del wrapper
+      const insertTarget = input.closest('.ux-dropzone') || input;
+      insertTarget.insertAdjacentElement('afterend', btn);
 
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -2844,7 +2960,7 @@
       });
     });
 
-    // ── Open panel near the trigger button ──────────────────────────────────
+    // ── Open modal ───────────────────────────────────────────────────────────
     let _imgPanelOpener = null;
     function openPanel(triggerBtn, section, fileInput) {
       _imgPanelOpener  = triggerBtn;
@@ -2852,43 +2968,29 @@
       currentFileInput = fileInput;
       titulo.textContent = '✨ Generar imagen — ' + (sectionLabels[section] || section);
 
-      // Reset state
       setError('');
       setLoading(false);
       showPreview(null);
       document.getElementById('iaImgPrompt').value = '';
 
-      panel.style.display = 'block';
-      panel.setAttribute('aria-hidden', 'false');
+      overlay.style.display = 'flex';
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
 
-      if (window.innerWidth >= 768) {
-        const rect = triggerBtn.getBoundingClientRect();
-        const panelW = 380;
-        let left = rect.left + window.scrollX;
-        let top  = rect.bottom + window.scrollY + 8;
-        if (left + panelW > window.innerWidth - 16) left = window.innerWidth - panelW - 16;
-        if (left < 8) left = 8;
-        panel.style.left = left + 'px';
-        panel.style.top  = top  + 'px';
-      }
-
-      const firstFocusable = panel.querySelector('input:not([type="hidden"]), textarea, button');
-      if (firstFocusable) firstFocusable.focus();
+      const firstFocusable = panel.querySelector('textarea, button');
+      if (firstFocusable) setTimeout(() => firstFocusable.focus(), 50);
     }
 
     // ── Close ────────────────────────────────────────────────────────────────
-    document.getElementById('iaImgClose').addEventListener('click', closePanel);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
-    document.addEventListener('click', e => {
-      if (panel.style.display !== 'none' && !panel.contains(e.target) && !e.target.classList.contains('ia-img-trigger')) {
-        closePanel();
-      }
-    });
     function closePanel() {
-      panel.style.display = 'none';
-      panel.setAttribute('aria-hidden', 'true');
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
       if (_imgPanelOpener) { _imgPanelOpener.focus(); _imgPanelOpener = null; }
     }
+    document.getElementById('iaImgClose').addEventListener('click', closePanel);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) closePanel(); });
 
     // ── Cambiar key Replicate ────────────────────────────────────────────────
     const btnCambiarR = document.getElementById('btnCambiarReplicate');
@@ -3266,7 +3368,6 @@
       'sec-ctas':               'CTAs',
       'sec-combo':              'Modo Combo',
       'sec-colores':            'Colores',
-      'sec-titulos':            'Títulos',
       'sec-announcement':       'Barra anuncios',
       'sec-hero-trust':         'Confianza hero',
       'sec-transportadoras':    'Transportadoras',
@@ -3708,13 +3809,16 @@
       }
     });
 
-    // Maneja los selectores de producto con data-confirm
-    document.querySelectorAll('.js-product-switcher').forEach(function(sel) {
-      sel.addEventListener('change', async function() {
-        if (!window.formDirty) { this.form.submit(); return; }
+    // Maneja el cambio de producto con botón explícito
+    document.querySelectorAll('.btn-switch-product').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        const sel  = this.closest('form').querySelector('select[name="producto_id"]');
+        if (!sel) return;
+        if (sel.value === sel.dataset.current) return;
+        if (!window.formDirty) { sel.form.submit(); return; }
         const ok = await openConfirm(this.dataset.confirm || '¿Continuar?', this);
-        if (ok) { this.form.submit(); }
-        else    { this.value = this.dataset.current; }
+        if (ok) { sel.form.submit(); }
+        else    { sel.value = sel.dataset.current; }
       });
     });
   })();

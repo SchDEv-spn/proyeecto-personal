@@ -331,7 +331,7 @@
   };
 
   const buildEstados = ({ start, end }) => {
-    const estados = ['nuevo', 'contactado', 'confirmado', 'enviado', 'entregado', 'cancelado'];
+    const estados = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
     const map = new Map(estados.map(e => [e, 0]));
 
     pedidos.forEach((p) => {
@@ -452,10 +452,13 @@
   const renderAll = (range = 'month') => {
     const w = getRangeWindow(range);
 
-    // ✅ KPIs también por rango
+    // Exponer timestamps para el filtro de DataTable
+    window.__RANGE_START_TS = w.start ? w.start.getTime() : null;
+    window.__RANGE_END_TS   = w.end   ? w.end.getTime()   : null;
+
+    // KPIs por rango
     updateKpisByRange(w);
 
-    // ✅ NUEVO: también filtra las cards con el mismo rango
     filterCardsByRange(w);
 
     // Embudo de conversión
@@ -529,6 +532,7 @@
             'rgba(34,211,238,.70)',  // contactado
             'rgba(34,197,94,.70)',   // confirmado
             'rgba(245,158,11,.70)',  // enviado
+            'rgba(251,146,60,.70)',  // en_oficina
             'rgba(16,185,129,.70)',  // entregado
             'rgba(255,59,48,.70)',   // cancelado
           ],
@@ -542,6 +546,12 @@
         plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10 } } }
       }
     });
+
+    // Redibujar DataTable con los nuevos filtros de fecha
+    if (window.__dtTable) {
+      window.__dtTable.draw();
+      if (typeof actualizarLabelEstado === 'function') actualizarLabelEstado();
+    }
   };
 
   // -------- Embudo de conversión
@@ -653,6 +663,79 @@
     applyFilter();
   }
 
+  // -------- Copy-to-clipboard (event delegation, funciona con HTML inyectado)
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.js-copy');
+    if (!btn) return;
+    const text = btn.dataset.copy;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const icon = btn.querySelector('i');
+      if (icon) icon.className = 'fas fa-check';
+      btn.style.background = 'var(--green-dark)';
+      btn.style.color = '#fff';
+      setTimeout(() => {
+        if (icon) icon.className = 'fas fa-copy';
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 1400);
+    });
+  });
+
+  // -------- Custom select para .js-estado-form
+  const ESTADO_LABELS = {
+    nuevo: 'Nuevo', contactado: 'Contactado', confirmado: 'Confirmado',
+    enviado: 'Enviado', en_oficina: 'En oficina', entregado: 'Entregado', cancelado: 'Cancelado',
+  };
+
+  window.initModalWidgets = function initModalWidgets(container) {
+    container.querySelectorAll('.js-estado-form select.form-select-sm, .dt-status-form select.form-select-sm').forEach(sel => {
+      if (sel.dataset.cselInit) return;
+      sel.dataset.cselInit = '1';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'csel';
+
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'csel__trigger';
+
+      const panel = document.createElement('div');
+      panel.className = 'csel__panel';
+
+      const renderTrigger = val => {
+        const lbl = ESTADO_LABELS[val] || val;
+        trigger.innerHTML = `<span class="csel__badge csel__badge--${val}"><span class="csel__dot csel__dot--${val}"></span>${lbl}</span><i class="fas fa-chevron-down csel__chev"></i>`;
+      };
+
+      Array.from(sel.options).forEach(opt => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'csel__opt' + (opt.selected ? ' is-selected' : '');
+        item.innerHTML = `<span class="csel__dot csel__dot--${opt.value}"></span>${ESTADO_LABELS[opt.value] || opt.text}`;
+        item.addEventListener('click', () => {
+          sel.value = opt.value;
+          renderTrigger(opt.value);
+          panel.querySelectorAll('.csel__opt').forEach(b => b.classList.toggle('is-selected', b === item));
+          wrap.classList.remove('is-open');
+        });
+        panel.appendChild(item);
+      });
+
+      renderTrigger(sel.value);
+      trigger.addEventListener('click', e => { e.stopPropagation(); wrap.classList.toggle('is-open'); });
+      document.addEventListener('click', () => wrap.classList.remove('is-open'));
+
+      sel.style.display = 'none';
+      wrap.appendChild(trigger);
+      wrap.appendChild(panel);
+      sel.parentNode.insertBefore(wrap, sel);
+    });
+  }
+
+  // Init selects de la tabla en carga inicial
+  initModalWidgets(document);
+
   // -------- Modal detalle (abre con .js-ver-detalle)
   const modalOverlay = document.getElementById('pedidoModal');
   const modalClose = document.getElementById('pedidoModalClose');
@@ -662,9 +745,8 @@
 
   // ===== Helpers Prev/Next =====
   const getCards = () => {
-    // Usa el contenedor si existe (mejor), si no, busca global
     const scope = container || document;
-    return Array.from(scope.querySelectorAll('.order-card[data-pedido-id]'));
+    return Array.from(scope.querySelectorAll('[data-pedido-id]'));
   };
 
   const getVisibleIds = () => {
@@ -691,9 +773,9 @@
   };
 
   const getHrefForId = (id) => {
-    const card = getCards().find(c => String(c.dataset.pedidoId) === String(id));
-    const a = card ? card.querySelector('a.js-ver-detalle') : null;
-    return a?.getAttribute('href') || `${window.BASE_URL}/AdminPedidos/detalle?id=${encodeURIComponent(id)}`;
+    const row = getCards().find(c => String(c.dataset.pedidoId) === String(id));
+    const a = row ? row.querySelector('a.js-ver-detalle') : null;
+    return a?.getAttribute('href') || `${window.BASE_URL || ''}/AdminPedidos/detalle?id=${encodeURIComponent(id)}`;
   };
 
   const updatePager = () => {
@@ -758,6 +840,7 @@
 
     // 5) insertar html y fade in
     modalBody.innerHTML = html;
+    initModalWidgets(modalBody);
     const scroller = modalBody.querySelector('.pedido-modal-scroll');
     if (scroller) scroller.scrollTop = 0;
     modalBody.classList.remove('is-switching');
@@ -837,6 +920,7 @@
 
       const html = await res.text();
       modalBody.innerHTML = html;
+      initModalWidgets(modalBody);
       updatePager();
       const scroller = modalBody.querySelector('.pedido-modal-scroll');
       if (scroller) scroller.scrollTop = 0;
@@ -949,7 +1033,7 @@
       }
 
       // 2) Sync en la tarjeta del listado
-      const card = document.querySelector(`.order-card[data-pedido-id="${CSS.escape(String(currentId))}"]`);
+      const card = document.querySelector(`tr[data-pedido-id="${CSS.escape(String(currentId))}"]`);
       if (card) {
         const tag = card.querySelector('.status-tag');
         if (tag) {
@@ -1078,14 +1162,14 @@
 
       e.preventDefault();
 
-      const card = form.closest('.order-card');
+      const card = form.closest('tr[data-pedido-id]');
       const btn = form.querySelector('button[type="submit"]');
       const sel = form.querySelector('select[name="estado"]');
 
-      const oldBtnText = btn ? btn.textContent : '';
+      const oldBtnHtml = btn ? btn.innerHTML : '';
       if (btn) {
         btn.disabled = true;
-        btn.textContent = 'Actualizando...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
       }
 
       const fd = new FormData(form);
@@ -1137,9 +1221,7 @@
           if (p) p.estado = estadoFinal;
         }
 
-        const active = document.querySelector('#rangeMenu .range-item.is-active');
-        const currentRange = active?.dataset?.range || 'month';
-
+        const currentRange = window.__RANGE_SELECTED || 'month';
         window.dispatchEvent(new CustomEvent('range:change', { detail: { range: currentRange } }));
 
 
@@ -1151,7 +1233,7 @@
       } finally {
         if (btn) {
           btn.disabled = false;
-          btn.textContent = oldBtnText || 'Actualizar Estado';
+          btn.innerHTML = oldBtnHtml || '<i class="fas fa-check"></i>';
         }
       }
     },

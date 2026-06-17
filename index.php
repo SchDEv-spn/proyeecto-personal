@@ -33,6 +33,7 @@ foreach (['telegram_bot_token' => 'TELEGRAM_BOT_TOKEN', 'telegram_chat_id' => 'T
 }
 unset($_cfgFile, $_baseCfg, $_k, $_v);
 
+require_once __DIR__ . '/app/helpers.php';
 require_once __DIR__ . '/app/core/Controller.php';
 require_once __DIR__ . '/app/core/Model.php';
 require_once __DIR__ . '/app/core/Database.php';

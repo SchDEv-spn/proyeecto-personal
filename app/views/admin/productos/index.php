@@ -7,8 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="<?= BASE_URL ?>/public/manifest.php">
     <meta name="theme-color" content="#C9A84C">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.min.css">
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
 </head>
 
@@ -76,15 +80,10 @@
 
             <section class="material-content">
 
-                <?php if (!empty($success)): ?>
-                    <div class="admin-alert-success">
-                        <i class="fas fa-circle-check"></i>
-                        <span><?= htmlspecialchars($success) ?></span>
-                    </div>
-                <?php endif; ?>
+                <?= alert_success($success) ?>
 
                 <!-- KPIs -->
-                <div class="stats-grid">
+                <div class="stats-grid stats-grid--4col">
                     <div class="stat-card glow-green">
                         <div class="stat-info">
                             <small>Productos Totales</small>
@@ -122,7 +121,7 @@
                     </div>
                 </div>
 
-                <!-- Cards -->
+                <!-- Tabla productos -->
                 <?php if (empty($productos)): ?>
                     <div class="empty-state">
                         <p>No hay productos creados todavía.</p>
@@ -132,136 +131,104 @@
                         <div class="table-header">
                             <h3>Listado de productos</h3>
                         </div>
+                        <div class="dt-table-wrap">
+                            <table id="tablaProductos" class="pedidos-dt" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Imagen</th>
+                                        <th>Producto</th>
+                                        <th>Precio venta</th>
+                                        <th>Utilidad</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach ($productos as $p):
+                                    $precioVenta     = (float)($p['precio_venta'] ?? 0);
+                                    $precioProveedor = (float)($p['precio_proveedor'] ?? 0);
+                                    $utilidad        = $precioVenta - $precioProveedor;
+                                    $slug            = $p['slug'] ?? '';
+                                    $activo          = !empty($p['activo']);
+                                    $landingUrl      = $slug !== ''
+                                        ? BASE_URL . '/producto/' . urlencode($slug)
+                                        : BASE_URL . '/Landing/index?producto_id=' . urlencode($p['id']);
 
-                        <div class="cards-container" id="contenedorProductos">
-                            <?php foreach ($productos as $p): ?>
-                                <?php
-                                $precioVenta     = (float)($p['precio_venta'] ?? 0);
-                                $precioProveedor = (float)($p['precio_proveedor'] ?? 0);
-                                $utilidad        = $precioVenta - $precioProveedor;
-
-                                $slug = $p['slug'] ?? '';
-                                $landingUrl = $slug !== ''
-                                    ? BASE_URL . '/producto/' . urlencode($slug)
-                                    : BASE_URL . '/Landing/index?producto_id=' . urlencode($p['id']);
-
-                                $activo = !empty($p['activo']);
-
-                                // ===== Imagen principal (robusto para nombre / ruta / URL)
-                                $imgRaw = trim((string)($p['imagen_principal'] ?? ''));
-                                $imgSrc = '';
-
-                                if ($imgRaw !== '') {
-                                    // Si ya es URL completa
-                                    if (preg_match('#^https?://#i', $imgRaw)) {
-                                        $imgSrc = $imgRaw;
-                                    } else {
-                                        // Si viene con una ruta tipo /tienda_mvc/... o /public/...
-                                        if ($imgRaw[0] === '/') {
+                                    $imgRaw = trim((string)($p['imagen_principal'] ?? ''));
+                                    $imgSrc = '';
+                                    if ($imgRaw !== '') {
+                                        if (preg_match('#^https?://#i', $imgRaw)) {
                                             $imgSrc = $imgRaw;
+                                        } elseif ($imgRaw[0] === '/') {
+                                            $imgSrc = $imgRaw;
+                                        } elseif (stripos($imgRaw, 'uploads/') !== false || stripos($imgRaw, 'public/') !== false) {
+                                            $imgSrc = BASE_URL . '/' . ltrim($imgRaw, '/');
                                         } else {
-                                            // Si viene como 'uploads/productos/x.jpg' o solo 'x.jpg'
-                                            if (stripos($imgRaw, 'uploads/') !== false || stripos($imgRaw, 'public/') !== false) {
-                                                $imgSrc = BASE_URL . '/' . ltrim($imgRaw, '/');
-                                            } else {
-                                                // Caso típico: solo nombre de archivo
-                                                $imgSrc = $UPLOADS_BASE . $imgRaw;
-                                            }
+                                            $imgSrc = $UPLOADS_BASE . $imgRaw;
                                         }
                                     }
-                                }
                                 ?>
-
-                                <div class="order-card" data-producto-id="<?= htmlspecialchars($p['id'] ?? '') ?>">
-
-                                    <div class="card-header">
-                                        <div>
-                                            <span class="card-label">ID Producto</span>
-                                            <strong>#<?= htmlspecialchars($p['id'] ?? '') ?></strong>
-                                        </div>
-
-                                        <?php if ($activo): ?>
-                                            <span class="tag-estado estado-activo">Activo</span>
-                                        <?php else: ?>
-                                            <span class="tag-estado estado-inactivo">Inactivo</span>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <!-- ✅ FOTO -->
-                                    <?php if ($imgSrc !== ''): ?>
-                                        <div class="product-media">
-                                            <img
-                                                src="<?= htmlspecialchars($imgSrc) ?>"
-                                                alt="<?= htmlspecialchars($p['nombre'] ?? 'Producto') ?>"
-                                                loading="lazy"
-                                                onerror="this.closest('.product-media').classList.add('product-media--broken'); this.style.display='none';">
-                                            <div class="product-media__fallback" aria-hidden="true">
-                                                <i class="fas fa-image"></i>
-                                            </div>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="product-media product-media--placeholder" aria-hidden="true">
-                                            <i class="fas fa-image"></i>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <div class="card-section">
-                                        <span class="card-label">Producto</span>
-                                        <div class="card-value">
-                                            <strong><?= htmlspecialchars($p['nombre'] ?? '') ?></strong><br>
-                                            <small style="color:var(--muted);">
-                                                Proveedor: $<?= number_format($precioProveedor, 0, ',', '.') ?>
-                                            </small>
-                                        </div>
-                                    </div>
-
-                                    <div class="card-section">
-                                        <span class="card-label">Landing / URL</span>
-                                        <div class="card-value">
-                                            <?php if ($slug !== ''): ?>
-                                                <small style="color:var(--muted);">
-                                                    Slug: <code class="code-pill"><?= htmlspecialchars($slug) ?></code>
-                                                </small><br>
+                                    <tr>
+                                        <td>
+                                            <?php if ($imgSrc !== ''): ?>
+                                                <img src="<?= htmlspecialchars($imgSrc) ?>"
+                                                     alt="<?= htmlspecialchars($p['nombre'] ?? '') ?>"
+                                                     loading="lazy"
+                                                     class="prod-thumb"
+                                                     onerror="this.replaceWith(document.createElement('span'))">
                                             <?php else: ?>
-                                                <small style="color:var(--muted);"><em>Sin slug definido</em></small><br>
+                                                <span class="prod-thumb prod-thumb--empty"><i class="fas fa-image"></i></span>
                                             <?php endif; ?>
+                                        </td>
 
-                                            <a class="link-landing" href="<?= htmlspecialchars($landingUrl) ?>" target="_blank" rel="noopener">
-                                                <i class="fas fa-up-right-from-square"></i> Ver landing
-                                            </a>
-                                        </div>
-                                    </div>
+                                        <td>
+                                            <strong><?= htmlspecialchars($p['nombre'] ?? '') ?></strong>
+                                            <?php if ($slug !== ''): ?>
+                                                <br><code class="code-pill"><?= htmlspecialchars($slug) ?></code>
+                                            <?php endif; ?>
+                                        </td>
 
-                                    <div class="card-section" style="display:flex; justify-content:space-between;">
-                                        <div>
-                                            <span class="card-label">Precio Venta</span>
-                                            <div class="card-value">
-                                                <span class="price-tag">$<?= number_format($precioVenta, 0, ',', '.') ?></span>
+                                        <td>
+                                            <span class="price-tag">$<?= number_format($precioVenta, 0, ',', '.') ?></span>
+                                            <br><small class="dt-cell-sub">Prov: $<?= number_format($precioProveedor, 0, ',', '.') ?></small>
+                                        </td>
+
+                                        <td>
+                                            <span class="profit-tag">$<?= number_format($utilidad, 0, ',', '.') ?></span>
+                                        </td>
+
+                                        <td>
+                                            <?php if ($activo): ?>
+                                                <span class="tag-estado estado-activo">Activo</span>
+                                            <?php else: ?>
+                                                <span class="tag-estado estado-inactivo">Inactivo</span>
+                                            <?php endif; ?>
+                                        </td>
+
+                                        <td>
+                                            <div class="dt-actions">
+                                                <a href="<?= htmlspecialchars($landingUrl) ?>"
+                                                   target="_blank" rel="noopener"
+                                                   class="btn-detail btn-detail--sm"
+                                                   title="Ver landing">
+                                                    <i class="fas fa-up-right-from-square"></i>
+                                                </a>
+                                                <a href="<?= BASE_URL ?>/AdminProductos/editar?id=<?= htmlspecialchars($p['id']) ?>"
+                                                   class="btn-detail btn-detail--sm"
+                                                   title="Editar producto">
+                                                    <i class="fas fa-pen"></i>
+                                                </a>
+                                                <a href="<?= BASE_URL ?>/AdminLanding/index?producto_id=<?= htmlspecialchars($p['id']) ?>"
+                                                   class="btn-save-status btn-save-status--sm"
+                                                   title="Editar landing">
+                                                    <i class="fas fa-layer-group"></i>
+                                                </a>
                                             </div>
-                                        </div>
-
-                                        <div style="text-align:right;">
-                                            <span class="card-label">Utilidad</span>
-                                            <div class="card-value">
-                                                <span class="profit-tag">$<?= number_format($utilidad, 0, ',', '.') ?></span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="card-footer" style="justify-content:flex-end;">
-                                        <div class="card-actions" style="gap:10px;">
-                                            <a href="<?= BASE_URL ?>/AdminProductos/editar?id=<?= htmlspecialchars($p['id']) ?>" class="btn-detail">
-                                                Editar producto
-                                            </a>
-
-                                            <a href="<?= BASE_URL ?>/AdminLanding/index?producto_id=<?= htmlspecialchars($p['id']) ?>" class="btn-primary btn-primary--soft">
-                                                Editar landing
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            <?php endforeach; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -270,7 +237,33 @@
         </main>
     </div>
 
+    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.min.js"></script>
     <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
+    <script>
+    (function () {
+        var table = new DataTable('#tablaProductos', {
+            pageLength: 25,
+            order: [[1, 'asc']],
+            columnDefs: [
+                { orderable: false, targets: [0, 5] }
+            ],
+            language: {
+                search: '', searchPlaceholder: 'Buscar…',
+                info: '_TOTAL_ productos', infoEmpty: 'Sin productos',
+                zeroRecords: 'Sin resultados.',
+                paginate: { first:'«', last:'»', next:'›', previous:'‹' }
+            },
+            dom: 't<"dt-bottom"ip>'
+        });
+
+        var searchInput = document.getElementById('searchProductos');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                table.search(this.value).draw();
+            });
+        }
+    })();
+    </script>
 </body>
 
 </html>

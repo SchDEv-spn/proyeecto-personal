@@ -32,15 +32,7 @@ $old     = $old     ?? [];
       <p>Ingresa tus credenciales para acceder al panel de administración.</p>
     </header>
 
-    <?php if (!empty($errores)): ?>
-      <div class="admin-alert-error" role="alert" aria-live="polite">
-        <ul>
-          <?php foreach ($errores as $e): ?>
-            <li><?= htmlspecialchars($e) ?></li>
-          <?php endforeach; ?>
-        </ul>
-      </div>
-    <?php endif; ?>
+    <?= alert_error($errores ?? []) ?>
 
     <form action="<?= BASE_URL ?>/Auth/procesar" method="POST" class="login-form" autocomplete="on">
       <?= csrf_field() ?>

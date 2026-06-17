@@ -62,6 +62,17 @@ window.BASE_URL = '<?= BASE_URL ?>';
             </div>
         <?php endif; ?>
 
+        <!-- Usuario -->
+        <div class="header-user" id="headerUser">
+            <img class="header-user__avatar"
+                 src="<?= BASE_URL ?>/public/img/admi/1.jpg"
+                 alt="<?= htmlspecialchars($usuarioNombre) ?>">
+            <div class="header-user__info">
+                <strong><?= htmlspecialchars($usuarioNombre) ?></strong>
+                <small><?= htmlspecialchars($usuarioEmail ?? '') ?></small>
+            </div>
+        </div>
+
         <!-- Campana de notificaciones -->
         <div class="notif-wrap" id="notifWrap">
             <button class="notif-bell" id="notifBell" type="button"
@@ -88,19 +99,21 @@ window.BASE_URL = '<?= BASE_URL ?>';
         <?php if (!empty($headerCtas)): ?>
             <?php foreach ($headerCtas as $cta): ?>
                 <?php
-                $href   = $cta['href']   ?? '#';
-                $label  = $cta['label']  ?? '';
-                $class  = $cta['class']  ?? 'btn-detail';
-                $icon   = $cta['icon']   ?? '';
-                $target = $cta['target'] ?? '';
-                $rel    = $cta['rel']    ?? '';
+                $href    = $cta['href']    ?? '#';
+                $label   = $cta['label']   ?? '';
+                $class   = $cta['class']   ?? 'btn-detail';
+                $icon    = $cta['icon']    ?? '';
+                $target  = $cta['target']  ?? '';
+                $rel     = $cta['rel']     ?? '';
+                $onclick = $cta['onclick'] ?? '';
                 ?>
                 <a href="<?= htmlspecialchars($href) ?>"
                    class="<?= htmlspecialchars($class) ?>"
-                   <?= $target ? 'target="' . htmlspecialchars($target) . '"' : '' ?>
-                   <?= $rel    ? 'rel="'    . htmlspecialchars($rel)    . '"' : '' ?>>
+                   <?= $target  ? 'target="' . htmlspecialchars($target)  . '"' : '' ?>
+                   <?= $rel     ? 'rel="'    . htmlspecialchars($rel)     . '"' : '' ?>
+                   <?= $onclick ? 'onclick="' . htmlspecialchars($onclick) . '"' : '' ?>>
                     <?php if ($icon): ?>
-                        <i class="<?= htmlspecialchars($icon) ?>"></i>
+                        <i class="fas <?= htmlspecialchars($icon) ?>" aria-hidden="true"></i>
                     <?php endif; ?>
                     <?= htmlspecialchars($label) ?>
                 </a>

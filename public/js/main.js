@@ -270,62 +270,80 @@ function initAccordion() {
 
 
 /* ══════════════════════════════════════════════════════════════
-   GALERÍA — swap suave + estado activo + zoom lightbox
+   GALERÍA — swap + estado activo + zoom lightbox + swipe
    ══════════════════════════════════════════════════════════════ */
 function initGallery() {
     const mainFigure = document.querySelector('.product-gallery__main');
-    const mainImg = document.querySelector('.product-gallery__main-img');
-    const thumbs = document.querySelectorAll('.product-gallery__thumb');
+    const mainImg    = document.querySelector('.product-gallery__main-img');
+    const thumbs     = Array.from(document.querySelectorAll('.product-gallery__thumb'));
 
     if (!mainImg || !thumbs.length) return;
 
-    // Estado inicial: primera miniatura activa
-    thumbs[0].classList.add('active', 'is-active');
-    const firstThumbImg = thumbs[0].querySelector('img');
-    if (firstThumbImg) firstThumbImg.style.opacity = '1';
+    // Lista completa de srcs: [imagen principal, ...miniaturas]
+    const allSrcs = [mainImg.src, ...thumbs.map(t => t.dataset.src || t.getAttribute('data-src') || '')];
+    let currentIdx = 0;
 
-    // Swap al hacer clic en miniatura
-    thumbs.forEach(thumb => {
-        thumb.addEventListener('click', function () {
-            // Resetear todas
-            thumbs.forEach(t => {
-                t.classList.remove('active', 'is-active');
-                const tImg = t.querySelector('img');
-                if (tImg) tImg.style.opacity = '0.7';
-            });
-
-            // Activar la seleccionada
-            this.classList.add('active', 'is-active');
-            const activeThumbImg = this.querySelector('img');
-            if (activeThumbImg) activeThumbImg.style.opacity = '1';
-
-            // Cambiar imagen principal — micro-transición 150ms
-            const newSrc = this.dataset.src || this.getAttribute('data-src');
-            if (!newSrc) return;
-
-            mainImg.style.opacity = '0.5';
-            setTimeout(() => {
-                mainImg.src = newSrc;
-                mainImg.style.opacity = '1';
-            }, 150);
-        });
-    });
-
-    // Zoom lightbox al tap en imagen principal
-    if (mainFigure) {
-        mainFigure.addEventListener('click', function (e) {
-            // Evitar que el tap en una miniatura también dispare el zoom
-            if (e.target.closest('.product-gallery__thumb')) return;
-            mainFigure.classList.toggle('zoomed');
-            document.body.style.overflow = mainFigure.classList.contains('zoomed')
-                ? 'hidden'
-                : '';
+    function setActive(idx) {
+        currentIdx = idx;
+        thumbs.forEach((t, i) => {
+            const on = (i === idx - 1);
+            t.classList.toggle('active',    on);
+            t.classList.toggle('is-active', on);
+            const ti = t.querySelector('img');
+            if (ti) ti.style.opacity = on ? '1' : '0.7';
         });
     }
 
+    function navigateTo(idx) {
+        if (idx < 0 || idx >= allSrcs.length || idx === currentIdx) return;
+        mainImg.style.opacity = '0.5';
+        setTimeout(() => {
+            mainImg.src = allSrcs[idx];
+            mainImg.style.opacity = '1';
+        }, 150);
+        setActive(idx);
+    }
+
+    // Estado inicial: primera miniatura resaltada visualmente
+    setActive(1);
+
+    // Click en miniatura
+    thumbs.forEach((thumb, i) => {
+        thumb.addEventListener('click', () => navigateTo(i + 1));
+    });
+
+    // ── Swipe en imagen principal ──────────────────────────────
+    let swipeX = 0, swipeY = 0, didSwipe = false;
+
+    mainFigure.addEventListener('touchstart', e => {
+        if (mainFigure.classList.contains('zoomed')) return;
+        swipeX   = e.touches[0].clientX;
+        swipeY   = e.touches[0].clientY;
+        didSwipe = false;
+    }, { passive: true });
+
+    mainFigure.addEventListener('touchend', e => {
+        if (mainFigure.classList.contains('zoomed')) return;
+        const dx = e.changedTouches[0].clientX - swipeX;
+        const dy = e.changedTouches[0].clientY - swipeY;
+        if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
+        didSwipe = true;
+        navigateTo(dx < 0
+            ? Math.min(currentIdx + 1, allSrcs.length - 1)  // izquierda → siguiente
+            : Math.max(currentIdx - 1, 0));                  // derecha   → anterior
+    }, { passive: true });
+
+    // ── Zoom lightbox — solo si no fue un swipe ────────────────
+    mainFigure.addEventListener('click', e => {
+        if (e.target.closest('.product-gallery__thumb')) return;
+        if (didSwipe) { didSwipe = false; return; }
+        mainFigure.classList.toggle('zoomed');
+        document.body.style.overflow = mainFigure.classList.contains('zoomed') ? 'hidden' : '';
+    });
+
     // Cerrar zoom con Escape
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && mainFigure && mainFigure.classList.contains('zoomed')) {
+        if (e.key === 'Escape' && mainFigure.classList.contains('zoomed')) {
             mainFigure.classList.remove('zoomed');
             document.body.style.overflow = '';
         }
@@ -333,11 +351,8 @@ function initGallery() {
 
     // Marcar imágenes loaded (skeleton CSS)
     document.querySelectorAll('[data-product-gallery] img').forEach(img => {
-        if (img.complete) {
-            img.classList.add('loaded');
-        } else {
-            img.addEventListener('load', () => img.classList.add('loaded'));
-        }
+        if (img.complete) img.classList.add('loaded');
+        else img.addEventListener('load', () => img.classList.add('loaded'));
     });
 }
 

@@ -1,12 +1,9 @@
-﻿<?php
-// Defaults
+<?php
 $usuarioNombre = $usuarioNombre ?? 'Admin';
 $usuarioEmail  = $usuarioEmail  ?? 'admin@tuempresa.com';
 
-// Detectar ruta actual automáticamente
 $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Resolver activeNav por URL
 if (strpos($currentPath, '/AdminProductos/') !== false) {
     $activeNav = 'productos';
 } elseif (strpos($currentPath, '/AdminPedidos/') !== false) {
@@ -21,37 +18,45 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
 ?>
 
 <aside class="material-sidebar">
+
+    <!-- Logo -->
     <div class="sidebar-logo">
-        <h2>FEDORA ULTIMATE</h2>
+        <span class="sidebar-logo__icon"><i class="fas fa-store"></i></span>
+        <span class="sidebar-logo__name">FEDORA<strong>MFB</strong></span>
     </div>
 
-    <div class="sidebar-user">
-        <img src="<?= BASE_URL ?>/public/img/admi/1.jpg?user=<?= substr($usuarioNombre, 0, 2) ?>" alt="User">
-        <div>
-            <h4><?= htmlspecialchars($usuarioNombre) ?></h4>
-            <small><?= htmlspecialchars($usuarioEmail) ?></small>
-        </div>
-    </div>
-
+    <!-- Nav -->
     <nav class="sidebar-nav">
+
+        <span class="sidebar-section-label">Menú</span>
+
         <a href="<?= BASE_URL ?>/AdminPedidos/index" class="<?= $activeNav === 'pedidos' ? 'active' : '' ?>">
-            <i class="fas fa-box"></i> Pedidos
+            <i class="fas fa-box"></i>
+            <span>Pedidos</span>
         </a>
 
         <a href="<?= BASE_URL ?>/AdminProductos/index" class="<?= $activeNav === 'productos' ? 'active' : '' ?>">
-            <i class="fas fa-shopping-bag"></i> Productos
+            <i class="fas fa-shopping-bag"></i>
+            <span>Productos</span>
         </a>
 
+        <span class="sidebar-section-label">Herramientas</span>
+
         <a href="<?= BASE_URL ?>/AdminPlantillasWa/index" class="<?= $activeNav === 'plantillas' ? 'active' : '' ?>">
-            <i class="fab fa-whatsapp"></i> Plantillas WA
+            <i class="fab fa-whatsapp"></i>
+            <span>Plantillas WA</span>
         </a>
 
         <a href="<?= BASE_URL ?>/AdminPerfil/index" class="<?= $activeNav === 'perfil' ? 'active' : '' ?>">
-            <i class="fas fa-user-circle"></i> Mi Perfil
+            <i class="fas fa-user-circle"></i>
+            <span>Mi Perfil</span>
         </a>
 
-        <a href="<?= BASE_URL ?>/Auth/logout">
-            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        <a href="<?= BASE_URL ?>/Auth/logout" class="sidebar-nav__logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Cerrar sesión</span>
         </a>
+
     </nav>
+
 </aside>

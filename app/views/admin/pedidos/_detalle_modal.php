@@ -1,295 +1,274 @@
-﻿<?php
+<?php
 $pedido = $pedido ?? null;
-
 if (!$pedido) {
-  echo "<div style='color:#fff;padding:1rem;'>No se encontró el pedido.</div>";
+  echo "<div style='padding:2rem;color:var(--tx-muted);text-align:center;'>No se encontró el pedido.</div>";
   return;
 }
 
-$estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
-$estadoActual = $pedido['estado'] ?? 'nuevo';
-$estadoSafe = in_array($estadoActual, $estadosPosibles, true) ? $estadoActual : 'nuevo';
+$estadosPosibles = ['nuevo','contactado','confirmado','enviado','en_oficina','entregado','cancelado'];
+$estadoActual    = $pedido['estado'] ?? 'nuevo';
+$estadoSafe      = in_array($estadoActual, $estadosPosibles, true) ? $estadoActual : 'nuevo';
 
-// =========================
-// Valores numéricos seguros
-// =========================
-$cantidadTotal = (int)($pedido['cantidad_total'] ?? 1);
-if ($cantidadTotal < 1) $cantidadTotal = 1;
+$cantidadTotal   = max(1, (int)($pedido['cantidad_total'] ?? 1));
+$precioUnit      = (float)($pedido['precio_venta']     ?? 0);
+$proveedorUnit   = (float)($pedido['precio_proveedor'] ?? 0);
+$subtotal        = $precioUnit * $cantidadTotal;
+$descuentoTotal  = max(0, (float)($pedido['descuento_total'] ?? 0));
+$precioTotal     = (float)($pedido['precio_total'] ?? 0) ?: max(0, $subtotal - $descuentoTotal);
+$costoEnvio      = max(0, (float)($pedido['costo_envio'] ?? $pedido['producto_costo_envio'] ?? 0));
+$costoTotal      = ($proveedorUnit * $cantidadTotal) + $costoEnvio;
+$utilidadTotal   = is_finite($precioTotal - $costoTotal) ? $precioTotal - $costoTotal : 0.0;
 
-$precioUnit     = (float)($pedido['precio_venta'] ?? 0);
-$proveedorUnit  = (float)($pedido['precio_proveedor'] ?? 0);
-
-// Subtotal (referencia)
-$subtotal = $precioUnit * $cantidadTotal;
-
-// Descuento (si existe)
-$descuentoTotal = (float)($pedido['descuento_total'] ?? 0);
-if ($descuentoTotal < 0) $descuentoTotal = 0;
-
-// ✅ Total cobrado REAL (misma regla que la tabla)
-// prioridad: pedido.precio_total -> subtotal - descuento -> subtotal
-$precioTotal = 0.0;
-if (isset($pedido['precio_total'])) {
-  $precioTotal = (float)$pedido['precio_total'];
-}
-if ($precioTotal <= 0) {
-  $precioTotal = max(0, $subtotal - $descuentoTotal);
-}
-
-// ✅ Costo envío (misma regla que la tabla)
-// prioridad: pedido.costo_envio -> producto_costo_envio -> 0
-$costoEnvio = 0.0;
-if (isset($pedido['costo_envio'])) {
-  $costoEnvio = (float)$pedido['costo_envio'];
-} elseif (isset($pedido['producto_costo_envio'])) {
-  $costoEnvio = (float)$pedido['producto_costo_envio'];
-} elseif (isset($pedido['costo_envio_total'])) {
-  // compatibilidad por si antes lo llamabas así
-  $costoEnvio = (float)$pedido['costo_envio_total'];
-}
-if ($costoEnvio < 0) $costoEnvio = 0;
-
-// Costos proveedor total
-$costoProveedorTotal = $proveedorUnit * $cantidadTotal;
-
-// ✅ Utilidad total REAL (misma regla que la tabla)
-$utilidadTotal = $precioTotal - ($costoProveedorTotal + $costoEnvio);
-if (!is_finite($utilidadTotal)) $utilidadTotal = 0.0;
-
-// ✅ Utilidad unitaria (coherente con utilidad total)
-$utilidadUnit = ($cantidadTotal > 0) ? ($utilidadTotal / $cantidadTotal) : 0.0;
-if (!is_finite($utilidadUnit)) $utilidadUnit = 0.0;
-
-// =========================
-// WhatsApp URL
-// =========================
 $telRaw    = $pedido['telefono'] ?? '';
 $telLimpio = preg_replace('/\D+/', '', $telRaw);
-$waUrl     = '';
-
 if ($telLimpio !== '') {
   if (strpos($telLimpio, '00') === 0) $telLimpio = substr($telLimpio, 2);
   if (strpos($telLimpio, '57') !== 0) {
     if (strlen($telLimpio) === 11 && $telLimpio[0] === '0') $telLimpio = substr($telLimpio, 1);
     $telLimpio = '57' . $telLimpio;
   }
-  $waUrl = "https://wa.me/" . $telLimpio . "?text=" . urlencode(
-    "Hola " . ($pedido['nombre'] ?? '') . ", te escribimos sobre tu pedido de " . ($pedido['producto_nombre'] ?? '') . "."
-  );
 }
+
+$_meses   = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+$_fechaTs = !empty($pedido['created_at']) ? strtotime($pedido['created_at']) : 0;
+$_fechaFmt = '';
+if ($_fechaTs) {
+  $_dtM      = (new DateTime('@'.$_fechaTs))->setTimezone(new DateTimeZone('America/Bogota'));
+  $_fechaFmt = $_dtM->format('j').' '.$_meses[(int)$_dtM->format('n')-1].'. '.$_dtM->format('Y').', '.$_dtM->format('g:i a');
+}
+
+$nombreCompleto   = trim(($pedido['nombre']??'').' '.($pedido['apellidos']??''));
+$ubicacionTexto   = trim(($pedido['municipio']??'').', '.($pedido['departamento']??''), ', ');
 ?>
 
 <div class="pedido-modal-wrap" data-pedido-id="<?= htmlspecialchars($pedido['id'] ?? '') ?>">
 
+  <!-- HEADER -->
   <div class="modal-header">
-    <div>
-      <h3 id="pedidoModalTitle">Pedido #<?= htmlspecialchars($pedido['id'] ?? '') ?></h3>
-      <?php
-      $_fechaTs  = !empty($pedido['created_at']) ? strtotime($pedido['created_at']) : 0;
-      $_meses    = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-      $_fechaFmt = '';
-      if ($_fechaTs) {
-          $_dtM = (new DateTime('@' . $_fechaTs))->setTimezone(new DateTimeZone('America/Bogota'));
-          $_fechaFmt = $_dtM->format('j') . ' ' . $_meses[(int)$_dtM->format('n') - 1] . '. ' . $_dtM->format('Y') . ', ' . $_dtM->format('g:i a');
-      } else {
-          $_fechaFmt = $pedido['created_at'] ?? '';
-      }
-      ?>
-      <p>Creado el <time datetime="<?= htmlspecialchars($pedido['created_at'] ?? '') ?>"><?= htmlspecialchars($_fechaFmt) ?></time></p>
+    <div class="mh-top">
+      <div class="mh-id">
+        <h3 id="pedidoModalTitle">Pedido <span>#<?= htmlspecialchars($pedido['id'] ?? '') ?></span></h3>
+        <span class="status-tag status-<?= htmlspecialchars($estadoSafe) ?> js-modal-status">
+          <?= ucfirst(str_replace('_',' ', htmlspecialchars($estadoSafe))) ?>
+        </span>
+      </div>
+      <?php if ($_fechaFmt): ?>
+        <p class="mh-date"><?= htmlspecialchars($_fechaFmt) ?></p>
+      <?php endif; ?>
     </div>
-
-    <div class="detalle-acciones">
-      <button type="button" class="btn-detail js-prev-pedido" aria-label="Pedido anterior">
-        <i class="fas fa-chevron-left"></i> Anterior
-      </button>
-
-      <span class="js-pedido-pager" style="color: var(--gray-light); font-weight:700; font-size:.85rem;"></span>
-
-      <button type="button" class="btn-detail js-next-pedido" aria-label="Pedido siguiente">
-        Siguiente <i class="fas fa-chevron-right"></i>
-      </button>
-
+    <div class="mh-actions">
+      <button type="button" class="mh-nav-btn js-prev-pedido"><i class="fas fa-chevron-left"></i> Anterior</button>
+      <span class="js-pedido-pager mh-pager"></span>
+      <button type="button" class="mh-nav-btn js-next-pedido">Siguiente <i class="fas fa-chevron-right"></i></button>
       <?php if ($telLimpio !== ''): ?>
-        <button type="button" class="btn-whatsapp js-wa-open"
-                data-telefono="<?= htmlspecialchars($telRaw) ?>"
-                data-nombre="<?= htmlspecialchars($pedido['nombre'] ?? '') ?>"
-                data-apellidos="<?= htmlspecialchars($pedido['apellidos'] ?? '') ?>"
-                data-producto="<?= htmlspecialchars($pedido['producto_nombre'] ?? '') ?>"
-                data-cantidad="<?= htmlspecialchars((string)$cantidadTotal) ?>"
-                data-precio="<?= htmlspecialchars('$' . number_format($precioTotal, 0, ',', '.')) ?>"
-                data-municipio="<?= htmlspecialchars($pedido['municipio'] ?? '') ?>"
-                data-departamento="<?= htmlspecialchars($pedido['departamento'] ?? '') ?>"
-                data-estado="<?= htmlspecialchars($estadoSafe) ?>"
-                data-tipo-entrega="<?= htmlspecialchars($pedido['tipo_entrega'] ?? '') ?>">
-          <i class="fab fa-whatsapp"></i> WhatsApp
-        </button>
+      <button type="button" class="mh-wa-btn js-wa-open"
+              data-telefono="<?= htmlspecialchars($telRaw) ?>"
+              data-nombre="<?= htmlspecialchars($pedido['nombre'] ?? '') ?>"
+              data-apellidos="<?= htmlspecialchars($pedido['apellidos'] ?? '') ?>"
+              data-producto="<?= htmlspecialchars($pedido['producto_nombre'] ?? '') ?>"
+              data-cantidad="<?= htmlspecialchars((string)$cantidadTotal) ?>"
+              data-precio="<?= htmlspecialchars('$'.number_format($precioTotal,0,',','.')) ?>"
+              data-municipio="<?= htmlspecialchars($pedido['municipio'] ?? '') ?>"
+              data-departamento="<?= htmlspecialchars($pedido['departamento'] ?? '') ?>"
+              data-estado="<?= htmlspecialchars($estadoSafe) ?>"
+              data-tipo-entrega="<?= htmlspecialchars($pedido['tipo_entrega'] ?? '') ?>">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </button>
       <?php endif; ?>
     </div>
   </div>
 
+  <!-- BODY -->
   <div class="pedido-modal-scroll">
 
-    <div class="table-container">
-      <div class="table-header">
-        <h3>Estado y producto</h3>
-      </div>
+    <!-- ESTADO Y PRODUCTO -->
+    <div class="modal-section">
+      <p class="modal-section__head">Estado y producto</p>
+      <div class="mii-grid">
 
-      <div class="detalle-grid">
-
-        <div class="detalle-item">
-          <span class="detalle-label">Estado actual</span>
-
-          <span class="status-tag status-<?= htmlspecialchars($estadoSafe) ?> js-modal-status">
-            <?= ucfirst(htmlspecialchars($estadoSafe)) ?>
-          </span>
-
-          <form action="<?= BASE_URL ?>/AdminPedidos/cambiarEstado" method="POST" class="status-form js-estado-form" style="margin-top:.75rem;">
-            <?= csrf_field() ?>
-            <input type="hidden" name="id" value="<?= htmlspecialchars($pedido['id'] ?? '') ?>">
-            <input type="hidden" name="ajax" value="1">
-            <select name="estado">
-              <?php foreach ($estadosPosibles as $estado): ?>
-                <option value="<?= htmlspecialchars($estado) ?>" <?= $estadoSafe === $estado ? 'selected' : '' ?>>
-                  <?= ucfirst(htmlspecialchars($estado)) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-            <button type="submit">Guardar</button>
-          </form>
-        </div>
-
-        <div class="detalle-item">
-          <span class="detalle-label">Producto</span>
-          <span class="detalle-value"><?= htmlspecialchars($pedido['producto_nombre'] ?? '-') ?></span>
-        </div>
-
-        <div class="detalle-item">
-          <span class="detalle-label">Cantidad total</span>
-          <span class="detalle-value"><?= number_format($cantidadTotal, 0, ',', '.') ?></span>
-        </div>
-
-        <div class="detalle-item">
-          <span class="detalle-label">Color</span>
-          <span class="detalle-value"><?= htmlspecialchars(($pedido['color'] ?? '') ?: '-') ?></span>
-        </div>
-      </div>
-    </div>
-
-
-
-    <div class="table-container" style="margin-top:1.25rem;">
-      <div class="table-header">
-        <h3>Cliente</h3>
-      </div>
-
-      <div class="detalle-grid">
-
-        <div class="detalle-item">
-          <span class="detalle-label">Nombre</span>
-          <span class="detalle-value">
-            <?= htmlspecialchars(trim(($pedido['nombre'] ?? '') . ' ' . ($pedido['apellidos'] ?? ''))) ?>
-          </span>
-        </div>
-
-        <div class="detalle-item">
-          <span class="detalle-label">Teléfono</span>
-          <div class="detalle-value phone-edit-wrap">
-            <span class="phone-display"><?= htmlspecialchars($pedido['telefono'] ?? '-') ?></span>
-            <button type="button" class="btn-edit-field" title="Editar teléfono">
-              <i class="fas fa-pencil-alt"></i>
-            </button>
-            <form class="phone-edit-form" style="display:none">
+        <!-- Cambiar estado — full width -->
+        <div class="mii mii--full">
+          <div class="mii__icon"><i class="fas fa-tag"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Cambiar estado</span>
+            <form action="<?= BASE_URL ?>/AdminPedidos/cambiarEstado" method="POST"
+                  class="status-form js-estado-form mif-form">
               <?= csrf_field() ?>
-              <input type="hidden" name="id" value="<?= (int)($pedido['id'] ?? 0) ?>">
-              <input type="tel" name="telefono"
-                     value="<?= htmlspecialchars($pedido['telefono'] ?? '') ?>"
-                     class="phone-edit-input"
-                     placeholder="Ej: 3001234567">
-              <button type="submit" class="btn-save-inline">Guardar</button>
-              <button type="button" class="btn-cancel-inline">×</button>
+              <input type="hidden" name="id"   value="<?= htmlspecialchars($pedido['id'] ?? '') ?>">
+              <input type="hidden" name="ajax" value="1">
+              <select name="estado" class="form-select-sm">
+                <?php foreach ($estadosPosibles as $est): ?>
+                  <option value="<?= htmlspecialchars($est) ?>" <?= $estadoSafe===$est?'selected':'' ?>>
+                    <?= ucfirst(str_replace('_',' ', htmlspecialchars($est))) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+              <button type="submit" class="btn-save-status btn-save-status--sm" title="Guardar estado"><i class="fas fa-check"></i></button>
             </form>
           </div>
         </div>
 
-        <div class="detalle-item">
-          <span class="detalle-label">Ubicación</span>
-          <span class="detalle-value">
-            <?= htmlspecialchars($pedido['municipio'] ?? '-') ?><br>
-            <small style="color:var(--gray-light);"><?= htmlspecialchars($pedido['departamento'] ?? '-') ?></small>
-          </span>
+        <!-- Producto -->
+        <div class="mii">
+          <div class="mii__icon"><i class="fas fa-shopping-bag"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Producto</span>
+            <span class="mii__value">
+              <?= htmlspecialchars($pedido['producto_nombre'] ?? '-') ?>
+              <button class="mii__copy js-copy" data-copy="<?= htmlspecialchars($pedido['producto_nombre'] ?? '') ?>" title="Copiar"><i class="fas fa-copy"></i></button>
+            </span>
+          </div>
         </div>
+
+        <!-- Cantidad -->
+        <div class="mii">
+          <div class="mii__icon"><i class="fas fa-layer-group"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Cantidad</span>
+            <span class="mii__value"><?= $cantidadTotal ?> <?= $cantidadTotal > 1 ? 'uds' : 'ud' ?></span>
+          </div>
+        </div>
+
+        <?php if (!empty($pedido['color'])): ?>
+        <div class="mii">
+          <div class="mii__icon"><i class="fas fa-palette"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Color</span>
+            <span class="mii__value"><?= htmlspecialchars($pedido['color']) ?></span>
+          </div>
+        </div>
+        <?php endif; ?>
+
       </div>
     </div>
 
-    <div class="table-container" style="margin-top:1.25rem;">
-      <div class="table-header">
-        <h3>Envío</h3>
-      </div>
+    <!-- CLIENTE -->
+    <div class="modal-section">
+      <p class="modal-section__head">Cliente</p>
+      <div class="mii-grid">
 
-      <div class="detalle-grid">
-
-        <div class="detalle-item">
-          <span class="detalle-label">Tipo entrega</span>
-          <span class="detalle-value">
-            <?= htmlspecialchars(($pedido['tipo_entrega'] ?? '') ? ucfirst($pedido['tipo_entrega']) : '-') ?>
-          </span>
+        <div class="mii">
+          <div class="mii__icon"><i class="fas fa-user"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Nombre</span>
+            <span class="mii__value">
+              <?= htmlspecialchars($nombreCompleto) ?>
+              <button class="mii__copy js-copy" data-copy="<?= htmlspecialchars($nombreCompleto) ?>" title="Copiar"><i class="fas fa-copy"></i></button>
+            </span>
+          </div>
         </div>
 
-        <?php if (!empty($pedido['direccion'])): ?>
-          <div class="detalle-item detalle-item-full">
-            <span class="detalle-label">Dirección</span>
-            <span class="detalle-value"><?= htmlspecialchars($pedido['direccion']) ?></span>
+        <div class="mii">
+          <div class="mii__icon"><i class="fas fa-phone"></i></div>
+          <div class="mii__body phone-edit-wrap">
+            <span class="mii__label">Teléfono</span>
+            <span class="mii__value">
+              <span class="phone-display"><?= htmlspecialchars($telRaw ?: '-') ?></span>
+              <button class="mii__copy js-copy" data-copy="<?= htmlspecialchars($telRaw) ?>" title="Copiar"><i class="fas fa-copy"></i></button>
+              <button type="button" class="btn-edit-field" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+            </span>
+            <form class="phone-edit-form" style="display:none">
+              <?= csrf_field() ?>
+              <input type="hidden" name="id" value="<?= (int)($pedido['id']??0) ?>">
+              <input type="tel" name="telefono" value="<?= htmlspecialchars($pedido['telefono']??'') ?>"
+                     class="phone-edit-input" placeholder="3001234567">
+              <button type="submit"  class="btn-save-inline">Guardar</button>
+              <button type="button"  class="btn-cancel-inline">×</button>
+            </form>
           </div>
+        </div>
+
+        <div class="mii">
+          <div class="mii__icon"><i class="fas fa-map-marker-alt"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Municipio</span>
+            <span class="mii__value">
+              <?= htmlspecialchars($pedido['municipio'] ?? '-') ?>
+              <?php if (!empty($pedido['municipio'])): ?>
+              <button class="mii__copy js-copy" data-copy="<?= htmlspecialchars($ubicacionTexto) ?>" title="Copiar ciudad, depto"><i class="fas fa-copy"></i></button>
+              <?php endif; ?>
+            </span>
+          </div>
+        </div>
+
+        <div class="mii">
+          <div class="mii__icon"><i class="fas fa-map"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Departamento</span>
+            <span class="mii__value"><?= htmlspecialchars($pedido['departamento'] ?? '-') ?></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ENVÍO -->
+    <?php if (!empty($pedido['tipo_entrega']) || !empty($pedido['direccion']) || !empty($pedido['nota_entrega'])): ?>
+    <div class="modal-section">
+      <p class="modal-section__head">Envío</p>
+      <div class="mii-grid">
+
+        <?php if (!empty($pedido['tipo_entrega'])): ?>
+        <div class="mii">
+          <div class="mii__icon"><i class="fas fa-truck"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Tipo entrega</span>
+            <span class="mii__value"><?= ucfirst(htmlspecialchars($pedido['tipo_entrega'])) ?></span>
+          </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if (!empty($pedido['direccion'])): ?>
+        <div class="mii mii--full">
+          <div class="mii__icon"><i class="fas fa-location-dot"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Dirección</span>
+            <span class="mii__value">
+              <?= htmlspecialchars($pedido['direccion']) ?>
+              <button class="mii__copy js-copy" data-copy="<?= htmlspecialchars($pedido['direccion']) ?>" title="Copiar"><i class="fas fa-copy"></i></button>
+            </span>
+          </div>
+        </div>
         <?php endif; ?>
 
         <?php if (!empty($pedido['nota_entrega'])): ?>
-          <div class="detalle-item detalle-item-full">
-            <span class="detalle-label">📝 Nota para el mensajero</span>
-            <span class="detalle-value"><?= htmlspecialchars($pedido['nota_entrega']) ?></span>
+        <div class="mii mii--full">
+          <div class="mii__icon"><i class="fas fa-note-sticky"></i></div>
+          <div class="mii__body">
+            <span class="mii__label">Nota mensajero</span>
+            <span class="mii__value"><?= htmlspecialchars($pedido['nota_entrega']) ?></span>
           </div>
+        </div>
         <?php endif; ?>
+
       </div>
     </div>
+    <?php endif; ?>
 
-    <!-- Sección financiera -->
-    <div class="table-container" style="margin-top:1.25rem;">
-      <div class="table-header">
-        <h3>Financiero</h3>
+    <!-- FINANCIERO -->
+    <div class="modal-finance-strip">
+      <div class="modal-finance-kpi">
+        <span class="modal-finance-kpi__label">Total cobrado</span>
+        <strong class="modal-finance-kpi__value">$<?= number_format($precioTotal,0,',','.') ?></strong>
       </div>
-      <div class="detalle-grid">
-
-        <div class="detalle-item">
-          <span class="detalle-label">Precio unitario</span>
-          <span class="detalle-value">$<?= number_format($precioUnit, 0, ',', '.') ?></span>
-        </div>
-
-        <?php if ($descuentoTotal > 0): ?>
-        <div class="detalle-item">
-          <span class="detalle-label">Descuento</span>
-          <span class="detalle-value" style="color:var(--ok,#4caf7d);">−$<?= number_format($descuentoTotal, 0, ',', '.') ?></span>
-        </div>
-        <?php endif; ?>
-
-        <div class="detalle-item">
-          <span class="detalle-label">Total cobrado</span>
-          <span class="detalle-value" style="font-weight:700;">$<?= number_format($precioTotal, 0, ',', '.') ?></span>
-        </div>
-
-        <?php if ($costoEnvio > 0): ?>
-        <div class="detalle-item">
-          <span class="detalle-label">Costo envío</span>
-          <span class="detalle-value">$<?= number_format($costoEnvio, 0, ',', '.') ?></span>
-        </div>
-        <?php endif; ?>
-
-        <div class="detalle-item">
-          <span class="detalle-label">Utilidad</span>
-          <span class="detalle-value profit-tag" style="font-weight:700;">$<?= number_format($utilidadTotal, 0, ',', '.') ?></span>
-        </div>
-
+      <div class="modal-finance-divider"></div>
+      <div class="modal-finance-kpi">
+        <span class="modal-finance-kpi__label">Utilidad</span>
+        <strong class="modal-finance-kpi__value modal-finance-kpi__value--profit">
+          $<?= number_format($utilidadTotal,0,',','.') ?>
+        </strong>
       </div>
+      <?php if ($costoEnvio > 0): ?>
+      <div class="modal-finance-divider"></div>
+      <div class="modal-finance-kpi">
+        <span class="modal-finance-kpi__label">Costo envío</span>
+        <strong class="modal-finance-kpi__value modal-finance-kpi__value--muted">
+          $<?= number_format($costoEnvio,0,',','.') ?>
+        </strong>
+      </div>
+      <?php endif; ?>
     </div>
 
   </div>
-
 </div>
+

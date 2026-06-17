@@ -7,11 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="<?= BASE_URL ?>/public/manifest.php">
     <meta name="theme-color" content="#C9A84C">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
-    <!-- DataTables (lo dejas si más adelante lo usas) -->
-    <!-- <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.min.css"> -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.min.css">
 </head>
 
 <body>
@@ -161,95 +163,95 @@
                 <div class="table-container">
                         <div class="table-header">
                             <h3>Pedidos Recientes</h3>
-                            <div class="table-header-actions">
-                                <div class="range-btns" role="group" aria-label="Rango de fechas">
-                                    <a href="<?= BASE_URL ?>/AdminPedidos?rango=hoy"    class="range-btn <?= $rango === 'hoy'    ? 'is-active' : '' ?>">Hoy</a>
-                                    <a href="<?= BASE_URL ?>/AdminPedidos?rango=ayer"   class="range-btn <?= $rango === 'ayer'   ? 'is-active' : '' ?>">Ayer</a>
-                                    <a href="<?= BASE_URL ?>/AdminPedidos?rango=semana" class="range-btn <?= $rango === 'semana' ? 'is-active' : '' ?>">Semana</a>
-                                    <a href="<?= BASE_URL ?>/AdminPedidos?rango=mes"    class="range-btn <?= $rango === 'mes'    ? 'is-active' : '' ?>">Mes</a>
-                                    <div class="range-picker-wrap" id="rangePickerWrap">
-                                        <button type="button"
-                                                class="range-btn range-btn--custom <?= $rango === 'personalizado' ? 'is-active' : '' ?>"
-                                                id="btnRangeCustom"
-                                                aria-expanded="<?= $rango === 'personalizado' ? 'true' : 'false' ?>"
-                                                aria-controls="rangePickerPopup"
-                                                title="Filtrar por rango de fechas">
-                                            <i class="fas fa-calendar-alt"></i>
-                                            <?php if ($rango === 'personalizado' && $desde && $hasta): ?>
-                                                <span class="range-btn__dates"><?= date('d/m', strtotime($desde)) ?> – <?= date('d/m', strtotime($hasta)) ?></span>
-                                            <?php else: ?>
-                                                <span class="range-btn__dates">Rango</span>
-                                            <?php endif; ?>
-                                        </button>
-                                        <form class="range-picker-popup<?= $rango === 'personalizado' ? ' is-open' : '' ?>"
-                                              id="rangePickerPopup"
-                                              method="get"
-                                              action="<?= BASE_URL ?>/AdminPedidos">
-                                            <input type="hidden" name="rango" value="personalizado">
-                                            <div class="range-picker-popup__body">
-                                                <label class="range-picker-popup__field">
-                                                    <span>Desde</span>
-                                                    <input type="date" name="desde"
-                                                           value="<?= htmlspecialchars($desde ?? '') ?>"
-                                                           max="<?= date('Y-m-d') ?>"
-                                                           required>
-                                                </label>
-                                                <label class="range-picker-popup__field">
-                                                    <span>Hasta</span>
-                                                    <input type="date" name="hasta"
-                                                           value="<?= htmlspecialchars($hasta ?? '') ?>"
-                                                           max="<?= date('Y-m-d') ?>"
-                                                           required>
-                                                </label>
-                                                <button type="submit" class="range-picker-popup__apply">Aplicar</button>
-                                            </div>
+                            <a href="<?= BASE_URL ?>/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?><?= $rango === 'personalizado' && $desde && $hasta ? '&desde=' . urlencode($desde) . '&hasta=' . urlencode($hasta) : '' ?>"
+                               class="btn-csv" title="Exportar a CSV">
+                                <i class="fas fa-file-csv"></i> CSV
+                            </a>
+                        </div>
+
+                        <?php
+                        $rangoLabels = ['hoy'=>'Hoy','ayer'=>'Ayer','semana'=>'Esta semana','mes'=>'Este mes','personalizado'=>'Rango personalizado'];
+                        $rangoLabel  = $rangoLabels[$rango] ?? 'Fecha';
+                        $rangoActivo = ($rango !== 'mes');
+                        ?>
+                        <!-- Barra de filtros unificada -->
+                        <div class="dt-filter-bar">
+
+                            <!-- Filtro: Fecha (details/summary = toggle nativo) -->
+                            <details class="dtf-wrap <?= $rangoActivo ? 'dtf-wrap--active' : '' ?>" id="fechaWrap">
+                                <summary class="dtf-btn">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span class="dtf-btn__label"><?= htmlspecialchars($rangoLabel) ?></span>
+                                    <i class="fas fa-chevron-down dtf-btn__chev"></i>
+                                </summary>
+                                <div class="dtf-panel">
+                                    <button type="button" class="dfd-item <?= $rango==='hoy'    ?'is-active':'' ?>" data-rango="hoy"    onclick="cambiarRango('hoy')"><i class="fas fa-sun"></i> Hoy</button>
+                                    <button type="button" class="dfd-item <?= $rango==='ayer'   ?'is-active':'' ?>" data-rango="ayer"   onclick="cambiarRango('ayer')"><i class="fas fa-history"></i> Ayer</button>
+                                    <button type="button" class="dfd-item <?= $rango==='semana' ?'is-active':'' ?>" data-rango="semana" onclick="cambiarRango('semana')"><i class="fas fa-calendar-week"></i> Esta semana</button>
+                                    <button type="button" class="dfd-item <?= $rango==='mes'    ?'is-active':'' ?>" data-rango="mes"    onclick="cambiarRango('mes')"><i class="fas fa-calendar-alt"></i> Este mes</button>
+                                    <div class="dfd-divider"></div>
+                                    <div class="dfd-custom">
+                                        <span class="dfd-custom__label"><i class="fas fa-sliders-h"></i> Rango personalizado</span>
+                                        <form class="dfd-custom__form" onsubmit="cambiarRangoPersonalizado(this); return false;">
+                                            <input type="date" id="fechaDesde" value="<?= htmlspecialchars($desde ?? '') ?>" max="<?= date('Y-m-d') ?>">
+                                            <input type="date" id="fechaHasta" value="<?= htmlspecialchars($hasta ?? '') ?>" max="<?= date('Y-m-d') ?>">
+                                            <button type="submit">Aplicar</button>
                                         </form>
                                     </div>
                                 </div>
-                                <a href="<?= BASE_URL ?>/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?><?= $rango === 'personalizado' && $desde && $hasta ? '&desde=' . urlencode($desde) . '&hasta=' . urlencode($hasta) : '' ?>"
-                                   class="btn-csv" title="Exportar a CSV">
-                                    <i class="fas fa-file-csv"></i> CSV
-                                </a>
-                            </div>
-                        </div>
-                        <div class="orders-search">
-                            <div class="orders-search__wrap">
-                                <i class="fas fa-search orders-search__icon"></i>
-                                <input type="search" id="searchPedidos"
-                                       class="orders-search__input"
-                                       placeholder="Buscar nombre, teléfono, ciudad…"
-                                       autocomplete="off">
-                            </div>
-                        </div>
+                            </details>
 
-                        <div class="state-filter" id="stateFilter">
-                            <button class="state-chip is-active" data-estado="">Todos</button>
-                            <button class="state-chip" data-estado="nuevo">Nuevo</button>
-                            <button class="state-chip" data-estado="contactado">Contactado</button>
-                            <button class="state-chip" data-estado="confirmado">Confirmado</button>
-                            <button class="state-chip" data-estado="enviado">Enviado</button>
-                            <button class="state-chip" data-estado="en_oficina">En oficina</button>
-                            <button class="state-chip" data-estado="entregado">Entregado</button>
-                            <button class="state-chip" data-estado="cancelado">Cancelado</button>
-                        </div>
-
-                        <p class="results-counter" id="resultsCounter"></p>
-                        <div class="cards-container" id="contenedorPedidos">
-                            <?php if (empty($pedidos)): ?>
-                                <div class="empty-state">
-                                    <p>No hay pedidos en este período. Prueba con otro rango de fechas.</p>
+                            <!-- Filtro: Estado -->
+                            <details class="dtf-wrap" id="estadoWrap">
+                                <summary class="dtf-btn">
+                                    <i class="fas fa-tag"></i>
+                                    <span class="dtf-btn__label" id="estadoBtnLabel">Estado</span>
+                                    <i class="fas fa-chevron-down dtf-btn__chev"></i>
+                                </summary>
+                                <div class="dtf-panel" id="estadoPanel">
+                                    <div id="stateFilterContent">
+                                        <button class="state-chip is-active" data-estado=""           onclick="filtrarEstado(this)">Todos</button>
+                                        <button class="state-chip" data-estado="nuevo"                onclick="filtrarEstado(this)">Nuevo</button>
+                                        <button class="state-chip" data-estado="contactado"           onclick="filtrarEstado(this)">Contactado</button>
+                                        <button class="state-chip" data-estado="confirmado"           onclick="filtrarEstado(this)">Confirmado</button>
+                                        <button class="state-chip" data-estado="enviado"              onclick="filtrarEstado(this)">Enviado</button>
+                                        <button class="state-chip" data-estado="en_oficina"           onclick="filtrarEstado(this)">En oficina</button>
+                                        <button class="state-chip" data-estado="entregado"            onclick="filtrarEstado(this)">Entregado</button>
+                                        <button class="state-chip" data-estado="cancelado"            onclick="filtrarEstado(this)">Cancelado</button>
+                                    </div>
                                 </div>
-                            <?php else: ?>
+                            </details>
+
+                            <!-- Búsqueda -->
+                            <div class="dt-search-wrap">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="dtSearchInput" placeholder="Buscar nombre, ciudad, producto…">
+                            </div>
+
+                        </div><!-- /dt-filter-bar -->
+
+                        <div id="contenedorPedidos" class="dt-table-wrap">
+                        <?php
+                        $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
+                        $_meses   = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                        $_tzBogota = new DateTimeZone('America/Bogota');
+                        ?>
+                        <table id="tablaPedidos" class="pedidos-dt">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Producto</th>
+                                    <th>Estado</th>
+                                    <th>Cambiar estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($pedidos as $p): ?>
                             <?php
-                            $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
-                            $_meses   = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-                            $_tzBogota = new DateTimeZone('America/Bogota');
-                            foreach ($pedidos as $p):
-                            ?>
-                                <?php
                                 $telRaw    = $p['telefono'] ?? '';
                                 $telLimpio = preg_replace('/\D+/', '', $telRaw);
-
                                 if ($telLimpio !== '') {
                                     if (strpos($telLimpio, '00') === 0) $telLimpio = substr($telLimpio, 2);
                                     if (strpos($telLimpio, '57') !== 0) {
@@ -257,99 +259,66 @@
                                         $telLimpio = '57' . $telLimpio;
                                     }
                                 }
-
-                                $estadoActual = $p['estado'] ?? 'nuevo';
-                                $cantidadTotal = (int)($p['cantidad_total'] ?? 1);
-                                if ($cantidadTotal < 1) $cantidadTotal = 1;
-
-                                $precioUnit = (float)($p['precio_venta'] ?? 0);
-                                $precioProvUnit = (float)($p['precio_proveedor'] ?? 0);
-                                $precioTotal = isset($p['precio_total']) ? (float)$p['precio_total'] : ($precioUnit * $cantidadTotal);
-
-                                $costoEnvio = 0.0;
-                                if (isset($p['costo_envio'])) {
-                                    $costoEnvio = (float)$p['costo_envio'];
-                                } elseif (isset($p['producto_costo_envio'])) {
-                                    $costoEnvio = (float)$p['producto_costo_envio'];
-                                }
-                                $costoTotal = ($precioProvUnit * $cantidadTotal) + $costoEnvio;
-                                $utilidadTotal = $precioTotal - $costoTotal;
-                                if (!is_finite($utilidadTotal)) $utilidadTotal = 0.0;
-                                ?>
-
-                                <?php
-                                $tsCreado = !empty($p['created_at']) ? strtotime($p['created_at']) : 0;
-                                $createdFmt = '';
+                                $estadoActual  = $p['estado'] ?? 'nuevo';
+                                $cantidadTotal = max(1, (int)($p['cantidad_total'] ?? 1));
+                                $precioUnit    = (float)($p['precio_venta'] ?? 0);
+                                $precioProvUnit= (float)($p['precio_proveedor'] ?? 0);
+                                $precioTotal   = isset($p['precio_total']) ? (float)$p['precio_total'] : ($precioUnit * $cantidadTotal);
+                                $costoEnvio    = (float)($p['costo_envio'] ?? $p['producto_costo_envio'] ?? 0);
+                                $costoTotal    = ($precioProvUnit * $cantidadTotal) + $costoEnvio;
+                                $utilidadTotal = is_finite($precioTotal - $costoTotal) ? $precioTotal - $costoTotal : 0.0;
+                                $tsCreado      = !empty($p['created_at']) ? strtotime($p['created_at']) : 0;
+                                $createdFmt    = '';
                                 if ($tsCreado) {
                                     $_dtC = (new DateTime('@' . $tsCreado))->setTimezone($_tzBogota);
-                                    $createdFmt = $_dtC->format('j') . ' ' . $_meses[(int)$_dtC->format('n') - 1] . '. ' . $_dtC->format('Y') . ' · ' . $_dtC->format('g:i a');
+                                    $createdFmt = $_dtC->format('j') . ' ' . $_meses[(int)$_dtC->format('n') - 1] . ' ' . $_dtC->format('Y');
                                 }
-                                ?>
-                                <div class="order-card"
-                                     data-pedido-id="<?= htmlspecialchars($p['id'] ?? '') ?>"
-                                     data-estado="<?= htmlspecialchars($estadoActual) ?>"
-                                     data-ts="<?= htmlspecialchars($p['updated_at'] ?? ($p['created_at'] ?? '')) ?>">
+                            ?>
+                                <tr data-pedido-id="<?= htmlspecialchars($p['id'] ?? '') ?>"
+                                    data-estado="<?= htmlspecialchars($estadoActual) ?>"
+                                    data-ts="<?= htmlspecialchars($p['updated_at'] ?? ($p['created_at'] ?? '')) ?>"
+                                    data-created-ts="<?= $tsCreado ?>">
 
-                                    <div class="card-header">
-                                        <div>
-                                            <span class="card-label">ID Pedido</span>
-                                            <strong>#<?= htmlspecialchars($p['id'] ?? '') ?></strong>
-                                            <?php if ($createdFmt): ?>
-                                                <small style="display:block;color:var(--tx-muted,#888);font-size:.72rem;margin-top:2px;"><?= htmlspecialchars($createdFmt) ?></small>
-                                            <?php endif; ?>
-                                        </div>
+                                    <td data-order="<?= $tsCreado ?>">
+                                        <?= $createdFmt ?: '—' ?>
+                                    </td>
+
+                                    <td>
+                                        <strong><?= htmlspecialchars(trim(($p['nombre'] ?? '') . ' ' . ($p['apellidos'] ?? ''))) ?></strong>
+                                        <br><small class="dt-cell-sub"><?= htmlspecialchars($p['municipio'] ?? '') ?><?= !empty($p['departamento']) ? ', ' . htmlspecialchars($p['departamento']) : '' ?></small>
+                                    </td>
+
+                                    <td>
+                                        <?= htmlspecialchars($p['producto_nombre'] ?? '') ?>
+                                        <small class="dt-cell-sub">(<?= $cantidadTotal ?> <?= $cantidadTotal > 1 ? 'uds' : 'ud' ?><?= !empty($p['color']) ? ' · ' . htmlspecialchars($p['color']) : '' ?>)</small>
+                                    </td>
+
+                                    <td>
                                         <span class="status-tag status-<?= htmlspecialchars($estadoActual) ?>">
-                                            <?= ucfirst(htmlspecialchars($estadoActual)) ?>
+                                            <?= ucfirst(str_replace('_', ' ', htmlspecialchars($estadoActual))) ?>
                                         </span>
-                                    </div>
+                                    </td>
 
-                                    <div class="card-section">
-                                        <span class="card-label">Cliente y Ubicación</span>
-                                        <div class="card-value">
-                                            <strong><?= htmlspecialchars(($p['nombre'] ?? '') . ' ' . ($p['apellidos'] ?? '')) ?></strong><br>
-                                            <small><?= htmlspecialchars($p['municipio'] ?? '') ?>, <?= htmlspecialchars($p['departamento'] ?? '') ?></small>
-                                        </div>
-                                    </div>
-
-                                    <div class="card-section">
-                                        <span class="card-label">Producto</span>
-                                        <div class="card-value">
-                                            <?= htmlspecialchars($p['producto_nombre'] ?? '') ?>
-                                            (<?= (string)$cantidadTotal ?> <?= $cantidadTotal > 1 ? 'uds' : 'ud' ?>)
-                                            <?php if (!empty($p['color'])): ?>
-                                                • <small><?= htmlspecialchars($p['color']) ?></small>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-
-                                    <div class="card-section card-fin">
-                                        <div>
-                                            <span class="card-label">Total cobrado</span>
-                                            <strong class="card-price">$<?= number_format($precioTotal, 0, ',', '.') ?></strong>
-                                        </div>
-                                        <div class="card-fin__right">
-                                            <span class="card-label">Utilidad</span>
-                                            <span class="card-profit">$<?= number_format($utilidadTotal, 0, ',', '.') ?></span>
-                                        </div>
-                                    </div>
-
-                                    <div class="card-footer">
-                                        <form action="<?= BASE_URL ?>/AdminPedidos/cambiarEstado" method="POST" class="status-form">
+                                    <td>
+                                        <form action="<?= BASE_URL ?>/AdminPedidos/cambiarEstado" method="POST" class="status-form dt-status-form">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="id" value="<?= htmlspecialchars($p['id'] ?? '') ?>">
                                             <select name="estado" class="form-select-sm">
-                                                <?php foreach ($estadosPosibles as $estado): ?>
-                                                    <option value="<?= htmlspecialchars($estado) ?>" <?= $estadoActual === $estado ? 'selected' : '' ?>>
-                                                        <?= ucfirst(htmlspecialchars($estado)) ?>
+                                                <?php foreach ($estadosPosibles as $est): ?>
+                                                    <option value="<?= htmlspecialchars($est) ?>" <?= $estadoActual === $est ? 'selected' : '' ?>>
+                                                        <?= ucfirst(str_replace('_', ' ', htmlspecialchars($est))) ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
-                                            <button type="submit" class="btn-save-status">Actualizar Estado</button>
+                                            <button type="submit" class="btn-save-status btn-save-status--sm" title="Guardar estado"><i class="fas fa-check"></i></button>
                                         </form>
+                                    </td>
 
-                                        <div class="card-actions">
+                                    <td>
+                                        <div class="dt-actions">
                                             <?php if ($telLimpio !== ''): ?>
-                                                <button type="button" class="btn-whatsapp js-wa-open"
+                                                <button type="button" class="btn-icon-wa js-wa-open"
+                                                        title="WhatsApp"
                                                         data-telefono="<?= htmlspecialchars($telRaw) ?>"
                                                         data-nombre="<?= htmlspecialchars($p['nombre'] ?? '') ?>"
                                                         data-apellidos="<?= htmlspecialchars($p['apellidos'] ?? '') ?>"
@@ -360,21 +329,21 @@
                                                         data-departamento="<?= htmlspecialchars($p['departamento'] ?? '') ?>"
                                                         data-estado="<?= htmlspecialchars($estadoActual) ?>"
                                                         data-tipo-entrega="<?= htmlspecialchars($p['tipo_entrega'] ?? '') ?>">
-                                                    <i class="fab fa-whatsapp"></i> WhatsApp
+                                                    <i class="fab fa-whatsapp"></i>
                                                 </button>
                                             <?php endif; ?>
-
                                             <a href="<?= BASE_URL ?>/AdminPedidos/detalle?id=<?= htmlspecialchars($p['id'] ?? '') ?>"
-                                                class="btn-detail js-ver-detalle"
-                                                data-id="<?= htmlspecialchars($p['id'] ?? '') ?>">
-                                                Detalles
+                                               class="btn-detail btn-detail--sm js-ver-detalle"
+                                               data-id="<?= htmlspecialchars($p['id'] ?? '') ?>">
+                                                <i class="fas fa-magnifying-glass"></i>
                                             </a>
                                         </div>
-                                    </div>
-                                </div>
+                                    </td>
+                                </tr>
                             <?php endforeach; ?>
-                            <?php endif; ?>
-                        </div><!-- /cards-container -->
+                            </tbody>
+                        </table>
+                        </div><!-- /contenedorPedidos -->
                     </div><!-- /table-container -->
             </section>
         </main>
@@ -420,7 +389,7 @@
             'telefono'             => $p['telefono']             ?? null,
         ], $pedidos), JSON_UNESCAPED_UNICODE) ?>;
         window.__PLANTILLAS__  = <?= json_encode($plantillas_wa, JSON_UNESCAPED_UNICODE) ?>;
-        window.__RANGE_INIT__  = <?= json_encode($rango === 'personalizado' ? 'custom' : 'month') ?>;
+        window.__RANGE_INIT__  = <?= json_encode(['hoy'=>'today','ayer'=>'yesterday','semana'=>'week','mes'=>'month','personalizado'=>'custom'][$rango] ?? 'month') ?>;
         window.__RANGE_CUSTOM__ = <?= ($rango === 'personalizado' && $desde && $hasta)
             ? json_encode(['desde' => $desde, 'hasta' => $hasta])
             : 'null' ?>;
@@ -428,6 +397,164 @@
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- jQuery (requerido por DataTables CDN) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.min.js"></script>
+    <script>
+    // ── Declaraciones hoistadas: disponibles aunque el IIFE de abajo falle ──
+
+    // Mapeo PHP-rango → JS-range
+    var __RANGO_MAP__ = {hoy:'today', ayer:'yesterday', semana:'week', mes:'month', personalizado:'custom'};
+    var __RANGO_LABELS__ = {hoy:'Hoy', ayer:'Ayer', semana:'Esta semana', mes:'Este mes', personalizado:'Rango personalizado'};
+
+    function cambiarRango(rango, desde, hasta) {
+        if (rango === 'personalizado') {
+            window.__RANGE_CUSTOM__ = (desde && hasta) ? {desde: desde, hasta: hasta} : window.__RANGE_CUSTOM__;
+        } else {
+            window.__RANGE_CUSTOM__ = null;
+        }
+
+        // Actualizar botones activos
+        document.querySelectorAll('.dfd-item[data-rango]').forEach(function(btn) {
+            btn.classList.toggle('is-active', btn.dataset.rango === rango);
+        });
+
+        // Actualizar label del summary
+        var lbl = document.querySelector('#fechaWrap summary .dtf-btn__label');
+        if (lbl) lbl.textContent = __RANGO_LABELS__[rango] || rango;
+
+        // Activar indicador visual en el botón
+        var wrap = document.getElementById('fechaWrap');
+        if (wrap) {
+            wrap.classList.toggle('dtf-wrap--active', rango !== 'mes');
+            wrap.open = false;
+        }
+
+        // Disparar el evento que funciones.js ya escucha (actualiza charts, KPIs, DT)
+        var rangoJs = __RANGO_MAP__[rango] || 'month';
+        window.__RANGE_SELECTED = rangoJs;
+        window.dispatchEvent(new CustomEvent('range:change', {detail: {range: rangoJs}}));
+    }
+
+    function cambiarRangoPersonalizado(form) {
+        var desde = document.getElementById('fechaDesde').value;
+        var hasta = document.getElementById('fechaHasta').value;
+        if (!desde || !hasta || desde > hasta) {
+            document.getElementById('fechaHasta').focus();
+            return;
+        }
+        cambiarRango('personalizado', desde, hasta);
+    }
+
+    function actualizarLabelEstado() {
+        var chip = document.querySelector('#stateFilterContent .state-chip.is-active');
+        var lbl  = document.getElementById('estadoBtnLabel');
+        if (!chip || !lbl) return;
+        var isAll = chip.dataset.estado === '';
+        var label = chip.textContent.trim();
+        if (!isAll && window.__dtTable) {
+            var count = window.__dtTable.rows({ filter: 'applied' }).count();
+            label += ' (' + count + ')';
+        }
+        lbl.textContent = label;
+    }
+
+    function filtrarEstado(chip) {
+        document.querySelectorAll('#stateFilterContent .state-chip').forEach(function(c) { c.classList.remove('is-active'); });
+        chip.classList.add('is-active');
+        var isAll = chip.dataset.estado === '';
+        document.getElementById('estadoWrap').classList.toggle('dtf-wrap--active', !isAll);
+        document.getElementById('estadoWrap').open = false;
+        if (window.__dtTable) {
+            window.__dtTable.draw();
+            actualizarLabelEstado();
+        }
+    }
+
+    // ── DataTable ──
+    try {
+        (function () {
+            var table = new DataTable('#tablaPedidos', {
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100], ['10', '25', '50', '100']],
+                searching: true,
+                order: [[0, 'desc']],
+                columnDefs: [
+                    { orderable: false, targets: [3, 4, 5] }
+                ],
+                language: {
+                    search:          '',
+                    searchPlaceholder: 'Buscar nombre, ciudad, producto…',
+                    lengthMenu:      'Mostrar _MENU_ por página',
+                    info:            '_TOTAL_ pedidos',
+                    infoEmpty:       'Sin pedidos',
+                    infoFiltered:    '(filtrado de _MAX_)',
+                    zeroRecords:     'Sin resultados para este filtro.',
+                    paginate: { first: '«', last: '»', next: '›', previous: '‹' }
+                },
+                dom: 't<"dt-bottom"ip>',
+                drawCallback: function() {
+                    if (typeof initModalWidgets === 'function') initModalWidgets(document.getElementById('tablaPedidos'));
+                }
+            });
+
+            window.__dtTable = table;
+            window.__DT_PEDIDOS__ = table;
+
+            // Filtro por estado: nTr primero, texto normalizado como fallback
+            DataTable.ext.search.push(function (settings, data, dataIndex) {
+                if (settings.nTable.id !== 'tablaPedidos') return true;
+                var chip = document.querySelector('#stateFilterContent .state-chip.is-active');
+                var estado = chip ? chip.dataset.estado : '';
+                if (!estado) return true;
+                var aoRow = settings.aoData[dataIndex];
+                if (aoRow && aoRow.nTr) return aoRow.nTr.dataset.estado === estado;
+                var txt = (data[3] || '').trim().toLowerCase().replace(/\s+/g, '_');
+                return txt === estado;
+            });
+
+            // Filtro por rango de fecha usando data-created-ts del <tr>
+            DataTable.ext.search.push(function (settings, data, dataIndex) {
+                if (settings.nTable.id !== 'tablaPedidos') return true;
+                var startTs = window.__RANGE_START_TS;
+                var endTs   = window.__RANGE_END_TS;
+                if (!startTs || !endTs) return true;
+                var aoRow = settings.aoData[dataIndex];
+                if (!aoRow || !aoRow.nTr) return true;
+                var rowTs = parseInt(aoRow.nTr.dataset.createdTs, 10);
+                if (!rowTs || isNaN(rowTs)) return true;
+                return (rowTs * 1000) >= startTs && (rowTs * 1000) < endTs;
+            });
+        })();
+    } catch (e) {
+        console.error('[DataTable] Error al inicializar:', e);
+    }
+
+    // ── Search en tiempo real ──
+    document.getElementById('dtSearchInput').addEventListener('input', function() {
+        if (window.__dtTable) { window.__dtTable.search(this.value).draw(); actualizarLabelEstado(); }
+    });
+
+    // ── details: cerrar los demás al abrir uno ──
+    document.querySelectorAll('details.dtf-wrap').forEach(function(det) {
+        det.addEventListener('toggle', function() {
+            if (det.open) {
+                document.querySelectorAll('details.dtf-wrap').forEach(function(other) {
+                    if (other !== det) other.open = false;
+                });
+            }
+        });
+    });
+
+    // ── Cerrar al hacer click fuera ──
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('details.dtf-wrap')) {
+            document.querySelectorAll('details.dtf-wrap').forEach(function(d) { d.open = false; });
+        }
+    });
+    </script>
 
     <!-- Tus scripts -->
     <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
