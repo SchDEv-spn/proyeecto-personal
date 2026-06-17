@@ -3350,6 +3350,7 @@ div.dataTables_paginate { display: flex; align-items: center; gap: 4px; flex-wra
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
+  max-height: 200px;
   border-radius: var(--r-md);
   background: var(--surface-2);
   display: flex;
