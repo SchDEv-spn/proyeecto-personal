@@ -161,9 +161,9 @@ class AdminMarketingController extends Controller
             $imagePath       = trim($_POST['image_path']      ?? '');
 
             $tipoDesc = [
-                'hero'      => 'Hero shot — el producto como protagonista absoluto sobre fondo dramático de estudio, sin personas',
-                'lifestyle' => 'Lifestyle / In-use — el producto siendo usado por una persona real en un contexto aspiracional cotidiano',
-                'flatlay'   => 'Flat lay editorial — el producto centrado sobre superficie premium rodeado de accesorios que conecten con el comprador',
+                'hero'      => 'Hero shot — el producto como protagonista absoluto (80% del frame) sobre fondo de estudio dramático, sin personas, spotlight lateral, gotas de agua, reflejo perfecto, macro extremo de texturas',
+                'lifestyle' => 'Lifestyle PLANO MEDIO — persona real de cintura a cabeza usando/llevando el producto en contexto natural. El producto ocupa máximo 15-20% del frame, correctamente proporcionado a escala real. 50mm lens, f/2.8, luz natural, persona en foco con el entorno desfocado suavemente',
+                'flatlay'   => 'Macro de detalles — primer plano extremo del producto mostrando materiales, texturas, costuras, acabados, cristales, hardware. El producto ocupa 90% del frame. Luz de estudio suave y pareja. Ultra-sharp 8K macro photography',
             ][$tipo] ?? 'Hero shot';
 
             $refLine  = $audienciaPerfil ? "\nPúblico: {$audienciaPerfil}" : '';
@@ -307,9 +307,9 @@ Reglas CRÍTICAS para los prompts:
 - Empieza SIEMPRE con: "Same product, preserve every detail, brand, color and shape EXACTLY."
 - Describe ÚNICAMENTE el entorno, iluminación, composición y contexto — NUNCA menciones cambios al producto.
 - Sé muy específico al tipo de producto que ves en la foto (bolsa, reloj, ropa, etc.).
-- Para "lifestyle": incluye SIEMPRE instrucciones de escala y proporciones reales. Ejemplo: "product appears at its true real-world scale, correctly proportioned relative to the human body, NOT enlarged or zoomed in" + cámara específica ("85mm lens, medium close-up shot, f/2.0") + "photorealistic, hyperrealistic skin texture, 8K quality, shot on Sony A7R IV".
-- Para "hero": usa términos de fotografía de producto premium: "macro detail, water droplets, perfect mirror reflection, 8K, commercial product photography".
-- Para "flatlay": "90-degree overhead shot, natural diffused light, styled editorial flat lay, 8K".
+- Para "lifestyle" (PLANO MEDIO): muestra la persona desde la cintura hasta la cabeza usando/llevando el producto en un entorno natural. El producto ocupa máximo 15-20% del frame — NO es el elemento dominante. Instrucciones obligatorias: "medium shot showing person from waist to head, product correctly proportioned at true real-world scale, NOT enlarged, product is a natural accessory in the scene" + cámara: "50mm lens, f/2.8, natural light, photorealistic, hyperrealistic skin and fabric textures, shot on Sony A7R IV".
+- Para "hero": producto solo sobre fondo de estudio dramático. "extreme close-up hero shot, product fills 80% of frame, single dramatic spotlight, water droplets, perfect mirror reflection, ultra-sharp macro detail on textures and surfaces, 8K commercial product photography".
+- Para "flatlay" (DETALLES): macro extremo del producto mostrando materiales, texturas y acabados. "extreme macro detail shot, product fills 90% of frame, ultra-sharp focus revealing material textures, surface finishes, stitching/hardware/crystal details, soft even studio light, 8K macro product photography".
 - Termina SIEMPRE con: "Photorealistic. Do not alter the product in any way. No text. No watermarks."
 
 ─────────────────────────────────────────
