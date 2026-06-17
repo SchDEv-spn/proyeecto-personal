@@ -141,6 +141,95 @@ class AdminMarketingController extends Controller
         ]);
     }
 
+    // AJAX: Claude mejora el prompt para una tarjeta específica
+    public function sugerirPrompt(): void
+    {
+        $this->requireLogin();
+        while (ob_get_level()) ob_end_clean();
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            $settings  = new AppSettings();
+            $claudeKey = $settings->get('claude_api_key');
+            if (!$claudeKey) { echo json_encode(['ok' => false, 'error' => 'Sin API key Claude']); return; }
+
+            $tipo            = trim($_POST['tipo']            ?? 'hero');   // hero | lifestyle | flatlay
+            $nombre          = trim($_POST['nombre']          ?? '');
+            $caracteristicas = trim($_POST['caracteristicas'] ?? '');
+            $audienciaPerfil = trim($_POST['audiencia_perfil']?? '');
+            $promptActual    = trim($_POST['prompt_actual']   ?? '');
+            $imagePath       = trim($_POST['image_path']      ?? '');
+
+            $tipoDesc = [
+                'hero'      => 'Hero shot — el producto como protagonista absoluto sobre fondo dramático de estudio, sin personas',
+                'lifestyle' => 'Lifestyle / In-use — el producto siendo usado por una persona real en un contexto aspiracional cotidiano',
+                'flatlay'   => 'Flat lay editorial — el producto centrado sobre superficie premium rodeado de accesorios que conecten con el comprador',
+            ][$tipo] ?? 'Hero shot';
+
+            $refLine  = $audienciaPerfil ? "\nPúblico: {$audienciaPerfil}" : '';
+            $caracLine = $caracteristicas ? "\nCaracterísticas: {$caracteristicas}" : '';
+            $prevLine  = $promptActual ? "\nPrompt anterior (mejora este): {$promptActual}" : '';
+
+            // Si hay imagen, incluirla para visión
+            $content = [];
+            $localPath = $this->uploadDir() . basename($imagePath);
+            if ($imagePath && file_exists($localPath)) {
+                $ext      = strtolower(pathinfo($localPath, PATHINFO_EXTENSION));
+                $mime     = 'image/' . ($ext === 'jpg' ? 'jpeg' : $ext);
+                $b64      = base64_encode(file_get_contents($localPath));
+                $content[] = ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => $mime, 'data' => $b64]];
+            }
+
+            $promptText = <<<PROMPT
+Eres un experto en fotografía de producto y publicidad digital.
+
+Producto: {$nombre}{$caracLine}{$refLine}{$prevLine}
+
+Genera UN prompt optimizado para Flux Kontext Pro (modelo img2img) para este tipo de imagen:
+{$tipoDesc}
+
+REGLAS CRÍTICAS DEL PROMPT:
+1. Empieza SIEMPRE con: "Same product, preserve every detail, brand, color and shape EXACTLY."
+2. Describe SOLO el entorno, iluminación, composición y contexto — NUNCA alteres el producto.
+3. Sé muy específico para este producto (analiza la foto para entender qué es).
+4. Termina SIEMPRE con: "Do not alter the product in any way. No text. No watermarks."
+5. Máximo 80 palabras. En inglés.
+
+Responde SOLO con el prompt en texto plano. Sin explicaciones, sin comillas, sin prefijos.
+PROMPT;
+
+            $content[] = ['type' => 'text', 'text' => $promptText];
+
+            $payload = json_encode([
+                'model'      => 'claude-sonnet-4-6',
+                'max_tokens' => 300,
+                'messages'   => [['role' => 'user', 'content' => $content]],
+            ]);
+
+            $ch = curl_init('https://api.anthropic.com/v1/messages');
+            curl_setopt_array($ch, [
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => $payload,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'x-api-key: ' . $claudeKey, 'anthropic-version: 2023-06-01'],
+                CURLOPT_TIMEOUT        => 30,
+            ]);
+            $resp = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            unset($ch);
+
+            $data   = json_decode($resp, true);
+            $newPrompt = trim($data['content'][0]['text'] ?? '');
+            if ($code !== 200 || !$newPrompt) {
+                echo json_encode(['ok' => false, 'error' => $data['error']['message'] ?? 'Error Claude']);
+                return;
+            }
+            echo json_encode(['ok' => true, 'prompt' => $newPrompt]);
+        } catch (\Throwable $e) {
+            echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     // AJAX: regenerar UNA imagen con prompt personalizado
     public function regenerarImagen(): void
     {
@@ -213,10 +302,11 @@ Cada prompt debe: preservar el producto exactamente, y transformar el entorno.
   "lifestyle": "prompt para foto lifestyle/in-use con persona real usando/llevando este producto específico",
   "flatlay": "prompt para flat lay editorial con accesorios que conecten con el buyer de este producto"
 }
-Reglas para los prompts:
-- Siempre empieza con: "Same product, preserve every detail, brand and color."
-- Sé específico al producto: si es una bolsa, menciona la bolsa; si es un reloj, el reloj en la muñeca, etc.
-- Termina siempre con: "no text, no watermarks, no logos added"
+Reglas CRÍTICAS para los prompts:
+- Empieza SIEMPRE con: "Same product, preserve every detail, brand, color and shape EXACTLY."
+- Describe ÚNICAMENTE el entorno, iluminación, composición y contexto — NUNCA menciones cambios al producto.
+- Sé muy específico al tipo de producto que ves en la foto (bolsa, reloj, ropa, etc.).
+- Termina SIEMPRE con: "Do not alter the product in any way. No text. No watermarks."
 
 ─────────────────────────────────────────
 3. "ads" — 3 variaciones de copy para Facebook Ads

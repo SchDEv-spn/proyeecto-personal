@@ -506,6 +506,22 @@
         }
         .btn-regen:hover:not(:disabled) { background: var(--green-dark); color: #fff; }
         .btn-regen:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-claude-prompt {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: var(--r-md);
+            background: transparent;
+            color: var(--purple, #7c3aed);
+            border: 1.5px solid var(--purple, #7c3aed);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background var(--t), color var(--t);
+        }
+        .btn-claude-prompt:hover:not(:disabled) { background: var(--purple, #7c3aed); color: #fff; }
+        .btn-claude-prompt:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* ── Audience card ────────────────────────────────────────── */
         .mkt-audience-card {
@@ -803,9 +819,16 @@ $showSearch      = false;
     }
 
     /* ── Render cards ───────────────────────────────────────────── */
-    async function renderResults({ imageUrl, imagePath, ads, precio, hasReplicate, imagePrompts }, localBlobSrc) {
+    async function renderResults({ imageUrl, imagePath, ads, precio, hasReplicate, imagePrompts, audiencia }, localBlobSrc) {
         cardsEl.innerHTML = '';
         document.getElementById('mktPromptCards').innerHTML = '';
+
+        // Guardar datos de sesión para uso en sugerirPrompt
+        _sessionData = {
+            nombre:          document.getElementById('mktNombre').value.trim(),
+            caracteristicas: document.getElementById('mktCaracteristicas').value.trim(),
+            audienciaPerfil: audiencia?.perfil || '',
+        };
 
         // Cadena de fallback separada en 3 niveles para evitar que fallen igual
         // fallback1: URL del servidor (foto subida)
@@ -894,9 +917,9 @@ $showSearch      = false;
             tryLoad(srcChain);
 
             // Prompt card editable bajo la imagen
-            const promptKey = { oscuro: 'hero', dorado: 'lifestyle', vibrante: 'flatlay' }[ad.tema] || 'hero';
+            const promptKey   = { oscuro: 'hero', dorado: 'lifestyle', vibrante: 'flatlay' }[ad.tema] || 'hero';
             const promptLabel = { oscuro: 'Hero shot', dorado: 'Lifestyle', vibrante: 'Flat lay' }[ad.tema] || ad.tema;
-            renderPromptCard(ad.tema, promptLabel, (imagePrompts || {})[promptKey] || '', imagePath, card);
+            renderPromptCard(ad.tema, promptKey, promptLabel, (imagePrompts || {})[promptKey] || '', imagePath, card);
         }
 
         renderFbCopy(ads, precio);
@@ -905,7 +928,10 @@ $showSearch      = false;
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    function renderPromptCard(tema, label, prompt, imagePath, siblingCard) {
+    // Datos de sesión para sugerirPrompt (se llenan en renderResults)
+    let _sessionData = {};
+
+    function renderPromptCard(tema, tipo, label, prompt, imagePath, siblingCard) {
         const promptCards = document.getElementById('mktPromptCards');
         const pc = document.createElement('div');
         pc.className = 'mkt-prompt-card';
@@ -915,13 +941,48 @@ $showSearch      = false;
                 <i class="fas fa-wand-magic-sparkles"></i> Prompt — ${label}
             </div>
             <textarea class="mkt-prompt-textarea" rows="4">${escHtml(prompt)}</textarea>
-            <button class="btn-regen"><i class="fas fa-rotate"></i> Regenerar imagen</button>`;
+            <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:2px">
+                <button class="btn-claude-prompt"><i class="fas fa-robot"></i> Claude sugiere</button>
+                <button class="btn-regen"><i class="fas fa-rotate"></i> Regenerar imagen</button>
+            </div>`;
         promptCards.appendChild(pc);
 
-        pc.querySelector('.btn-regen').addEventListener('click', async function () {
-            const customPrompt = pc.querySelector('.mkt-prompt-textarea').value.trim();
+        const textarea  = pc.querySelector('.mkt-prompt-textarea');
+        const btnClaude = pc.querySelector('.btn-claude-prompt');
+        const btnRegen  = pc.querySelector('.btn-regen');
+
+        // Claude mejora el prompt
+        btnClaude.addEventListener('click', async function () {
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pensando...';
+            const fd = new FormData();
+            fd.append('tipo',             tipo);
+            fd.append('nombre',           _sessionData.nombre           || '');
+            fd.append('caracteristicas',  _sessionData.caracteristicas  || '');
+            fd.append('audiencia_perfil', _sessionData.audienciaPerfil  || '');
+            fd.append('prompt_actual',    textarea.value.trim());
+            fd.append('image_path',       imagePath);
+            try {
+                const res  = await fetch(BASE + '/AdminMarketing/sugerirPrompt', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.error || 'Error');
+                textarea.value = data.prompt;
+                textarea.style.borderColor = 'var(--green-dark)';
+                setTimeout(() => { textarea.style.borderColor = ''; }, 1500);
+            } catch(e) {
+                alert('Error: ' + e.message);
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-robot"></i> Claude sugiere';
+            }
+        });
+
+        // Regenerar imagen con Replicate
+        btnRegen.addEventListener('click', async function () {
+            const customPrompt = textarea.value.trim();
             if (!customPrompt) return;
             this.disabled = true;
+            btnClaude.disabled = true;
             this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
 
             const wrap = siblingCard.querySelector('.mkt-ad-card__canvas-wrap');
@@ -958,6 +1019,7 @@ $showSearch      = false;
                 wrap.innerHTML = `<div style="padding:16px;color:#dc2626;font-size:12px">${e.message}</div>`;
             } finally {
                 this.disabled = false;
+                btnClaude.disabled = false;
                 this.innerHTML = '<i class="fas fa-rotate"></i> Regenerar imagen';
             }
         });
