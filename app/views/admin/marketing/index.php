@@ -308,9 +308,13 @@
             padding-top: 28px;
             border-top: 1px solid var(--border);
         }
-        .mkt-fb-head .fab.fa-facebook {
-            font-size: 1.6rem;
-            color: #1877f2;
+        .mkt-fb-head__icon {
+            width: 36px; height: 36px;
+            border-radius: var(--r-md);
+            background: var(--soft-blue);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--blue);
+            font-size: 16px;
             flex-shrink: 0;
         }
         .mkt-fb-head h3 {
@@ -358,7 +362,7 @@
         .mkt-fb-card__avatar {
             width: 36px; height: 36px;
             border-radius: 50%;
-            background: #1877f2;
+            background: var(--green-dark);
             display: flex; align-items: center; justify-content: center;
             color: #fff;
             font-size: 16px;
@@ -411,12 +415,13 @@
         }
         .mkt-fb-card__cta-pill {
             flex-shrink: 0;
-            background: #1877f2;
+            background: var(--green-dark);
             color: #fff;
             font-size: 11px;
             font-weight: 700;
             padding: 5px 12px;
             border-radius: var(--r-md);
+            white-space: nowrap;
         }
 
         /* Footer con ángulo + copiar */
@@ -525,19 +530,30 @@
 
         /* ── Audience card ────────────────────────────────────────── */
         .mkt-audience-card {
-            background: linear-gradient(135deg, #f0f7f4 0%, #e8f4ff 100%);
-            border: 1px solid #bcd4e6;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: var(--r-xl);
             padding: 20px 24px;
             margin-bottom: 28px;
+            box-shadow: var(--shadow-xs);
         }
         .mkt-audience-card__head {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
         }
-        .mkt-audience-card__head i { font-size: 1.2rem; color: #1877f2; }
+        .mkt-audience-card__head-icon {
+            width: 36px; height: 36px;
+            border-radius: var(--r-md);
+            background: var(--green-soft);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--green-dark);
+            font-size: 16px;
+            flex-shrink: 0;
+        }
         .mkt-audience-card__head h4 { font-size: var(--text-base); font-weight: 700; color: var(--tx); margin: 0; }
         .mkt-audience-card__head p { font-size: var(--text-sm); color: var(--tx-muted); margin: 2px 0 0; }
 
@@ -549,8 +565,8 @@
         @media (max-width: 600px) { .audience-grid { grid-template-columns: 1fr; } }
 
         .audience-item {
-            background: rgba(255,255,255,0.75);
-            border: 1px solid rgba(24,119,242,0.15);
+            background: var(--surface-2);
+            border: 1px solid var(--border);
             border-radius: var(--r-md);
             padding: 10px 13px;
         }
@@ -560,7 +576,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.07em;
-            color: #1877f2;
+            color: var(--green-dark);
             margin-bottom: 4px;
         }
         .audience-item span {
@@ -575,11 +591,12 @@
             margin-top: 4px;
         }
         .audience-tag {
-            background: #1877f2;
-            color: #fff;
+            background: var(--green-soft);
+            color: var(--green-dark);
+            border: 1px solid var(--green-glow);
             font-size: 10px;
-            font-weight: 600;
-            padding: 2px 8px;
+            font-weight: 700;
+            padding: 2px 9px;
             border-radius: var(--r-full);
         }
         .audience-item--full { grid-column: 1 / -1; }
@@ -705,7 +722,7 @@ $showSearch      = false;
 
                     <!-- Copy Facebook -->
                     <div class="mkt-fb-head">
-                        <i class="fab fa-facebook"></i>
+                        <div class="mkt-fb-head__icon"><i class="fab fa-facebook-f"></i></div>
                         <div>
                             <h3>Copy listo para Facebook Ads</h3>
                             <p>Pega el texto directamente en tu campaña — un ángulo distinto por anuncio</p>
@@ -720,7 +737,7 @@ $showSearch      = false;
     </main>
 </div>
 
-<script src="<?= BASE_URL ?>/public/js/admin-sidebar.js"></script>
+<script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 <script>
 (function () {
     const BASE = '<?= BASE_URL ?>';
@@ -1035,31 +1052,31 @@ $showSearch      = false;
         wrap.innerHTML = `
         <div class="mkt-audience-card">
             <div class="mkt-audience-card__head">
-                <i class="fab fa-facebook"></i>
+                <div class="mkt-audience-card__head-icon"><i class="fas fa-bullseye"></i></div>
                 <div>
                     <h4>Público sugerido para Facebook Ads</h4>
-                    <p>Basado en el análisis de la foto y los datos del producto</p>
+                    <p>Basado en el análisis visual del producto por IA</p>
                 </div>
             </div>
             <div class="audience-grid">
                 <div class="audience-item">
-                    <label><i class="fas fa-calendar-alt"></i> Edad</label>
+                    <label>Edad</label>
                     <span>${escHtml(audiencia.edad || '—')}</span>
                 </div>
                 <div class="audience-item">
-                    <label><i class="fas fa-user"></i> Género</label>
+                    <label>Género</label>
                     <span>${escHtml(audiencia.genero || '—')}</span>
                 </div>
                 <div class="audience-item">
-                    <label><i class="fas fa-heart"></i> Intereses</label>
+                    <label>Intereses</label>
                     <div class="audience-intereses">${intereses || '—'}</div>
                 </div>
                 <div class="audience-item">
-                    <label><i class="fas fa-mouse-pointer"></i> Comportamientos</label>
+                    <label>Comportamientos</label>
                     <div class="audience-intereses">${comportamientos || '—'}</div>
                 </div>
                 <div class="audience-item audience-item--full">
-                    <label><i class="fas fa-bullseye"></i> Perfil del comprador ideal</label>
+                    <label>Perfil del comprador ideal</label>
                     <span>${escHtml(audiencia.perfil || '—')}</span>
                 </div>
             </div>
