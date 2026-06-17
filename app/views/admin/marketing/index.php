@@ -870,35 +870,6 @@ $showSearch      = false;
             img.height * scale
         );
 
-        /* 2. Badge de precio — esquina superior derecha */
-        const priceBadge = {
-            oscuro:   { bg: 'rgba(10,10,10,0.72)',    tx: '#f0e8d6', border: 'rgba(200,168,91,0.5)' },
-            dorado:   { bg: 'rgba(255,255,255,0.88)',  tx: '#78350f', border: 'rgba(217,119,6,0.4)' },
-            vibrante: { bg: 'rgba(139,92,246,0.88)',   tx: '#ffffff', border: 'rgba(255,255,255,0.3)' },
-        };
-        const pb = priceBadge[tema] || priceBadge.oscuro;
-
-        const priceStr = '$' + String(precio).trim() + ' COP';
-        ctx.font = 'bold 30px Inter,sans-serif';
-        const pw  = ctx.measureText(priceStr).width;
-        const bh  = 50, bpad = 20, bw = pw + bpad * 2, br = 12;
-        const bx  = W - bw - 28, by = 28;
-
-        // Fondo con blur visual (doble rect semitransparente)
-        rrect(ctx, bx - 2, by - 2, bw + 4, bh + 4, br + 2, 'rgba(0,0,0,0.15)');
-        rrect(ctx, bx, by, bw, bh, br, pb.bg);
-
-        // Borde sutil
-        ctx.strokeStyle = pb.border;
-        ctx.lineWidth   = 1.5;
-        ctx.beginPath();
-        ctx.roundRect(bx, by, bw, bh, br);
-        ctx.stroke();
-
-        ctx.fillStyle    = pb.tx;
-        ctx.textAlign    = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(priceStr, bx + bw / 2, by + bh / 2);
 
     }
 
