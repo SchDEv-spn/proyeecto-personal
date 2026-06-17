@@ -98,9 +98,9 @@ class AdminMarketingController extends Controller
             $imageData = 'data:image/' . ($ext ?? 'jpeg') . ';base64,' . base64_encode(file_get_contents($localPath));
 
             $stylePrompts = [
-                'oscuro'   => "Keep the product exactly as-is. Transform background to dramatic dark studio: deep black/charcoal background, professional dramatic side lighting, sharp product focus, premium commercial product photography, no text",
-                'dorado'   => "Keep the product exactly as-is. Transform background to warm luxury: soft golden hour sunlight bokeh, warm amber tones, premium lifestyle feel, elegant soft-focus background, no text",
-                'vibrante' => "Keep the product exactly as-is. Transform background to vibrant modern: bold colorful gradient background, high energy pop aesthetic, vivid saturated colors, dynamic composition, no text",
+                'oscuro'   => "Keep the exact same product, same shape, same details, same branding. Replace only the background: pitch-black velvet studio background, single dramatic side spotlight with crisp hard shadow, ultra-sharp focus on product, premium high-fashion editorial photography, cinematic contrast, no text, no watermarks",
+                'dorado'   => "Keep the exact same product, same shape, same details, same branding. Replace only the background: opulent gold and marble surface, warm candlelight bokeh, luxurious lifestyle setting like a high-end boutique, soft warm rim lighting, shallow depth of field, editorial magazine feel, no text, no watermarks",
+                'vibrante' => "Keep the exact same product, same shape, same details, same branding. Replace only the background: explosive neon gradient burst — electric magenta, cyan and violet rays radiating outward like a supernova, hyper-pop art direction, vivid saturated colors, dynamic diagonal energy lines, no text, no watermarks",
             ];
 
             $generatedImages = $this->callReplicateMulti($replicateKey, $imageData, $stylePrompts, $nombre);
@@ -367,26 +367,4 @@ PROMPT;
         return $results;
     }
 
-    // ── Descargar imagen generada y guardarla localmente ─────────
-    private function downloadImage(string $url, string $prefix): ?string
-    {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_TIMEOUT        => 60,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_USERAGENT      => 'Mozilla/5.0',
-        ]);
-        $raw      = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        unset($ch);
-
-        if (!$raw || $httpCode !== 200) return null;
-
-        $filename = $prefix . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.jpg';
-        $dest     = $this->uploadDir() . $filename;
-        file_put_contents($dest, $raw);
-        return $filename;
-    }
 }

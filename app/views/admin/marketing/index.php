@@ -298,6 +298,153 @@
         .angle-badge--dolor     { background: var(--soft-red);    color: var(--red); }
         .angle-badge--urgencia  { background: var(--soft-orange);  color: var(--orange); }
         .angle-badge--transformacion { background: var(--soft-purple); color: var(--purple); }
+
+        /* ── Facebook copy section ────────────────────────────────── */
+        .mkt-fb-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 36px 0 16px;
+            padding-top: 28px;
+            border-top: 1px solid var(--border);
+        }
+        .mkt-fb-head .fab.fa-facebook {
+            font-size: 1.6rem;
+            color: #1877f2;
+            flex-shrink: 0;
+        }
+        .mkt-fb-head h3 {
+            font-size: var(--text-lg);
+            font-weight: 700;
+            color: var(--tx);
+            margin: 0;
+        }
+        .mkt-fb-head p {
+            font-size: var(--text-sm);
+            color: var(--tx-muted);
+            margin: 2px 0 0;
+        }
+
+        .mkt-fb-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+        @media (max-width: 780px) {
+            .mkt-fb-cards { grid-template-columns: 1fr; }
+        }
+
+        .mkt-fb-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-xs);
+            transition: box-shadow var(--t);
+        }
+        .mkt-fb-card:hover { box-shadow: var(--shadow-md); }
+
+        /* Simulación del encabezado de un post de Facebook */
+        .mkt-fb-card__header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .mkt-fb-card__avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: #1877f2;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .mkt-fb-card__page-name {
+            font-size: var(--text-sm);
+            font-weight: 700;
+            color: var(--tx);
+            line-height: 1.2;
+        }
+        .mkt-fb-card__sponsored {
+            font-size: 11px;
+            color: var(--tx-dim);
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .mkt-fb-card__sponsored::before {
+            content: '·';
+            margin-right: 2px;
+        }
+
+        /* Texto del ad */
+        .mkt-fb-card__body {
+            padding: 14px 16px;
+            flex: 1;
+        }
+        .mkt-fb-card__primary {
+            font-size: 13px;
+            line-height: 1.55;
+            color: var(--tx);
+            white-space: pre-line;
+            margin: 0 0 10px;
+        }
+        .mkt-fb-card__headline-bar {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .mkt-fb-card__headline-txt {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--tx);
+        }
+        .mkt-fb-card__cta-pill {
+            flex-shrink: 0;
+            background: #1877f2;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: var(--r-md);
+        }
+
+        /* Footer con ángulo + copiar */
+        .mkt-fb-card__footer {
+            padding: 10px 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .btn-copy-fb {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            border-radius: var(--r-md);
+            background: transparent;
+            color: var(--green-dark);
+            border: 1.5px solid var(--green-dark);
+            font-size: var(--text-xs);
+            font-weight: 700;
+            cursor: pointer;
+            transition: background var(--t), color var(--t);
+            flex-shrink: 0;
+        }
+        .btn-copy-fb:hover { background: var(--green-dark); color: #fff; }
+        .btn-copy-fb.copied { background: var(--green-dark); color: #fff; }
     </style>
 </head>
 <body>
@@ -411,6 +558,16 @@ $showSearch      = false;
                         </div>
                     </div>
                     <div class="mkt-cards" id="mktCards"></div>
+
+                    <!-- Copy Facebook -->
+                    <div class="mkt-fb-head">
+                        <i class="fab fa-facebook"></i>
+                        <div>
+                            <h3>Copy listo para Facebook Ads</h3>
+                            <p>Pega el texto directamente en tu campaña — un ángulo distinto por anuncio</p>
+                        </div>
+                    </div>
+                    <div class="mkt-fb-cards" id="mktFbCards"></div>
                 </div>
 
                 <?php endif; ?>
@@ -607,8 +764,81 @@ $showSearch      = false;
             tryLoad(srcChain);
         }
 
+        renderFbCopy(ads, precio);
+
         resultsEl.style.display = 'block';
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderFbCopy(ads, precio) {
+        const fbEl = document.getElementById('mktFbCards');
+        if (!fbEl) return;
+        fbEl.innerHTML = '';
+
+        const angleConfig = {
+            dolor:         { label: 'Dolor',         icon: 'fa-heart-crack',  cls: 'angle-badge--dolor',         emoji: '😢' },
+            urgencia:      { label: 'Urgencia',       icon: 'fa-fire',         cls: 'angle-badge--urgencia',      emoji: '🔥' },
+            transformacion:{ label: 'Transformación', icon: 'fa-star',         cls: 'angle-badge--transformacion',emoji: '✨' },
+        };
+
+        const precioFmt = precio ? `$${Number(precio).toLocaleString('es-CO')} COP` : precio;
+
+        for (const ad of ads) {
+            const aC = angleConfig[ad.angulo] || { label: ad.angulo, icon: 'fa-circle', cls: 'angle-badge--dolor', emoji: '📢' };
+
+            // Texto primario del ad (lo que va en el campo "Texto principal" de FB Ads)
+            const primaryText = [
+                aC.emoji + ' ' + ad.headline,
+                '',
+                ad.body,
+                '',
+                `👉 ${ad.cta} — ${precioFmt} | Pago contra entrega`,
+                `📦 Envío a toda Colombia`,
+            ].join('\n');
+
+            const card = document.createElement('div');
+            card.className = 'mkt-fb-card';
+            card.innerHTML = `
+                <div class="mkt-fb-card__header">
+                    <div class="mkt-fb-card__avatar"><i class="fas fa-store"></i></div>
+                    <div>
+                        <div class="mkt-fb-card__page-name">Tu página de Facebook</div>
+                        <div class="mkt-fb-card__sponsored"><i class="fas fa-globe" style="font-size:10px"></i> Patrocinado</div>
+                    </div>
+                </div>
+                <div class="mkt-fb-card__body">
+                    <p class="mkt-fb-card__primary">${escHtml(primaryText)}</p>
+                    <div class="mkt-fb-card__headline-bar">
+                        <span class="mkt-fb-card__headline-txt">${escHtml(ad.headline.toUpperCase())}</span>
+                        <span class="mkt-fb-card__cta-pill">${escHtml(ad.cta)}</span>
+                    </div>
+                </div>
+                <div class="mkt-fb-card__footer">
+                    <span class="angle-badge ${aC.cls}"><i class="fas ${aC.icon}"></i> ${aC.label}</span>
+                    <button class="btn-copy-fb" data-copy="${escAttr(primaryText)}">
+                        <i class="fas fa-copy"></i> Copiar
+                    </button>
+                </div>`;
+            fbEl.appendChild(card);
+
+            card.querySelector('.btn-copy-fb').addEventListener('click', function () {
+                navigator.clipboard.writeText(this.dataset.copy).then(() => {
+                    this.innerHTML = '<i class="fas fa-check"></i> Copiado';
+                    this.classList.add('copied');
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                        this.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+        }
+    }
+
+    function escHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escAttr(s) {
+        return s.replace(/"/g,'&quot;').replace(/\n/g,'&#10;');
     }
 
     function loadImage(src) {
