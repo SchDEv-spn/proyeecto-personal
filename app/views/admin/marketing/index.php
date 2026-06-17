@@ -520,8 +520,11 @@ $showSearch      = false;
     async function renderResults({ imageUrl, ads, precio, hasReplicate }, localBlobSrc) {
         cardsEl.innerHTML = '';
 
-        // Fallback: primero intenta URL del servidor, luego el blob local
-        const fallbackSrc = imageUrl || localBlobSrc;
+        // Cadena de fallback separada en 3 niveles para evitar que fallen igual
+        // fallback1: URL del servidor (foto subida)
+        // fallback2: blob URL local (siempre disponible, del file input)
+        const serverImgUrl = imageUrl || null;
+        const blobImgUrl   = localBlobSrc || null;
 
         const angleConfig = {
             dolor:         { label: 'Dolor',         icon: 'fa-heart-crack',  cls: 'angle-badge--dolor' },
@@ -552,9 +555,13 @@ $showSearch      = false;
                 </div>`;
             cardsEl.appendChild(card);
 
-            // Cargar imagen (puede ser la generada por Replicate o la original)
-            const imgSrc = ad.imageUrl || fallbackSrc;
-            function paintCanvas(img) {
+            // 3 niveles de fallback independientes
+            // 1: ad.imageUrl (puede ser Replicate CDN o URL servidor)
+            // 2: serverImgUrl (URL servidor — foto original subida)
+            // 3: blobImgUrl  (blob: URL del file input, siempre funciona)
+            const adImgSrc = ad.imageUrl || null;
+
+            const paintCanvas = (img) => {
                 const wrap = card.querySelector('.mkt-ad-card__canvas-wrap');
                 wrap.innerHTML = '';
                 const canvas = document.createElement('canvas');
@@ -569,27 +576,35 @@ $showSearch      = false;
                     try {
                         a.href = canvas.toDataURL('image/png');
                     } catch (e) {
-                        alert('No se puede descargar: la imagen es cross-origin sin CORS. Contacta al soporte.');
+                        alert('No se puede descargar: imagen cross-origin sin CORS.');
                         return;
                     }
                     a.click();
                 });
-            }
+            };
 
-            loadImage(imgSrc)
-                .then(paintCanvas)
-                .catch(err1 => {
-                    // Primer fallback: URL local de la foto subida
-                    loadImage(fallbackSrc)
-                        .then(paintCanvas)
-                        .catch(err2 => {
-                            // Mostrar error en la card
-                            const wrap = card.querySelector('.mkt-ad-card__canvas-wrap');
-                            wrap.innerHTML = `<div style="padding:20px;font-size:12px;color:#dc2626;text-align:center;">
-                                Error cargando imagen.<br>${err1.message}<br>${err2.message}
-                            </div>`;
-                        });
-                });
+            const showCardError = (msg) => {
+                const wrap = card.querySelector('.mkt-ad-card__canvas-wrap');
+                wrap.innerHTML = `<div style="padding:20px;font-size:12px;color:#dc2626;text-align:center;">
+                    Error cargando imagen.<br><code style="font-size:10px">${msg}</code>
+                </div>`;
+            };
+
+            // Intentar en cascada: Replicate CDN → servidor → blob local
+            const tryLoad = (srcs) => {
+                const [first, ...rest] = srcs.filter(Boolean);
+                if (!first) { showCardError('Sin fuente de imagen disponible'); return; }
+                loadImage(first)
+                    .then(paintCanvas)
+                    .catch(err => {
+                        if (rest.length) tryLoad(rest);
+                        else showCardError(err.message);
+                    });
+            };
+
+            // Evitar duplicados en la cadena (si ad.imageUrl === serverImgUrl ya cayó)
+            const srcChain = [...new Set([adImgSrc, serverImgUrl, blobImgUrl].filter(Boolean))];
+            tryLoad(srcChain);
         }
 
         resultsEl.style.display = 'block';

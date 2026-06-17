@@ -224,7 +224,7 @@ PROMPT;
         return ['ok' => true, 'ads' => $parsed];
     }
 
-    // ── Replicate: 3 llamadas en paralelo con curl_multi ─────────
+    // ── Replicate: 3 llamadas en paralelo + polling paralelo ─────
     private function callReplicateMulti(string $apiKey, string $imageData, array $stylePrompts, string $nombre): array
     {
         $endpoint = 'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions';
@@ -234,6 +234,7 @@ PROMPT;
             'Prefer: wait',
         ];
 
+        // ── Fase 1: lanzar las 3 predicciones en paralelo ────────
         $mh      = curl_multi_init();
         $handles = [];
 
@@ -254,75 +255,116 @@ PROMPT;
                 CURLOPT_POSTFIELDS     => $payload,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_HTTPHEADER     => $headers,
-                CURLOPT_TIMEOUT        => 120,
+                CURLOPT_TIMEOUT        => 90,
             ]);
 
             curl_multi_add_handle($mh, $ch);
             $handles[$tema] = $ch;
         }
 
-        // Ejecutar en paralelo
         $running = null;
         do {
             curl_multi_exec($mh, $running);
-            if ($running) curl_multi_select($mh);
+            if ($running) curl_multi_select($mh, 1.0);
         } while ($running > 0);
 
-        $results = [];
+        $results    = [];
+        $pendingIds = []; // [tema => predictionId] para polling paralelo
+
         foreach ($handles as $tema => $ch) {
             $body     = curl_multi_getcontent($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_multi_remove_handle($mh, $ch);
             unset($ch);
 
-            if (!$body) {
-                $results[$tema] = ['error' => 'Sin respuesta de Replicate'];
-                continue;
-            }
+            if (!$body) { $results[$tema] = ['error' => 'Sin respuesta']; continue; }
 
             $data = json_decode($body, true);
             if ($httpCode !== 200 && $httpCode !== 201) {
-                $results[$tema] = ['error' => $data['detail'] ?? $data['error'] ?? 'Error Replicate'];
+                $results[$tema] = ['error' => $data['detail'] ?? $data['error'] ?? 'HTTP ' . $httpCode];
                 continue;
             }
 
             $output = $data['output'] ?? null;
             if (is_array($output)) $output = $output[0] ?? null;
 
-            if (!$output) {
-                // Prediction creada pero no resuelta aún — polling
-                $id = $data['id'] ?? null;
-                $results[$tema] = $id ? $this->pollReplicate($apiKey, $id) : ['error' => 'Sin URL de imagen'];
+            if ($output) {
+                $results[$tema] = $output; // ya resuelto ✓
             } else {
-                $results[$tema] = $output;
+                $id = $data['id'] ?? null;
+                if ($id) $pendingIds[$tema] = $id;
+                else     $results[$tema]   = ['error' => 'Sin id de predicción'];
+            }
+        }
+        curl_multi_close($mh);
+
+        // ── Fase 2: polling paralelo para los que quedaron pending ─
+        if (!empty($pendingIds)) {
+            $polled = $this->pollReplicateMulti($apiKey, $pendingIds);
+            foreach ($polled as $tema => $result) {
+                $results[$tema] = $result;
             }
         }
 
-        curl_multi_close($mh);
         return $results;
     }
 
-    // ── Replicate: polling si Prefer:wait no resolvió ────────────
-    private function pollReplicate(string $apiKey, string $id): string|array
+    // ── Polling paralelo con curl_multi ───────────────────────────
+    private function pollReplicateMulti(string $apiKey, array $pendingIds, int $maxTries = 15): array
     {
-        for ($i = 0; $i < 20; $i++) {
-            sleep(3);
-            $ch = curl_init("https://api.replicate.com/v1/predictions/{$id}");
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey],
-                CURLOPT_TIMEOUT        => 10,
-            ]);
-            $data   = json_decode(curl_exec($ch), true);
-            unset($ch);
-            $status = $data['status'] ?? '';
-            if ($status === 'succeeded') {
-                $out = $data['output'] ?? null;
-                return is_array($out) ? ($out[0] ?? ['error' => 'Sin URL']) : ($out ?: ['error' => 'Sin URL']);
+        $results  = [];
+        $pending  = $pendingIds; // [tema => id]
+        $headers  = ['Authorization: Bearer ' . $apiKey, 'Content-Type: application/json'];
+
+        for ($try = 0; $try < $maxTries && !empty($pending); $try++) {
+            sleep(4);
+
+            $mh      = curl_multi_init();
+            $handles = [];
+
+            foreach ($pending as $tema => $id) {
+                $ch = curl_init("https://api.replicate.com/v1/predictions/{$id}");
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_HTTPHEADER     => $headers,
+                    CURLOPT_TIMEOUT        => 10,
+                ]);
+                curl_multi_add_handle($mh, $ch);
+                $handles[$tema] = $ch;
             }
-            if ($status === 'failed') return ['error' => $data['error'] ?? 'Generación fallida'];
+
+            $running = null;
+            do {
+                curl_multi_exec($mh, $running);
+                if ($running) curl_multi_select($mh, 1.0);
+            } while ($running > 0);
+
+            foreach ($handles as $tema => $ch) {
+                $data   = json_decode(curl_multi_getcontent($ch) ?: '{}', true);
+                curl_multi_remove_handle($mh, $ch);
+                unset($ch);
+
+                $status = $data['status'] ?? '';
+                if ($status === 'succeeded') {
+                    $out = $data['output'] ?? null;
+                    $results[$tema] = is_array($out) ? ($out[0] ?? ['error' => 'Sin URL']) : ($out ?: ['error' => 'Sin URL']);
+                    unset($pending[$tema]);
+                } elseif ($status === 'failed') {
+                    $results[$tema] = ['error' => $data['error'] ?? 'Generación fallida'];
+                    unset($pending[$tema]);
+                }
+                // Si sigue 'processing'/'starting', queda en $pending para el siguiente try
+            }
+
+            curl_multi_close($mh);
         }
-        return ['error' => 'Timeout Replicate'];
+
+        // Los que aún siguen pendientes tras maxTries
+        foreach ($pending as $tema => $_) {
+            $results[$tema] = ['error' => 'Timeout polling'];
+        }
+
+        return $results;
     }
 
     // ── Descargar imagen generada y guardarla localmente ─────────
