@@ -858,7 +858,7 @@ $showSearch      = false;
             urgencia:      { label: 'Urgencia',       icon: 'fa-fire',         cls: 'angle-badge--urgencia' },
             transformacion:{ label: 'Transformación', icon: 'fa-star',         cls: 'angle-badge--transformacion' },
         };
-        const temaLabels = { oscuro: 'Hero shot · IA', dorado: 'Lifestyle · IA', vibrante: 'Detalles · IA' };
+        const temaLabels = { oscuro: 'Contexto de uso · IA', dorado: 'Hero premium · IA', vibrante: 'Característica · IA' };
 
         for (const ad of ads) {
             const aC = angleConfig[ad.angulo] || { label: ad.angulo || '?', icon: 'fa-circle', cls: 'angle-badge--dolor' };
@@ -935,7 +935,7 @@ $showSearch      = false;
 
             // Prompt card editable bajo la imagen
             const promptKey   = { oscuro: 'hero', dorado: 'lifestyle', vibrante: 'flatlay' }[ad.tema] || 'hero';
-            const promptLabel = { oscuro: 'Hero shot', dorado: 'Lifestyle plano medio', vibrante: 'Detalles macro' }[ad.tema] || ad.tema;
+            const promptLabel = { oscuro: 'Contexto de uso', dorado: 'Hero premium', vibrante: 'Característica estrella' }[ad.tema] || ad.tema;
             renderPromptCard(ad.tema, promptKey, promptLabel, (imagePrompts || {})[promptKey] || '', imagePath, card);
         }
 

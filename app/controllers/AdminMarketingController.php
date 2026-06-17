@@ -161,10 +161,10 @@ class AdminMarketingController extends Controller
             $imagePath       = trim($_POST['image_path']      ?? '');
 
             $tipoDesc = [
-                'hero'      => 'Hero shot — el producto como protagonista absoluto (80% del frame) sobre fondo de estudio dramático, sin personas. ANALIZA EL COLOR DEL PRODUCTO: si es oscuro/negro usa fondo blanco/perla con rim lights que dibujen los bordes (técnica contraluz doble); si es claro/blanco/dorado usa fondo negro velvet con spotlight dramático. Siempre: gotas de agua, reflejo perfecto, macro extremo de texturas, 8K',
-                'lifestyle' => 'Lifestyle PLANO MEDIO — persona real de cintura a cabeza usando/llevando el producto en contexto natural. El producto ocupa máximo 15-20% del frame, correctamente proporcionado a escala real. 50mm lens, f/2.8, luz natural, persona en foco con el entorno desfocado suavemente',
-                'flatlay'   => 'Macro de detalles — primer plano extremo del producto mostrando materiales, texturas, costuras, acabados, cristales, hardware. El producto ocupa 90% del frame. Luz de estudio suave y pareja. Ultra-sharp 8K macro photography',
-            ][$tipo] ?? 'Hero shot';
+                'hero'      => 'CONTEXTO DE USO — el producto rodeado de los objetos específicos que cuentan su historia de uso real (lo que un comprador usaría junto a este producto). El producto es el protagonista claro. Composición editorial, superficie acorde al público. Genera deseo mostrando el producto EN SU MUNDO.',
+                'lifestyle' => 'HERO PREMIUM CON ALMA — foto de estudio con personalidad. NO fondo blanco aburrido. Superficie interesante acorde a la esencia del producto (piedra, madera, mármol, metal, concreto). Iluminación dramática y direccional. Máximo 1 prop. Color del fondo contrasta con el producto. Calidad de campaña de marca premium.',
+                'flatlay'   => 'CARACTERÍSTICA ESTRELLA — macro extremo enfocado en LA característica más diferenciadora del producto visible en la foto (grano del cuero, cristal del reloj, tejido de la tela, herrajes, costuras). 90% del frame. Luz lateral de estudio para maximizar profundidad de textura. El cliente siente la calidad sin tocar el producto.',
+            ][$tipo] ?? 'hero';
 
             $refLine  = $audienciaPerfil ? "\nPúblico: {$audienciaPerfil}" : '';
             $caracLine = $caracteristicas ? "\nCaracterísticas: {$caracteristicas}" : '';
@@ -307,12 +307,23 @@ Reglas CRÍTICAS para los prompts:
 - Empieza SIEMPRE con: "Same product, preserve every detail, brand, color and shape EXACTLY."
 - Describe ÚNICAMENTE el entorno, iluminación, composición y contexto — NUNCA menciones cambios al producto.
 - Sé muy específico al tipo de producto que ves en la foto (bolsa, reloj, ropa, etc.).
-- Para "lifestyle" (PLANO MEDIO): muestra la persona desde la cintura hasta la cabeza usando/llevando el producto en un entorno natural. El producto ocupa máximo 15-20% del frame — NO es el elemento dominante. Instrucciones obligatorias: "medium shot showing person from waist to head, product correctly proportioned at true real-world scale, NOT enlarged, product is a natural accessory in the scene" + cámara: "50mm lens, f/2.8, natural light, photorealistic, hyperrealistic skin and fabric textures, shot on Sony A7R IV".
-- Para "hero": producto solo sobre fondo de estudio dramático. Analiza el COLOR DOMINANTE del producto en la foto y aplica la técnica correcta:
-  * Si el producto es OSCURO/NEGRO/GRIS OSCURO: usa fondo blanco/gris perla o técnica rim light — "product on pearl white curved seamless background, two rim lights from 45° behind creating bright glowing edge highlights that separate the product from background, soft front fill light, specular surface reflections, product mirror reflection on polished white acrylic surface below"
-  * Si el producto es CLARO/BLANCO/DORADO/PLATEADO: usa fondo negro/oscuro — "pitch-black velvet background, single dramatic overhead spotlight, hard shadows, perfect mirror reflection on dark surface below"
-  * En todos los casos: "extreme close-up hero shot, product fills 80% of frame, water droplets catching light, ultra-sharp macro detail on every texture and surface, 8K commercial product photography"
-- Para "flatlay" (DETALLES): macro extremo del producto mostrando materiales, texturas y acabados. "extreme macro detail shot, product fills 90% of frame, ultra-sharp focus revealing material textures, surface finishes, stitching/hardware/crystal details, soft even studio light, 8K macro product photography".
+CONCEPTO DE LOS 3 CREATIVOS — lee esto cuidadosamente antes de generar los prompts:
+
+- Para "hero" (CONTEXTO DE USO):
+  Analiza la foto e identifica el tipo de producto y su propósito principal. Rodea el producto de los objetos que cuentan su historia de uso real — NO accesorios decorativos genéricos, sino los que un comprador real usaría junto a este producto específico.
+  Ejemplos: bolso → laptop, billetera, llaves, audifonos (lo que va adentro); reloj deportivo → guantes gym, botella de agua, auriculares; zapatos de cuero → cinturón, billetera, perfume masculino.
+  Formato: "Same product centered as the clear hero, naturally surrounded by [listar los objetos específicos identificados para ESTE producto], [flat lay o composición 3/4 según lo que quede mejor], arranged on [superficie acorde al público target], natural editorial lighting, product is dominant, 8K photorealistic editorial photography. Do not alter the product in any way. No text. No watermarks."
+
+- Para "lifestyle" (HERO PREMIUM CON ALMA):
+  Foto de estudio con personalidad — NO fondo blanco aburrido. Analiza el producto e identifica su esencia (¿es rústico? ¿urbano? ¿lujo? ¿deportivo?) y elige la superficie y atmósfera acorde.
+  Superficie acorde: reloj militar → superficie de piedra/roca texturizada; bolso cuero → madera oscura pulida o mármol negro; accesorio femenino → mármol blanco con pétalos; producto deportivo → concreto texturizado o metal cepillado.
+  Iluminación: siempre dramática y direccional, un máximo de 1 prop que sume contexto. Adapta el color del fondo al producto: oscuro si el producto es claro, claro si el producto es oscuro.
+  Formato: "Same product on [superficie específica para ESTE producto], [dirección] dramatic studio lighting creating [tipo de sombra/highlight], [1 prop contextual específico] adding story, deep specular highlights on product surface, cinematic color grade, 8K hyperrealistic commercial photography, premium brand campaign quality. Do not alter the product in any way. No text. No watermarks."
+
+- Para "flatlay" (CARACTERÍSTICA ESTRELLA):
+  Analiza la foto e identifica LA característica más diferenciadora y visible del producto. NO el producto completo — el DETALLE que hace que el cliente sienta la calidad sin tocarlo.
+  Ejemplos: bolso cuero → grano del cuero, costuras, herrajes dorados; reloj → cristal de zafiro con sus reflejos, bezel, textura de la correa; tela premium → tejido, punto, textura del material; calzado → suela, pespuntes, material.
+  Formato: "Same product, extreme macro close-up tightly focused on [la característica específica identificada en LA FOTO], filling 90% of the frame, ultra-sharp focus revealing [textura/material/detalle concreto], perfect soft studio lighting from the side to maximize texture depth and shadow detail, 8K macro commercial product photography. Do not alter the product in any way. No text. No watermarks."
 - Termina SIEMPRE con: "Photorealistic. Do not alter the product in any way. No text. No watermarks."
 
 ─────────────────────────────────────────
