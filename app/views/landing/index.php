@@ -741,7 +741,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <div class="caract-slider" id="caractSlider">
                 <div class="caract-track" id="caractTrack">
                     <?php foreach ($caractItems as $ci => $cItem): ?>
-                    <div class="caract-slide" aria-hidden="<?= $ci === 0 ? 'false' : 'true' ?>">
+                    <div class="caract-slide">
                         <?php if (!empty($cItem['media_path'])): ?>
                         <div class="caract-media">
                             <?php if (($cItem['media_type'] ?? 'image') === 'video'): ?>
@@ -785,95 +785,32 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </div>
 
             <?php if (count($caractItems) > 1): ?>
-            <div class="caract-nav" id="caractNav" aria-label="Navegación de características">
-                <div class="caract-dots" role="tablist">
-                    <?php foreach ($caractItems as $ci => $cItem): ?>
-                    <button class="caract-dot <?= $ci === 0 ? 'is-active' : '' ?>"
-                            data-idx="<?= $ci ?>"
-                            role="tab"
-                            aria-label="Característica <?= $ci + 1 ?>"
-                            aria-selected="<?= $ci === 0 ? 'true' : 'false' ?>"></button>
-                    <?php endforeach; ?>
-                </div>
+            <div class="caract-hint" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12H3"/><path d="M8 7l-5 5 5 5"/><path d="M16 7l5 5-5 5"/>
+                </svg>
+                <span>Desliza para ver más</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12H3"/><path d="M8 7l-5 5 5 5"/><path d="M16 7l5 5-5 5"/>
+                </svg>
             </div>
             <?php endif; ?>
 
             <script>
             (function () {
-                var track  = document.getElementById('caractTrack');
-                if (!track) return;
-                var realSlides = Array.from(track.querySelectorAll('.caract-slide'));
-                var dots       = document.querySelectorAll('#caractNav .caract-dot');
-                var total      = realSlides.length;
-                if (total < 2) return;
-                var GAP     = 14;
-                var current = 0;
+                var track = document.getElementById('caractTrack');
+                var slider = document.getElementById('caractSlider');
+                if (!track || !slider) return;
 
-                /* clone first and last for seamless wrap */
-                var cloneFirst = realSlides[0].cloneNode(true);
-                var cloneLast  = realSlides[total - 1].cloneNode(true);
-                cloneFirst.setAttribute('aria-hidden', 'true');
-                cloneLast.setAttribute('aria-hidden',  'true');
-                track.appendChild(cloneFirst);
-                track.insertBefore(cloneLast, realSlides[0]);
-
-                /* all slides including clones */
-                var slides = Array.from(track.querySelectorAll('.caract-slide'));
-                /* real slides start at index 1 (after the leading clone) */
-
-                function stepPx() {
-                    return slides[0] ? slides[0].offsetWidth + GAP : 0;
+                /* nudge — insinúa que hay más slides, se dispara una vez al cargar */
+                if (track.querySelectorAll('.caract-slide').length > 1) {
+                    setTimeout(function () {
+                        slider.scrollTo({ left: 44, behavior: 'smooth' });
+                        setTimeout(function () {
+                            slider.scrollTo({ left: 0, behavior: 'smooth' });
+                        }, 520);
+                    }, 900);
                 }
-
-                function setPos(idx, animated) {
-                    if (!animated) track.style.transition = 'none';
-                    track.style.transform = 'translateX(-' + (idx * stepPx()) + 'px)';
-                    if (!animated) track.offsetHeight; /* force reflow */
-                    if (!animated) track.style.transition = '';
-                }
-
-                function updateDots(idx) {
-                    dots.forEach(function(d, i) {
-                        d.classList.toggle('is-active', i === idx);
-                        d.setAttribute('aria-selected', i === idx ? 'true' : 'false');
-                    });
-                    realSlides.forEach(function(s, i) {
-                        s.setAttribute('aria-hidden', i !== idx ? 'true' : 'false');
-                    });
-                }
-
-                function goTo(idx) {
-                    current = (idx + total) % total;
-                    /* visual position = current + 1 (offset for leading clone) */
-                    setPos(current + 1, true);
-                    updateDots(current);
-                }
-
-                /* after transition: if we're on a clone, jump silently to the real slide */
-                track.addEventListener('transitionend', function() {
-                    /* detect if we slid to leading clone (visual pos 0) */
-                    var mat = new (window.DOMMatrix || window.WebKitCSSMatrix)(window.getComputedStyle(track).transform);
-                    var x   = mat.m41;
-                    var step = stepPx();
-                    if (step === 0) return;
-                    var pos = Math.round(-x / step);
-                    if (pos === 0) {
-                        setPos(total, false); /* jump to real last */
-                        current = total - 1;
-                    } else if (pos === total + 1) {
-                        setPos(1, false); /* jump to real first */
-                        current = 0;
-                    }
-                });
-
-                dots.forEach(function(d, i) { d.addEventListener('click', function() { goTo(i); }); });
-
-                var startX = 0;
-                track.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, {passive: true});
-                track.addEventListener('touchend', function(e) {
-                    var dx = e.changedTouches[0].clientX - startX;
-                    if (Math.abs(dx) > 40) goTo(dx < 0 ? current + 1 : current - 1);
-                }, {passive: true});
 
                 /* ── Controles de video: tap-to-pause + mute toggle ── */
                 track.addEventListener('click', function(e) {
@@ -902,23 +839,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         }
                     }
                 });
-
-                /* init at real slide 0 (visual pos 1) */
-                setPos(1, false);
-                updateDots(0);
-
-                /* nudge — insinúa que hay más slides, se dispara una vez al cargar */
-                setTimeout(function () {
-                    var step = stepPx();
-                    if (step === 0) return;
-                    var base = -(1 * step);
-                    track.style.transition = 'transform 0.55s cubic-bezier(0.22,1,0.36,1)';
-                    track.style.transform  = 'translateX(' + (base + 32) + 'px)';
-                    setTimeout(function () {
-                        track.style.transform = 'translateX(' + base + 'px)';
-                        setTimeout(function () { track.style.transition = ''; }, 560);
-                    }, 480);
-                }, 900);
             })();
             </script>
         </section>

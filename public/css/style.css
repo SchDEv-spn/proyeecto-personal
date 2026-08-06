@@ -6787,23 +6787,35 @@ img[loading="lazy"].loaded {
 
 .caract-slider {
     position: relative;
-    overflow: hidden;
     max-width: 500px;
     margin-inline: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline-start: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    cursor: grab;
     -webkit-mask-image: linear-gradient(to right, black 80%, rgba(0,0,0,0.35) 95%, transparent 100%);
     mask-image: linear-gradient(to right, black 80%, rgba(0,0,0,0.35) 95%, transparent 100%);
 }
 
+.caract-slider::-webkit-scrollbar { display: none; }
+
+.caract-slider:active { cursor: grabbing; }
+
 .caract-track {
     display: flex;
     gap: 14px;
-    transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
+    width: max-content;
+    padding-inline: 8px;
 }
 
 .caract-slide {
-    flex: 0 0 78%;
-    width: 78%;
+    flex: 0 0 78vw;
+    max-width: 380px;
+    scroll-snap-align: start;
     background: var(--bg-card, rgba(255,255,255,0.05));
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -6934,48 +6946,17 @@ img[loading="lazy"].loaded {
     opacity: 0.9;
 }
 
-/* ── Navigation ───────────────────────────────────────────── */
-.caract-nav {
+/* ── Hint de deslizar ─────────────────────────────────────── */
+.caract-hint {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 20px;
-    max-width: 500px;
-    margin-inline: auto;
-    width: 100%;
-    padding-inline: 8px;
-    box-sizing: border-box;
-}
-
-.caract-dots {
-    display: flex;
-    align-items: center;
-    justify-content: space-evenly;
-    width: 100%;
-}
-
-@keyframes caract-dot-breathe {
-    0%, 100% { transform: scale(1);    opacity: 1; }
-    50%       { transform: scale(1.7); opacity: 0.85; }
-}
-
-.caract-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--cream-dim);
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    transition: background 0.3s, transform 0.3s;
-    flex-shrink: 0;
-    animation: caract-dot-breathe 1.7s ease-in-out infinite;
-}
-
-.caract-dot.is-active {
-    background: var(--gold);
-    animation: none;
-    transform: scale(1.4);
+    gap: 8px;
+    padding: 14px 0 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--cream-muted);
+    user-select: none;
 }
 
 /* Light themes — softer card shadow */
