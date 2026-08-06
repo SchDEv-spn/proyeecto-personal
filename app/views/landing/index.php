@@ -2095,6 +2095,43 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 sumEl.style.display = parts.length ? 'flex' : 'none';
             }
 
+            function calcOrderTotal(unit, d2, d3, act, qty) {
+                if (act !== 1 || qty <= 1) return unit * qty;
+                let total = unit;
+                if (qty >= 2) total += unit * (1 - d2 / 100);
+                if (qty >= 3) total += (qty - 2) * unit * (1 - d3 / 100);
+                return total;
+            }
+
+            function updateOrderSummary(qty) {
+                const box = document.getElementById('orderSummary');
+                if (!box) return;
+                const unit = parseFloat(box.dataset.priceUnit) || 0;
+                const d2   = parseInt(box.dataset.d2, 10) || 15;
+                const d3   = parseInt(box.dataset.d3, 10) || 20;
+                const act  = parseInt(box.dataset.act, 10) || 1;
+                const subtotal = unit * qty;
+                const total    = calcOrderTotal(unit, d2, d3, act, qty);
+                const discount = subtotal - total;
+                const fmt = n => '$' + Math.round(n).toLocaleString('es-CO');
+
+                const qtyEl     = document.getElementById('summaryQty');
+                const qtyWordEl = document.getElementById('summaryQtyWord');
+                const subEl     = document.getElementById('summarySubtotal');
+                const discEl    = document.getElementById('summaryDiscount');
+                const saveRow   = document.getElementById('summarySaveRow');
+                const saveEl    = document.getElementById('summarySave');
+                const totalEl   = document.getElementById('summaryTotal');
+
+                if (qtyEl)     qtyEl.textContent = qty;
+                if (qtyWordEl) qtyWordEl.textContent = qty === 1 ? 'unidad' : 'unidades';
+                if (subEl)     subEl.textContent = fmt(subtotal);
+                if (discEl)    discEl.textContent = discount > 0 ? '-' + fmt(discount) : fmt(0);
+                if (saveRow)   saveRow.style.display = discount > 0 ? 'flex' : 'none';
+                if (saveEl)    saveEl.textContent = fmt(discount);
+                if (totalEl)   totalEl.textContent = fmt(total);
+            }
+
             function updatePricePreview(qty) {
                 const strip = document.getElementById('pricePreviewStrip');
                 const amtEl = document.getElementById('pricePreviewAmt');
@@ -2103,15 +2140,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 const d2   = parseInt(strip.dataset.d2, 10) || 15;
                 const d3   = parseInt(strip.dataset.d3, 10) || 20;
                 const act  = parseInt(strip.dataset.act, 10) || 1;
-                let total;
-                if (act !== 1 || qty <= 1) {
-                    total = unit * qty;
-                } else {
-                    total = unit;
-                    if (qty >= 2) total += unit * (1 - d2 / 100);
-                    if (qty >= 3) total += (qty - 2) * unit * (1 - d3 / 100);
-                }
+                const total = calcOrderTotal(unit, d2, d3, act, qty);
                 amtEl.textContent = '$' + Math.round(total).toLocaleString('es-CO');
+                updateOrderSummary(qty);
                 // Notificar para que updateFloatingTotal() sincronice barra y botón submit
                 document.dispatchEvent(new Event('landing:recalc'));
             }
