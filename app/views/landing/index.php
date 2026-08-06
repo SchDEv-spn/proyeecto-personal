@@ -1962,7 +1962,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 requestAnimationFrame(() => {
                     const step = form.querySelector(`.form-step[data-step="${n}"]`);
                     const first = step?.querySelector('input:not([type=hidden]):not([type=radio]), select');
-                    first?.focus({ preventScroll: true });
+                    first?.focus();
                 });
             }
 
@@ -2231,6 +2231,23 @@ $colorBorder     = $cfg['color_border']     ?? null;
             /* Enfocar el primer campo visible */
             var first = card ? card.querySelector('.form-step.is-active input:not([type="hidden"])') : null;
             if (first) setTimeout(function () { first.focus(); }, 80);
+        }
+
+        /* ── Mantener el campo enfocado visible cuando aparece el teclado ── */
+        function scrollFocusedIntoView() {
+            var el = document.activeElement;
+            if (!el || !card || !card.contains(el)) return;
+            if (!/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+            el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', scrollFocusedIntoView);
+        }
+        if (card) {
+            card.addEventListener('focusin', function (e) {
+                if (!/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+                setTimeout(scrollFocusedIntoView, 300);
+            });
         }
 
         function closeModal() {
