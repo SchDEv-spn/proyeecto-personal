@@ -380,6 +380,7 @@
   --input-border:    rgba(26,46,74,0.15);
   --form-bg:         #f0f4f8;
   --price-box-bg:    #ffffff;
+  --btn-text:        #ffffff;
 }
 
 [data-theme="minimal-clean"] body {
@@ -5306,7 +5307,7 @@ img[loading="lazy"].loaded {
     position: absolute;
     opacity: 0;
     transition: opacity 0.2s;
-    color: var(--bg);
+    color: #fff;
 }
 
 .stepper-node__label {
@@ -5327,7 +5328,7 @@ img[loading="lazy"].loaded {
     border-color: var(--gold);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 20%, transparent);
 }
-.stepper-node.is-active .stepper-node__num  { color: var(--bg); }
+.stepper-node.is-active .stepper-node__num  { color: #fff; }
 .stepper-node.is-active .stepper-node__label { color: var(--gold); font-weight: 700; }
 
 /* Estado completado */
@@ -5405,7 +5406,7 @@ img[loading="lazy"].loaded {
     flex: 1;
     padding: 14px 20px;
     background: var(--gold);
-    color: var(--bg);
+    color: #fff;
     border: none;
     border-radius: var(--radius-sm);
     font-size: 16px;
@@ -5673,7 +5674,7 @@ img[loading="lazy"].loaded {
     font-weight: 700;
     border-radius: 12px;
     background: var(--gold);
-    color: var(--bg);
+    color: #fff;
     border: none;
     cursor: pointer;
     transition: opacity 0.2s, transform 0.1s;
