@@ -1287,6 +1287,30 @@ h3 {
   }
 }
 
+/* El video del hero reutiliza los controles (.caract-video-wrap) de
+   Características, pero ese wrapper usa height:100% asumiendo un
+   contenedor padre con alto fijo — el hero no lo tiene, así que se
+   sobreescribe para que el video conserve su aspect-ratio real. */
+.hero-media .caract-video-wrap {
+  height: auto;
+}
+
+.hero-media .caract-video-wrap video {
+  height: auto;
+  aspect-ratio: 8.5 / 11;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-deep);
+  border: 1px solid var(--gold-border);
+}
+
+@media (max-width: 767px) {
+  .hero-media .caract-video-wrap video {
+    aspect-ratio: 9 / 16;
+    object-position: center;
+  }
+}
+
 /* Badge de confianza sobre la imagen */
 .hero-trust-badge {
   position: absolute;

@@ -482,11 +482,27 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
         <div class="hero-media">
             <?php if ($heroMediaType === 'video'): ?>
-                <video src="<?= htmlspecialchars($heroMediaPath) ?>"
-                    <?php if (!empty($cfg['hero_poster_path'])): ?>poster="<?= htmlspecialchars($cfg['hero_poster_path']) ?>"<?php endif; ?>
-                    autoplay muted loop playsinline
-                    preload="auto"
-                    style="max-width:100%; border-radius:10px;"></video>
+                <div class="caract-video-wrap" id="heroVideoWrap">
+                    <video src="<?= htmlspecialchars($heroMediaPath) ?>"
+                        <?php if (!empty($cfg['hero_poster_path'])): ?>poster="<?= htmlspecialchars($cfg['hero_poster_path']) ?>"<?php endif; ?>
+                        autoplay loop playsinline
+                        preload="auto"
+                        style="max-width:100%; border-radius:10px;"></video>
+                    <div class="caract-video-tap" aria-hidden="true"></div>
+                    <div class="caract-play-overlay" aria-hidden="true">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="rgba(255,255,255,0.92)" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </div>
+                    <button class="caract-vol-btn" type="button" aria-label="Silenciar / activar sonido">
+                        <svg class="caract-vol-icon caract-vol-icon--muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                            <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+                        </svg>
+                        <svg class="caract-vol-icon caract-vol-icon--sound" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                        </svg>
+                    </button>
+                </div>
             <?php else: ?>
                 <img src="<?= htmlspecialchars($heroMediaPath) ?>"
                     alt="Imagen del producto"
@@ -500,6 +516,79 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </div>
         </div>
     </header>
+
+    <?php if ($heroMediaType === 'video'): ?>
+    <script>
+    (function () {
+        var wrap = document.getElementById('heroVideoWrap');
+        if (!wrap) return;
+        var video  = wrap.querySelector('video');
+        var volBtn = wrap.querySelector('.caract-vol-btn');
+
+        function markUnmuted() {
+            if (volBtn) volBtn.classList.add('is-unmuted');
+        }
+        function markMuted() {
+            if (volBtn) volBtn.classList.remove('is-unmuted');
+        }
+
+        /* Intenta reproducir con sonido de entrada; si el navegador lo
+           bloquea (autoplay con audio sin interacción previa), cae a
+           silencioso para no perder el autoplay, y se desilencia solo
+           en cuanto el usuario toque la página por primera vez. */
+        if (video) {
+            video.muted = false;
+            var playPromise = video.play();
+            if (playPromise && typeof playPromise.then === 'function') {
+                playPromise.then(function () {
+                    if (!video.muted) markUnmuted();
+                }).catch(function () {
+                    video.muted = true;
+                    markMuted();
+                    video.play().catch(function () {});
+
+                    var unmuteOnFirstInteraction = function () {
+                        video.muted = false;
+                        markUnmuted();
+                        document.removeEventListener('click', unmuteOnFirstInteraction);
+                        document.removeEventListener('touchstart', unmuteOnFirstInteraction);
+                    };
+                    document.addEventListener('click', unmuteOnFirstInteraction, { once: true });
+                    document.addEventListener('touchstart', unmuteOnFirstInteraction, { once: true, passive: true });
+                });
+            } else if (!video.muted) {
+                markUnmuted();
+            }
+        }
+
+        /* ── Controles de video: tap-to-pause + mute toggle ── */
+        wrap.addEventListener('click', function (e) {
+            /* Mute / unmute */
+            var volBtn = e.target.closest('.caract-vol-btn');
+            if (volBtn) {
+                e.stopPropagation();
+                var isNowUnmuted = volBtn.classList.toggle('is-unmuted');
+                var volVid = wrap.querySelector('video');
+                if (volVid) volVid.muted = !isNowUnmuted;
+                return;
+            }
+            /* Tap to pause / play */
+            var tap = e.target.closest('.caract-video-tap');
+            if (tap) {
+                var video = wrap.querySelector('video');
+                if (!video) return;
+                if (video.paused) {
+                    video.play();
+                    wrap.classList.remove('is-paused');
+                } else {
+                    video.pause();
+                    wrap.classList.add('is-paused');
+                }
+            }
+        });
+    })();
+    </script>
+    <?php endif; ?>
 
     <?php
     // Orden de secciones dinámico
