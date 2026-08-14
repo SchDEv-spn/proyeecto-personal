@@ -614,6 +614,20 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 $firstColor = $colorVariants[0];
                 $mainImg    = $firstColor['images'][0] ?? '';
                 $thumbImgs  = array_slice($firstColor['images'], 1, 3);
+
+                // Colores que solo tienen 1 foto: se listan como miniaturas fijas
+                // (funcionan como selector rápido de color, independiente del color activo)
+                $singleImgColors = [];
+                foreach ($colorVariants as $cIdx => $cv) {
+                    if (count($cv['images']) === 1) {
+                        $singleImgColors[] = [
+                            'idx'  => $cIdx,
+                            'img'  => $cv['images'][0],
+                            'name' => $cv['name'],
+                            'hex'  => $cv['hex'],
+                        ];
+                    }
+                }
             } else {
                 // Sin variantes: usa las fotos del editor (con fallback)
                 $gallery = !empty($galleryPaths) ? $galleryPaths : [
@@ -630,7 +644,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <?php if (!empty($colorVariants)): ?>
             <div class="gallery-color-pills" role="group" aria-label="Colores disponibles">
                 <span class="gallery-color-pills__label">Color:</span>
-                <div class="gallery-color-pills__grid">
+                <div class="gallery-color-pills__row">
                     <?php foreach ($colorVariants as $cIdx => $cv): ?>
                     <button
                         type="button"
@@ -639,9 +653,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         data-color-images="<?= htmlspecialchars(json_encode($cv['images'], JSON_UNESCAPED_UNICODE)) ?>"
                         aria-pressed="<?= $cIdx === 0 ? 'true' : 'false' ?>"
                         aria-label="<?= htmlspecialchars($cv['name']) ?>"
-                        title="<?= htmlspecialchars($cv['name']) ?>"
-                        style="--cv-color:<?= htmlspecialchars($cv['hex']) ?>">
-                        <span class="gallery-color-pill__swatch" style="background:<?= htmlspecialchars($cv['hex']) ?>"></span>
+                        title="<?= htmlspecialchars($cv['name']) ?>">
+                        <span class="gallery-color-pill__radio" aria-hidden="true"></span>
                         <span class="gallery-color-pill__name"><?= htmlspecialchars($cv['name']) ?></span>
                     </button>
                     <?php endforeach; ?>
@@ -680,12 +693,30 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <?php endif; ?>
             </div>
 
+            <?php if (!empty($singleImgColors)): ?>
+            <div class="gallery-color-thumbs" role="list" aria-label="Otros colores disponibles">
+                <?php foreach ($singleImgColors as $sc): ?>
+                <button
+                    type="button"
+                    class="gallery-color-thumb <?= $sc['idx'] === 0 ? 'is-active' : '' ?>"
+                    role="listitem"
+                    data-color-idx="<?= $sc['idx'] ?>"
+                    aria-label="Color <?= htmlspecialchars($sc['name']) ?>"
+                    title="<?= htmlspecialchars($sc['name']) ?>"
+                    style="--cv-color:<?= htmlspecialchars($sc['hex']) ?>">
+                    <img src="<?= htmlspecialchars($sc['img']) ?>" alt="Color <?= htmlspecialchars($sc['name']) ?>" loading="lazy" decoding="async">
+                </button>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
             <?php if (!empty($colorVariants)): ?>
             <script>
             (function () {
                 var pills   = document.querySelectorAll('.gallery-color-pill');
+                var thumbs  = document.querySelectorAll('.gallery-color-thumb');
                 var gallery = document.querySelector('[data-product-gallery]');
-                if (!pills.length || !gallery) return;
+                if (!gallery || (!pills.length && !thumbs.length)) return;
 
                 function applyImages(images) {
                     var mainImg   = gallery.querySelector('.product-gallery__main-img');
@@ -713,13 +744,29 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     }
                 }
 
+                function selectColor(idx) {
+                    var pill  = document.querySelector('.gallery-color-pill[data-color-idx="' + idx + '"]');
+                    var thumb = document.querySelector('.gallery-color-thumb[data-color-idx="' + idx + '"]');
+                    if (!pill) return;
+
+                    pills.forEach(function (p) { p.classList.remove('is-active'); p.setAttribute('aria-pressed', 'false'); });
+                    thumbs.forEach(function (t) { t.classList.remove('is-active'); });
+                    pill.classList.add('is-active');
+                    pill.setAttribute('aria-pressed', 'true');
+                    if (thumb) thumb.classList.add('is-active');
+
+                    var images = JSON.parse(pill.getAttribute('data-color-images') || '[]');
+                    applyImages(images);
+                }
+
                 pills.forEach(function (pill) {
                     pill.addEventListener('click', function () {
-                        pills.forEach(function (p) { p.classList.remove('is-active'); p.setAttribute('aria-pressed', 'false'); });
-                        pill.classList.add('is-active');
-                        pill.setAttribute('aria-pressed', 'true');
-                        var images = JSON.parse(pill.getAttribute('data-color-images') || '[]');
-                        applyImages(images);
+                        selectColor(pill.getAttribute('data-color-idx'));
+                    });
+                });
+                thumbs.forEach(function (thumb) {
+                    thumb.addEventListener('click', function () {
+                        selectColor(thumb.getAttribute('data-color-idx'));
                     });
                 });
             })();
