@@ -630,19 +630,22 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <?php if (!empty($colorVariants)): ?>
             <div class="gallery-color-pills" role="group" aria-label="Colores disponibles">
                 <span class="gallery-color-pills__label">Color:</span>
-                <?php foreach ($colorVariants as $cIdx => $cv): ?>
-                <button
-                    type="button"
-                    class="color-pill <?= $cIdx === 0 ? 'is-active' : '' ?>"
-                    data-color-idx="<?= $cIdx ?>"
-                    data-color-images="<?= htmlspecialchars(json_encode($cv['images'], JSON_UNESCAPED_UNICODE)) ?>"
-                    aria-label="<?= htmlspecialchars($cv['name']) ?>"
-                    title="<?= htmlspecialchars($cv['name']) ?>"
-                    style="--cv-color:<?= htmlspecialchars($cv['hex']) ?>">
-                    <span class="color-pill__swatch" style="background:<?= htmlspecialchars($cv['hex']) ?>"></span>
-                    <span class="color-pill__name"><?= htmlspecialchars($cv['name']) ?></span>
-                </button>
-                <?php endforeach; ?>
+                <div class="gallery-color-pills__grid">
+                    <?php foreach ($colorVariants as $cIdx => $cv): ?>
+                    <button
+                        type="button"
+                        class="gallery-color-pill <?= $cIdx === 0 ? 'is-active' : '' ?>"
+                        data-color-idx="<?= $cIdx ?>"
+                        data-color-images="<?= htmlspecialchars(json_encode($cv['images'], JSON_UNESCAPED_UNICODE)) ?>"
+                        aria-pressed="<?= $cIdx === 0 ? 'true' : 'false' ?>"
+                        aria-label="<?= htmlspecialchars($cv['name']) ?>"
+                        title="<?= htmlspecialchars($cv['name']) ?>"
+                        style="--cv-color:<?= htmlspecialchars($cv['hex']) ?>">
+                        <span class="gallery-color-pill__swatch" style="background:<?= htmlspecialchars($cv['hex']) ?>"></span>
+                        <span class="gallery-color-pill__name"><?= htmlspecialchars($cv['name']) ?></span>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
             </div>
             <?php endif; ?>
 
@@ -680,7 +683,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <?php if (!empty($colorVariants)): ?>
             <script>
             (function () {
-                var pills   = document.querySelectorAll('.color-pill');
+                var pills   = document.querySelectorAll('.gallery-color-pill');
                 var gallery = document.querySelector('[data-product-gallery]');
                 if (!pills.length || !gallery) return;
 
@@ -712,8 +715,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                 pills.forEach(function (pill) {
                     pill.addEventListener('click', function () {
-                        pills.forEach(function (p) { p.classList.remove('is-active'); });
+                        pills.forEach(function (p) { p.classList.remove('is-active'); p.setAttribute('aria-pressed', 'false'); });
                         pill.classList.add('is-active');
+                        pill.setAttribute('aria-pressed', 'true');
                         var images = JSON.parse(pill.getAttribute('data-color-images') || '[]');
                         applyImages(images);
                     });
