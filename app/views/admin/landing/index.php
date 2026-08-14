@@ -535,9 +535,13 @@
                           $cvHex  = htmlspecialchars($cv['hex']  ?? '#000000');
                           $cvImgs = array_pad($cv['images'] ?? [], 4, '');
                         ?>
-                        <div class="mini-card">
+                        <div class="mini-card" id="cvCard<?= $ci ?>">
                           <div class="mini-card-title">
                             <span><i class="fas fa-circle" aria-hidden="true" style="color:<?= htmlspecialchars($cv['hex'] ?? '#888') ?>"></i> Color <?= $ci ?></span>
+                            <button type="button" class="btn-cv-remove" title="Quitar este color y sus imágenes"
+                              onclick="landingCvRemoveColor(<?= $ci ?>)">
+                              <i class="fas fa-trash-alt" aria-hidden="true"></i> Quitar
+                            </button>
                           </div>
 
                           <div class="admin-form-group" style="margin-bottom:8px;">
@@ -574,23 +578,53 @@
                           ?>
                           <div class="admin-form-group" style="margin-bottom:8px;">
                             <label style="font-size:0.8rem; opacity:0.75;">Imagen <?= $gi ?></label>
-                            <div class="media-preview" style="margin-bottom:4px; height:80px;">
+                            <div class="media-preview" id="cv<?= $ci ?>_g<?= $gi ?>_preview" style="margin-bottom:4px; height:80px;">
                               <?php if ($gSrc !== ''): ?>
                                 <img src="<?= $gSrc ?>" alt="Color <?= $ci ?> img <?= $gi ?>" style="height:100%; object-fit:cover; border-radius:6px;">
+                                <button type="button" class="btn-media-remove" title="Quitar imagen"
+                                  onclick="landingCvRemoveImage(<?= $ci ?>, <?= $gi ?>)">
+                                  <i class="fas fa-times" aria-hidden="true"></i>
+                                </button>
                               <?php else: ?>
                                 <div class="media-empty" style="height:80px;">
                                   <i class="fas fa-image"></i>
                                 </div>
                               <?php endif; ?>
                             </div>
-                            <input type="hidden" name="<?= $gActual ?>" value="<?= $gSrc ?>">
-                            <input type="file" name="<?= $gFile ?>" accept="image/*" style="font-size:0.8rem;">
+                            <input type="hidden" id="<?= $gActual ?>" name="<?= $gActual ?>" value="<?= $gSrc ?>">
+                            <input type="file" id="<?= $gFile ?>" name="<?= $gFile ?>" accept="image/*" style="font-size:0.8rem;">
                           </div>
                           <?php endfor; ?>
                         </div>
                         <?php endfor; ?>
                       </div>
                     </div>
+
+                    <script>
+                    function landingCvRemoveImage(ci, gi) {
+                      var actual  = document.getElementById('cv' + ci + '_g' + gi + '_actual');
+                      var file    = document.getElementById('cv' + ci + '_g' + gi + '_file');
+                      var preview = document.getElementById('cv' + ci + '_g' + gi + '_preview');
+                      if (actual) actual.value = '';
+                      if (file)   file.value = '';
+                      if (preview) {
+                        preview.innerHTML = '<div class="media-empty" style="height:80px;"><i class="fas fa-image"></i></div>';
+                      }
+                    }
+
+                    function landingCvRemoveColor(ci) {
+                      if (!confirm('¿Quitar este color y todas sus imágenes?')) return;
+                      var name = document.getElementById('cv' + ci + '_name');
+                      if (name) name.value = '';
+                      var hex = document.getElementById('cv' + ci + '_hex');
+                      if (hex) {
+                        hex.value = '#000000';
+                        var txt = hex.closest('.admin-form-group').querySelector('input[type=text]');
+                        if (txt) txt.value = '#000000';
+                      }
+                      for (var gi = 1; gi <= 4; gi++) landingCvRemoveImage(ci, gi);
+                    }
+                    </script>
 
                   </div>
 

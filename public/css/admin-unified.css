@@ -3591,6 +3591,47 @@ div.dataTables_paginate { display: flex; align-items: center; gap: 4px; flex-wra
 
 /* Dentro de mini-card: ocultar hints del dropzone para no overflow en columnas estrechas */
 .mini-card .ux-dropzone-hint { display: none; }
+
+/* Botón "Quitar" color de variante — en el header del mini-card */
+.btn-cv-remove {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.9);
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background var(--t), border-color var(--t);
+  flex-shrink: 0;
+}
+.btn-cv-remove:hover { background: rgba(220,53,69,.85); border-color: rgba(220,53,69,.9); }
+.btn-cv-remove i { width: auto; height: auto; background: none; font-size: 10px; }
+
+/* Botón "✕" para quitar una imagen individual sobre su preview */
+.btn-media-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  transition: background var(--t);
+}
+.btn-media-remove:hover { background: rgba(220,53,69,.9); }
 /* Labels marcados como upload-label → ocultos (el dropzone tiene su ícono) */
 .mini-card .upload-label-hidden { display: none; }
 
