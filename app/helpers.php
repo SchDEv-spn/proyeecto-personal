@@ -86,3 +86,30 @@ function total_con_descuento(int $cantidad, float $precioUnit, int $d2, int $d3,
 
     return $total;
 }
+
+/**
+ * ¿Estamos en un entorno de desarrollo (XAMPP local, red interna, dominio .test)?
+ *
+ * Se usa para no disparar analytics (Clarity, Pixel) desde local: hasta ahora
+ * las pruebas en localhost se mezclaban con el tráfico real en el mismo
+ * proyecto de Clarity y sesgaban todos los promedios.
+ *
+ * APP_ENV en .env manda cuando está definido; si no (producción no lleva .env,
+ * está en .gitignore), se decide por el host de la petición.
+ */
+function es_entorno_local(): bool
+{
+    $env = getenv('APP_ENV');
+    if ($env !== false && $env !== '') {
+        return strtolower(trim($env)) !== 'production';
+    }
+
+    $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+    $host = explode(':', $host)[0];
+
+    if ($host === '' || $host === 'localhost' || $host === '127.0.0.1' || $host === '::1') return true;
+    if (str_ends_with($host, '.local') || str_ends_with($host, '.test')) return true;
+    if (str_starts_with($host, '192.168.') || str_starts_with($host, '10.')) return true;
+
+    return false;
+}
