@@ -532,32 +532,45 @@ $colorBorder     = $cfg['color_border']     ?? null;
             if (volBtn) volBtn.classList.remove('is-unmuted');
         }
 
+        /* Si la página está embebida en un iframe (p.ej. la vista previa
+           en vivo del editor de Landing), nunca se intenta sonido — solo
+           reproduce silencioso. Evita que el video suene solo dentro del
+           panel de administración al guardar cambios. */
+        var isEmbedded = false;
+        try { isEmbedded = window.self !== window.top; } catch (e) { isEmbedded = true; }
+
         /* Intenta reproducir con sonido de entrada; si el navegador lo
            bloquea (autoplay con audio sin interacción previa), cae a
            silencioso para no perder el autoplay, y se desilencia solo
            en cuanto el usuario toque la página por primera vez. */
         if (video) {
-            video.muted = false;
-            var playPromise = video.play();
-            if (playPromise && typeof playPromise.then === 'function') {
-                playPromise.then(function () {
-                    if (!video.muted) markUnmuted();
-                }).catch(function () {
-                    video.muted = true;
-                    markMuted();
-                    video.play().catch(function () {});
+            if (isEmbedded) {
+                video.muted = true;
+                markMuted();
+                video.play().catch(function () {});
+            } else {
+                video.muted = false;
+                var playPromise = video.play();
+                if (playPromise && typeof playPromise.then === 'function') {
+                    playPromise.then(function () {
+                        if (!video.muted) markUnmuted();
+                    }).catch(function () {
+                        video.muted = true;
+                        markMuted();
+                        video.play().catch(function () {});
 
-                    var unmuteOnFirstInteraction = function () {
-                        video.muted = false;
-                        markUnmuted();
-                        document.removeEventListener('click', unmuteOnFirstInteraction);
-                        document.removeEventListener('touchstart', unmuteOnFirstInteraction);
-                    };
-                    document.addEventListener('click', unmuteOnFirstInteraction, { once: true });
-                    document.addEventListener('touchstart', unmuteOnFirstInteraction, { once: true, passive: true });
-                });
-            } else if (!video.muted) {
-                markUnmuted();
+                        var unmuteOnFirstInteraction = function () {
+                            video.muted = false;
+                            markUnmuted();
+                            document.removeEventListener('click', unmuteOnFirstInteraction);
+                            document.removeEventListener('touchstart', unmuteOnFirstInteraction);
+                        };
+                        document.addEventListener('click', unmuteOnFirstInteraction, { once: true });
+                        document.addEventListener('touchstart', unmuteOnFirstInteraction, { once: true, passive: true });
+                    });
+                } else if (!video.muted) {
+                    markUnmuted();
+                }
             }
         }
 
