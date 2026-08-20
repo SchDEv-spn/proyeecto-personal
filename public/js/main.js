@@ -279,40 +279,34 @@ function initGallery() {
 
     if (!mainImg || !thumbs.length) return;
 
-    let allSrcs = [mainImg.src, ...thumbs.map(t => t.dataset.src || t.getAttribute('data-src') || '')];
-    let currentIdx = 0;
+    // Modelo: la foto principal y cada miniatura son "casillas" — al elegir
+    // una miniatura, intercambia su imagen con la que está en la casilla
+    // principal (en vez de solo pisar la principal y perder esa foto).
+    // Así las 4 fotos siguen siendo accesibles sin importar cuántas veces
+    // se cambie de foto.
+    let swipePointer = 0; // cicla 0..N-1 para saber qué miniatura toca en el próximo swipe
 
-    // updateState=false solo pinta el resaltado visual, sin tocar currentIdx
-    // (usado al cargar/reiniciar, cuando el thumb resaltado no es realmente
-    // la imagen que se está mostrando en ese momento — evita que el primer
-    // clic en esa miniatura no haga nada por creer que "ya estamos ahí").
-    function setActive(idx, updateState) {
-        if (updateState !== false) currentIdx = idx;
-        thumbs.forEach((t, i) => {
-            const on = (i === idx - 1);
-            t.classList.toggle('active',    on);
-            t.classList.toggle('is-active', on);
-            const ti = t.querySelector('img');
-            if (ti) ti.style.opacity = on ? '1' : '0.65';
-        });
-    }
+    function swapWithThumb(thumb) {
+        const thumbImgEl = thumb.querySelector('img');
+        if (!thumbImgEl) return;
 
-    function navigateTo(idx) {
-        if (idx < 0 || idx >= allSrcs.length || idx === currentIdx) return;
-        mainImg.src = allSrcs[idx];
-        setActive(idx);
+        const mainSrc  = mainImg.src;
+        const thumbSrc = thumbImgEl.getAttribute('src') || thumbImgEl.src;
+        if (!thumbSrc || thumbSrc === mainSrc) return;
+
+        mainImg.src = thumbSrc;
+        thumbImgEl.src = mainSrc;
+        thumb.dataset.src = mainSrc;
+        thumb.setAttribute('data-src', mainSrc);
+
         stopThumbPulse();
     }
 
-    // Permite que código externo (pills de color) reinicie las fuentes tras swap de DOM
+    // Permite que código externo (pills de color) reinicie el puntero de swipe
+    // tras swap de DOM (p.ej. al cambiar de color)
     window.galleryRefresh = function () {
-        allSrcs = [mainImg.src, ...thumbs.map(t => t.dataset.src || t.getAttribute('data-src') || '')];
-        currentIdx = 0;
-        setActive(1, false);
+        swipePointer = 0;
     };
-
-    // Estado inicial: primera miniatura resaltada visualmente
-    setActive(1, false);
 
     // ── Pulse en miniaturas para invitar al usuario ────────────
     function stopThumbPulse() {
@@ -324,28 +318,24 @@ function initGallery() {
     }, 1200);
 
     // Click en miniatura
-    thumbs.forEach((thumb, i) => {
-        thumb.addEventListener('click', () => navigateTo(i + 1));
+    thumbs.forEach((thumb) => {
+        thumb.addEventListener('click', () => swapWithThumb(thumb));
     });
 
     // ── Swipe en imagen principal ──────────────────────────────
-    let swipeX = 0, swipeY = 0, didSwipe = false;
+    let swipeX = 0, swipeY = 0;
 
     mainFigure.addEventListener('touchstart', e => {
-        swipeX   = e.touches[0].clientX;
-        swipeY   = e.touches[0].clientY;
-        didSwipe = false;
+        swipeX = e.touches[0].clientX;
+        swipeY = e.touches[0].clientY;
     }, { passive: true });
 
     mainFigure.addEventListener('touchend', e => {
         const dx = e.changedTouches[0].clientX - swipeX;
         const dy = e.changedTouches[0].clientY - swipeY;
-        if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
-        didSwipe = true;
-        stopThumbPulse();
-        navigateTo(dx < 0
-            ? Math.min(currentIdx + 1, allSrcs.length - 1)
-            : Math.max(currentIdx - 1, 0));
+        if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx) || !thumbs.length) return;
+        swapWithThumb(thumbs[swipePointer]);
+        swipePointer = (swipePointer + (dx < 0 ? 1 : -1) + thumbs.length) % thumbs.length;
     }, { passive: true });
 
     // Marcar imágenes loaded (skeleton CSS)
