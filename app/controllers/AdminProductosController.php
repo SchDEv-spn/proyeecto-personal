@@ -73,6 +73,14 @@ class AdminProductosController extends Controller
             return false;
         }
 
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        $finfo    = new finfo(FILEINFO_MIME_TYPE);
+        $mimeReal = $finfo->file($file['tmp_name']);
+        if (!in_array($mimeReal, $allowedMimes, true)) {
+            $errores[] = "El contenido del archivo no coincide con una imagen JPG, PNG o WEBP válida.";
+            return false;
+        }
+
         return true;
     }
 

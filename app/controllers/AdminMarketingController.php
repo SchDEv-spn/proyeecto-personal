@@ -32,6 +32,7 @@ class AdminMarketingController extends Controller
     public function generarAnuncios(): void
     {
         $this->requireLogin();
+        $this->requireCsrf();
         while (ob_get_level()) ob_end_clean();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -145,6 +146,7 @@ class AdminMarketingController extends Controller
     public function sugerirPrompt(): void
     {
         $this->requireLogin();
+        $this->requireCsrf();
         while (ob_get_level()) ob_end_clean();
         header('Content-Type: application/json; charset=utf-8');
 
@@ -235,6 +237,7 @@ PROMPT;
     public function regenerarImagen(): void
     {
         $this->requireLogin();
+        $this->requireCsrf();
         while (ob_get_level()) ob_end_clean();
         header('Content-Type: application/json; charset=utf-8');
 

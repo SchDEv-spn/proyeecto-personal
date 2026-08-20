@@ -32,9 +32,7 @@ class AdminPlantillasWaController extends Controller
         foreach ($estados as $estado) {
             $titulo  = trim($_POST["titulo_{$estado}"]  ?? '');
             $mensaje = trim($_POST["mensaje_{$estado}"] ?? '');
-            if ($mensaje !== '') {
-                $model->upsert($estado, $titulo, $mensaje);
-            }
+            $model->upsert($estado, $titulo, $mensaje);
         }
 
         header('Location: ' . BASE_URL . '/AdminPlantillasWa/index?saved=1');

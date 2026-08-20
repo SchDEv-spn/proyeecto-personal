@@ -79,14 +79,16 @@ class PlantillaWa extends Model
         ];
     }
 
+    // Solo agrega estados que todavía no existan en la tabla (p.ej. si en el
+    // futuro se agrega un estado nuevo a self::textos()). NUNCA debe tocar
+    // filas ya existentes: sobrescribía en cada request cualquier plantilla
+    // que el admin hubiera personalizado, con INSERT ... ON DUPLICATE KEY
+    // UPDATE incondicional — el admin nunca podía guardar un cambio real.
     private function migrateTemplates(): void
     {
         $stmt = $this->db->prepare("
-            INSERT INTO plantillas_wa (estado, titulo, mensaje)
+            INSERT IGNORE INTO plantillas_wa (estado, titulo, mensaje)
             VALUES (:estado, :titulo, :mensaje)
-            ON DUPLICATE KEY UPDATE
-                titulo  = VALUES(titulo),
-                mensaje = VALUES(mensaje)
         ");
 
         foreach (self::textos() as $estado => $data) {

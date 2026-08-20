@@ -741,6 +741,7 @@ $showSearch      = false;
 <script>
 (function () {
     const BASE = '<?= BASE_URL ?>';
+    const CSRF_TOKEN = '<?= csrf_token() ?>';
 
     const fotoInput   = document.getElementById('mktFoto');
     const uploadZone  = document.getElementById('mktUploadZone');
@@ -804,6 +805,7 @@ $showSearch      = false;
         const localBlobSrc = previewImg.src;
 
         const fd = new FormData();
+        fd.append('csrf_token', CSRF_TOKEN);
         fd.append('foto',     fotoInput.files[0]);
         fd.append('nombre',   nombre);
         fd.append('precio',   precio);
@@ -973,6 +975,7 @@ $showSearch      = false;
             this.disabled = true;
             this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pensando...';
             const fd = new FormData();
+            fd.append('csrf_token', CSRF_TOKEN);
             fd.append('tipo',             tipo);
             fd.append('nombre',           _sessionData.nombre           || '');
             fd.append('caracteristicas',  _sessionData.caracteristicas  || '');
@@ -1006,6 +1009,7 @@ $showSearch      = false;
             wrap.innerHTML = '<span style="font-size:13px;color:#9ca3af;display:flex;align-items:center;gap:6px;height:100%;justify-content:center"><i class="fas fa-spinner fa-spin"></i> Regenerando...</span>';
 
             const fd = new FormData();
+            fd.append('csrf_token', CSRF_TOKEN);
             fd.append('tema',       tema);
             fd.append('prompt',     customPrompt);
             fd.append('image_path', imagePath);
