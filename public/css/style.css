@@ -1667,7 +1667,7 @@ h3 {
 
 .product-gallery__thumb img {
   width: 100%;
-  aspect-ratio: 8.5 / 11;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   display: block;
   transition: transform 0.3s ease;
