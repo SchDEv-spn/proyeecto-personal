@@ -2502,7 +2502,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
     </div>
 
     <script src="<?= BASE_URL ?>/public/js/pricing-summary.js" defer></script>
-    <script src="<?= BASE_URL ?>/public/js/pricing-combo.js" defer></script>
     <script src="<?= BASE_URL ?>/public/js/funcionesLandin.js" defer></script>
 
     <!-- Botón WhatsApp flotante -->

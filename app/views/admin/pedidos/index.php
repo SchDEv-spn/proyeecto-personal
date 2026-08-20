@@ -492,6 +492,7 @@
                     infoEmpty:       'Sin pedidos',
                     infoFiltered:    '(filtrado de _MAX_)',
                     zeroRecords:     'Sin resultados para este filtro.',
+                    emptyTable:      'Sin pedidos en este período.',
                     paginate: { first: '«', last: '»', next: '›', previous: '‹' }
                 },
                 dom: 't<"dt-bottom"ip>',

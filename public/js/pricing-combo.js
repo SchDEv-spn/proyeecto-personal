@@ -4,7 +4,7 @@
   if (!cfgEl) return;
 
   // IMPORTANTE: toma el primer form correcto
-  const form = document.querySelector('form[action=(window.BASE_URL||"")+"/Landing/enviarPedido"]');
+  const form = document.getElementById('formPedido');
   if (!form) return;
 
   // OJO: busca el selector dentro del form (para evitar agarrar uno “duplicado” fuera)
@@ -344,7 +344,7 @@
   updateSummary();
 });
 document.addEventListener('DOMContentLoaded', () => {
-  const form = document.querySelector('form[action=(window.BASE_URL||"")+"/Landing/enviarPedido"]');
+  const form = document.getElementById('formPedido');
   if (!form) return;
 
   const pricingMode = document.getElementById('pricingMode');

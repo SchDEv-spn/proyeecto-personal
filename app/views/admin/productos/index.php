@@ -237,6 +237,9 @@
         </main>
     </div>
 
+    <!-- jQuery (requerido por DataTables CDN) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
+    <!-- DataTables -->
     <script src="https://cdn.datatables.net/2.3.5/js/dataTables.min.js"></script>
     <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
     <script>
@@ -250,7 +253,9 @@
             language: {
                 search: '', searchPlaceholder: 'Buscar…',
                 info: '_TOTAL_ productos', infoEmpty: 'Sin productos',
+                infoFiltered: '(filtrado de _MAX_)',
                 zeroRecords: 'Sin resultados.',
+                emptyTable: 'Sin productos registrados.',
                 paginate: { first:'«', last:'»', next:'›', previous:'‹' }
             },
             dom: 't<"dt-bottom"ip>'
