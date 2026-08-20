@@ -282,8 +282,12 @@ function initGallery() {
     let allSrcs = [mainImg.src, ...thumbs.map(t => t.dataset.src || t.getAttribute('data-src') || '')];
     let currentIdx = 0;
 
-    function setActive(idx) {
-        currentIdx = idx;
+    // updateState=false solo pinta el resaltado visual, sin tocar currentIdx
+    // (usado al cargar/reiniciar, cuando el thumb resaltado no es realmente
+    // la imagen que se está mostrando en ese momento — evita que el primer
+    // clic en esa miniatura no haga nada por creer que "ya estamos ahí").
+    function setActive(idx, updateState) {
+        if (updateState !== false) currentIdx = idx;
         thumbs.forEach((t, i) => {
             const on = (i === idx - 1);
             t.classList.toggle('active',    on);
@@ -304,11 +308,11 @@ function initGallery() {
     window.galleryRefresh = function () {
         allSrcs = [mainImg.src, ...thumbs.map(t => t.dataset.src || t.getAttribute('data-src') || '')];
         currentIdx = 0;
-        setActive(1);
+        setActive(1, false);
     };
 
     // Estado inicial: primera miniatura resaltada visualmente
-    setActive(1);
+    setActive(1, false);
 
     // ── Pulse en miniaturas para invitar al usuario ────────────
     function stopThumbPulse() {
