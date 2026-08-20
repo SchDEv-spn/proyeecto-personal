@@ -153,6 +153,7 @@
                                     $landingUrl      = $slug !== ''
                                         ? BASE_URL . '/producto/' . urlencode($slug)
                                         : BASE_URL . '/Landing/index?producto_id=' . urlencode($p['id']);
+                                    $landingUrlAbs   = 'https://' . ($_SERVER['HTTP_HOST'] ?? '') . $landingUrl;
 
                                     $imgRaw = trim((string)($p['imagen_principal'] ?? ''));
                                     $imgSrc = '';
@@ -207,6 +208,12 @@
 
                                         <td>
                                             <div class="dt-actions">
+                                                <button type="button"
+                                                   class="btn-detail btn-detail--sm js-copy"
+                                                   data-copy="<?= htmlspecialchars($landingUrlAbs) ?>"
+                                                   title="Copiar enlace para anuncios (ej. Facebook Ads)">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
                                                 <a href="<?= htmlspecialchars($landingUrl) ?>"
                                                    target="_blank" rel="noopener"
                                                    class="btn-detail btn-detail--sm"
