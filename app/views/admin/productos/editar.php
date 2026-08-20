@@ -124,7 +124,7 @@
                     <div class="wizard-panel is-active" data-panel="0">
                         <div class="wizard-panel__head">
                             <div class="wph-icon"><i class="fas fa-tag"></i></div>
-                            <div class="wph-text"><h3>Información básica</h3><p>Nombre e ID del producto en la plataforma.</p></div>
+                            <div class="wph-text"><h2>Información básica</h2><p>Nombre e ID del producto en la plataforma.</p></div>
                         </div>
                         <div class="form-grid">
                             <div class="form-group form-group--full">
@@ -146,7 +146,7 @@
                     <div class="wizard-panel" data-panel="1">
                         <div class="wizard-panel__head">
                             <div class="wph-icon"><i class="fas fa-dollar-sign"></i></div>
-                            <div class="wph-text"><h3>Precios</h3><p>Ajusta los precios de venta y el costo interno.</p></div>
+                            <div class="wph-text"><h2>Precios</h2><p>Ajusta los precios de venta y el costo interno.</p></div>
                         </div>
                         <div class="form-grid">
                             <div class="form-group">
@@ -194,7 +194,7 @@
                     <div class="wizard-panel" data-panel="2">
                         <div class="wizard-panel__head">
                             <div class="wph-icon"><i class="fas fa-percent"></i></div>
-                            <div class="wph-text"><h3>Estrategia de descuentos</h3><p>Configura los descuentos por cantidad.</p></div>
+                            <div class="wph-text"><h2>Estrategia de descuentos</h2><p>Configura los descuentos por cantidad.</p></div>
                         </div>
                         <div class="form-grid">
                             <div class="form-group form-group--full">
@@ -226,7 +226,7 @@
                     <div class="wizard-panel" data-panel="3">
                         <div class="wizard-panel__head">
                             <div class="wph-icon"><i class="fas fa-image"></i></div>
-                            <div class="wph-text"><h3>Imagen y colores</h3><p>Reemplaza la imagen principal o gestiona los colores disponibles.</p></div>
+                            <div class="wph-text"><h2>Imagen y colores</h2><p>Reemplaza la imagen principal o gestiona los colores disponibles.</p></div>
                         </div>
                         <div class="form-grid">
 
@@ -308,6 +308,10 @@
     </main>
 
 </div>
+
+<script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
+
+<script src="<?= BASE_URL ?>/public/js/form-labels.js"></script>
 
 <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 <script>

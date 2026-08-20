@@ -30,15 +30,18 @@
         return el !== h2;
       });
 
-      /* -- Toggle header -- */
+      /* -- Toggle header --
+         El header es solo un contenedor: el control que abre y cierra es un
+         <button> real dentro de él. Antes el propio header era role="button" y
+         otros botones (IA, visibilidad) quedaban anidados dentro, lo que deja
+         controles inalcanzables para lectores de pantalla. */
       var header = document.createElement('div');
       header.className = 'sec-toggle-header';
-      header.setAttribute('tabindex', '0');
-      header.setAttribute('role', 'button');
-      header.setAttribute('aria-expanded', 'true');
 
-      var titleEl = document.createElement('span');
+      var titleEl = document.createElement('button');
+      titleEl.type = 'button';
       titleEl.className = 'sec-toggle-title';
+      titleEl.setAttribute('aria-expanded', 'true');
       titleEl.textContent = h2.textContent.trim();
 
       var badge = document.createElement('span');
@@ -48,9 +51,9 @@
       chevron.className = 'sec-chevron sec-chevron--open';
       chevron.setAttribute('aria-hidden', 'true');
 
+      titleEl.appendChild(chevron);
       header.appendChild(titleEl);
       header.appendChild(badge);
-      header.appendChild(chevron);
 
       /* -- Body colapsable -- */
       var body = document.createElement('div');
@@ -70,7 +73,7 @@
 
         body.classList.toggle('sec-body--open', open);
         chevron.classList.toggle('sec-chevron--open', open);
-        header.setAttribute('aria-expanded', String(open));
+        titleEl.setAttribute('aria-expanded', String(open));
         setTimeout(updateExpandInfo, 30);
       };
 
@@ -78,12 +81,10 @@
       section._uxBadge = badge;
 
       /* -- Eventos -- */
-      header.addEventListener('click', function () { section._uxToggle(); });
-      header.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          section._uxToggle();
-        }
+      // El <button> ya responde a Enter y Espacio por sí mismo.
+      titleEl.addEventListener('click', function (e) {
+        e.stopPropagation();
+        section._uxToggle();
       });
     });
   }

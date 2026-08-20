@@ -27,7 +27,7 @@ window.BASE_URL = '<?= BASE_URL ?>';
         </button>
 
         <div>
-            <h3><?= htmlspecialchars($pageTitle) ?></h3>
+            <h1><?= htmlspecialchars($pageTitle) ?></h1>
             <p><?= htmlspecialchars($pageSubtitle) ?></p>
         </div>
     </div>

@@ -88,7 +88,7 @@
             align-items: center;
             gap: .5rem;
             background: var(--gold);
-            color: var(--tx-inverse);
+            color: #fff; /* 4.9:1 sobre --gold */
             border: none;
             border-radius: var(--r-sm);
             font-family: var(--font-display);
@@ -301,6 +301,8 @@ $initials = strtoupper(substr($usuarioNombre, 0, 1) . (strpos($usuarioNombre, ' 
         </section>
     </main>
 </div>
+
+<script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
 
 <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 <script>

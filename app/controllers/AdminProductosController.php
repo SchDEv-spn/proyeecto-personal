@@ -53,6 +53,28 @@ class AdminProductosController extends Controller
         return max(0, min(100, $v));
     }
 
+    /**
+     * Coherencia económica del producto. Antes, un descuento del 300% se
+     * recortaba a 100% en silencio y un precio de proveedor mayor al de venta
+     * se guardaba tal cual, dejando márgenes negativos en el listado.
+     */
+    private function validarEconomia($d2Raw, $d3Raw, float $precioVenta, float $precioProveedor, array &$errores): void
+    {
+        foreach ([['2da', $d2Raw], ['3ra+', $d3Raw]] as [$etiqueta, $raw]) {
+            if ($raw === null || $raw === '') continue;
+            $n = (int)$raw;
+            if ($n < 0 || $n > 90) {
+                $errores[] = "El descuento de {$etiqueta} unidad debe estar entre 0% y 90%.";
+            }
+        }
+
+        if ($precioVenta > 0 && $precioProveedor >= $precioVenta) {
+            $errores[] = "El precio del proveedor ($" . number_format($precioProveedor, 0, ',', '.')
+                . ") es mayor o igual al de venta ($" . number_format($precioVenta, 0, ',', '.')
+                . "). Cada venta daría pérdida.";
+        }
+    }
+
     /** Valida imagen subida (mínimo) */
     private function validarImagenUpload(array $file, array &$errores): bool
     {
@@ -190,6 +212,8 @@ class AdminProductosController extends Controller
         if ($descuento3 < $descuento2) {
             $errores[] = "El descuento 3ra+ debería ser mayor o igual al de 2da unidad.";
         }
+
+        $this->validarEconomia($_POST['descuento_2da'] ?? null, $_POST['descuento_3ra'] ?? null, $precioVenta, $precioProveedor, $errores);
 
         $old = [
             'nombre'           => $nombre,
@@ -403,6 +427,8 @@ class AdminProductosController extends Controller
         if ($descuento3 < $descuento2) {
             $errores[] = "El descuento 3ra+ debería ser mayor o igual al de 2da unidad.";
         }
+
+        $this->validarEconomia($_POST['descuento_2da'] ?? null, $_POST['descuento_3ra'] ?? null, $precioVenta, $precioProveedor, $errores);
 
         $old = [
             'id'               => $id,

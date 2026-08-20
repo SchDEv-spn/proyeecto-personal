@@ -37,7 +37,7 @@
   --sidebar-tx-h:       #ffffff;
   --sidebar-active-bg:  rgba(255,255,255,.14);
   --sidebar-active-tx:  #ffffff;
-  --sidebar-label-tx:   rgba(255,255,255,.35);
+  --sidebar-label-tx:   rgba(255,255,255,.58); /* 5.2:1 sobre --sidebar-bg (AA) */
 
   /* Bordes */
   --border:        #E5E9E6;
@@ -45,12 +45,12 @@
 
   /* Texto */
   --tx:       #111827;
-  --tx-muted: #6B7280;
-  --tx-dim:   #9CA3AF;
+  --tx-muted: #56606E; /* 6.4:1 sobre blanco, 5.7:1 sobre #f1f3f5 */
+  --tx-dim:   #626C78; /* 5.9:1 sobre blanco; #9CA3AF daba 2.4-2.5 */
 
   /* Semánticos */
   --green:  #15803D;
-  --red:    #DC2626;
+  --red:    #B01717; /* 5.4:1 sobre --soft-red; #DC2626 daba 3.95 */
   --blue:   #2563EB;
   --purple: #7C3AED;
   --cyan:   #0891B2;
@@ -254,7 +254,7 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
 }
 .sidebar-nav a.active i { color: rgba(255,255,255,.85); }
 
-.sidebar-nav__logout { color: rgba(255,255,255,.35) !important; margin-top: var(--sp-2); }
+.sidebar-nav__logout { color: rgba(255,255,255,.72) !important; /* 7.1:1 — es un enlace de acción */ margin-top: var(--sp-2); }
 .sidebar-nav__logout:hover { color: #fca5a5 !important; background: rgba(239,68,68,.18) !important; }
 
 /* sidebar-upgrade eliminado — usuario ahora vive en el header */
@@ -288,7 +288,7 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
 .header-greeting { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; overflow: hidden; }
 .header-greeting--with-menu { flex-direction: row; align-items: center; gap: var(--sp-3); }
 .header-greeting--with-menu > div { min-width: 0; overflow: hidden; }
-.header-greeting h3 {
+.header-greeting h1, .header-greeting h3 {
   font-size: var(--text-lg);
   font-weight: 800;
   color: var(--tx);
@@ -612,7 +612,7 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   border-bottom: none;
   border-radius: var(--r-xl) var(--r-xl) 0 0;
 }
-.panel__head h4 { font-size: var(--text-sm); font-weight: 700; color: rgba(255,255,255,.92); }
+.panel__head h2, .panel__head h4 { font-size: var(--text-sm); font-weight: 700; color: rgba(255,255,255,.92); }
 
 .chip {
   font-size: var(--text-xs);
@@ -664,6 +664,9 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-sm), 0 0 0 0 transparent;
   padding: var(--sp-5);
+  /* Sin esto el item de grid no baja de su min-content (~175px) y dos tarjetas
+     desbordan el ancho en pantallas de 320-360px. */
+  min-width: 0;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -684,7 +687,7 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   color: var(--tx-muted);
   margin-bottom: var(--sp-1);
 }
-.stat-info h3 {
+.stat-info h2, .stat-info h3 {
   font-size: clamp(1.25rem, 4vw, var(--text-3xl));
   font-weight: 800;
   color: var(--tx);
@@ -696,7 +699,7 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   white-space: nowrap;
 }
 .stat-info .target { display: block; font-size: var(--text-xs); color: var(--tx-muted); margin-top: var(--sp-2); }
-.target.pending    { color: var(--orange); font-weight: 600; }
+.target.pending    { color: #92400E; /* 6.4:1 sobre blanco — el #D97706 daba 3.18 */ font-weight: 600; }
 
 /* Badge de variación — estilo PinenMFB */
 .kpi-trend {
@@ -836,7 +839,7 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   border-bottom: none;
 }
-.table-header h3 { font-size: var(--text-lg); font-weight: 800; color: #fff; letter-spacing: -.02em; }
+.table-header h2, .table-header h3 { font-size: var(--text-lg); font-weight: 800; color: #fff; letter-spacing: -.02em; }
 .table-header-actions { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
 
 /* ============================================================
@@ -1213,10 +1216,17 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--t-slow);
+  /* visibility saca sus botones del orden de tabulación mientras está cerrado;
+     con solo opacity:0 seguían siendo enfocables dentro de un aria-hidden. */
+  visibility: hidden;
+  transition: opacity var(--t-slow), visibility var(--t-slow);
 }
 @media (min-width: 600px) { .modal-overlay { align-items: center; } }
-.modal-overlay:not([aria-hidden="true"]) { opacity: 1; pointer-events: all; }
+.modal-overlay:not([aria-hidden="true"]) {
+  opacity: 1;
+  pointer-events: all;
+  visibility: visible;
+}
 
 .modal-card {
   background: var(--surface);
@@ -2044,7 +2054,7 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   border-bottom: 1px solid var(--border);
   background: var(--green-dark);
 }
-.form-card-header h3 { font-size: var(--text-base); font-weight: 700; color: #fff; }
+.form-card-header h2, .form-card-header h3 { font-size: var(--text-base); font-weight: 700; color: #fff; }
 .form-card-body { padding: var(--sp-6); }
 
 /* Grid de campos */
@@ -2802,7 +2812,7 @@ div.dataTables_paginate { display: flex; align-items: center; gap: 4px; flex-wra
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .07em;
-  color: rgba(255,255,255,.35);
+  color: rgba(255,255,255,.58); /* AA sobre el fondo verde oscuro */
   transition: color var(--t);
   white-space: nowrap;
 }
@@ -2850,7 +2860,7 @@ div.dataTables_paginate { display: flex; align-items: center; gap: 4px; flex-wra
   font-size: 15px;
   flex-shrink: 0;
 }
-.wizard-panel__head .wph-text h3 {
+.wizard-panel__head .wph-text h2, .wizard-panel__head .wph-text h3 {
   font-size: var(--text-base);
   font-weight: 700;
   color: var(--tx);
@@ -4164,9 +4174,12 @@ div.dataTables_paginate { display: flex; align-items: center; gap: 4px; flex-wra
   display: flex;
   flex-direction: column;
   box-shadow: -8px 0 40px rgba(0,0,0,.18);
-  transition: right .3s cubic-bezier(.4,0,.2,1);
+  /* Fuera de pantalla no basta: sus botones seguían siendo enfocables dentro
+     de un contenedor aria-hidden. */
+  visibility: hidden;
+  transition: right .3s cubic-bezier(.4,0,.2,1), visibility .3s;
 }
-.preview-panel.is-open { right: 0; }
+.preview-panel.is-open { right: 0; visibility: visible; }
 
 .preview-panel__header {
   display: flex;
@@ -4924,3 +4937,77 @@ body.preview-panel-open { overflow: hidden; }
     content: ''; position: absolute; inset: -8px;
   }
 }
+
+/* Placeholder para media cuya ruta quedó huérfana en la BD */
+.media-empty--missing {
+  min-height: 90px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-soft, transparent);
+}
+
+/* CTA cuyo contenedor está oculto: no se renderiza en la landing */
+/* Sin opacity: atenuaba tambien el texto del aviso y lo dejaba por
+ debajo del contraste minimo. Se marca con el fondo, no con transparencia. */
+.mini-card--inactiva { background: var(--bg-soft, #f6f7f6); }
+.cta-huerfano {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 8px 0 0;
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: var(--warn-bg, rgba(217,119,6,.10));
+  color: #92400E;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+.cta-huerfano i { margin-top: 2px; }
+
+/* ============================================================
+   Pantallas estrechas (320-400px)
+   El panel tenía un ancho mínimo efectivo de ~385px y toda la
+   interfaz se desplazaba de lado en iPhone SE y Android de gama
+   media. Se corrige dejando que los contenedores se contraigan.
+   ============================================================ */
+@media (max-width: 400px) {
+  .stats-grid,
+  .stats-grid--4col { grid-template-columns: 1fr; }
+
+  .material-header { padding: 0 var(--sp-4); }
+  .stat-card { padding: var(--sp-4); }
+}
+
+/* Los contenedores con scroll propio deben poder contraerse: sin
+   min-width:0 empujan el body en vez de desplazarse por dentro. */
+.dt-table-wrap,
+div.dataTables_wrapper,
+.material-content,
+.material-main { min-width: 0; }
+
+.material-content { overflow-x: clip; }
+
+/* El título de sección pasó de <span> dentro de un div[role=button] a un
+   <button> real, para no anidar controles interactivos. */
+.sec-toggle-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--tx);
+}
+.sec-toggle-title:focus-visible {
+  outline: 2px solid var(--green-glow);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+.sec-toggle-header { cursor: default; }
+.sec-toggle-header:hover { background: transparent; }
+.sec-toggle-title:hover { color: var(--green-dark); }

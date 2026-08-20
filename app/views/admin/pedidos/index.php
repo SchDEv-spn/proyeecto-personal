@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/vendor/dataTables.dataTables.min.css">
 </head>
 
 <body>
@@ -63,7 +63,7 @@
                 <section class="dash-grid" aria-label="Dashboard">
                     <article class="panel panel--kpi kpi-purple">
                         <div class="panel__head">
-                            <h4>Pedidos últimos 30 días</h4>
+                            <h2>Pedidos últimos 30 días</h2>
                             <span class="chip">Actividad</span>
                         </div>
                         <div class="panel__body">
@@ -73,7 +73,7 @@
 
                     <article class="panel panel--kpi kpi-cyan">
                         <div class="panel__head">
-                            <h4>Ventas últimos 30 días</h4>
+                            <h2>Ventas últimos 30 días</h2>
                             <span class="chip">COP</span>
                         </div>
                         <div class="panel__body">
@@ -83,7 +83,7 @@
 
                     <article class="panel panel--wide">
                         <div class="panel__head">
-                            <h4>Distribución por estado</h4>
+                            <h2>Distribución por estado</h2>
                             <span class="chip">Resumen</span>
                         </div>
                         <div class="panel__body panel__body--center">
@@ -99,7 +99,7 @@
                     <div class="stat-card glow-green">
                         <div class="stat-info">
                             <small>Pedidos Totales</small>
-                            <h3 id="kpiPedidos"><?= number_format($total_pedidos, 0, ',', '.') ?></h3>
+                            <h2 id="kpiPedidos"><?= number_format($total_pedidos, 0, ',', '.') ?></h2>
                             <span class="target"><?= ($renderTrend)($tendencias['pedidos'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
                         </div>
                         <i class="fas fa-clipboard-list stat-icon"></i>
@@ -108,7 +108,7 @@
                     <div class="stat-card glow-red">
                         <div class="stat-info">
                             <small>Pedidos Nuevos</small>
-                            <h3 id="kpiNuevos"><?= number_format($pedidos_nuevos, 0, ',', '.') ?></h3>
+                            <h2 id="kpiNuevos"><?= number_format($pedidos_nuevos, 0, ',', '.') ?></h2>
                             <span class="target pending">Pendientes de contacto</span>
                         </div>
                         <i class="fas fa-bell stat-icon"></i>
@@ -117,7 +117,7 @@
                     <div class="stat-card glow-purple">
                         <div class="stat-info">
                             <small>Ventas Totales</small>
-                            <h3 id="kpiVentas">$<?= number_format((float)$total_venta, 0, ',', '.') ?></h3>
+                            <h2 id="kpiVentas">$<?= number_format((float)$total_venta, 0, ',', '.') ?></h2>
                             <span class="target"><?= ($renderTrend)($tendencias['ventas'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
                         </div>
                         <i class="fas fa-dollar-sign stat-icon"></i>
@@ -126,7 +126,7 @@
                     <div class="stat-card glow-blue">
                         <div class="stat-info">
                             <small>Utilidad Acumulada</small>
-                            <h3 id="kpiUtilidad">$<?= number_format((float)$total_utilidad, 0, ',', '.') ?></h3>
+                            <h2 id="kpiUtilidad">$<?= number_format((float)$total_utilidad, 0, ',', '.') ?></h2>
                             <span class="target"><?= ($renderTrend)($tendencias['utilidad'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
                         </div>
                         <i class="fas fa-chart-line stat-icon"></i>
@@ -135,7 +135,7 @@
                     <div class="stat-card glow-gold">
                         <div class="stat-info">
                             <small>Ticket Promedio</small>
-                            <h3 id="kpiTicket">$<?= number_format($ticket_promedio ?? 0, 0, ',', '.') ?></h3>
+                            <h2 id="kpiTicket">$<?= number_format($ticket_promedio ?? 0, 0, ',', '.') ?></h2>
                             <span class="target">Por pedido (excl. cancelados)</span>
                         </div>
                         <i class="fas fa-receipt stat-icon"></i>
@@ -149,7 +149,7 @@
                 <div class="funnel-wrap">
                     <div class="panel">
                         <div class="panel__head">
-                            <h4>Embudo de conversión</h4>
+                            <h2>Embudo de conversión</h2>
                             <span class="chip">Pipeline</span>
                         </div>
                         <div class="panel__body">
@@ -162,7 +162,7 @@
 
                 <div class="table-container">
                         <div class="table-header">
-                            <h3>Pedidos Recientes</h3>
+                            <h2>Pedidos Recientes</h2>
                             <a href="<?= BASE_URL ?>/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?><?= $rango === 'personalizado' && $desde && $hasta ? '&desde=' . urlencode($desde) . '&hasta=' . urlencode($hasta) : '' ?>"
                                class="btn-csv" title="Exportar a CSV">
                                 <i class="fas fa-file-csv"></i> CSV
@@ -334,8 +334,9 @@
                                             <?php endif; ?>
                                             <a href="<?= BASE_URL ?>/AdminPedidos/detalle?id=<?= htmlspecialchars($p['id'] ?? '') ?>"
                                                class="btn-detail btn-detail--sm js-ver-detalle"
-                                               data-id="<?= htmlspecialchars($p['id'] ?? '') ?>">
-                                                <i class="fas fa-magnifying-glass"></i>
+                                               data-id="<?= htmlspecialchars($p['id'] ?? '') ?>"
+                                               aria-label="Ver detalle del pedido #<?= htmlspecialchars($p['id'] ?? '') ?>">
+                                                <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
                                             </a>
                                         </div>
                                     </td>
@@ -396,12 +397,12 @@
     </script>
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="<?= BASE_URL ?>/public/vendor/chart.umd.min.js"></script>
 
     <!-- jQuery (requerido por DataTables CDN) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
+    <script src="<?= BASE_URL ?>/public/vendor/jquery-3.7.1.slim.min.js"></script>
     <!-- DataTables -->
-    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.min.js"></script>
+    <script src="<?= BASE_URL ?>/public/vendor/dataTables.min.js"></script>
     <script>
     // ── Declaraciones hoistadas: disponibles aunque el IIFE de abajo falle ──
 
@@ -558,6 +559,7 @@
     </script>
 
     <!-- Tus scripts -->
+    <script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
     <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 
 </body>

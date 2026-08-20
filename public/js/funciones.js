@@ -696,12 +696,20 @@
       const wrap = document.createElement('div');
       wrap.className = 'csel';
 
+      const cselId = 'csel-' + Math.random().toString(36).slice(2, 9);
+
       const trigger = document.createElement('button');
       trigger.type = 'button';
       trigger.className = 'csel__trigger';
+      trigger.setAttribute('aria-haspopup', 'listbox');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-controls', cselId);
+      trigger.setAttribute('aria-label', sel.getAttribute('aria-label') || 'Estado del pedido');
 
       const panel = document.createElement('div');
       panel.className = 'csel__panel';
+      panel.id = cselId;
+      panel.setAttribute('role', 'listbox');
 
       const renderTrigger = val => {
         const lbl = ESTADO_LABELS[val] || val;
@@ -712,19 +720,87 @@
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'csel__opt' + (opt.selected ? ' is-selected' : '');
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', opt.selected ? 'true' : 'false');
         item.innerHTML = `<span class="csel__dot csel__dot--${opt.value}"></span>${ESTADO_LABELS[opt.value] || opt.text}`;
         item.addEventListener('click', () => {
           sel.value = opt.value;
+          // El <select> nativo está oculto: hay que disparar el evento a mano
+          // para que cualquier listener de la página se entere.
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
           renderTrigger(opt.value);
-          panel.querySelectorAll('.csel__opt').forEach(b => b.classList.toggle('is-selected', b === item));
-          wrap.classList.remove('is-open');
+          panel.querySelectorAll('.csel__opt').forEach(b => {
+            const sel2 = b === item;
+            b.classList.toggle('is-selected', sel2);
+            b.setAttribute('aria-selected', sel2 ? 'true' : 'false');
+          });
+          cerrar(true);
         });
         panel.appendChild(item);
       });
 
+      const opciones = () => Array.from(panel.querySelectorAll('.csel__opt'));
+
+      function abrir() {
+        wrap.classList.add('is-open');
+        trigger.setAttribute('aria-expanded', 'true');
+        const activa = panel.querySelector('.csel__opt.is-selected') || opciones()[0];
+        if (activa) activa.focus();
+      }
+
+      function cerrar(devolverFoco) {
+        if (!wrap.classList.contains('is-open')) return;
+        wrap.classList.remove('is-open');
+        trigger.setAttribute('aria-expanded', 'false');
+        if (devolverFoco) trigger.focus();
+      }
+
+      function moverFoco(paso) {
+        const items = opciones();
+        if (!items.length) return;
+        const i = items.indexOf(document.activeElement);
+        const siguiente = i < 0 ? 0 : (i + paso + items.length) % items.length;
+        items[siguiente].focus();
+      }
+
       renderTrigger(sel.value);
-      trigger.addEventListener('click', e => { e.stopPropagation(); wrap.classList.toggle('is-open'); });
-      document.addEventListener('click', () => wrap.classList.remove('is-open'));
+
+      trigger.addEventListener('click', e => {
+        e.stopPropagation();
+        wrap.classList.contains('is-open') ? cerrar(false) : abrir();
+      });
+
+      trigger.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          abrir();
+        }
+      });
+
+      wrap.addEventListener('keydown', e => {
+        if (!wrap.classList.contains('is-open')) return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation(); // no cerrar también el modal que lo contiene
+          cerrar(true);
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          moverFoco(1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          moverFoco(-1);
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          opciones()[0]?.focus();
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          opciones().slice(-1)[0]?.focus();
+        } else if (e.key === 'Tab') {
+          cerrar(false);
+        }
+      });
+
+      document.addEventListener('click', () => cerrar(false));
 
       sel.style.display = 'none';
       wrap.appendChild(trigger);
@@ -851,16 +927,20 @@
     // 6) pager actualizado
     updatePager();
   };
+  const trampaFoco = window.crearTrampaFoco ? window.crearTrampaFoco(modalOverlay) : null;
+
   const openModal = () => {
     modalOverlay.classList.add('is-open');
     modalOverlay.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
+    if (trampaFoco) trampaFoco.activar(modalClose);
   };
 
   const closeModal = () => {
     modalOverlay.classList.remove('is-open');
     modalOverlay.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('modal-open');
+    if (trampaFoco) trampaFoco.desactivar();
     // Limpia contenido (opcional, pero deja el loading listo para la próxima)
     modalBody.innerHTML = `
       <div class="modal-loading">

@@ -2,24 +2,6 @@
 
 class Pedido extends Model
 {
-    /**
-     * (Fallback) Regla antigua si el controller no manda precio_total.
-     * Idealmente el controller manda precio_total/descuento_total/utilidad_total.
-     */
-    private function totalConDescuento(int $cantidad, float $precioUnit): float
-    {
-        if ($cantidad <= 0) return 0.0;
-        if ($cantidad === 1) return $precioUnit;
-
-        $total = 0.0;
-        $total += $precioUnit;        // 1ra
-        $total += $precioUnit * 0.85; // 2da -15%
-        if ($cantidad >= 3) {
-            $total += $precioUnit * 0.80 * ($cantidad - 2); // 3ra+ -20%
-        }
-        return $total;
-    }
-
     public function crearConId(array $data): int
     {
         $nombre       = trim((string)($data['nombre'] ?? ''));
@@ -43,9 +25,16 @@ class Pedido extends Model
             ? (float)$data['utilidad']
             : ($precioVenta - $precioProveedor);
 
-        // Totales fallback (si el controller no los manda)
+        // Totales fallback (si el controller no los manda). Usa los descuentos
+        // reales del producto, no valores fijos.
         $subtotal       = $precioVenta * $cantidadTotal;
-        $precioTotal    = $this->totalConDescuento($cantidadTotal, $precioVenta);
+        $precioTotal    = total_con_descuento(
+            $cantidadTotal,
+            $precioVenta,
+            (int)($data['descuento_2da'] ?? 15),
+            (int)($data['descuento_3ra'] ?? 20),
+            (int)($data['descuento_multicantidad_activo'] ?? 1)
+        );
         $descuentoTotal = max(0, $subtotal - $precioTotal);
 
         // Nota: aquí NO incluimos envío porque pedidos no tiene costo_envio.

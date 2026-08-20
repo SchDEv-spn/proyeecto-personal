@@ -617,7 +617,13 @@ function initPixelEvents() {
     function mostrarErrores(errors) {
         if (!errorsBox) return;
         if (!errors.length) { errorsBox.style.display = 'none'; return; }
-        errorsBox.innerHTML = '<ul>' + errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+        const ul = document.createElement('ul');
+        errors.forEach(e => {
+            const li = document.createElement('li');
+            li.textContent = e;
+            ul.appendChild(li);
+        });
+        errorsBox.replaceChildren(ul);
         errorsBox.style.display = 'block';
         errorsBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -675,6 +681,10 @@ function initPixelEvents() {
                             num_items: 1,
                         });
                     }
+                } else {
+                    mostrarErrores(res.errores && res.errores.length
+                        ? res.errores
+                        : ['No pudimos registrar tu pedido. Inténtalo de nuevo o escríbenos por WhatsApp.']);
                 }
             })
             .catch(function () {

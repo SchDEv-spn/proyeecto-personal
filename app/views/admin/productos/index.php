@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/vendor/dataTables.dataTables.min.css">
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
 </head>
 
@@ -87,7 +87,7 @@
                     <div class="stat-card glow-green">
                         <div class="stat-info">
                             <small>Productos Totales</small>
-                            <h3><?= number_format($totalProductos, 0, ',', '.') ?></h3>
+                            <h2><?= number_format($totalProductos, 0, ',', '.') ?></h2>
                             <span class="target">Inventario registrado</span>
                         </div>
                         <i class="fas fa-boxes-stacked stat-icon"></i>
@@ -96,7 +96,7 @@
                     <div class="stat-card glow-blue">
                         <div class="stat-info">
                             <small>Activos</small>
-                            <h3><?= number_format($activosCount, 0, ',', '.') ?></h3>
+                            <h2><?= number_format($activosCount, 0, ',', '.') ?></h2>
                             <span class="target">Visibles al público</span>
                         </div>
                         <i class="fas fa-circle-check stat-icon"></i>
@@ -105,7 +105,7 @@
                     <div class="stat-card glow-red">
                         <div class="stat-info">
                             <small>Inactivos</small>
-                            <h3><?= number_format($inactivosCount, 0, ',', '.') ?></h3>
+                            <h2><?= number_format($inactivosCount, 0, ',', '.') ?></h2>
                             <span class="target pending">Ocultos / pausados</span>
                         </div>
                         <i class="fas fa-circle-xmark stat-icon"></i>
@@ -114,7 +114,7 @@
                     <div class="stat-card glow-purple">
                         <div class="stat-info">
                             <small>Utilidad Promedio (unitaria)</small>
-                            <h3>$<?= number_format($utilidadProm, 0, ',', '.') ?></h3>
+                            <h2>$<?= number_format($utilidadProm, 0, ',', '.') ?></h2>
                             <span class="target">Promedio por producto</span>
                         </div>
                         <i class="fas fa-chart-line stat-icon"></i>
@@ -129,7 +129,7 @@
                 <?php else: ?>
                     <div class="table-container">
                         <div class="table-header">
-                            <h3>Listado de productos</h3>
+                            <h2>Listado de productos</h2>
                         </div>
                         <div class="dt-table-wrap">
                             <table id="tablaProductos" class="pedidos-dt" style="width:100%">
@@ -245,9 +245,10 @@
     </div>
 
     <!-- jQuery (requerido por DataTables CDN) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
+    <script src="<?= BASE_URL ?>/public/vendor/jquery-3.7.1.slim.min.js"></script>
     <!-- DataTables -->
-    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.min.js"></script>
+    <script src="<?= BASE_URL ?>/public/vendor/dataTables.min.js"></script>
+    <script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
     <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
     <script>
     (function () {

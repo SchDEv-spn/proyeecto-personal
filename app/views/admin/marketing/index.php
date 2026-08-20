@@ -195,7 +195,7 @@
             gap: 12px;
             margin-bottom: 16px;
         }
-        .mkt-results-head h3 {
+        .mkt-results-head h2, .mkt-results-head h3 {
             font-size: var(--text-lg);
             font-weight: 700;
             color: var(--tx);
@@ -278,7 +278,7 @@
             border-radius: var(--r-xl);
             padding: 28px;
             text-align: center;
-            color: var(--orange);
+            color: #92400E; /* 5.4:1 sobre --soft-orange */
         }
         .mkt-no-key i { font-size: 1.8rem; margin-bottom: 10px; display: block; }
         .mkt-no-key a { color: var(--green-dark); font-weight: 700; }
@@ -317,7 +317,7 @@
             font-size: 16px;
             flex-shrink: 0;
         }
-        .mkt-fb-head h3 {
+        .mkt-fb-head h2, .mkt-fb-head h3 {
             font-size: var(--text-lg);
             font-weight: 700;
             color: var(--tx);
@@ -554,7 +554,7 @@
             font-size: 16px;
             flex-shrink: 0;
         }
-        .mkt-audience-card__head h4 { font-size: var(--text-base); font-weight: 700; color: var(--tx); margin: 0; }
+        .mkt-audience-card__head h2, .mkt-audience-card__head h4 { font-size: var(--text-base); font-weight: 700; color: var(--tx); margin: 0; }
         .mkt-audience-card__head p { font-size: var(--text-sm); color: var(--tx-muted); margin: 2px 0 0; }
 
         .audience-grid {
@@ -642,10 +642,10 @@ $showSearch      = false;
                 ═══════════════════════════════════════════ -->
                 <div class="panel" style="padding:0;overflow:hidden;">
                     <div class="panel__head" style="padding:18px 22px 14px;">
-                        <h4 style="display:flex;align-items:center;gap:8px;">
+                        <h2 style="display:flex;align-items:center;gap:8px;">
                             <i class="fas fa-camera" style="color:var(--green-dark)"></i>
                             Datos del producto
-                        </h4>
+                        </h2>
                         <span class="chip">Paso 1</span>
                     </div>
                     <div class="panel__body" style="padding:0 22px 22px;">
@@ -708,7 +708,7 @@ $showSearch      = false;
                 <div class="mkt-results" id="mktResults">
                     <div class="mkt-results-head">
                         <div>
-                            <h3>Tus anuncios listos</h3>
+                            <h2>Tus anuncios listos</h2>
                             <p>3 ángulos psicológicos distintos — descarga el que más conecte con tu cliente</p>
                         </div>
                     </div>
@@ -724,7 +724,7 @@ $showSearch      = false;
                     <div class="mkt-fb-head">
                         <div class="mkt-fb-head__icon"><i class="fab fa-facebook-f"></i></div>
                         <div>
-                            <h3>Copy listo para Facebook Ads</h3>
+                            <h2>Copy listo para Facebook Ads</h2>
                             <p>Pega el texto directamente en tu campaña — un ángulo distinto por anuncio</p>
                         </div>
                     </div>
@@ -736,6 +736,8 @@ $showSearch      = false;
         </section>
     </main>
 </div>
+
+<script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
 
 <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 <script>
@@ -1058,7 +1060,7 @@ $showSearch      = false;
             <div class="mkt-audience-card__head">
                 <div class="mkt-audience-card__head-icon"><i class="fas fa-bullseye"></i></div>
                 <div>
-                    <h4>Público sugerido para Facebook Ads</h4>
+                    <h2>Público sugerido para Facebook Ads</h2>
                     <p>Basado en el análisis visual del producto por IA</p>
                 </div>
             </div>

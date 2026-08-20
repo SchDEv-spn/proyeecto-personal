@@ -47,7 +47,7 @@ $ubicacionTexto   = trim(($pedido['municipio']??'').', '.($pedido['departamento'
   <div class="modal-header">
     <div class="mh-top">
       <div class="mh-id">
-        <h3 id="pedidoModalTitle">Pedido <span>#<?= htmlspecialchars($pedido['id'] ?? '') ?></span></h3>
+        <h2 id="pedidoModalTitle">Pedido <span>#<?= htmlspecialchars($pedido['id'] ?? '') ?></span></h2>
         <span class="status-tag status-<?= htmlspecialchars($estadoSafe) ?> js-modal-status">
           <?= ucfirst(str_replace('_',' ', htmlspecialchars($estadoSafe))) ?>
         </span>

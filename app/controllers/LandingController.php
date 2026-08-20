@@ -11,35 +11,7 @@ class LandingController extends Controller
      */
     private function totalConDescuento(int $cantidad, float $precioUnit, int $d2, int $d3, int $activo = 1): float
     {
-        if ($cantidad <= 0) return 0.0;
-
-        $d2 = max(0, min(100, (int)$d2));
-        $d3 = max(0, min(100, (int)$d3));
-        $activo = (int)$activo;
-
-        // Si está apagado, cobra normal
-        if ($activo !== 1) {
-            return $precioUnit * $cantidad;
-        }
-
-        if ($cantidad === 1) return $precioUnit;
-
-        $total = 0.0;
-
-        // 1ra sin descuento
-        $total += $precioUnit;
-
-        // 2da con d2%
-        if ($cantidad >= 2) {
-            $total += $precioUnit * (1 - ($d2 / 100));
-        }
-
-        // 3ra+ con d3%
-        if ($cantidad >= 3) {
-            $total += ($cantidad - 2) * ($precioUnit * (1 - ($d3 / 100)));
-        }
-
-        return $total;
+        return total_con_descuento($cantidad, $precioUnit, $d2, $d3, $activo);
     }
 
     /**
@@ -61,20 +33,23 @@ class LandingController extends Controller
 
     public function index()
     {
-        $productoId = (int)($_GET['producto_id'] ?? ($_GET['id'] ?? 1));
-        if ($productoId <= 0) $productoId = 1;
-
         $productoModel = new Producto();
-        $producto      = $productoModel->obtenerPorId($productoId);
 
+        $productoId = (int)($_GET['producto_id'] ?? ($_GET['id'] ?? 0));
+        $producto   = $productoId > 0 ? $productoModel->obtenerPorId($productoId) : null;
+
+        // Sin producto indicado (o inexistente): llevar al primer producto activo
+        // en lugar de asumir un id fijo, que puede no existir.
         if (!$producto) {
-            $productoId = 1;
-            $producto   = $productoModel->obtenerPorId($productoId);
+            $producto = $productoModel->obtenerPrimeroActivo();
             if (!$producto) {
-                header("HTTP/1.0 404 Not Found");
-                echo "Producto no encontrado";
+                $this->notFound('Todavía no hay productos publicados.');
+            }
+            if (!empty($producto['slug'])) {
+                header("Location: " . BASE_URL . "/producto/" . rawurlencode($producto['slug']), true, 302);
                 exit;
             }
+            $productoId = (int)$producto['id'];
         }
 
         $success = $_SESSION['success'] ?? '';
@@ -461,9 +436,7 @@ class LandingController extends Controller
         $producto      = $productoModel->obtenerPorSlug($slug);
 
         if (!$producto) {
-            header("HTTP/1.0 404 Not Found");
-            echo "Producto no encontrado";
-            exit;
+            $this->notFound('El producto que buscas ya no está disponible.');
         }
 
         $productoId = (int)$producto['id'];

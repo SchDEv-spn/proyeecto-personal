@@ -43,3 +43,46 @@ function alert_error(array $errors, string $title = 'Revisa estos campos'): stri
 </div>
 HTML;
 }
+
+/**
+ * ¿La ruta apunta a un vídeo? Decidido por la extensión del archivo, no por el
+ * campo de tipo guardado: los dos se desincronizan al cambiar de imagen a vídeo
+ * y entonces un .mp4 termina dentro de un <img> que nunca carga.
+ */
+function es_video(?string $path): bool
+{
+    if (!$path) return false;
+    $ext = strtolower(pathinfo(parse_url($path, PHP_URL_PATH) ?? $path, PATHINFO_EXTENSION));
+    return in_array($ext, ['mp4', 'mov', 'webm', 'ogg', 'm4v'], true);
+}
+
+/**
+ * Precio total con descuento multicantidad. Única fuente de verdad: antes
+ * existían dos copias (LandingController y Pedido) con reglas distintas — la
+ * del modelo tenía 15% y 20% escritos a mano e ignoraba la configuración
+ * del producto, así que daba precios incorrectos en silencio.
+ *
+ * 1ra unidad sin descuento · 2da al -d2% · 3ra en adelante al -d3%.
+ */
+function total_con_descuento(int $cantidad, float $precioUnit, int $d2, int $d3, int $activo = 1): float
+{
+    if ($cantidad <= 0) return 0.0;
+
+    $d2 = max(0, min(100, $d2));
+    $d3 = max(0, min(100, $d3));
+
+    if ((int)$activo !== 1) {
+        return $precioUnit * $cantidad;
+    }
+
+    if ($cantidad === 1) return $precioUnit;
+
+    $total = $precioUnit;                                  // 1ra sin descuento
+    $total += $precioUnit * (1 - ($d2 / 100));             // 2da
+
+    if ($cantidad >= 3) {
+        $total += ($cantidad - 2) * ($precioUnit * (1 - ($d3 / 100)));
+    }
+
+    return $total;
+}

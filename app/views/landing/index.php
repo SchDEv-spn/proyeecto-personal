@@ -26,17 +26,20 @@ $comboPrice2  = (int)($cfg['combo_price_2'] ?? 0);
 if ($comboPrice2 <= 0) $comboPrice2 = 115000; // fallback
 
 
+// Un campo guardado en blanco debe comportarse como ausente: si no, la landing
+// se publica con <title> y <h1> vacíos.
+$val = fn($k, $default) => (isset($cfg[$k]) && trim((string)$cfg[$k]) !== '') ? $cfg[$k] : $default;
+
 // ===== HERO =====
-$heroTitle       = $cfg['hero_title']        ?? ($producto['nombre'] ?? 'Nombre del producto');
-$heroSubtitle    = $cfg['hero_subtitle']     ?? 'Subtítulo potente que explique el beneficio principal del producto en una frase clara.';
+$heroTitle       = $val('hero_title', $producto['nombre'] ?? 'Nombre del producto');
+$heroSubtitle    = $val('hero_subtitle', 'Subtítulo potente que explique el beneficio principal del producto en una frase clara.');
 $heroSubtitle2   = trim($cfg['hero_subtitle_2'] ?? '');
 $heroSubtitle3   = trim($cfg['hero_subtitle_3'] ?? '');
 $heroSubtitles   = array_filter([$heroSubtitle, $heroSubtitle2, $heroSubtitle3], fn($s) => $s !== '');
 $heroNote        = $cfg['hero_note']         ?? 'Promoción válida solo por tiempo limitado.';
 $heroButtonText  = $cfg['hero_button_text']  ?? '¡Necesito el mío!';
 $heroMediaType   = $cfg['hero_media_type']   ?? 'imagen';
-$heroMediaPath   = $cfg['hero_media_path']
-    ?? ($producto['imagen_principal'] ?? BASE_URL . '/public/img/producto.png');
+$heroMediaPath   = $val('hero_media_path', (!empty($producto['imagen_principal']) ? $producto['imagen_principal'] : BASE_URL . '/public/img/producto/uso-1.png'));
 
 $benefitsMediaType = $cfg['benefits_media_type'] ?? 'imagen';
 $porqueMediaType   = $cfg['porque_media_type']   ?? 'imagen';
@@ -50,7 +53,7 @@ for ($i = 1; $i <= 4; $i++) {
         $benefits[] = $cfg[$key];
     }
 }
-$benefitsMediaPath = $cfg['benefits_media_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
+$benefitsMediaPath = $val('benefits_media_path', BASE_URL . '/public/img/producto/uso-1.png');
 
 // ===== GALERÍA =====
 $galleryPaths = [];
@@ -98,23 +101,23 @@ $porqueBulletIcons  = [];
 foreach (['porque_bullet1_icon', 'porque_bullet2_icon', 'porque_bullet3_icon'] as $idx => $key) {
     $porqueBulletIcons[] = !empty($cfg[$key]) ? $cfg[$key] : $defaultBulletIcons[$idx];
 }
-$porqueMediaPath = $cfg['porque_media_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
+$porqueMediaPath = $val('porque_media_path', BASE_URL . '/public/img/producto/uso-1.png');
 
 // ===== TESTIMONIOS =====
 $test1Name  = $cfg['test1_name']       ?? 'María G.';
 $test1City  = $cfg['test1_city']       ?? 'Bogotá';
 $test1Text  = $cfg['test1_text']       ?? 'Desde que lo uso, mi día a día es mucho más fácil. Llegó rápido y en perfecto estado.';
-$test1Photo = $cfg['test1_photo_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
+$test1Photo = $val('test1_photo_path', BASE_URL . '/public/img/producto/uso-1.png');
 
 $test2Name  = $cfg['test2_name']       ?? 'Carlos R.';
 $test2City  = $cfg['test2_city']       ?? 'Medellín';
 $test2Text  = $cfg['test2_text']       ?? 'Muy buena atención, me explicaron todo por WhatsApp y el producto es tal cual a las fotos.';
-$test2Photo = $cfg['test2_photo_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
+$test2Photo = $val('test2_photo_path', BASE_URL . '/public/img/producto/uso-1.png');
 
 $test3Name  = $cfg['test3_name']       ?? 'Laura P.';
 $test3City  = $cfg['test3_city']       ?? 'Cali';
 $test3Text  = $cfg['test3_text']       ?? 'Lo recomiendo totalmente. Me dieron confianza con el pago contraentrega y cumplió 10/10.';
-$test3Photo = $cfg['test3_photo_path'] ?? BASE_URL . '/public/img/producto/uso-1.jpg';
+$test3Photo = $val('test3_photo_path', BASE_URL . '/public/img/producto/uso-1.png');
 
 // ===== TESTIMONIOS WHATSAPP (editable) =====
 $waEnabled    = isset($cfg['wa_enabled']) ? (int)$cfg['wa_enabled'] : 1;
@@ -449,6 +452,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </style>
     <?php endif; ?>
 
+    <!-- Sin defer: el script inline del modal lo usa durante el parseo -->
+    <script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
     <script src="<?= BASE_URL ?>/public/js/main.js" defer></script>
 </head>
 
@@ -733,10 +738,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
             } else {
                 // Sin variantes: usa las fotos del editor (con fallback)
                 $gallery = !empty($galleryPaths) ? $galleryPaths : [
-                    BASE_URL . '/public/img/producto/uso-1.jpg',
-                    BASE_URL . '/public/img/producto/uso-1.jpg',
-                    BASE_URL . '/public/img/producto/uso-1.jpg',
-                    BASE_URL . '/public/img/producto/uso-1.jpg',
+                    BASE_URL . '/public/img/producto/uso-1.png',
+                    BASE_URL . '/public/img/producto/uso-1.png',
+                    BASE_URL . '/public/img/producto/uso-1.png',
+                    BASE_URL . '/public/img/producto/uso-1.png',
                 ];
                 $mainImg   = $gallery[0] ?? '';
                 $thumbImgs = array_slice($gallery, 1, 3);
@@ -775,13 +780,13 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </figure>
 
                 <?php if (!empty($thumbImgs)): ?>
-                    <div class="product-gallery__thumbs" role="list">
+                    <div class="product-gallery__thumbs" role="group" aria-label="Miniaturas del producto">
                         <?php foreach ($thumbImgs as $i => $src): ?>
                             <?php if (trim($src) === '') continue; ?>
                             <button
                                 type="button"
                                 class="product-gallery__thumb"
-                                role="listitem"
+                                
                                 aria-label="Ver imagen <?= (int)($i + 2) ?>"
                                 data-src="<?= htmlspecialchars($src) ?>">
                                 <img
@@ -796,12 +801,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </div>
 
             <?php if (!empty($singleImgColors)): ?>
-            <div class="gallery-color-thumbs" role="list" aria-label="Otros colores disponibles">
+            <div class="gallery-color-thumbs" role="group" aria-label="Otros colores disponibles">
                 <?php foreach ($singleImgColors as $sc): ?>
                 <button
                     type="button"
                     class="gallery-color-thumb <?= $sc['idx'] === 0 ? 'is-active' : '' ?>"
-                    role="listitem"
+                    
                     data-color-idx="<?= $sc['idx'] ?>"
                     aria-label="Color <?= htmlspecialchars($sc['name']) ?>"
                     title="<?= htmlspecialchars($sc['name']) ?>"
@@ -1556,7 +1561,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php
         $modalProductImg = !empty($producto['imagen_principal'])
             ? $producto['imagen_principal']
-            : ($heroMediaType === 'imagen' && !empty($heroMediaPath) ? $heroMediaPath : BASE_URL . '/public/img/producto.png');
+            : ($heroMediaType === 'imagen' && !empty($heroMediaPath) ? $heroMediaPath : BASE_URL . '/public/img/producto/uso-1.png');
         ?>
         <!-- ══════════════════════════════════════════════════════
              MODAL DE PEDIDO
@@ -1657,7 +1662,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
             </div>
 
-            <div id="stepperErrors" class="error" style="display:none;"></div>
+            <div id="stepperErrors" class="error" style="display:none;" role="alert" aria-live="assertive"></div>
 
             <div class="form-box">
                 <form id="formPedido" action="<?= BASE_URL ?>/Landing/enviarPedido" method="POST" novalidate>
@@ -2376,6 +2381,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
         var closeBtn = document.getElementById('orderModalClose');
         if (!modal || !closeBtn) return;
 
+        var trampaFoco = window.crearTrampaFoco ? window.crearTrampaFoco(modal) : null;
+
         function openModal() {
             modal.removeAttribute('hidden');
             document.body.classList.add('modal-open');
@@ -2383,7 +2390,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
             if (scroll) scroll.scrollTop = 0;
             /* Enfocar el primer campo visible */
             var first = card ? card.querySelector('.form-step.is-active input:not([type="hidden"])') : null;
-            if (first) setTimeout(function () { first.focus(); }, 80);
+            if (trampaFoco) trampaFoco.activar(first);
+            else if (first) setTimeout(function () { first.focus(); }, 80);
         }
 
         /* ── Mantener el campo enfocado visible cuando aparece el teclado ── */
@@ -2406,6 +2414,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         function closeModal() {
             modal.setAttribute('hidden', '');
             document.body.classList.remove('modal-open');
+            if (trampaFoco) trampaFoco.desactivar();
             setTimeout(function () {
                 if (typeof window.dispararFomo === 'function') window.dispararFomo();
             }, 400);
@@ -2454,9 +2463,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
 
     <?php if ($showFooter): ?>
-    <div class="footer-text">
+    <footer class="footer-text">
         <?= htmlspecialchars($footerText) ?>
-    </div>
+    </footer>
     <?php endif; ?>
 
 
@@ -2466,7 +2475,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
     <!-- CTA sticky para móviles -->
     <?php if ($showCtaSticky): ?>
-    <div class="cta-sticky-mobile">
+    <aside class="cta-sticky-mobile" aria-label="Comprar ahora">
         <div class="csm-info">
             <?php if (!empty($producto['imagen_principal'])): ?>
             <img class="csm-thumb"
@@ -2487,7 +2496,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <a href="#form-pedido" class="btn-primary csm-cta">
             <?= htmlspecialchars($ctaStickyMobileText) ?>
         </a>
-    </div>
+    </aside>
     <?php endif; ?>
 
     <?php
@@ -2519,6 +2528,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
     <!-- Botón WhatsApp flotante -->
     <?php if ($showWhatsappBtn): ?>
+    <aside aria-label="Contacto directo">
     <a href="https://wa.me/<?= urlencode($waPhone) ?>?text=Hola%2C%20me%20interesa%20el%20producto%20y%20tengo%20una%20consulta."
        class="wa-float-btn" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -2526,6 +2536,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.557 4.116 1.526 5.845L.057 23.998l6.304-1.658A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.793 9.793 0 01-4.997-1.367l-.356-.212-3.745.985.993-3.644-.232-.373A9.79 9.79 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
         </svg>
     </a>
+    </aside>
     <?php endif; ?>
 
     <!-- Contenedor FOMO notifications -->

@@ -6653,7 +6653,7 @@ img[loading="lazy"].loaded {
 [data-theme="femme-rose"] .porque-card__tagline,
 [data-theme="natural-sage"] .porque-card__tagline,
 [data-theme="blanc-luxe"] .porque-card__tagline {
-    color: rgba(0,0,0,0.5) !important;
+    color: rgba(0,0,0,0.62) !important; /* 5.9:1 — 0.5 daba 3.94 */
 }
 
 /* Grid de mini-cards: 1 columna en mobile, 3 en desktop */
@@ -7076,3 +7076,57 @@ img[loading="lazy"].loaded {
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
+
+/* ============================================================
+   Contraste AA en temas claros
+   .caract-text y .caract-hint heredaban tonos pensados para fondo
+   oscuro y quedaban en 3.69:1 y 2.29:1 sobre las tarjetas claras.
+   ============================================================ */
+[data-theme="light-luxury"] .caract-text,
+[data-theme="bold-conversion"] .caract-text,
+[data-theme="minimal-clean"] .caract-text,
+[data-theme="femme-rose"] .caract-text,
+[data-theme="natural-sage"] .caract-text,
+[data-theme="blanc-luxe"] .caract-text {
+    color: #3F4A44;
+    opacity: 1;
+}
+
+[data-theme="light-luxury"] .caract-hint,
+[data-theme="bold-conversion"] .caract-hint,
+[data-theme="minimal-clean"] .caract-hint,
+[data-theme="femme-rose"] .caract-hint,
+[data-theme="natural-sage"] .caract-hint,
+[data-theme="blanc-luxe"] .caract-hint {
+    color: #56605A;
+}
+
+/* Zona pulsable mínima de 44px sin agrandar el icono */
+.caract-vol-btn {
+    position: relative;
+}
+.caract-vol-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+}
+
+/* Pantallas muy estrechas: las etiquetas del stepper (white-space:nowrap)
+   se salían del modal y quedaban cortadas contra el borde. */
+@media (max-width: 360px) {
+    .stepper-node__label {
+        font-size: 10px;
+        gap: 2px;
+    }
+    .stepper-node__label svg,
+    .stepper-node__label i {
+        display: none;
+    }
+}
+
+/* El pie iba en #575757 sobre #050505 (2.8:1) */
+.footer-text { color: #9AA3A6; }

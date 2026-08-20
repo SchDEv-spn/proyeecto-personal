@@ -51,7 +51,7 @@
         }
 
         .p-badge-nuevo      { background: var(--info-bg);  color: var(--info);  border: 1px solid var(--info-bd); }
-        .p-badge-contactado { background: rgba(168,139,250,.10); color: #a78bfa; border: 1px solid rgba(168,139,250,.24); }
+        .p-badge-contactado { background: rgba(168,139,250,.10); color: #6D28D9; border: 1px solid rgba(168,139,250,.24); }
         .p-badge-confirmado { background: var(--ok-bg);    color: var(--ok);    border: 1px solid var(--ok-bd); }
         .p-badge-enviado    { background: var(--warn-bg);  color: var(--warn);  border: 1px solid var(--warn-bd); }
         .p-badge-en_oficina { background: var(--warn-bg);  color: var(--warn);  border: 1px solid var(--warn-bd); }
@@ -128,7 +128,7 @@
 
         .btn-guardar-plantillas {
             background: var(--gold);
-            color: var(--tx-inverse);
+            color: #fff; /* 4.9:1 sobre --gold; el texto oscuro daba 3.6 */
             border: none;
             border-radius: 12px;
             padding: 11px 28px;
@@ -234,7 +234,7 @@ $resolvePreview = fn(string $msg): string => str_replace(
 
             <!-- Guía de flujo de trabajo -->
             <div class="panel" style="padding:1rem 1.25rem 1rem;margin-bottom:1rem;">
-                <h4 style="font-size:13px;font-weight:700;margin-bottom:.75rem;">Flujo recomendado de mensajes</h4>
+                <h2 style="font-size:13px;font-weight:700;margin-bottom:.75rem;">Flujo recomendado de mensajes</h2>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
                     <div style="background:var(--gold-ghost);border-radius:12px;padding:.85rem 1rem;border-left:3px solid var(--gold);">
                         <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:.5rem;">📦 Envío a domicilio (Envia)</p>
@@ -282,7 +282,7 @@ $resolvePreview = fn(string $msg): string => str_replace(
                 </p>
                 <div class="vars-strip">
                     <?php foreach ($varManual as $v): ?>
-                        <span class="var-chip" style="border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1);color:#d97706;"
+                        <span class="var-chip" style="border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1);color:#92400E;"
                               title="Lo completas en el picker antes de enviar"><?= $v ?></span>
                     <?php endforeach; ?>
                 </div>
@@ -344,7 +344,9 @@ $resolvePreview = fn(string $msg): string => str_replace(
     </main>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="<?= BASE_URL ?>/public/vendor/jquery-3.7.1.min.js"></script>
+<script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
+<script src="<?= BASE_URL ?>/public/js/form-labels.js"></script>
 <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 <script>
 (() => {

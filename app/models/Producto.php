@@ -18,6 +18,18 @@ class Producto extends Model
         return $row ?: null;
     }
 
+    /**
+     * Primer producto activo. Sirve de destino por defecto cuando se entra a la
+     * raíz del sitio sin indicar producto.
+     */
+    public function obtenerPrimeroActivo(): ?array
+    {
+        $sql = "SELECT * FROM productos WHERE activo = 1 ORDER BY id ASC LIMIT 1";
+        $stmt = $this->db->query($sql);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
     public function obtenerPorSlug(string $slug): ?array
     {
         $sql = "SELECT * FROM productos WHERE slug = :slug LIMIT 1";

@@ -28,7 +28,7 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
     </div>
 
     <!-- Nav -->
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav" aria-label="Menú principal">
 
         <span class="sidebar-section-label">Menú</span>
 
@@ -59,7 +59,7 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
             <span>Mi Perfil</span>
         </a>
 
-        <a href="<?= BASE_URL ?>/Auth/logout" class="sidebar-nav__logout">
+        <a href="<?= BASE_URL ?>/Auth/logout" class="sidebar-nav__logout" id="logoutLink">
             <i class="fas fa-sign-out-alt"></i>
             <span>Cerrar sesión</span>
         </a>
@@ -67,3 +67,25 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
     </nav>
 
 </aside>
+
+<script>
+// Al cerrar sesión, vaciar la caché del navegador: puede contener vistas del
+// panel con datos de clientes.
+(function () {
+    var link = document.getElementById('logoutLink');
+    if (!link || !('caches' in window)) return;
+
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        var href = link.href;
+        var done = false;
+        var go = function () { if (!done) { done = true; window.location.href = href; } };
+
+        setTimeout(go, 700); // no dejar al usuario esperando si algo falla
+        caches.keys()
+            .then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); })
+            .then(go)
+            .catch(go);
+    });
+})();
+</script>

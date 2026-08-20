@@ -98,6 +98,54 @@
         <?= alert_success($success) ?>
         <?= alert_error(!empty($error) ? [$error] : []) ?>
 
+        <?php
+        // Toda la landing puede quedar sin un solo botón que abra el formulario
+        // de pedido si se apagan a la vez las secciones que los contienen.
+        $fuentesCta = [
+          'show_price_box'          => ['Caja de precio', 'sec-hero'],
+          'show_cta_sticky'         => ['CTA fija móvil', 'sec-ctas'],
+          'show_cta_benefits'       => ['CTA Beneficios', 'sec-ctas'],
+          'show_cta_gallery'        => ['CTA Galería', 'sec-ctas'],
+          'show_cta_porque'         => ['CTA ¿Por qué?', 'sec-ctas'],
+          'show_cta_testimonials'   => ['CTA Testimonios', 'sec-ctas'],
+          'show_cta_faq'            => ['CTA FAQ', 'sec-ctas'],
+          'show_cta_como_funciona'  => ['CTA Cómo funciona', 'sec-ctas'],
+          'show_cta_comparison'     => ['CTA Comparativa', 'sec-ctas'],
+          'show_cta_para_quien'     => ['CTA Para quién es', 'sec-ctas'],
+          'show_cta_wa_testimonios' => ['CTA WA Testimonios', 'sec-ctas'],
+        ];
+        $padresCta = [
+          'show_cta_benefits'       => 'show_benefits',
+          'show_cta_gallery'        => 'show_gallery',
+          'show_cta_porque'         => 'show_porque',
+          'show_cta_testimonials'   => 'show_testimonios',
+          'show_cta_faq'            => 'show_faqs',
+          'show_cta_como_funciona'  => 'show_como_funciona',
+          'show_cta_comparison'     => 'show_comparison',
+          'show_cta_para_quien'     => 'show_para_quien',
+          'show_cta_wa_testimonios' => 'show_wa_testimonios',
+        ];
+        $ctasEfectivos = 0;
+        foreach ($fuentesCta as $campo => $_info) {
+            if ((int)($config[$campo] ?? 1) !== 1) continue;
+            $padre = $padresCta[$campo] ?? null;
+            if ($padre !== null && (int)($config[$padre] ?? 1) !== 1) continue; // CTA huérfano
+            $ctasEfectivos++;
+        }
+        ?>
+        <?php if ($ctasEfectivos === 0): ?>
+        <div class="admin-alert-error" role="alert">
+          <div class="admin-alert-title">
+            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+            Esta landing no tiene ningún botón de compra
+          </div>
+          <ul>
+            <li>Nadie puede hacer un pedido: no hay nada que abra el formulario.</li>
+            <li>Activa <b>Caja de precio</b> en la sección Hero, o <b>CTA fija móvil</b> en la sección CTAs.</li>
+          </ul>
+        </div>
+        <?php endif; ?>
+
         <!-- Layout con índice lateral -->
         <div class="landing-editor-layout">
 
@@ -138,7 +186,7 @@
             <!-- Selector producto -->
             <div class="form-card form-card--product-selector">
               <div class="form-card-header">
-                <h3>Seleccionar producto</h3>
+                <h2>Seleccionar producto</h2>
               </div>
               <div class="form-card-body">
                 <form action="<?= BASE_URL ?>/AdminLanding/index" method="GET" class="admin-form admin-form--compact">
@@ -166,7 +214,7 @@
             <!-- Copiar orden de secciones desde otro producto -->
             <div class="form-card form-card--product-selector">
               <div class="form-card-header">
-                <h3>Copiar orden de secciones</h3>
+                <h2>Copiar orden de secciones</h2>
               </div>
               <div class="form-card-body">
                 <p class="section-hint" style="margin-top:0;">
@@ -216,7 +264,7 @@
             <!-- FORM PRINCIPAL -->
             <div class="form-card form-card--main">
               <div class="form-card-header">
-                <h3>Configuración de la landing</h3>
+                <h2>Configuración de la landing</h2>
               </div>
 
               <div class="form-card-body">
@@ -390,8 +438,8 @@
                         <div class="form-grid">
                           <?php $heroType = $config['hero_media_type'] ?? 'imagen'; ?>
                           <div class="admin-form-group admin-form-group--full">
-                            <label>Tipo de media</label>
-                            <select name="hero_media_type" onchange="toggleMediaPreview('hero', this.value)">
+                            <label for="hero_media_type">Tipo de media</label>
+                            <select id="hero_media_type" name="hero_media_type" onchange="toggleMediaPreview('hero', this.value)">
                               <option value="imagen" <?= $heroType === 'imagen' ? 'selected' : '' ?>>Imagen</option>
                               <option value="video"  <?= $heroType === 'video'  ? 'selected' : '' ?>>Video</option>
                             </select>
@@ -416,10 +464,10 @@
                             <label>Preview actual</label>
                             <div class="media-preview">
                               <?php if (!empty($config['hero_media_path'])): ?>
-                                <?php if ($heroType === 'video'): ?>
+                                <?php if (es_video($config['hero_media_path'])): ?>
                                   <video src="<?= htmlspecialchars($config['hero_media_path']) ?>" controls></video>
                                 <?php else: ?>
-                                  <img src="<?= htmlspecialchars($config['hero_media_path']) ?>" alt="Hero">
+                                  <img src="<?= htmlspecialchars($config['hero_media_path']) ?>" alt="Hero" class="js-media-check">
                                 <?php endif; ?>
                               <?php else: ?>
                                 <div class="media-empty">
@@ -560,7 +608,7 @@
                       <label style="font-weight:700; font-size:1rem; display:block; margin-bottom:6px;">
                         <i class="fas fa-palette" aria-hidden="true"></i> Variantes de color
                       </label>
-                      <p style="font-size:0.85rem; opacity:0.7; margin-bottom:14px;">
+                      <p style="font-size:0.85rem; color:var(--tx-muted); margin-bottom:14px;">
                         Define hasta 4 colores. Al activar uno en la landing, la galería mostrará sus imágenes.
                         Deja el nombre en blanco para desactivar esa variante.
                       </p>
@@ -614,7 +662,7 @@
                             $gFile   = "cv{$ci}_g{$gi}_file";
                           ?>
                           <div class="admin-form-group" style="margin-bottom:8px;">
-                            <label style="font-size:0.8rem; opacity:0.75;">Imagen <?= $gi ?></label>
+                            <label style="font-size:0.8rem;">Imagen <?= $gi ?></label>
                             <div class="media-preview" id="cv<?= $ci ?>_g<?= $gi ?>_preview" style="margin-bottom:4px; height:80px;">
                               <?php if ($gSrc !== ''): ?>
                                 <img src="<?= $gSrc ?>" alt="Color <?= $ci ?> img <?= $gi ?>" style="height:100%; object-fit:cover; border-radius:6px;">
@@ -699,10 +747,10 @@
                       <div class="gallery-card" style="margin-bottom:12px;">
                         <div class="media-preview">
                           <?php if (!empty($cPath)): ?>
-                            <?php if ($cType === 'video'): ?>
+                            <?php if (es_video($cPath)): ?>
                               <video src="<?= htmlspecialchars($cPath) ?>" muted controls style="width:100%;border-radius:6px;"></video>
                             <?php else: ?>
-                              <img src="<?= htmlspecialchars($cPath) ?>" alt="Característica <?= $cn ?>">
+                              <img src="<?= htmlspecialchars($cPath) ?>" alt="Característica <?= $cn ?>" class="js-media-check">
                             <?php endif; ?>
                           <?php else: ?>
                             <div class="media-empty">
@@ -844,14 +892,10 @@
                             <label>Preview actual</label>
                             <div class="media-preview" id="porque_preview">
                               <?php if (!empty($config['porque_media_path'])): ?>
-                                <?php
-                                $ext     = strtolower(pathinfo($config['porque_media_path'], PATHINFO_EXTENSION));
-                                $isVideo = in_array($ext, ['mp4', 'mov', 'webm']);
-                                ?>
-                                <?php if ($isVideo): ?>
+                                <?php if (es_video($config['porque_media_path'])): ?>
                                   <video src="<?= htmlspecialchars($config['porque_media_path']) ?>" muted loop controls></video>
                                 <?php else: ?>
-                                  <img src="<?= htmlspecialchars($config['porque_media_path']) ?>" alt="Por qué te encantará">
+                                  <img src="<?= htmlspecialchars($config['porque_media_path']) ?>" alt="Por qué te encantará" class="js-media-check">
                                 <?php endif; ?>
                               <?php else: ?>
                                 <div class="media-empty">
@@ -1224,7 +1268,7 @@
                           <div class="mini-card-title">
                             <i class="fas fa-circle-question" aria-hidden="true"></i>
                             Pregunta <?= $i ?>
-                            <?php if ($i > 3): ?><small style="opacity:.45;font-weight:400;text-transform:none;letter-spacing:0;">(opcional)</small><?php endif; ?>
+                            <?php if ($i > 3): ?><small style="opacity:.85;font-weight:400;text-transform:none;letter-spacing:0;">(opcional)</small><?php endif; ?>
                           </div>
 
                           <div class="admin-form-group">
@@ -1313,11 +1357,27 @@
                         'para_quien'      => ['icon' => 'fa-user-check',      'label' => 'CTA Para quién es',    'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Sí, es para mí →'],
                         'wa_testimonios'  => ['icon' => 'fa-whatsapp',        'label' => 'CTA WA Testimonios',   'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Yo también lo quiero →'],
                       ];
+                      // Cada CTA vive dentro de una sección. Si la sección está
+                      // oculta, el CTA no se renderiza aunque esté activado.
+                      $ctaParents = [
+                        'benefits'       => 'show_benefits',
+                        'gallery'        => 'show_gallery',
+                        'porque'         => 'show_porque',
+                        'testimonials'   => 'show_testimonios',
+                        'faq'            => 'show_faqs',
+                        'como_funciona'  => 'show_como_funciona',
+                        'comparison'     => 'show_comparison',
+                        'para_quien'     => 'show_para_quien',
+                        'wa_testimonios' => 'show_wa_testimonios',
+                      ];
+
                       foreach ($sectionCtas as $ctaKey => $ctaData):
-                        $showField = 'show_cta_' . $ctaKey;
-                        $isOn = (int)($config[$showField] ?? 1);
+                        $showField   = 'show_cta_' . $ctaKey;
+                        $isOn        = (int)($config[$showField] ?? 1);
+                        $parentField = $ctaParents[$ctaKey] ?? null;
+                        $parentOn    = $parentField === null ? true : (int)($config[$parentField] ?? 1) === 1;
                       ?>
-                      <div class="mini-card">
+                      <div class="mini-card<?= $parentOn ? '' : ' mini-card--inactiva' ?>">
                         <div class="mini-card-title">
                           <span><i class="fas <?= $ctaData['icon'] ?>"></i> <?= $ctaData['label'] ?></span>
                           <label class="toggle-label" style="margin:0;">
@@ -1328,6 +1388,12 @@
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                           </label>
                         </div>
+                        <?php if (!$parentOn): ?>
+                        <p class="cta-huerfano">
+                          <i class="fas fa-eye-slash" aria-hidden="true"></i>
+                          Su sección está oculta, así que este CTA no aparece en la landing aunque esté activado.
+                        </p>
+                        <?php endif; ?>
                         <div class="form-grid" style="margin-top:12px;">
                           <?php if (!empty($ctaData['has_text'])): ?>
                           <div class="admin-form-group admin-form-group--full">
@@ -1922,7 +1988,7 @@
                         title="Expandir o colapsar todas las secciones"
                         aria-label="Colapsar todas las secciones">Colapsar todo</button>
               </div>
-              <nav class="toc-nav" id="landingToc">
+              <nav class="toc-nav" id="landingToc" aria-label="Índice de secciones">
                 <a href="#sec-secciones" data-target="sec-secciones">Secciones</a>
                 <a href="#sec-hero" data-target="sec-hero">Hero</a>
                 <a href="#sec-beneficios" data-target="sec-beneficios">Beneficios</a>
@@ -2471,6 +2537,8 @@
 
 
   <!-- JS global del admin (menú) -->
+  <script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
+  <script src="<?= BASE_URL ?>/public/js/form-labels.js"></script>
   <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 
   <!-- JS del índice lateral -->
@@ -2554,7 +2622,7 @@
       <!-- Paso 3: Éxito -->
       <div class="ia-modal__body ia-modal__success" id="iaStep3" style="display:none;">
         <div class="ia-success-icon">✅</div>
-        <h3>¡Landing generada!</h3>
+        <h2>¡Landing generada!</h2>
         <p id="iaSuccessMsg">Todos los textos fueron rellenados. Revisa, ajusta lo que quieras y guarda.</p>
         <button type="button" class="ia-modal__submit" id="iaBtnCerrarOk">Revisar y guardar →</button>
       </div>
@@ -2953,7 +3021,7 @@
           <small>Foto base de tu producto — aplica a <strong>todas</strong> las secciones.</small>
         </div>
         <div id="iaRefPreview" style="display:none; margin-top:8px;">
-          <img id="iaRefPreviewImg" src="" alt="Referencia global"
+          <img id="iaRefPreviewImg" alt="Referencia global"
                style="width:100%; max-height:100px; object-fit:contain; border-radius:6px; border:1px solid var(--bd-default,#2a2a3a);">
           <button type="button" id="iaRefClear" class="ia-ref-clear">✕ Quitar referencia global</button>
         </div>
@@ -2971,7 +3039,7 @@
           <small>Foto específica para esta sección (ej: medidas, detalle, ángulo). <strong>Sobreescribe</strong> la global solo aquí. Se resetea al cambiar de sección.</small>
         </div>
         <div id="iaRefSecPreview" style="display:none; margin-top:8px;">
-          <img id="iaRefSecPreviewImg" src="" alt="Referencia sección"
+          <img id="iaRefSecPreviewImg" alt="Referencia sección"
                style="width:100%; max-height:100px; object-fit:contain; border-radius:6px; border:1px solid rgba(93,104,255,.4);">
           <button type="button" id="iaRefSecClear" class="ia-ref-clear">✕ Quitar referencia de sección</button>
         </div>
@@ -3010,7 +3078,7 @@
 
       <!-- Preview + acciones -->
       <div id="iaImgPreviewWrap" style="display:none;">
-        <img id="iaImgPreviewImg" src="" alt="Imagen generada"
+        <img id="iaImgPreviewImg" alt="Imagen generada"
              style="width:100%; border-radius:8px; margin-top:12px; border:1px solid var(--bd-default,#2a2a3a);">
         <div class="ia-img-preview-actions">
           <button type="button" id="iaImgUsar" class="ia-img-btn-usar">✅ Usar esta imagen</button>
@@ -4069,6 +4137,65 @@
   })();
   </script>
 
+<script>
+// Rutas guardadas en BD cuyo archivo ya no existe en disco: mostrar un aviso
+// legible en vez del icono de imagen rota del navegador.
+(function () {
+    function marcarRota(img) {
+        if (img.dataset.rotaMarcada) return;
+        img.dataset.rotaMarcada = "1";
+        var box = document.createElement("div");
+        box.className = "media-empty media-empty--missing";
+        box.innerHTML = '<i class="fas fa-link-slash" aria-hidden="true"></i>' +
+            '<span>Archivo no encontrado</span>';
+        box.title = img.getAttribute("src") || "";
+        img.replaceWith(box);
+    }
+    document.querySelectorAll(".media-preview img, .gallery-card img").forEach(function (img) {
+        if (img.complete && img.naturalWidth === 0) { marcarRota(img); return; }
+        img.addEventListener("error", function () { marcarRota(img); });
+    });
+})();
+</script>
+<script>
+// Aviso de cambios sin guardar: el formulario tiene ~377 campos y cerrar la
+// pestaña por error descartaba todo el trabajo sin preguntar.
+(function () {
+    var form = document.getElementById("formLanding");
+    if (!form) return;
+    var sucio = false;
+    var marcar = function () { sucio = true; };
+    form.addEventListener("input", marcar);
+    form.addEventListener("change", marcar);
+    form.addEventListener("submit", function () { sucio = false; });
+    window.addEventListener("beforeunload", function (e) {
+        if (!sucio) return;
+        e.preventDefault();
+        e.returnValue = "";
+    });
+})();
+
+// Volver a la sección en la que se estaba trabajando tras guardar.
+(function () {
+    var form = document.getElementById("formLanding");
+    if (!form) return;
+    form.addEventListener("submit", function () {
+        var visible = "";
+        document.querySelectorAll(".section-block[id]").forEach(function (sec) {
+            if (visible) return;
+            var r = sec.getBoundingClientRect();
+            if (r.bottom > 80) visible = sec.id;
+        });
+        try { sessionStorage.setItem("landingSeccion", visible); } catch (err) {}
+    });
+    var vuelta = null;
+    try { vuelta = sessionStorage.getItem("landingSeccion"); } catch (err) {}
+    if (!vuelta) return;
+    try { sessionStorage.removeItem("landingSeccion"); } catch (err) {}
+    var destino = document.getElementById(vuelta);
+    if (destino) setTimeout(function () { destino.scrollIntoView({ block: "start" }); }, 120);
+})();
+</script>
 </body>
 
 </html>

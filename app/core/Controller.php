@@ -5,6 +5,23 @@ class Controller {
         require_once __DIR__ . "/../views/{$view}.php";
     }
 
+    /**
+     * 404 con el diseño del sitio. Ofrece un enlace al primer producto activo
+     * para que el visitante no quede en una vía muerta.
+     */
+    protected function notFound(string $mensaje = 'No encontramos la página que buscas.'): void {
+        http_response_code(404);
+
+        $volver = '';
+        if (class_exists('Producto')) {
+            $p = (new Producto())->obtenerPrimeroActivo();
+            if ($p && !empty($p['slug'])) $volver = BASE_URL . '/producto/' . rawurlencode($p['slug']);
+        }
+
+        $this->view('errors/404', ['mensaje' => $mensaje, 'volver' => $volver]);
+        exit;
+    }
+
     protected function requireCsrf(): void {
         $token = trim((string)($_POST['csrf_token'] ?? ''));
         $valid = $_SESSION['csrf_token'] ?? '';
