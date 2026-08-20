@@ -19,6 +19,7 @@
   <?php
   $config      = $config ?? [];
   $success     = $success ?? '';
+  $error       = $error ?? '';
   $producto_id = isset($producto_id) ? (int)$producto_id : 1;
   $productos   = $productos ?? [];
   $producto    = $producto ?? null;
@@ -95,6 +96,7 @@
       <section class="material-content" id="top">
 
         <?= alert_success($success) ?>
+        <?= alert_error(!empty($error) ? [$error] : []) ?>
 
         <!-- Layout con índice lateral -->
         <div class="landing-editor-layout">
@@ -154,6 +156,41 @@
                       <button type="button" class="btn-switch-product"
                         data-confirm="Tienes cambios sin guardar en la landing actual. ¿Cambiar de producto de todas formas?">
                         <i class="fas fa-arrow-right-arrow-left" aria-hidden="true"></i> Cambiar
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Copiar orden de secciones desde otro producto -->
+            <div class="form-card form-card--product-selector">
+              <div class="form-card-header">
+                <h3>Copiar orden de secciones</h3>
+              </div>
+              <div class="form-card-body">
+                <p class="section-hint" style="margin-top:0;">
+                  Copia el <strong>orden</strong> de las secciones y cuáles están <strong>visibles/ocultas</strong>
+                  (incluyendo los elementos fijos: barra sticky, anuncios, WhatsApp flotante, FOMO, popup de salida, etc.)
+                  desde otra landing. No se modifican textos, imágenes ni colores de esta landing.
+                </p>
+                <form id="formCopiarOrden" action="<?= BASE_URL ?>/AdminLanding/copiarOrden" method="POST" class="admin-form admin-form--compact">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="producto_id" value="<?= htmlspecialchars($producto_id) ?>">
+                  <div class="admin-form-group">
+                    <label for="producto_id_origen_select">Copiar orden y secciones visibles desde</label>
+                    <div class="product-switcher-row">
+                      <select name="producto_id_origen" id="producto_id_origen_select" required>
+                        <option value="">Selecciona un producto…</option>
+                        <?php foreach ($productos as $prod): if ((int)$prod['id'] === $producto_id) continue; ?>
+                          <option value="<?= htmlspecialchars($prod['id']) ?>">
+                            <?= htmlspecialchars($prod['nombre']) ?>
+                          </option>
+                        <?php endforeach; ?>
+                      </select>
+                      <button type="submit" class="btn-switch-product"
+                        onclick="return confirm('Esto reemplazará el orden y las secciones visibles/ocultas de esta landing por las de la landing seleccionada. Los textos, imágenes y colores no se modifican. ¿Continuar?');">
+                        <i class="fas fa-arrows-rotate" aria-hidden="true"></i> Copiar
                       </button>
                     </div>
                   </div>

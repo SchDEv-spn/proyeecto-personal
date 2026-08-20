@@ -26,6 +26,58 @@ class LandingConfig extends Model
         }
     }
 
+    // Columnas que definen la ESTRUCTURA de la landing: el orden de las
+    // secciones ordenables y si cada una está visible u oculta.
+    // No incluye textos, imágenes, colores ni elementos fijos/CTA.
+    private const COLUMNAS_ESTRUCTURA = [
+        'section_order',
+        'show_benefits',
+        'show_gallery',
+        'show_caracteristicas',
+        'show_como_funciona',
+        'show_countdown',
+        'show_porque',
+        'show_comparison',
+        'show_para_quien',
+        'show_testimonios',
+        'show_faqs',
+        'show_wa_testimonios',
+        'show_garantia',
+        'show_regalo',
+        'show_price_box',
+
+        // Elementos fijos (sin orden propio, pero también son estructura)
+        'show_sticky_bar',
+        'show_announcement_bar',
+        'show_resumen_oferta',
+        'show_cta_sticky',
+        'show_whatsapp_btn',
+        'show_fomo',
+        'show_exit_popup',
+    ];
+
+    // Copia solo el orden estructural y la visibilidad de las secciones
+    // de un producto a otro — no toca textos, imágenes ni colores.
+    public function copiarEstructura(int $productoIdOrigen, int $productoIdDestino): bool
+    {
+        $origen = $this->obtenerPorProducto($productoIdOrigen);
+        if (!$origen) {
+            return false;
+        }
+
+        $this->asegurarFilaProducto($productoIdDestino);
+
+        $sets   = implode(', ', array_map(fn($c) => "$c = :$c", self::COLUMNAS_ESTRUCTURA));
+        $params = [':producto_id' => $productoIdDestino];
+        foreach (self::COLUMNAS_ESTRUCTURA as $col) {
+            $params[":$col"] = $origen[$col] ?? null;
+        }
+
+        $sql  = "UPDATE landing_config SET $sets WHERE producto_id = :producto_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
+
     public function guardarPorProducto(int $productoId, array $data)
     {
         $this->asegurarFilaProducto($productoId);

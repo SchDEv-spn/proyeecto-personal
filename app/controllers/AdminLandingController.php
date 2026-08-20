@@ -45,16 +45,57 @@ class AdminLandingController extends Controller
             unset($_SESSION['admin_landing_success']);
         }
 
+        $error = '';
+        if (!empty($_SESSION['admin_landing_error'])) {
+            $error = $_SESSION['admin_landing_error'];
+            unset($_SESSION['admin_landing_error']);
+        }
+
         $settings = new AppSettings();
         $this->view('admin/landing/index', [
             'config'             => $config,
             'success'            => $success,
+            'error'              => $error,
             'producto_id'        => $productoId,
             'productos'          => $productos,
             'producto'           => $productoActual,
             'tiene_api_key'      => $settings->hasKey('claude_api_key'),
             'tiene_replicate_key'=> $settings->hasKey('replicate_api_key'),
         ]);
+    }
+
+    // Copia solo el orden de secciones de otro producto hacia el actual
+    public function copiarOrden()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: " . BASE_URL . "/AdminLanding/index");
+            exit;
+        }
+
+        $productoId        = (int)($_POST['producto_id'] ?? 0);
+        $productoIdOrigen  = (int)($_POST['producto_id_origen'] ?? 0);
+
+        if ($productoId > 0 && $productoIdOrigen > 0 && $productoIdOrigen !== $productoId) {
+            $productoModel = new Producto();
+            if ($productoModel->obtenerPorId($productoIdOrigen)) {
+                $configModel = new LandingConfig();
+                if ($configModel->copiarEstructura($productoIdOrigen, $productoId)) {
+                    $_SESSION['admin_landing_success'] = "Orden y secciones visibles copiados correctamente.";
+                } else {
+                    $_SESSION['admin_landing_error'] = "No se pudo copiar la estructura de secciones.";
+                }
+            } else {
+                $_SESSION['admin_landing_error'] = "El producto de origen no existe.";
+            }
+        } else {
+            $_SESSION['admin_landing_error'] = "Selecciona un producto de origen válido.";
+        }
+
+        header("Location: " . BASE_URL . "/AdminLanding/index?producto_id=" . $productoId);
+        exit;
     }
 
     public function guardar()
