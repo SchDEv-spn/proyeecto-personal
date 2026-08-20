@@ -393,6 +393,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function showPopup() {
             if (popupShown) return;
+
+            /* Nunca por encima de alguien que está haciendo el pedido:
+               el modal usa z-index 9000 y el popup 200, así que aparecería
+               invisible detrás, se gastaría para la sesión y dejaría el
+               scroll del body bloqueado. */
+            if (document.body.classList.contains('modal-open')) return;
+
             popupShown = true;
             ssSet(SESSION_KEY_SHOWN, '1');
             popup.removeAttribute('hidden');
@@ -438,7 +445,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (isMobile) {
-            ['touchstart', 'scroll'].forEach(function (ev) {
+            /* keydown/input cuentan como actividad: escribir en el formulario no
+               dispara touchstart ni scroll, y con 40s de umbral el popup
+               saltaba a mitad del pedido. */
+            ['touchstart', 'scroll', 'keydown', 'input'].forEach(function (ev) {
                 document.addEventListener(ev, resetMobileTimer, { passive: true });
             });
             resetMobileTimer();

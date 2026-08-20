@@ -414,8 +414,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <!-- Preconnect a dominios externos para reducir latencia DNS+TLS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <?php if (!es_entorno_local()): ?>
     <link rel="dns-prefetch" href="https://connect.facebook.net">
     <link rel="dns-prefetch" href="https://www.clarity.ms">
+    <?php endif; ?>
 
     <!-- Fuentes: cargadas como link (no @import) para no bloquear el CSS principal -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap">
@@ -490,7 +492,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <div class="caract-video-wrap" id="heroVideoWrap">
                     <video src="<?= htmlspecialchars($heroMediaPath) ?>"
                         <?php if (!empty($cfg['hero_poster_path'])): ?>poster="<?= htmlspecialchars($cfg['hero_poster_path']) ?>"<?php endif; ?>
-                        autoplay loop playsinline
+                        autoplay muted loop playsinline
                         preload="auto"
                         style="max-width:100%; border-radius:10px;"></video>
                     <div class="caract-video-tap" aria-hidden="true"></div>
@@ -537,46 +539,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
             if (volBtn) volBtn.classList.remove('is-unmuted');
         }
 
-        /* Si la página está embebida en un iframe (p.ej. la vista previa
-           en vivo del editor de Landing), nunca se intenta sonido — solo
-           reproduce silencioso. Evita que el video suene solo dentro del
-           panel de administración al guardar cambios. */
-        var isEmbedded = false;
-        try { isEmbedded = window.self !== window.top; } catch (e) { isEmbedded = true; }
 
-        /* Intenta reproducir con sonido de entrada; si el navegador lo
-           bloquea (autoplay con audio sin interacción previa), cae a
-           silencioso para no perder el autoplay, y se desilencia solo
-           en cuanto el usuario toque la página por primera vez. */
+        /* El video SIEMPRE arranca silenciado. El sonido lo activa el
+           usuario con el botón de volumen, nunca solo.
+           Antes se intentaba autoplay con audio y, si el navegador lo
+           bloqueaba, se desilenciaba en el primer toque de la página —
+           incluido el primer scroll. Eso hacía que a alguien que abre el
+           anuncio desde Facebook le sonara audio de golpe al deslizar,
+           que es una de las formas más rápidas de perder la visita. */
         if (video) {
-            if (isEmbedded) {
-                video.muted = true;
-                markMuted();
-                video.play().catch(function () {});
-            } else {
-                video.muted = false;
-                var playPromise = video.play();
-                if (playPromise && typeof playPromise.then === 'function') {
-                    playPromise.then(function () {
-                        if (!video.muted) markUnmuted();
-                    }).catch(function () {
-                        video.muted = true;
-                        markMuted();
-                        video.play().catch(function () {});
-
-                        var unmuteOnFirstInteraction = function () {
-                            video.muted = false;
-                            markUnmuted();
-                            document.removeEventListener('click', unmuteOnFirstInteraction);
-                            document.removeEventListener('touchstart', unmuteOnFirstInteraction);
-                        };
-                        document.addEventListener('click', unmuteOnFirstInteraction, { once: true });
-                        document.addEventListener('touchstart', unmuteOnFirstInteraction, { once: true, passive: true });
-                    });
-                } else if (!video.muted) {
-                    markUnmuted();
-                }
-            }
+            video.muted = true;
+            markMuted();
+            video.play().catch(function () {});
         }
 
         /* ── Controles de video: tap-to-pause + mute toggle ── */
@@ -1555,8 +1529,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
         if ($precioCombo2 <= 0) $precioCombo2 = 115000;
         $hasColors = !empty($colores);
         ?>
-        <!-- Ancla vacía — mantiene compatibilidad con initStickyVisibility -->
-        <div id="form-pedido" style="display:none;" aria-hidden="true"></div>
 
         <?php
         $modalProductImg = !empty($producto['imagen_principal'])
@@ -1580,56 +1552,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
         $micoTruck  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
         $micoSwap   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
         ?>
-        <div id="orderModal" class="order-modal-overlay" hidden
-             role="dialog" aria-modal="true" aria-labelledby="orderModalProductName">
-            <div class="order-modal-card" id="orderModalCard">
-
-                <button class="order-modal-close" id="orderModalClose" aria-label="Cerrar pedido">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                    </svg>
-                </button>
-
-                <div class="order-modal-card__scroll" id="orderModalScroll">
-
-                <!-- Barra del producto -->
-                <div class="order-modal-product-bar">
-                    <div class="order-modal-product-bar__imgwrap">
-                        <img src="<?= htmlspecialchars($modalProductImg) ?>"
-                             alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>"
-                             class="order-modal-product-bar__img" loading="eager">
-                        <span class="order-modal-product-bar__badge" id="modalCartBadge">1</span>
-                    </div>
-                    <div class="order-modal-product-bar__info">
-                        <p class="order-modal-product-bar__name" id="orderModalProductName">
-                            <?= htmlspecialchars($producto['nombre'] ?? '') ?>
-                        </p>
-                        <p class="order-modal-product-bar__price" id="modalBarPrice">
-                            $<?= number_format($precio_venta, 0, ',', '.') ?>
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Trust line compacta -->
-                <div class="order-modal-trust-line">
-                    <?php if ($ahorro > 0): ?>
-                    <span class="order-modal-trust-line__saving">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></span>
-                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
-                    <?php endif; ?>
-                    <span>Envío gratis</span>
-                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
-                    <span>Pagas al recibirlo</span>
-                </div>
-
-                <!-- Título y subtítulo del formulario -->
-                <?php if (!empty($formTitle)): ?>
-                <h2 class="order-modal-form-title"><?= htmlspecialchars($formTitle) ?></h2>
-                <?php endif; ?>
-                <p class="order-modal-intro-text">
-                    <?= htmlspecialchars($formSubtitle) ?>
-                </p>
-
-                <!-- Cuerpo del formulario -->
+        <!-- ══════════════════════════════════════════════════════
+             FORMULARIO DE PEDIDO
+             Vive aquí, en el flujo de la página, NO dentro del modal.
+             Con JS el modal se lo lleva prestado y esta sección se oculta;
+             si el JS falla (11% de sesiones), el formulario sigue visible
+             y el POST nativo funciona: el servidor valida igual.
+        ══════════════════════════════════════════════════════════ -->
+        <section id="form-pedido" class="pedido-section" aria-labelledby="pedidoSectionTitle">
+            <h2 id="pedidoSectionTitle" class="pedido-section__title"><?= htmlspecialchars($formTitle ?? "Completa tu pedido") ?></h2>
                 <div class="order-modal-body">
 
                     <!-- Barra de progreso -->
@@ -2005,6 +1936,60 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
                 </div><!-- /.form-box -->
                 </div><!-- /.order-modal-body -->
+        </section>
+
+        <div id="orderModal" class="order-modal-overlay" hidden
+             role="dialog" aria-modal="true" aria-labelledby="orderModalProductName">
+            <div class="order-modal-card" id="orderModalCard">
+
+                <button class="order-modal-close" id="orderModalClose" aria-label="Cerrar pedido">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+
+                <div class="order-modal-card__scroll" id="orderModalScroll">
+
+                <!-- Barra del producto -->
+                <div class="order-modal-product-bar">
+                    <div class="order-modal-product-bar__imgwrap">
+                        <img src="<?= htmlspecialchars($modalProductImg) ?>"
+                             alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>"
+                             class="order-modal-product-bar__img" loading="eager">
+                        <span class="order-modal-product-bar__badge" id="modalCartBadge">1</span>
+                    </div>
+                    <div class="order-modal-product-bar__info">
+                        <p class="order-modal-product-bar__name" id="orderModalProductName">
+                            <?= htmlspecialchars($producto['nombre'] ?? '') ?>
+                        </p>
+                        <p class="order-modal-product-bar__price" id="modalBarPrice">
+                            $<?= number_format($precio_venta, 0, ',', '.') ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Trust line compacta -->
+                <div class="order-modal-trust-line">
+                    <?php if ($ahorro > 0): ?>
+                    <span class="order-modal-trust-line__saving">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></span>
+                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
+                    <?php endif; ?>
+                    <span>Envío gratis</span>
+                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
+                    <span>Pagas al recibirlo</span>
+                </div>
+
+                <!-- Título y subtítulo del formulario -->
+                <?php if (!empty($formTitle)): ?>
+                <h2 class="order-modal-form-title"><?= htmlspecialchars($formTitle) ?></h2>
+                <?php endif; ?>
+                <p class="order-modal-intro-text">
+                    <?= htmlspecialchars($formSubtitle) ?>
+                </p>
+
+                <!-- Cuerpo del formulario -->
+                <!-- El cuerpo del formulario se inserta aquí por JS al abrir el modal -->
+                <div class="order-modal-slot" id="orderModalSlot"></div>
 
                 </div><!-- /.order-modal-card__scroll -->
 
@@ -2025,6 +2010,13 @@ $colorBorder     = $cfg['color_border']     ?? null;
         (function () {
             const form = document.getElementById('formPedido');
             if (!form) return;
+
+            /* Marca que el modo "un paso a la vez" está vivo. Sin esta clase
+               el CSS muestra los 3 pasos seguidos y oculta los botones de
+               navegación, para que el formulario siga siendo usable si este
+               script no llega a ejecutarse. */
+            const cuerpoPasos = form.closest('.order-modal-body');
+            if (cuerpoPasos) cuerpoPasos.classList.add('js-pasos');
 
             let current = 1;
             const errBox    = document.getElementById('stepperErrors');
@@ -2383,7 +2375,25 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
         var trampaFoco = window.crearTrampaFoco ? window.crearTrampaFoco(modal) : null;
 
+        /* ── Formulario prestado ──────────────────────────────────
+           El formulario vive en <section id="form-pedido"> dentro de la
+           página, no aquí. Este script lo trae al modal la primera vez
+           que se abre y oculta la sección. Si este script nunca corre
+           (error de JS), la sección se queda visible y el pedido se
+           puede hacer igual con el POST nativo del formulario. */
+        var seccion = document.getElementById('form-pedido');
+        var slot    = document.getElementById('orderModalSlot');
+        var cuerpo  = seccion ? seccion.querySelector('.order-modal-body') : null;
+
+        if (seccion && cuerpo) seccion.classList.add('pedido-section--en-modal');
+
+        function traerFormulario() {
+            if (!slot || !cuerpo || cuerpo.parentNode === slot) return;
+            slot.appendChild(cuerpo);
+        }
+
         function openModal() {
+            traerFormulario();
             modal.removeAttribute('hidden');
             document.body.classList.add('modal-open');
             var scroll = document.getElementById('orderModalScroll');
@@ -2577,6 +2587,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
     </div>
     <?php endif; ?>
 
+    <?php if (!es_entorno_local()): // en local no se cargan: ensuciaban Clarity y el Pixel con pruebas ?>
     <!-- ── Analytics al final del body para no bloquear el render ────── -->
     <!-- Facebook Pixel -->
     <script>
@@ -2612,7 +2623,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
             y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
         })(window,document,"clarity","script","<?= htmlspecialchars($clarityId) ?>");
     </script>
-    <?php endif; ?>
+    <?php endif; // fin bloque Clarity ?>
+    <script src="<?= BASE_URL ?>/public/js/clarity-tags.js"></script>
+    <?php endif; // fin analytics solo-produccion ?>
 
 </body>
 

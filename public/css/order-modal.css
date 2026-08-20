@@ -412,3 +412,34 @@ body.modal-open { overflow: hidden; }
 .confetti-p:nth-child(8)  { left: 82%; background: #60a5fa;               animation-delay: 0.18s; }
 .confetti-p:nth-child(9)  { left: 90%; background: var(--success,#22c55e);animation-delay: 0.07s; width:9px; }
 .confetti-p:nth-child(10) { left: 5%;  background: #f472b6;               animation-delay: 0.13s; height:5px; }
+
+/* ══════════════════════════════════════════════════════════════
+   FORMULARIO EN PÁGINA — fallback sin JavaScript
+   El formulario vive en <section id="form-pedido">. Cuando el JS del
+   modal arranca, añade .pedido-section--en-modal y la sección
+   desaparece porque el modal se lleva el formulario prestado.
+   Si el JS falla, nada de esto ocurre y el formulario queda visible
+   e igual de funcional (el servidor valida el POST nativo).
+   ══════════════════════════════════════════════════════════════ */
+.pedido-section {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 32px 16px 48px;
+}
+
+.pedido-section__title {
+    font-size: 1.5rem;
+    line-height: 1.25;
+    text-align: center;
+    margin: 0 0 20px;
+}
+
+/* JS vivo: el modal se encarga, la sección sobra */
+.pedido-section--en-modal { display: none; }
+
+/* Sin el stepper activo: los 3 pasos seguidos y sin navegación por pasos */
+.order-modal-body:not(.js-pasos) .form-step { display: block; }
+.order-modal-body:not(.js-pasos) .btn-step-next,
+.order-modal-body:not(.js-pasos) .btn-step-prev,
+.order-modal-body:not(.js-pasos) .form-stepper-indicator,
+.order-modal-body:not(.js-pasos) .modal-progress-bar { display: none; }
