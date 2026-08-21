@@ -35,7 +35,26 @@
   --gold-dim:    color-mix(in srgb, var(--primary-color) 15%, transparent);
   --gold-border: color-mix(in srgb, var(--primary-color) 30%, transparent);
   --cream-dim:   color-mix(in srgb, var(--text-color) 60%, transparent);
-  --cream-muted: color-mix(in srgb, var(--text-color) 35%, transparent);
+  /* 35% daba ~2.8:1 de contraste: por debajo del mínimo legible (4.5:1) y
+     literalmente invisible en un celular a pleno sol. 50% deja ~4.6:1 y
+     sigue leyéndose como texto secundario. */
+  --cream-muted: color-mix(in srgb, var(--text-color) 50%, transparent);
+
+  /* ── Alias usados por el CSS que nunca se habían definido ──────
+     Sin estas tres, `var(--text-muted)` y `var(--border)` eran valores
+     inválidos: el color heredaba (los placeholders y las ayudas salían
+     a todo color, iguales que un valor escrito) y los bordes no se
+     dibujaban. Se declaran aquí, encima de los temas, para que cada
+     tema las resuelva con su propia paleta sin repetirlas. */
+  --text-muted:   var(--cream-dim);
+  --border:       var(--gold-border);
+  --font-heading: var(--font-display);
+
+  /* Iconos que el CSS pinta en ::before. Van como máscara y no como emoji
+     para que hereden el color del tema y midan siempre lo mismo — un
+     emoji lo dibuja cada sistema a su manera y a su tamaño. */
+  --ico-estrella: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.9 6.26 6.85.72-5.1 4.6 1.42 6.72L12 16.9l-6.07 3.4L7.35 13.6 2.25 9l6.85-.72z'/%3E%3C/svg%3E");
+  --ico-carrito: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='21' r='1'/%3E%3Ccircle cx='20' cy='21' r='1'/%3E%3Cpath d='M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6'/%3E%3C/svg%3E");
 
   /* ── Resto de tokens (no cambian con el admin) ── */
   --white:   #ffffff;
@@ -43,8 +62,20 @@
   --success: #4caf7d;
   --btn-text: #0a0a0a;
 
-  --font-display: 'Montserrat', system-ui, sans-serif;
-  --font-body:    'Lora', Georgia, serif;
+  /* Un solo tipo para todo. --font-body era Lora, una serif, y bastaba
+     ella sola para que la página se leyera como periódico: remates en el
+     texto corrido + párrafos centrados = columna editorial. Se mantiene
+     el nombre de la variable para no tocar los 15 sitios que la usan. */
+  /* Oswald titula, Montserrat cuenta.
+     Oswald es una condensada de trazo vertical: ocupa menos ancho por
+     letra, así que un titular que en Montserrat 800 se parte en cuatro
+     líneas en un móvil, aquí cabe en dos. Ese es todo el efecto de los
+     titulares que se ven "compactos" en los anuncios.
+     Ojo al tocar pesos: Oswald llega hasta 700, no tiene 800 ni 900. Un
+     font-weight mayor no da más grosor, lo sintetiza el navegador y sale
+     sucio — por eso los titulares se fijaron en 700. */
+  --font-display: 'Oswald', 'Montserrat', system-ui, sans-serif;
+  --font-body:    'Montserrat', system-ui, sans-serif;
 
   --space-xs:  4px;
   --space-sm:  8px;
@@ -57,6 +88,43 @@
   --radius-md:  12px;
   --radius-lg:  20px;
   --radius-pill:100px;
+
+  /* ── SISTEMA DE TARJETAS ────────────────────────────────────
+     La sensación de "elegante y ordenado" de una landing no sale de
+     los colores: sale de que doce tarjetas seguidas midan exactamente
+     lo mismo. Aquí había 14 tarjetas con 5 fondos, 3 radios y 8
+     paddings distintos, y por eso al bajar parecía una maqueta de
+     periódico — cada bloque con su propia caja.
+     Estos cuatro tokens son la medida única. Cualquier tarjeta nueva
+     debe salir de aquí y no inventarse la suya. */
+  --card-bg:      var(--bg-layer2);
+  /* Sin borde: la tarjeta se despega del fondo por la sombra, no por una
+     línea. Es la receta del price-box, que es la que mejor funciona de
+     toda la landing. Una línea clara de 1px alrededor de cada bloque
+     dibuja la cuadrícula de la maqueta en vez de disimularla — se ven
+     las cajas antes que el contenido. */
+  --card-border:  none;
+  --card-shadow:  0 2px 16px rgba(0,0,0,0.13);
+  --card-radius:  16px;
+  --card-pad:     20px;
+  --card-gap:     12px;
+
+  /* El chip que envuelve cada icono. En la referencia visual es lo que
+     convierte un SVG suelto en un elemento de interfaz: cuadrado
+     redondeado, fondo propio, icono en color de acento. */
+  --chip-size:    40px;
+  --chip-radius:  11px;
+  --chip-bg:      color-mix(in srgb, var(--gold) 13%, transparent);
+
+  /* Acento de acción — sólo los botones de compra. Ver la explicación
+     larga en el bloque "EL ACENTO DE ACCIÓN" al final del archivo.
+     Vive aquí arriba, antes de los temas, para que cada tema pueda
+     definir el suyo: en la cascada :root y [data-theme] pesan igual, así
+     que gana el que esté más abajo. Por defecto es el mismo dorado, y
+     por eso los ocho temas anteriores no cambian nada. */
+  --cta:      var(--gold);
+  --cta-soft: var(--gold-light);
+  --cta-text: var(--btn-text);
 
   --shadow-gold: 0 0 24px color-mix(in srgb, var(--primary-color) 20%, transparent);
   --shadow-card: 0 8px 32px rgba(0,0,0,0.5);
@@ -101,7 +169,7 @@
 
   --cream:         var(--text-color);
   --cream-dim:     color-mix(in srgb, var(--text-color) 60%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 35%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 50%, transparent);
 
   --success:       #4caf7d;
   --error:         #e05c5c;
@@ -141,7 +209,7 @@
 
   --bg-base:       #fdf8f5;
   --bg-layer1:     #f7f0ec;
-  --bg-layer2:     #f0e6e0;
+  --bg-layer2:     #f0e5e0;
   --bg-layer3:     #e8d8d0;
   --bg-card:       rgba(139,34,82,0.04);
   --bg-card-hover: rgba(139,34,82,0.08);
@@ -153,7 +221,7 @@
 
   --cream:         var(--text-color);
   --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 40%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
 
   --success:       #2e7d32;
   --error:         #c62828;
@@ -264,7 +332,7 @@
 
   --cream:         var(--text-color);
   --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 40%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
 
   --success:       #2d6a4f;
   --error:         #c62828;
@@ -352,7 +420,7 @@
 
   --bg-base:       #f8fafc;
   --bg-layer1:     #f0f4f8;
-  --bg-layer2:     #e8eef4;
+  --bg-layer2:     #e8edf4;
   --bg-layer3:     #dde5ef;
   --bg-card:       rgba(26,46,74,0.04);
   --bg-card-hover: rgba(26,46,74,0.08);
@@ -364,7 +432,7 @@
 
   --cream:         var(--text-color);
   --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 40%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
 
   --success:       #1b5e20;
   --error:         #b71c1c;
@@ -512,7 +580,7 @@
 
   --bg-base:       #fff5f7;
   --bg-layer1:     #ffedf1;
-  --bg-layer2:     #ffe0e8;
+  --bg-layer2:     #ffe0e7;
   --bg-layer3:     #ffd0db;
   --bg-card:       rgba(255,255,255,0.82);
   --bg-card-hover: rgba(255,255,255,0.95);
@@ -524,7 +592,7 @@
 
   --cream:         var(--text-color);
   --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 40%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
 
   --success:       #2e7d32;
   --error:         #c62828;
@@ -623,7 +691,7 @@
   --text-color:       #1a2e22;
 
   --bg-base:       #f4f7f4;
-  --bg-layer1:     #eaf2ec;
+  --bg-layer1:     #eaf2eb;
   --bg-layer2:     #dceade;
   --bg-layer3:     #cce3d0;
   --bg-card:       rgba(45,106,79,0.05);
@@ -636,7 +704,7 @@
 
   --cream:         var(--text-color);
   --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 40%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
 
   --success:       #40916c;
   --error:         #b71c1c;
@@ -734,8 +802,8 @@
   --background-color: #fff8f6;
   --text-color:       #4a2535;
 
-  --bg-base:       #fff8f6;
-  --bg-layer1:     #fdf0ee;
+  --bg-base:       #fff6f8;
+  --bg-layer1:     #fdeef1;
   --bg-layer2:     #f8e4e8;
   --bg-layer3:     #f2d4da;
   --bg-card:       rgba(255,255,255,0.82);
@@ -748,10 +816,10 @@
 
   --cream:         var(--text-color);
   --cream-dim:     color-mix(in srgb, var(--text-color) 62%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 38%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
 
   --success:       #3a7c5c;
-  --error:         #c0392b;
+  --error:         var(--error);
   --countdown-color: var(--primary-color);
 
   --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 18%, transparent);
@@ -863,7 +931,7 @@
 
   --cream:         var(--text-color);
   --cream-dim:     color-mix(in srgb, var(--text-color) 60%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 35%, transparent);
+  --cream-muted:   color-mix(in srgb, var(--text-color) 50%, transparent);
 
   --success:       #6acd8e;
   --error:         #e05c5c;
@@ -927,6 +995,76 @@
 [data-theme="obsidian"] .dot.active {
   background: var(--primary-color);
   border-color: var(--primary-color);
+}
+
+/* ── TEMA 9: MIDNIGHT AMBER (Azul noche · Ámbar) ───────────
+   El fondo no es negro sino azul noche: sobre negro puro, una tarjeta
+   apenas más clara se lee como una mancha gris y todo se aplana. Con
+   base azulada la tarjeta tiene de dónde despegarse y aparece la
+   sensación de capas que da el aspecto "de producto".
+   El ámbar es más cálido y menos amarillo que el dorado de dark-luxury,
+   así que aguanta bloques grandes de texto en mayúscula sin cansar. */
+[data-theme="midnight-amber"] {
+  --primary-color:    #f0a83c;
+  --secondary-color:  #23304d;
+  --accent-color:     #ffc46b;
+  --background-color: #0f1729;
+  --text-color:       #e8eefc;
+
+  --bg-base:       #0f1729;
+  --bg-layer1:     #141d33;
+  --bg-layer2:     #1a2338;
+  --bg-layer3:     #232e49;
+  --bg-card:       #1a2338;
+  --bg-card-hover: #202b45;
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      color-mix(in srgb, var(--primary-color) 14%, transparent);
+  /* Era blanco puro al 8% — el único de los nueve temas sin teñir. Un
+     blanco sobre un fondo azul no es "sutil", es otro color: se ve gris
+     frío y recorta la caja. Teñido con el propio azul del tema, la línea
+     se lee como un escalón de luz y no como un contorno. */
+  --gold-border:   #2b3550;
+
+  --cream:         var(--text-color);
+  --cream-dim:     #93a4c4;
+  --cream-muted:   #6e7f9e;
+
+  --success:       #3ecf8e;
+  --error:         #f2685f;
+  --countdown-color: var(--gold-light);
+
+  --shadow-gold:   0 0 26px color-mix(in srgb, var(--primary-color) 22%, transparent);
+  --shadow-card:   0 4px 18px rgba(0,0,0,0.35);
+  --shadow-deep:   0 18px 48px rgba(0,0,0,0.5);
+
+  --announcement-bg: linear-gradient(90deg, #0c1322 0%, #16203a 50%, #0c1322 100%);
+  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(240,168,60,0.10) 0%, transparent 70%);
+  --input-bg:        #141d33;
+  --input-border:    rgba(255,255,255,0.10);
+  --form-bg:         #141d33;
+  --price-box-bg:    #1a2338;
+
+  --btn-text: #10182b;
+  --carrier-invert: 1;
+
+  /* El acento de acción. El ámbar decora toda la página — títulos,
+     iconos, estrellas, eyebrows — así que el botón necesita un color
+     que no aparezca en ningún otro sitio. Este naranja es el único
+     de la landing: por eso no hay forma de perderlo de vista.
+     Es el mismo salto de tono que separa "mira" de "toca". */
+  --cta:      #f4621e;
+  --cta-soft: #ff8340;
+  /* Texto oscuro, no blanco. Sobre este naranja el blanco se queda en
+     3,2:1 — por debajo del mínimo legible, y este es justo el texto que
+     alguien tiene que poder leer con el móvil al sol. El oscuro da
+     5,6:1 en la parte baja del degradado y 7,2:1 en la alta. */
+  --cta-text: #10182b;
+}
+
+[data-theme="midnight-amber"] .announcement-bar {
+  background: var(--announcement-bg);
 }
 
 
@@ -1004,7 +1142,11 @@ ul, ol { list-style: none; }
   left: 0;
   right: 0;
   z-index: 100;
-  background: linear-gradient(90deg, #0a0a0a 0%, #1a1408 50%, #0a0a0a 100%);
+  /* Sale del token del tema, no de un negro escrito a mano. El respaldo
+     se construye con los colores del propio tema, así que si algún día
+     se añade un tema que no defina --announcement-bg, la barra seguirá
+     siendo de su color y no negra. */
+  background: var(--announcement-bg, linear-gradient(90deg, var(--bg-base) 0%, var(--bg-layer2) 50%, var(--bg-base) 100%));
   border-bottom: 1px solid var(--gold-border);
   padding: 20px var(--space-md);
   overflow: hidden;
@@ -1089,23 +1231,36 @@ h3 {
   letter-spacing: 0;
 }
 
+/* Definición única del título de sección. Antes vivía repartida en tres
+   bloques del archivo que se pisaban entre sí con !important — el
+   tamaño de 4.4rem de aquí no llegaba a verse nunca. */
 .section-title {
   font-family: var(--font-display);
-  font-size: clamp(2.2rem, 9vw, 4.4rem);
-  font-weight: 800;
+  font-size: clamp(1.6rem, 5.5vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: 0.005em;
+  line-height: 1.15;
   text-align: center;
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
   position: relative;
   color: var(--cream);
+  text-wrap: balance;
 }
 
-.section-title::after {
-  content: '';
+/* La línea dorada bajo un título centrado es el gesto de cabecera de
+   revista, y era de lo que más contribuía al aire de periódico. En su
+   lugar el ritmo lo marca el eyebrow de arriba, que es lo que hace la
+   referencia visual. */
+.section-eyebrow {
   display: block;
-  width: 48px;
-  height: 2px;
-  background: linear-gradient(90deg, var(--gold), transparent);
-  margin: 12px auto 0;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
 }
 
 /* ── ANIMACIONES DE ENTRADA ───────────────────────────────── */
@@ -1141,9 +1296,13 @@ h3 {
   18%, 100%    { transform: translateX(220%)  skewX(-20deg); }
 }
 
+/* El halo iba con el dorado del tema por defecto escrito a mano
+   (201,168,76). En natural-sage, femme-rose o bold-conversion el botón
+   es verde, rosa o naranja pero el resplandor que late seguía siendo
+   dorado. Ahora sale del color del propio tema. */
 @keyframes btn-glow-pulse {
-  0%, 100% { box-shadow: 0 4px 20px rgba(201,168,76,0.3), 0 1px 0 rgba(255,255,255,0.18) inset; }
-  50%       { box-shadow: 0 6px 32px rgba(201,168,76,0.55), 0 0 0 6px rgba(201,168,76,0.1), 0 1px 0 rgba(255,255,255,0.18) inset; }
+  0%, 100% { box-shadow: 0 4px 20px color-mix(in srgb, var(--cta) 30%, transparent), 0 1px 0 rgba(255,255,255,0.18) inset; }
+  50%      { box-shadow: 0 6px 32px color-mix(in srgb, var(--cta) 55%, transparent), 0 0 0 6px color-mix(in srgb, var(--cta) 10%, transparent), 0 1px 0 rgba(255,255,255,0.18) inset; }
 }
 
 .btn-primary {
@@ -1157,8 +1316,9 @@ h3 {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--btn-text, #0a0a0a);
-  background: linear-gradient(160deg, var(--gold-light) 0%, var(--gold) 60%, color-mix(in srgb, var(--gold) 70%, #000) 100%);
+  /* El acento de acción, no el decorativo — ver --cta arriba. */
+  color: var(--cta-text, #0a0a0a);
+  background: linear-gradient(160deg, var(--cta-soft) 0%, var(--cta) 60%, color-mix(in srgb, var(--cta) 70%, #000) 100%);
   border: none;
   border-radius: var(--radius-pill);
   cursor: pointer;
@@ -1187,7 +1347,7 @@ h3 {
 @media (hover: hover) {
   .btn-primary:hover {
     transform: translateY(-3px) scale(1.025);
-    box-shadow: 0 12px 38px rgba(201,168,76,0.55), 0 2px 0 rgba(255,255,255,0.2) inset;
+    box-shadow: 0 12px 38px color-mix(in srgb, var(--cta) 55%, transparent), 0 2px 0 rgba(255,255,255,0.2) inset;
     filter: brightness(1.07);
     animation: none;
   }
@@ -1200,7 +1360,7 @@ h3 {
 .btn-primary:active {
   transform: scale(0.96);
   filter: brightness(1.12);
-  box-shadow: 0 2px 16px rgba(201,168,76,0.4);
+  box-shadow: 0 2px 16px color-mix(in srgb, var(--cta) 40%, transparent);
   animation: none;
   transition: transform 0.08s ease, filter 0.08s ease;
 }
@@ -1264,9 +1424,12 @@ h3 {
   width: 100%;
   aspect-ratio: 8.5 / 11;
   object-fit: cover;
-  border-radius: var(--radius-lg);
+  /* Sin contorno: el creativo del hero se apoya en la sombra, igual que
+     las tarjetas. Una linea alrededor de la foto la convierte en una
+     ilustracion enmarcada en vez de en el producto. */
+  border-radius: var(--card-radius);
   box-shadow: var(--shadow-deep);
-  border: 1px solid var(--gold-border);
+  border: none;
 }
 
 /* En mobile la imagen en portrait llenaría toda la pantalla —
@@ -1299,9 +1462,12 @@ h3 {
   height: auto;
   aspect-ratio: 8.5 / 11;
   object-fit: cover;
-  border-radius: var(--radius-lg);
+  /* Sin contorno: el creativo del hero se apoya en la sombra, igual que
+     las tarjetas. Una linea alrededor de la foto la convierte en una
+     ilustracion enmarcada en vez de en el producto. */
+  border-radius: var(--card-radius);
   box-shadow: var(--shadow-deep);
-  border: 1px solid var(--gold-border);
+  border: none;
 }
 
 @media (max-width: 767px) {
@@ -1332,9 +1498,17 @@ h3 {
   animation: fadeIn 0.8s ease 0.6s both;
 }
 
+/* Era un emoji de estrella en content: cada teléfono lo pintaba de otro
+   color y otro tamaño. Ahora es una estrella dibujada que hereda el color
+   del tema. */
 .hero-trust-badge::before {
-  content: '⭐';
-  font-size: 11px;
+  content: '';
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  background: currentColor;
+  -webkit-mask: var(--ico-estrella) center / contain no-repeat;
+  mask: var(--ico-estrella) center / contain no-repeat;
 }
 
 .hero-text {
@@ -1478,7 +1652,7 @@ h3 {
   font-size: 13px;
   font-weight: 600;
   color: var(--bg-base);
-  background: var(--success);
+  background: var(--positivo);
   border-radius: var(--radius-pill);
   padding: 3px 12px;
   width: fit-content;
@@ -1495,9 +1669,15 @@ h3 {
   margin-top: 4px;
 }
 
+/* Mismo caso: el carrito era un emoji del sistema. */
 .recent-orders-badge::before {
-  content: '🛒';
-  font-size: 13px;
+  content: '';
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  background: currentColor;
+  -webkit-mask: var(--ico-carrito) center / contain no-repeat;
+  mask: var(--ico-carrito) center / contain no-repeat;
 }
 
 /* ── TRUST STRIP (transportadoras) ────────────────────────── */
@@ -1580,7 +1760,7 @@ h3 {
   gap: var(--space-sm);
   padding: var(--space-md);
   background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid color-mix(in srgb, var(--cream) 6%, transparent);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-sm);
   font-size: 14px;
@@ -1609,7 +1789,7 @@ h3 {
   text-align: center;
   margin-top: var(--space-xl);
   padding-top: var(--space-xl);
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-top: 1px solid color-mix(in srgb, var(--cream) 6%, transparent);
 }
 
 .section-cta p {
@@ -1688,10 +1868,14 @@ h3 {
   box-shadow: 0 0 0 2px var(--gold);
 }
 
+/* --gold-rgb no existe en ningún tema, así que siempre caía en el dorado
+   escrito a mano del respaldo: la miniatura activa latía en dorado aunque
+   el tema fuera verde o rosa. color-mix trabaja con el color del tema
+   directamente y no necesita los canales por separado. */
 @keyframes thumb-pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(var(--gold-rgb, 201,168,76), 0.7); }
-  60%  { box-shadow: 0 0 0 6px rgba(var(--gold-rgb, 201,168,76), 0); }
-  100% { box-shadow: 0 0 0 0   rgba(var(--gold-rgb, 201,168,76), 0); }
+  0%   { box-shadow: 0 0 0 0   color-mix(in srgb, var(--gold) 70%, transparent); }
+  60%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0   transparent; }
 }
 
 .product-gallery__thumb.thumb-pulse {
@@ -1728,7 +1912,7 @@ h3 {
   align-items: center;
   gap: 7px;
   padding: 7px 14px 7px 10px;
-  border: 1.5px solid var(--gold-border, rgba(255,255,255,0.18));
+  border: 1.5px solid var(--gold-border);
   border-radius: 999px;
   background: var(--bg-layer2, rgba(255,255,255,0.06));
   cursor: pointer;
@@ -1739,49 +1923,17 @@ h3 {
 }
 
 .gallery-color-pill:hover {
-  border-color: var(--gold, #c8a85b);
+  border-color: var(--gold);
 }
 
 .gallery-color-pill.is-active {
-  border-color: var(--gold, #c8a85b);
-  background: color-mix(in srgb, var(--gold, #c8a85b) 12%, transparent);
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
   color: var(--cream);
 }
 
-/* Radio button real: aro hueco, con un punto interior que aparece al activarse */
-.gallery-color-pill__radio {
-  position: relative;
-  display: block;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  border: 2px solid var(--cream-muted, rgba(255,255,255,0.4));
-  background: var(--input-bg, transparent);
-  flex-shrink: 0;
-  transition: border-color 0.18s;
-}
-
-.gallery-color-pill__radio::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--gold, #c8a85b);
-  transform: translate(-50%, -50%) scale(0);
-  transition: transform 0.15s;
-}
-
-.gallery-color-pill.is-active .gallery-color-pill__radio {
-  border-color: var(--gold, #c8a85b);
-}
-
-.gallery-color-pill.is-active .gallery-color-pill__radio::after {
-  transform: translate(-50%, -50%) scale(1);
-}
-
+/* El radio button de las pastillas se sustituyo por una muestra con el
+   color real de la variante — ver CAPA VISUAL al final del archivo. */
 /* ── Miniaturas fijas de colores con una sola foto ───────────
    Funcionan como selector rápido adicional a las pastillas.  */
 .gallery-color-thumbs {
@@ -1796,7 +1948,7 @@ h3 {
   position: relative;
   width: 64px;
   padding: 0;
-  border: 1.5px solid var(--gold-border, rgba(255,255,255,0.15));
+  border: 1.5px solid var(--gold-border);
   border-radius: var(--radius-sm, 8px);
   background: none;
   cursor: pointer;
@@ -1812,13 +1964,13 @@ h3 {
 }
 
 .gallery-color-thumb:hover {
-  border-color: var(--cv-color, var(--gold, #c8a85b));
+  border-color: var(--cv-color, var(--gold));
   transform: translateY(-1px);
 }
 
 .gallery-color-thumb.is-active {
-  border-color: var(--cv-color, var(--gold, #c8a85b));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cv-color, var(--gold, #c8a85b)) 35%, transparent);
+  border-color: var(--cv-color, var(--gold));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cv-color, var(--gold)) 35%, transparent);
 }
 
 .gallery-color-thumb.is-active::after {
@@ -1835,7 +1987,7 @@ h3 {
   font-size: 9px;
   font-weight: 800;
   color: #fff;
-  background: var(--cv-color, var(--gold, #c8a85b));
+  background: var(--cv-color, var(--gold));
   border: 2px solid var(--bg-base, #0a0a0a);
   box-shadow: 0 1px 4px rgba(0,0,0,0.35);
 }
@@ -1874,7 +2026,12 @@ h3 {
 
 #countdown-timer {
   display: block;
-  font-family: 'Courier New', 'Courier', monospace;
+  /* Courier era un tercer tipo de letra en una pagina que ya se unifico
+     a Montserrat, y ademas se ve anticuado. Las cifras tabulares dan la
+     misma ventaja que buscaba el monospace: que los digitos no bailen al
+     cambiar el segundo. */
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
   font-size: clamp(2.8rem, 14vw, 5rem);
   font-weight: 700;
   color: var(--gold-light);
@@ -2107,10 +2264,32 @@ h3 {
   }
 }
 
+/* Estado "el usuario quiere leer": lo activa initTickerLectura() en
+   main.js al primer toque. La animación se detiene del todo y el
+   contenedor pasa a arrastrarse a mano, igual que el ticker de
+   WhatsApp. Sin esto, en móvil el testimonio no se puede leer. */
+.testimonios-ticker.is-leyendo {
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.testimonios-ticker.is-leyendo::-webkit-scrollbar { display: none; }
+
+.testimonios-ticker.is-leyendo .testimonios-ticker__track {
+  animation: none;
+}
+
+.testimonios-ticker.is-leyendo .testimonios-ticker__card {
+  scroll-snap-align: center;
+}
+
 .testimonios-ticker__card {
   flex: 0 0 260px;
   background: var(--bg-card);
-  border: 1px solid var(--gold-border, rgba(255,255,255,0.08));
+  border: 1px solid var(--gold-border);
   border-radius: 16px;
   padding: 20px 20px 18px;
   position: relative;
@@ -2135,16 +2314,19 @@ h3 {
 }
 
 .testimonios-ticker__stars {
-  color: #f59e0b;
+  color: var(--gold);
   font-size: 15px;
   letter-spacing: 2px;
   line-height: 1;
 }
 
+/* El testimonio es prosa, no un titular: iba en 700 y a 13px, que lo
+   hacía gritar y costar de leer a la vez. El peso lo lleva el nombre
+   de quien lo firma, que es lo que da credibilidad. */
 .testimonios-ticker__text {
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.5;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
   color: var(--cream);
   margin: 0;
   flex: 1;
@@ -2163,13 +2345,13 @@ h3 {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border: 2px solid var(--gold-border, rgba(255,255,255,0.15));
+  border: 2px solid var(--gold-border);
 }
 
 .testimonios-ticker__name {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--cream-dim);
+  font-weight: 700;
+  color: var(--cream);
 }
 
 /* light-theme overrides */
@@ -2209,9 +2391,16 @@ h3 {
   padding-block: 0;
 }
 
-.faqs-section .section-title {
-  font-family: var(--font-body);
-  font-weight: 600;
+/* El título de FAQ llevaba font-body y era el único de toda la página en
+   serif — rompía la fila de doce títulos que van en Montserrat. Hereda
+   .section-title como todos los demás.
+
+   El título de testimonios traía además un style="" en el HTML que le
+   cambiaba el padding; se recoge aquí para que la separación sea la
+   misma que en el resto de secciones. */
+.testimonios-ticker-section .section-title {
+  text-align: center;
+  padding-inline: var(--space-md);
 }
 
 .wa-ticker {
@@ -2242,7 +2431,7 @@ h3 {
   flex: 0 0 80vw;
   scroll-snap-align: start;
   background: var(--bg-layer2);
-  border: 1px solid var(--gold-border, rgba(255,255,255,0.08));
+  border: 1px solid var(--gold-border);
   border-radius: 16px;
   overflow: hidden;
   display: flex;
@@ -2287,7 +2476,7 @@ h3 {
 }
 
 .wa-ticker__stars {
-  color: #f59e0b;
+  color: var(--gold);
   font-size: 13px;
   letter-spacing: 2px;
 }
@@ -2327,8 +2516,8 @@ h3 {
 .wa-ticker__check {
   font-size: 10px;
   font-weight: 600;
-  color: var(--success);
-  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--positivo);
+  background: color-mix(in srgb, var(--positivo) 12%, transparent);
   padding: 2px 6px;
   border-radius: 20px;
 }
@@ -2492,9 +2681,9 @@ h3 {
 }
 
 .form-box {
-  background: var(--bg-layer2);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
   padding: var(--space-xl) var(--space-lg);
   max-width: 640px;
   margin-inline: auto;
@@ -2522,11 +2711,15 @@ select,
 textarea {
   width: 100%;
   background: var(--bg-layer3);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid color-mix(in srgb, var(--cream) 10%, transparent);
   border-radius: var(--radius-sm);
   padding: 14px 16px;
   font-family: var(--font-body);
-  font-size: 15px;
+  /* 16px es el mínimo: por debajo, Safari y el WebView de Facebook hacen
+     zoom al enfocar el campo y ya no vuelven atrás — la página se queda
+     ampliada y descuadrada. Afectaba al textarea de indicaciones para el
+     mensajero, que es el único campo sin .input-lg. */
+  font-size: 16px;
   color: var(--cream);
   transition: var(--transition);
   outline: none;
@@ -2695,7 +2888,7 @@ select option {
   gap: 10px;
   padding: 14px var(--space-md);
   background: var(--bg-layer3);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid color-mix(in srgb, var(--cream) 8%, transparent);
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 14px;
@@ -2763,7 +2956,7 @@ select option {
   font-size: 14px;
   color: var(--cream-dim);
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid color-mix(in srgb, var(--cream) 5%, transparent);
 }
 
 .order-summary__row:last-child {
@@ -2787,13 +2980,13 @@ select option {
 }
 
 .summary-free {
-  color: var(--success);
+  color: var(--positivo);
   font-size: 12px;
   letter-spacing: 0.06em;
 }
 
 .summary-save {
-  color: var(--success);
+  color: var(--positivo);
 }
 
 .order-summary__question {
@@ -2847,7 +3040,7 @@ select option {
   border: 1px solid rgba(76,175,125,0.3);
   border-radius: var(--radius-md);
   padding: var(--space-md);
-  color: var(--success);
+  color: var(--positivo);
   font-size: 14px;
   margin-bottom: var(--space-md);
   text-align: center;
@@ -2877,7 +3070,7 @@ select option {
   font-size: 12px;
   color: var(--cream-muted);
   padding: var(--space-xl) var(--space-md);
-  border-top: 1px solid rgba(255,255,255,0.05);
+  border-top: 1px solid color-mix(in srgb, var(--cream) 5%, transparent);
   background: var(--bg-base);
 }
 
@@ -2897,9 +3090,12 @@ select option {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 16px;
+  /* El padding inferior suma el área segura del iPhone: sin ella, en
+     los modelos con indicador de inicio la barra queda pegada al borde
+     y parte del botón cae bajo una zona que el sistema se reserva. */
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
   background: var(--bg-layer2);
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid color-mix(in srgb, var(--cream) 7%, transparent);
   box-shadow: 0 -4px 24px rgba(0,0,0,0.3);
   min-height: 66px;
   text-decoration: none;
@@ -2920,7 +3116,7 @@ select option {
   border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid color-mix(in srgb, var(--cream) 8%, transparent);
 }
 .csm-meta {
   display: flex;
@@ -2980,7 +3176,7 @@ select option {
 @media (max-width: 1023px) {
   .sticky-spacer {
     display: block;
-    height: 88px;
+    height: calc(88px + env(safe-area-inset-bottom, 0px));
     transition: height 0.3s ease;
   }
   body.sticky-cta-oculto .sticky-spacer { height: 0; }
@@ -3147,7 +3343,7 @@ img[loading="lazy"].loaded {
 .form-carriers {
     margin-top: 20px;
     padding-top: 16px;
-    border-top: 1px solid rgba(255,255,255,0.07);
+    border-top: 1px solid color-mix(in srgb, var(--cream) 7%, transparent);
     text-align: center;
 }
 
@@ -3182,20 +3378,25 @@ img[loading="lazy"].loaded {
     height: 26px;
     width: auto;
     object-fit: contain;
-    /* Negro por defecto: 6 de los 8 temas son claros. Antes el default era
-       blanco y se listaban los temas claros uno por uno, así que los logos
-       desaparecían en bold-conversion y blanc-luxe, que faltaban en la lista.
-       Al revés solo hay que acordarse de los dos temas oscuros. */
-    filter: brightness(0);
-    opacity: 0.45;
     flex-shrink: 0;
-}
 
-/* Temas oscuros: logos en blanco */
-[data-theme="dark-luxury"] .form-carriers__track img,
-[data-theme="obsidian"] .form-carriers__track img {
-    filter: brightness(0) invert(1);
-    opacity: 0.65;
+    /* Los logos vienen en PNG de un solo color, así que se recolorean:
+       brightness(0) los deja negros e invert() los pasa a blanco.
+       Quién los invierte lo decide --carrier-invert, que cada tema ya
+       define (1 = fondo oscuro, logo blanco; 0 = fondo claro, negro).
+
+       Antes esto se resolvía enumerando los temas oscuros a mano, y el
+       propio comentario avisaba de que la lista se quedaba corta. Volvió
+       a pasar: al añadir midnight-amber los logos siguieron saliendo
+       negros sobre azul noche y desaparecían. Con el token no hay lista
+       que mantener — un tema nuevo hereda el valor correcto o lo declara
+       una vez, y esto funciona solo.
+
+       La opacidad se calcula del mismo token: 0,45 sobre fondo claro y
+       0,65 sobre oscuro, porque un logo blanco sobre negro necesita algo
+       más de cuerpo para pesar lo mismo. */
+    filter: brightness(0) invert(var(--carrier-invert, 1));
+    opacity: calc(0.45 + var(--carrier-invert, 1) * 0.2);
 }
 
 /* ── ORDER SUCCESS ────────────────────────────────────────── */
@@ -3220,7 +3421,7 @@ img[loading="lazy"].loaded {
   align-items: center;
   justify-content: center;
   margin: 0 auto var(--space-lg);
-  color: var(--success);
+  color: var(--positivo);
 }
 
 .order-success__label {
@@ -3228,7 +3429,7 @@ img[loading="lazy"].loaded {
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--success);
+  color: var(--positivo);
   margin-bottom: 6px;
 }
 
@@ -3323,6 +3524,8 @@ img[loading="lazy"].loaded {
   transition: var(--transition);
 }
 
+/* Verde de WhatsApp, no el acento: es un logo de marca y la gente lo
+   reconoce por el color. Es la única excepción a la paleta. */
 .order-success__wa-btn:hover {
   background: #1ebe5d;
   transform: translateY(-1px);
@@ -3387,12 +3590,12 @@ img[loading="lazy"].loaded {
     font-size: 13px;
     color: var(--text-color, #222);
 }
-.urgency-stock { color: #c0392b; font-weight: 500; }
+.urgency-stock { color: var(--error); font-weight: 500; }
 .urgency-sep   { color: var(--gold-border, #aaa); }
 .urgency-viewers { color: var(--text-color, #444); }
 
 /* Stock: animación de pulso cuando baja a ≤3 */
-.urgency-stock.critical { color: #c0392b; }
+.urgency-stock.critical { color: var(--error); }
 .urgency-stock.critical #stockCount {
     animation: stockPulse 1s ease-in-out infinite;
 }
@@ -3417,7 +3620,7 @@ img[loading="lazy"].loaded {
     font-size: 18px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: var(--countdown-color, var(--primary-color, #c0392b));
+    color: var(--countdown-color, var(--primary-color, var(--error)));
     letter-spacing: 1px;
 }
 
@@ -3580,12 +3783,12 @@ img[loading="lazy"].loaded {
     background: var(--bg-card);
     transition: border-color var(--transition);
 }
-.confirm-label:has(input:checked) { border-color: var(--success); }
+.confirm-label:has(input:checked) { border-color: var(--positivo); }
 .confirm-label input[type="checkbox"] {
     flex-shrink: 0;
     width: 20px;
     height: 20px;
-    accent-color: var(--success);
+    accent-color: var(--positivo);
     margin-top: 1px;
 }
 
@@ -3603,7 +3806,7 @@ img[loading="lazy"].loaded {
 .btn-submit-hero {
     width: 100%;
     padding: 20px 24px;
-    background: linear-gradient(160deg, #5ecc8a 0%, var(--success, #4caf7d) 55%, #38936a 100%);
+    background: linear-gradient(160deg, var(--positivo) 0%, var(--positivo) 55%, var(--positivo) 100%);
     color: #fff;
     border: none;
     border-radius: var(--radius-pill);
@@ -3834,7 +4037,7 @@ img[loading="lazy"].loaded {
     gap: 4px;
     font-size: 11px;
     font-weight: 500;
-    color: var(--success);
+    color: var(--positivo);
     margin-top: 6px;
     font-style: normal;
 }
@@ -3849,7 +4052,7 @@ img[loading="lazy"].loaded {
 .garantia-banner {
     background: linear-gradient(
         135deg,
-        color-mix(in srgb, var(--success) 6%, transparent) 0%,
+        color-mix(in srgb, var(--positivo) 6%, transparent) 0%,
         color-mix(in srgb, var(--gold) 5%, transparent) 100%
     );
     border-top: none;
@@ -3875,19 +4078,19 @@ img[loading="lazy"].loaded {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--success) 10%, transparent);
-    border: 2px solid color-mix(in srgb, var(--success) 30%, transparent);
+    background: color-mix(in srgb, var(--positivo) 10%, transparent);
+    border: 2px solid color-mix(in srgb, var(--positivo) 30%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--success);
+    color: var(--positivo);
     flex-shrink: 0;
     animation: garantiaPulse 3s ease-in-out infinite;
 }
 
 @keyframes garantiaPulse {
-    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 25%, transparent); }
-    50%       { box-shadow: 0 0 0 14px color-mix(in srgb, var(--success) 0%, transparent); }
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--positivo) 25%, transparent); }
+    50%       { box-shadow: 0 0 0 14px color-mix(in srgb, var(--positivo) 0%, transparent); }
 }
 
 .garantia-body {
@@ -3895,7 +4098,10 @@ img[loading="lazy"].loaded {
     width: 100%;
 }
 
-.garantia-body h3 {
+/* El título pasó de h3 a h2 para no saltarse un nivel del esquema; el
+   tamaño se mantiene, porque aquí va dentro de una tarjeta y no compite
+   con los títulos de sección. */
+.garantia-body h2 {
     font-size: clamp(1.1rem, 4vw, 1.5rem);
     color: var(--cream);
     margin-bottom: var(--space-sm);
@@ -3945,7 +4151,7 @@ img[loading="lazy"].loaded {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--success);
+    background: var(--positivo);
     flex-shrink: 0;
     animation: fspDotPulse 2s ease-in-out infinite;
 }
@@ -4022,7 +4228,10 @@ img[loading="lazy"].loaded {
 /* ── WHATSAPP FLOTANTE ────────────────────────────────────── */
 .wa-float-btn {
     position: fixed;
-    bottom: 110px;
+    /* Va por encima de la barra sticky, que ahora crece con el área
+       segura del iPhone: si no se suma aquí también, en esos modelos el
+       botón se monta sobre el CTA de compra. */
+    bottom: calc(110px + env(safe-area-inset-bottom, 0px));
     right: 16px;
     z-index: 80;
     width: 52px;
@@ -4038,6 +4247,7 @@ img[loading="lazy"].loaded {
     text-decoration: none;
 }
 
+/* Igual que arriba: el botón flotante conserva el verde de WhatsApp. */
 .wa-float-btn:hover {
     background: #1ebe5d;
     transform: scale(1.1);
@@ -4183,8 +4393,8 @@ img[loading="lazy"].loaded {
 }
 
 .para-quien-card--yes {
-    background: color-mix(in srgb, var(--success) 6%, var(--bg-card));
-    border-color: color-mix(in srgb, var(--success) 20%, transparent);
+    background: color-mix(in srgb, var(--positivo) 6%, var(--bg-card));
+    border-color: color-mix(in srgb, var(--positivo) 20%, transparent);
 }
 
 .para-quien-card--no {
@@ -4229,7 +4439,7 @@ img[loading="lazy"].loaded {
 
 .para-quien-card--yes .para-quien-list li::before {
     content: '✓';
-    color: var(--success);
+    color: var(--positivo);
     font-weight: 700;
     flex-shrink: 0;
     margin-top: 1px;
@@ -4304,7 +4514,7 @@ img[loading="lazy"].loaded {
 .antes-despues-badge--antes {
     background: rgba(0,0,0,0.55);
     color: rgba(255,255,255,0.9);
-    border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid color-mix(in srgb, var(--cream) 15%, transparent);
 }
 
 .antes-despues-badge--despues {
@@ -4452,7 +4662,8 @@ img[loading="lazy"].loaded {
 }
 
 .exit-popup__timer-digits {
-    font-family: 'Courier New', monospace;
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
     font-size: clamp(2rem, 10vw, 2.8rem);
     font-weight: 700;
     color: var(--gold-light);
@@ -4488,7 +4699,7 @@ img[loading="lazy"].loaded {
     font-size: 12px;
     font-weight: 600;
     color: var(--bg-base);
-    background: var(--success);
+    background: var(--positivo);
     border-radius: var(--radius-pill);
     padding: 3px 10px;
 }
@@ -4571,7 +4782,7 @@ img[loading="lazy"].loaded {
 .comparison-header strong {
     font-family: var(--font-display);
     font-size: 1.1rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
 }
@@ -4581,7 +4792,7 @@ img[loading="lazy"].loaded {
 }
 
 .comparison-header--without strong {
-    color: #e05c5c;
+    color: var(--error);
 }
 
 .comparison-header--with {
@@ -4589,7 +4800,7 @@ img[loading="lazy"].loaded {
 }
 
 .comparison-header--with strong {
-    color: #4caf7d;
+    color: var(--positivo);
 }
 
 .comparison-list {
@@ -4602,7 +4813,7 @@ img[loading="lazy"].loaded {
 .comparison-list li {
     padding: 12px 16px;
     font-size: .85rem;
-    border-bottom: 1px solid rgba(255,255,255,.04);
+    border-bottom: 1px solid color-mix(in srgb, var(--cream) 4%, transparent);
     line-height: 1.45;
     display: flex;
     gap: 8px;
@@ -4675,7 +4886,9 @@ img[loading="lazy"].loaded {
     border-radius: var(--radius-md);
     border: none;
     box-shadow: 0 2px 12px rgba(0,0,0,0.12);
-    background: var(--bg-main, #0a0a0a);
+    /* --bg-main no existe: caía siempre en el negro del respaldo, también
+       en los seis temas claros. --bg-base sí lo define cada tema. */
+    background: var(--bg-base);
     transition: transform .2s ease, box-shadow .2s ease;
 }
 
@@ -4687,7 +4900,7 @@ img[loading="lazy"].loaded {
 .authority-stat__num {
     font-size: 2rem;
     font-weight: 800;
-    color: var(--gold-light, #e8c96a);
+    color: var(--gold-light);
     line-height: 1.1;
     margin-bottom: 8px;
 }
@@ -4865,6 +5078,48 @@ img[loading="lazy"].loaded {
     padding: 6px 12px !important;
 }
 
+/* ── ICONOS QUE SUSTITUYEN A LOS EMOJI ────────────────────────
+   Los emoji que quedaban sueltos por la página (⭐ 🛡️ ✅ 💳 🔄 🔥 ⚠️ 📲)
+   pasaron a SVG de trazo, el mismo juego que ya usaban el formulario y
+   la garantía. Estas reglas sólo los alinean con el texto: sin esto un
+   SVG en línea se apoya en la base de la línea y queda descolgado. */
+.hero-image-badge__ico,
+.authority-stat__ico,
+.exit-popup__badge-ico {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: -0.12em;
+    margin-right: 4px;
+}
+
+.offer-anchor__perks span,
+.offer-anchor__scarcity {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.offer-anchor__perks svg,
+.offer-anchor__scarcity svg {
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+
+/* La cuarta estadística es sólo un icono (el escudo de la garantía): sin
+   número que lo sostenga, hay que centrarlo a la altura de los otros. */
+.authority-stat__num--ico {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1em;
+}
+
+.exit-popup__cta svg,
+.order-success__share-btn svg {
+    flex-shrink: 0;
+    vertical-align: -0.15em;
+}
+
 /* ── HERO TRUST ROW — más visible ────────────────────────── */
 .hero-trust-row {
     opacity: 1 !important;
@@ -4873,7 +5128,7 @@ img[loading="lazy"].loaded {
     padding: 10px 14px;
     background: rgba(255,255,255,0.04);
     border-radius: var(--radius-md);
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid color-mix(in srgb, var(--cream) 6%, transparent);
     justify-content: center !important;
 }
 
@@ -4890,11 +5145,8 @@ img[loading="lazy"].loaded {
 }
 
 /* ── SECTION TITLES — línea dorada más larga ─────────────── */
-.section-title::after {
-    width: 64px;
-    height: 3px;
-    background: linear-gradient(90deg, var(--gold), var(--gold-light), transparent);
-}
+/* (Aquí había un ::after que alargaba la línea dorada del título. La
+   línea se retiró entera — ver .section-eyebrow.) */
 
 /* ── BENEFIT ITEMS — hover más notable ───────────────────── */
 .benefit-item {
@@ -4915,10 +5167,15 @@ img[loading="lazy"].loaded {
     height: 2px !important;
 }
 
-/* ── FORM BOX — borde dorado ─────────────────────────────── */
+/* ── FORM BOX — la tarjeta destacada ──────────────────────────
+   Lleva la misma caja que las demás más el halo del acento: es la pieza
+   donde termina todo el recorrido y tiene que pesar más que el resto.
+   La sombra combina las dos capas — sin la primera, el formulario
+   flotaba con brillo pero sin apoyo, y se despegaba del fondo. */
 .form-box {
-    border-color: var(--gold-border) !important;
-    box-shadow: var(--shadow-gold) !important;
+    border: var(--card-border) !important;
+    border-radius: var(--card-radius) !important;
+    box-shadow: var(--card-shadow), 0 0 60px color-mix(in srgb, var(--gold) 10%, transparent) !important;
 }
 
 /* ── GARANTÍA BANNER — sin bordes ────────────────────────── */
@@ -4965,10 +5222,10 @@ img[loading="lazy"].loaded {
 
 /* ── PARA QUIÉN — tarjeta SI más llamativa ────────────────── */
 .para-quien-card--yes {
-    background: color-mix(in srgb, var(--success) 9%, var(--bg-card)) !important;
-    border-color: color-mix(in srgb, var(--success) 35%, transparent) !important;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 15%, transparent),
-                0 4px 20px color-mix(in srgb, var(--success) 10%, transparent);
+    background: color-mix(in srgb, var(--positivo) 9%, var(--bg-card)) !important;
+    border-color: color-mix(in srgb, var(--positivo) 35%, transparent) !important;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--positivo) 15%, transparent),
+                0 4px 20px color-mix(in srgb, var(--positivo) 10%, transparent);
 }
 .para-quien-card--yes .para-quien-list li {
     font-size: 15px;
@@ -5066,9 +5323,14 @@ img[loading="lazy"].loaded {
     padding: var(--space-md) var(--space-lg) !important;
 }
 
-/* ── ANUNCIO BAR — fondo más oscuro y elegante ───────────── */
+/* ── ANUNCIO BAR ──────────────────────────────────────────────
+   Aquí había un degradado casi negro con !important, y al llevar
+   !important ganaba a los NUEVE temas: la barra salía negra sobre un
+   fondo crema, azul o borgoña según el tema, sin relación con nada.
+   Cada tema ya define su propia --announcement-bg; sólo había que
+   dejarla pasar. */
 .announcement-bar {
-    background: linear-gradient(90deg, #050505 0%, #1a1205 50%, #050505 100%) !important;
+    background: var(--announcement-bg);
 }
 
 /* ── EXIT POPUP — CTA mayor ──────────────────────────────── */
@@ -5113,11 +5375,10 @@ img[loading="lazy"].loaded {
     line-height: 1.5;
 }
 
-/* ── SECTION TITLE — un toque más de tamaño ─────────────── */
-.section-title {
-    font-size: clamp(1.6rem, 5.5vw, 2.5rem) !important;
-    font-weight: 700 !important;
-}
+/* (Este bloque era el que de verdad fijaba el tamaño del título, con
+   !important y a 900 líneas de distancia de la regla original. Todo se
+   consolidó arriba: ahora .section-title se define en un solo sitio y
+   sin !important, y se puede tocar sin pelearse con la cascada.) */
 
 /* ── GALLERY THUMB — glow más visible al seleccionar ─────── */
 .product-gallery__thumb.active {
@@ -5133,7 +5394,8 @@ img[loading="lazy"].loaded {
 
 /* ── FORM URGENCY STRIP — countdown en negrita ───────────── */
 .form-urgency-strip strong {
-    font-family: 'Courier New', monospace;
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
     font-size: 15px;
     letter-spacing: 0.04em;
     color: var(--gold-light);
@@ -5141,8 +5403,8 @@ img[loading="lazy"].loaded {
 
 /* ── SUCCESS SCREEN — ícono verde más vivo ───────────────── */
 .order-success__icon {
-    background: linear-gradient(135deg, #5dd89a, #4caf7d) !important;
-    box-shadow: 0 0 0 6px rgba(76,175,125,0.15) !important;
+    background: var(--positivo) !important;
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--positivo) 18%, transparent) !important;
 }
 .order-success__wa-btn {
     background: #25d366 !important;
@@ -5321,9 +5583,9 @@ img[loading="lazy"].loaded {
 
 .offer-anchor__save {
     display: inline-block;
-    background: color-mix(in srgb, var(--success) 15%, transparent);
-    color: var(--success);
-    border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+    background: color-mix(in srgb, var(--positivo) 15%, transparent);
+    color: var(--positivo);
+    border: 1px solid color-mix(in srgb, var(--positivo) 30%, transparent);
     border-radius: var(--radius-pill);
     font-size: 12px;
     font-weight: 600;
@@ -5357,12 +5619,12 @@ img[loading="lazy"].loaded {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
-    background: color-mix(in srgb, var(--success) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
+    background: color-mix(in srgb, var(--positivo) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--positivo) 25%, transparent);
     border-radius: var(--radius-sm);
     padding: 10px 14px;
     font-size: 14px;
-    color: var(--success);
+    color: var(--positivo);
     font-weight: 500;
     margin-top: var(--space-sm);
     margin-bottom: var(--space-sm);
@@ -5446,12 +5708,12 @@ img[loading="lazy"].loaded {
 
 /* Estado completado */
 .stepper-node.is-done .stepper-node__circle {
-    background: var(--success);
-    border-color: var(--success);
+    background: var(--positivo);
+    border-color: var(--positivo);
 }
 .stepper-node.is-done .stepper-node__num   { opacity: 0; }
 .stepper-node.is-done .stepper-node__check { opacity: 1; color: #fff; }
-.stepper-node.is-done .stepper-node__label { color: var(--success); }
+.stepper-node.is-done .stepper-node__label { color: var(--positivo); }
 
 /* Conector entre pasos */
 .stepper-connector {
@@ -5463,7 +5725,7 @@ img[loading="lazy"].loaded {
     transition: background 0.3s;
     min-width: 24px;
 }
-.stepper-connector.is-done { background: var(--success); }
+.stepper-connector.is-done { background: var(--positivo); }
 
 /* Pasos del formulario */
 .form-step { display: none; }
@@ -5533,8 +5795,8 @@ img[loading="lazy"].loaded {
 .btn-step-prev {
     padding: 14px 20px;
     background: rgba(255, 255, 255, 0.06);
-    color: var(--cream, #e8ddc8);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: var(--cream);
+    border: 1px solid color-mix(in srgb, var(--cream) 18%, transparent);
     border-radius: var(--radius-sm);
     font-size: 14px;
     font-weight: 600;
@@ -5803,8 +6065,8 @@ img[loading="lazy"].loaded {
     font-size: 17px;
     font-weight: 800;
     border-radius: var(--radius-md);
-    background: linear-gradient(160deg, var(--gold-light) 0%, var(--gold) 60%, color-mix(in srgb, var(--gold) 70%, #000) 100%);
-    color: var(--btn-text, #0a0a0a);
+    background: linear-gradient(160deg, var(--cta-soft) 0%, var(--cta) 60%, color-mix(in srgb, var(--cta) 70%, #000) 100%);
+    color: var(--cta-text, #0a0a0a);
     border: none;
     cursor: pointer;
     line-height: 1.3;
@@ -5995,8 +6257,8 @@ img[loading="lazy"].loaded {
     font-size: 12px;
     border-radius: 6px;
     border: none;
-    background: rgba(220, 60, 60, 0.12);
-    color: #e05c5c;
+    background: color-mix(in srgb, var(--error) 12%, transparent);
+    color: var(--error);
     cursor: pointer;
     margin-top: 10px;
     transition: background 0.15s;
@@ -6155,7 +6417,7 @@ img[loading="lazy"].loaded {
 /* ── BENEFIT ITEMS: checkmark verde en lugar de diamante ───── */
 .benefit-item::before {
     content: '✓' !important;
-    color: var(--success) !important;
+    color: var(--positivo) !important;
     font-size: 16px !important;
     font-weight: 800 !important;
     line-height: 1.35;
@@ -6190,24 +6452,14 @@ img[loading="lazy"].loaded {
 }
 
 /* ── SECTION TITLE: 800, letra ajustada, underline sólido ─── */
-.section-title {
-    font-weight: 800 !important;
-    letter-spacing: -0.025em !important;
-}
-.section-title::after {
-    width: 36px !important;
-    height: 3px !important;
-    background: var(--gold) !important;
-    border-radius: 999px !important;
-    opacity: 0.75;
-}
+/* (El peso y el letter-spacing que había aquí, y la tercera versión de
+   la línea dorada, se consolidaron en la definición única de
+   .section-title más arriba.) */
 
-/* ── PRICE BOX: viejo precio más claramente tachado ─────────── */
-.price-box .old {
-    font-size: 16px !important;
-    font-weight: 400 !important;
-    opacity: 0.6;
-}
+/* El bloque `.price-box .old` que vivía aquí lo pisaba entero otro más
+   abajo ("Precio viejo: tachado, solo, encima del precio grande"), que
+   es el que manda. Se quita para no dejar dos reglas peleando por lo
+   mismo. */
 
 /* ── PRICE SAVE BADGE: más gordo, más impacto ─────────────── */
 .price-box .save {
@@ -6258,11 +6510,15 @@ img[loading="lazy"].loaded {
    PRICE BOX REDESIGN — limpio, directo, sin ambigüedad
    ============================================================ */
 
+/* El price-box ya era la receta buena antes de que existiera el sistema:
+   sin borde y con la sombra llevando la profundidad. Ahora sale de los
+   mismos tokens que el resto, para que un cambio en la medida única lo
+   arrastre a él también y no se quede descolgado. */
 .price-box {
-    background: var(--bg-layer2) !important;
-    border: none !important;
-    border-radius: 16px !important;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.13) !important;
+    background: var(--card-bg) !important;
+    border: var(--card-border) !important;
+    border-radius: var(--card-radius) !important;
+    box-shadow: var(--card-shadow) !important;
     padding: 18px 20px 14px !important;
     display: flex !important;
     flex-direction: column !important;
@@ -6299,8 +6555,11 @@ img[loading="lazy"].loaded {
     font-weight: 800 !important;
     letter-spacing: 0.04em !important;
     text-transform: uppercase !important;
-    color: #fff !important;
-    background: var(--success) !important;
+    /* Sobre verde el blanco pasaba justo; sobre el ámbar del acento se
+       queda en ~2:1 y la pastilla se lee como una mancha. El texto va en
+       el color del fondo de la página, que es lo que contrasta. */
+    color: var(--bg-base) !important;
+    background: var(--positivo) !important;
     border-radius: 999px !important;
     padding: 4px 14px !important;
     white-space: nowrap;
@@ -6309,13 +6568,17 @@ img[loading="lazy"].loaded {
     margin-bottom: 2px !important;
 }
 
-/* Precio viejo: tachado, solo, encima del precio grande */
+/* Precio viejo: tachado, solo, encima del precio grande.
+   Es el precio ancla — el que sostiene todo el argumento del descuento —
+   así que tiene que LEERSE. Antes llevaba --cream-muted y encima un
+   opacity 0.65, que multiplicaban hasta dejarlo en ~3:1 de contraste:
+   invisible en un celular a la luz del día. Un solo nivel de atenuación
+   con --cream-dim basta para que se lea como secundario sin desaparecer. */
 .price-box .old {
     font-size: 15px !important;
     font-weight: 400 !important;
-    color: var(--cream-muted) !important;
+    color: var(--cream-dim) !important;
     text-decoration: line-through !important;
-    opacity: 0.65 !important;
     line-height: 1 !important;
 }
 
@@ -6359,10 +6622,13 @@ img[loading="lazy"].loaded {
     white-space: nowrap;
 }
 
+/* El contador iba en rojo fijo, que era un quinto color en pantalla sin
+   ningún papel — no marca un error, marca urgencia. Cada tema ya define
+   --countdown-color para eso. */
 .countdown-digits {
     font-size: 18px !important;
     font-weight: 800 !important;
-    color: #e05c5c !important;
+    color: var(--countdown-color, var(--gold-light)) !important;
     letter-spacing: 0.04em !important;
     font-variant-numeric: tabular-nums !important;
 }
@@ -6508,7 +6774,7 @@ img[loading="lazy"].loaded {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: var(--success);
+    background: var(--positivo);
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 5l3.5 3.5L11 1' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: center;
@@ -6769,7 +7035,7 @@ img[loading="lazy"].loaded {
     align-items: center;
     gap: 10px;
     background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid color-mix(in srgb, var(--cream) 12%, transparent);
     border-radius: var(--radius-md);
     padding: 11px 14px;
     font-size: 13px;
@@ -6866,7 +7132,7 @@ img[loading="lazy"].loaded {
     background: rgba(0, 0, 0, 0.42);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid color-mix(in srgb, var(--cream) 18%, transparent);
     white-space: nowrap;
 }
 
@@ -6934,7 +7200,7 @@ img[loading="lazy"].loaded {
     border-radius: var(--radius-md);
     overflow: hidden;
     box-shadow: var(--shadow-card);
-    border: 1px solid var(--gold-border, rgba(255,255,255,0.06));
+    border: 1px solid var(--gold-border);
 }
 
 .caract-media {
@@ -7010,7 +7276,7 @@ img[loading="lazy"].loaded {
     background: rgba(0, 0, 0, 0.42);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid color-mix(in srgb, var(--cream) 18%, transparent);
     color: #fff;
     cursor: pointer;
     display: flex;
@@ -7151,12 +7417,22 @@ img[loading="lazy"].loaded {
    ══════════════════════════════════════════════════════════════ */
 .caract-vol-btn {
     width: auto;
-    min-width: 34px;
-    height: 34px;
+    min-width: 40px;
+    height: 40px;
     padding: 0 12px 0 9px;
     gap: 7px;
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.62);
+}
+
+/* El círculo se ve de 40px, pero el dedo necesita 44 y este botón es el
+   que enciende el audio del video del hero — el creativo por el que se
+   paga el anuncio. Se agranda el área táctil sin tocar el diseño. */
+.caract-vol-btn::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
 }
 
 .caract-vol-btn__txt {
@@ -7169,7 +7445,7 @@ img[loading="lazy"].loaded {
 
 /* Con el sonido ya activado sobra el texto: vuelve al círculo */
 .caract-vol-btn.is-unmuted {
-    width: 34px;
+    width: 40px;
     min-width: 0;
     padding: 0;
     gap: 0;
@@ -7183,7 +7459,7 @@ img[loading="lazy"].loaded {
 /* En el carrusel de características hay varios videos a la vez y el
    espacio es corto: ahí basta el icono. */
 .caract-section .caract-vol-btn {
-    width: 34px;
+    width: 40px;
     min-width: 0;
     padding: 0;
     gap: 0;
@@ -7202,4 +7478,492 @@ img[loading="lazy"].loaded {
         88%           { transform: scale(1.08); }
         94%           { transform: scale(0.98); }
     }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CAPA VISUAL — SISTEMA DE TARJETAS
+   ══════════════════════════════════════════════════════════════
+   Qué problema resuelve
+   ---------------------
+   La landing tenía 14 tarjetas con 5 fondos, 3 radios y 8 paddings
+   distintos. Al bajar por la página cada bloque traía su propia caja,
+   su propio margen y su propia alineación, y el conjunto se leía como
+   una maqueta de periódico en vez de como un producto.
+   La referencia visual que perseguimos no usa colores más bonitos:
+   usa UNA medida para todo. Eso es lo que se monta aquí.
+
+   Cómo está montado
+   -----------------
+   Dos niveles, y la distinción importa:
+
+   1. LA CAJA — fondo, borde, radio y sombra. Esto sí es medida única:
+      idéntico en las catorce tarjetas, sin excepción. Es lo que hace
+      que al bajar por la página todo parezca la misma familia.
+
+   2. EL RELLENO — depende de cuánto contenido lleva cada tarjeta. Una
+      ficha de estadística necesita respirar; una viñeta de garantía de
+      una línea, no. Forzar el mismo padding a las dos no da unidad, da
+      huecos raros. La referencia hace lo mismo: p-4, p-5 y p-6 según
+      densidad, pero un solo borde y un solo fondo.
+
+   Las tarjetas con estructura interna propia — el carrusel, el
+   acordeón, las capturas de WhatsApp, el regalo — no reciben padding
+   aquí: lo reparten sus propias partes. Sí reciben la caja.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── NIVEL 1 · LA CAJA — las catorce, sin excepción ───────── */
+.benefit-card-h,
+.testimonios-ticker__card,
+.step-card,
+.caract-slide,
+.wa-ticker__card,
+.accordion-item,
+.offer-anchor,
+.para-quien-card,
+.regalo-card,
+.authority-stat,
+.garantia-card,
+.porque-benefit-card {
+    background: var(--card-bg);
+    border: var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+}
+
+/* ── NIVEL 2 · EL RELLENO, por densidad ───────────────────── */
+
+/* Estándar: texto de párrafo dentro de la caja */
+.benefit-card-h,
+.testimonios-ticker__card,
+.step-card,
+.para-quien-card,
+.offer-anchor {
+    padding: var(--card-pad);
+}
+
+/* Holgado: la ficha de estadística ya trae su propio relleno con
+   !important más arriba (28px 16px) porque una cifra grande sola
+   necesita aire. No se repite aquí para no dejar dos reglas peleando
+   por lo mismo — que es justo el problema del que venimos. */
+
+/* Denso: viñetas de una o dos líneas */
+.garantia-card,
+.porque-benefit-card {
+    padding: 13px 15px;
+}
+
+/* ── Excepciones deliberadas ──────────────────────────────── */
+
+/* "Es para ti" conserva su tinte: aquí el color no decora, informa —
+   es una comparación y el lado bueno tiene que distinguirse. El lado
+   malo se queda con la caja neutra. Va después del nivel 1 porque si
+   no, el fondo de la medida única le borraría el tinte. */
+.para-quien-card--yes {
+    background: color-mix(in srgb, var(--positivo) 7%, var(--card-bg));
+}
+
+/* El regalo y el formulario son las dos piezas que deben destacar sobre
+   el resto, así que además de la caja llevan el halo del acento. Es la
+   variante "destacada" del sistema, no una tarjeta distinta. */
+.regalo-card,
+.form-box {
+    box-shadow: var(--card-shadow), 0 0 60px color-mix(in srgb, var(--gold) 8%, transparent);
+}
+
+/* Dentro de una tarjeta el texto va a la izquierda, siempre. El texto
+   centrado dentro de una caja es justo lo que hace que un bloque
+   parezca una columna de periódico y no una ficha de producto. */
+.benefit-card-h__text,
+.testimonios-ticker__text {
+    text-align: left;
+}
+
+
+/* ── BENEFICIOS ───────────────────────────────────────────────
+   La tarjeta pasa de "foto arriba, pie de foto centrado debajo" a la
+   disposición de la referencia: miniatura cuadrada a la izquierda,
+   texto a la derecha. Es sólo un cambio de dirección del flex — el
+   HTML no se toca.
+   Con foto en vez de icono porque el contenido de esta sección son
+   fotos; el chip cuadrado le da el mismo papel visual que tiene el
+   icono en la referencia. */
+.benefit-card-h {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    overflow: visible;
+}
+
+.benefit-card-h__img {
+    width: 56px;
+    height: 56px;
+    aspect-ratio: auto;
+    flex-shrink: 0;
+    border-radius: var(--chip-radius);
+    overflow: hidden;
+}
+
+.benefit-card-h__text {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--cream-dim);
+    padding: 0;
+}
+
+/* Sin foto la tarjeta ya no necesita altura mínima ni centrarse: la da
+   el padding del sistema, igual que todas las demás. */
+.benefit-card-h:not(:has(.benefit-card-h__img)) {
+    justify-content: flex-start;
+    min-height: 0;
+    padding: var(--card-pad);
+}
+
+/* El listado deja de ser rejilla de dos columnas y pasa a pila de
+   tarjetas anchas. En un móvil, dos columnas obligan a partir cada
+   frase en cuatro líneas de seis caracteres. */
+.benefit-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--card-gap);
+}
+
+/* En escritorio una sola columna dejaría tarjetas de 1100px de ancho con
+   una miniatura de 56px perdida en la esquina. A partir de tablet vuelven
+   dos columnas, pero ya con la disposición nueva dentro de cada una. */
+@media (min-width: 640px) {
+    .benefit-cards-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+
+/* ── TESTIMONIOS ──────────────────────────────────────────────
+   Se retira la comilla decorativa de 64px: es un recurso de revista y
+   además chocaba con las comillas rectas que el texto ya lleva.
+   La firma se separa con una línea fina, como en la referencia. */
+.testimonios-ticker__qmark {
+    display: none;
+}
+
+.testimonios-ticker__card {
+    gap: 8px;
+}
+
+.testimonios-ticker__stars {
+    color: var(--gold);
+    font-size: 13px;
+}
+
+.testimonios-ticker__text {
+    color: var(--cream-dim);
+    font-size: 13.5px;
+    font-weight: 400;
+}
+
+/* El separador de la firma sale del color del texto, no del borde de la
+   tarjeta: dentro de una caja sin contorno, una línea a tono se lee como
+   una pausa; una línea clara vuelve a dibujar una caja. */
+.testimonios-ticker__author {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--cream) 10%, transparent);
+}
+
+/* Sin anillo alrededor de la foto: era otro contorno claro más, y a 32px
+   el aro se come parte de la cara. */
+.testimonios-ticker__avatar {
+    width: 32px;
+    height: 32px;
+    border: none;
+}
+
+.testimonios-ticker__name {
+    color: var(--gold);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+
+/* ── CHIP DE ICONO ────────────────────────────────────────────
+   Envuelve un SVG suelto en un cuadrado redondeado con fondo propio.
+   Es el gesto que más separa "interfaz de producto" de "documento":
+   sin él los iconos flotan pegados al texto sin peso visual.
+   Se declara aquí para toda la página aunque de momento sólo lo usen
+   las secciones de la muestra. */
+.chip-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--chip-size);
+    height: var(--chip-size);
+    flex-shrink: 0;
+    border-radius: var(--chip-radius);
+    background: var(--chip-bg);
+    color: var(--gold);
+}
+
+.chip-ico svg {
+    width: 20px;
+    height: 20px;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CAPA VISUAL — PALETA SEMÁNTICA
+   ══════════════════════════════════════════════════════════════
+   Qué problema resuelve
+   ---------------------
+   Había 37 colores escritos a mano fuera de los temas: siete verdes
+   distintos, cinco rojos y dos ámbares casi idénticos conviviendo en
+   la misma pantalla. Nadie los eligió juntos — se fueron acumulando
+   uno por parche. El ojo no los distingue como intención, los lee como
+   desorden.
+   A partir de aquí el color tiene tres papeles y uno solo por papel:
+
+     var(--positivo) todo lo que confirma o tranquiliza
+     var(--error)    contraste: sólo la columna negativa de comparación
+
+   Cualquier color nuevo debe entrar por uno de estos dos. Si no encaja
+   en ninguno, casi siempre significa que no hacía falta.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── EL ACENTO ÚNICO ──────────────────────────────────────────
+   --positivo es un papel, no un color: "esto confirma, esto está
+   bien, esto te conviene". Apunta al acento del tema porque la paleta
+   se colapsó a un solo acento, como en la referencia visual.
+
+   Antes este papel lo hacía el verde, y convivía con el ámbar en la
+   misma pantalla: la pastilla de "Envío GRATIS" verde justo al lado de
+   la de "Pagas al recibir" ámbar, los ✓ verdes bajo un título ámbar.
+   Dos acentos compitiendo no dan el doble de énfasis — dan la mitad,
+   porque ya no hay un solo sitio donde mire el ojo.
+
+   Para recuperar el verde basta cambiar esta línea por
+   var(--positivo), que cada tema sigue definiendo. Nada más. */
+:root {
+  --positivo: var(--gold);
+
+  /* ── EL ACENTO DE ACCIÓN ────────────────────────────────────
+     --gold decora: títulos, iconos, estrellas, eyebrows.
+     --cta acciona: existe SÓLO en los botones de compra.
+
+     Es la diferencia entre "mira aquí" y "toca aquí". Cuando el botón
+     lleva el mismo color que los títulos, las estrellas y los chips, el
+     ojo deja de distinguirlo del decorado — hay ámbar por todas partes
+     y ninguno manda. Reservar un color exclusivo para el botón lo hace
+     imposible de no ver, sin subir el tamaño ni añadir animación.
+
+     Por defecto vale lo mismo que --gold, así que los ocho temas que ya
+     estaban no cambian ni un píxel. Un tema activa el acento de acción
+     definiendo su propio --cta, como hace midnight-amber.
+
+     Los valores por defecto NO viven aquí, sino en el bloque de tokens
+     del principio del archivo, porque tienen que ir ANTES que los temas:
+     este :root está al final y en la cascada pesa lo mismo que un
+     [data-theme], así que ganaría por orden y anularía el naranja. */
+}
+
+/* Los círculos de los SVG (✓ y ✗) llevaban #4caf7d y #e05c5c escritos
+   dentro del marcado, así que ignoraban el tema por completo. Ahora
+   heredan con currentColor y el color se decide aquí. */
+.para-quien-card--yes .para-quien-card__icon,
+.comparison-col--with .comparison-row-icon {
+    color: var(--positivo);
+}
+
+.para-quien-card--no .para-quien-card__icon,
+.comparison-col--without .comparison-row-icon {
+    color: var(--error);
+}
+
+/* Las estrellas iban en var(--gold), un ámbar distinto del ámbar del tema.
+   Dos naranjas casi iguales a diez píxeles de distancia es exactamente
+   lo que hace que una paleta se vea sucia. */
+.testimonios-ticker__stars,
+.wa-ticker__stars {
+    color: var(--gold);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CAPA VISUAL — CHIPS DE ICONO
+   ══════════════════════════════════════════════════════════════
+   Los iconos de "cómo funciona", "garantía" y "para quién es" flotaban
+   sueltos pegados al texto, sin tamaño ni fondo definidos. Un SVG suelto
+   no tiene peso visual: se lee como un adorno del párrafo, no como un
+   elemento de la interfaz.
+   Envolverlo en un cuadrado redondeado con fondo propio es lo que separa
+   "documento" de "producto", y es el gesto que más se repite en la
+   referencia. Reutiliza los tokens --chip-* del principio del archivo.
+   ══════════════════════════════════════════════════════════════ */
+.step-icon-wrap,
+.garantia-card__icon,
+.para-quien-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--chip-size);
+    height: var(--chip-size);
+    flex-shrink: 0;
+    border-radius: var(--chip-radius);
+    background: var(--chip-bg);
+    color: var(--gold);
+}
+
+.step-icon-wrap svg,
+.garantia-card__icon svg,
+.para-quien-card__icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Los círculos ✓ y ✗ de "para quién es" ya traen su propio color de
+   fondo dentro del SVG, así que el chip iría de más: se quedan a tamaño
+   completo y sin cuadrado detrás. */
+.para-quien-card__icon {
+    background: transparent;
+    width: auto;
+    height: auto;
+}
+
+.para-quien-card__icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+/* Los pasos son la única sección con el icono centrado sobre el texto:
+   ahí el chip necesita separarse del título. */
+.step-icon-wrap {
+    margin-bottom: 10px;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CAPA VISUAL — TEXTO A LA IZQUIERDA DENTRO DE LA TARJETA
+   ══════════════════════════════════════════════════════════════
+   Se centra la CABECERA de sección; el contenido de una tarjeta va
+   pegado a la izquierda. Un párrafo centrado dentro de una caja obliga
+   al ojo a buscar dónde empieza cada línea, y es lo que da el aire de
+   columna de periódico que queríamos quitar.
+   Las excepciones son deliberadas: la ficha de estadística (una cifra
+   sola), el price-box y el bloque de oferta se quedan centrados, porque
+   ahí el contenido es un dato único y no un texto que se lee.
+   ══════════════════════════════════════════════════════════════ */
+.step-card,
+.garantia-card,
+.porque-benefit-card,
+.para-quien-card,
+.caract-body,
+.wa-ticker__content {
+    text-align: left;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CAPA VISUAL — CABECERA DE SECCIÓN
+   ══════════════════════════════════════════════════════════════
+   .section-header y .subtitle se usaban en el marcado pero no tenían
+   una sola línea de CSS. El resultado: el subtítulo de la sección de
+   WhatsApp era un párrafo desnudo — a todo color, del tamaño del texto
+   corrido y alineado a la izquierda mientras el título iba centrado.
+   Competía con el título en vez de acompañarlo.
+   Aquí queda la cabecera completa en un solo patrón: eyebrow, título y
+   subtítulo. Cualquier sección puede usarla.
+   ══════════════════════════════════════════════════════════════ */
+.section-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: var(--space-lg);
+}
+
+/* Dentro de la cabecera el título ya no necesita su margen propio: la
+   separación la reparte el flex, y así el subtítulo queda pegado a su
+   título y no flotando a medio camino del siguiente bloque. */
+.section-header .section-title {
+    margin-bottom: 0;
+}
+
+.section-header .section-eyebrow {
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    max-width: 46ch;
+    margin: 10px auto 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--cream-dim);
+    text-align: center;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CAPA VISUAL — PASTILLAS DE COLOR DE LA GALERÍA
+   ══════════════════════════════════════════════════════════════
+   Estaban montadas como un radio button de formulario: un aro hueco
+   que se rellenaba de ámbar al seleccionarlo, más el nombre al lado,
+   todo dentro de una pastilla con borde de 1,5px. Tres formas anidadas
+   para decir una cosa — y el ámbar era el mismo en las cuatro, así que
+   el comprador leía "Vino tinto" pero no veía nada vino tinto, teniendo
+   el dato guardado a mano en color_variants.
+   Ahora el punto lleva el color real y la pastilla se apoya en el mismo
+   lenguaje que el resto: sin borde, el estado activo por anillo de
+   acento y fondo teñido.
+   ══════════════════════════════════════════════════════════════ */
+.gallery-color-pills__label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    opacity: 1;
+    color: var(--cream-muted);
+}
+
+.gallery-color-pill {
+    gap: 9px;
+    padding: 8px 15px 8px 9px;
+    border: none;
+    background: var(--card-bg);
+    box-shadow: var(--card-shadow);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--cream-dim);
+    transition: color 0.18s, box-shadow 0.18s, background 0.18s;
+}
+
+/* El estado activo se marca con un anillo, no con un borde: así la
+   pastilla no cambia de tamaño al seleccionarla y la fila no baila. */
+.gallery-color-pill.is-active {
+    background: color-mix(in srgb, var(--gold) 12%, var(--card-bg));
+    color: var(--cream);
+    box-shadow: inset 0 0 0 1.5px var(--gold), var(--card-shadow);
+}
+
+@media (hover: hover) {
+    .gallery-color-pill:hover {
+        box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--gold) 45%, transparent), var(--card-shadow);
+    }
+}
+
+/* La muestra: el color de la variante, con un aro tenue para que un
+   color casi negro o casi blanco no desaparezca sobre la pastilla. */
+.gallery-color-pill__swatch {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--cv-color, var(--gold));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cream) 22%, transparent);
+}
+
+.gallery-color-pill.is-active .gallery-color-pill__swatch {
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--cream) 22%, transparent),
+        0 0 0 2px color-mix(in srgb, var(--gold) 55%, transparent);
 }

@@ -1496,6 +1496,7 @@
                           'natural-sage'   => ['name' => 'Natural Sage',   'desc' => 'Verde · Orgánico · Salud'],
                           'obsidian'       => ['name' => 'Obsidian',       'desc' => 'Negro · Plata · Ultra premium'],
                           'blanc-luxe'     => ['name' => 'Blanc Luxe',     'desc' => 'Blanco · Oro · Alta elegancia'],
+                          'midnight-amber' => ['name' => 'Midnight Amber', 'desc' => 'Azul noche · Ámbar · Tarjetas'],
                         ];
                         $currentTheme = $config['theme'] ?? 'dark-luxury';
                         foreach ($themeCards as $themeVal => $themeData):
@@ -2508,6 +2509,23 @@
           color_countdown: '#c4687a',
           color_bg_card: '#fdf0ee',
           color_border: '#c4687a'
+        },
+        'midnight-amber': {
+          background_color: '#0f1729',
+          text_color: '#e8eefc',
+          primary_color: '#f0a83c',
+          accent_color: '#ffc46b',
+          secondary_color: '#23304d',
+          color_gold: '#f0a83c',
+          color_gold_light: '#ffc46b',
+          color_success: '#3ecf8e',
+          color_countdown: '#ffc46b',
+          color_bg_card: '#1a2338',
+          /* Siete caracteres exactos. La columna color_border es
+             varchar(7): un hex con alfa (#rrggbbaa) se trunca al guardar
+             y deja el color opaco — así es como un borde pensado como
+             blanco al 8% acabó siendo blanco puro en toda la landing. */
+          color_border: '#2b3550'
         },
       };
 

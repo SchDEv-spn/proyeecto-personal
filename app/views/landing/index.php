@@ -16,8 +16,10 @@ $ahorro = max(0, $precio_regular - $precio_venta);
 $config = $config ?? [];
 $cfg    = $config;
 
-// Contador de pedidos reales (últimos 30 días) con mínimo para social proof
-$pedidosRecientes = max(12, (int)($pedidos_recientes ?? 0));
+/* El contador de pedidos recientes se calculaba aquí pero no se pinta en
+   ninguna parte de la landing — la sección que lo mostraba se retiró y el
+   cálculo se quedó huérfano. Si se quiere recuperar, el sitio es el
+   .recent-orders-badge, que ya tiene estilos en style.css. */
 
 
 
@@ -29,6 +31,17 @@ if ($comboPrice2 <= 0) $comboPrice2 = 115000; // fallback
 // Un campo guardado en blanco debe comportarse como ausente: si no, la landing
 // se publica con <title> y <h1> vacíos.
 $val = fn($k, $default) => (isset($cfg[$k]) && trim((string)$cfg[$k]) !== '') ? $cfg[$k] : $default;
+
+/* Quita el icono con el que venga escrito un texto del admin, sea emoji o
+   viñeta. La página tiene un solo lenguaje de icono — SVG de trazo, que
+   hereda el color del tema — y un emoji suelto delante de una frase lo
+   rompe: Android lo pinta a color y con otra métrica.
+   Ya se usaba en hero_trust, garantía y comparación; ahora también en la
+   barra de anuncios y en el título de WhatsApp, que eran los dos sitios
+   por donde seguían colándose.
+   Se respeta lo que sí es texto: los signos de apertura ("¿Por qué…") y
+   el "+" de las cifras ("+3.200 clientas"), que cambia lo que dicen. */
+$stripLeadingEmoji = fn(string $t): string => trim(preg_replace('/^[^\p{L}\p{N}¿¡+$]+/u', '', $t));
 
 // ===== HERO =====
 $heroTitle       = $val('hero_title', $producto['nombre'] ?? 'Nombre del producto');
@@ -81,7 +94,8 @@ if (!empty($cfg['color_variants'])) {
 }
 
 // ===== COUNTDOWN =====
-$countdownTitle = $cfg['countdown_title'] ?? 'La promoción termina en:';
+// Sin los dos puntos finales: era el único título de la página que los llevaba.
+$countdownTitle = $cfg['countdown_title'] ?? 'La promoción termina en';
 $countdownText  = $cfg['countdown_text']  ?? 'Después de que el contador llegue a cero, el precio puede volver a la normalidad.';
 
 // ===== POR QUÉ TE ENCANTARÁ =====
@@ -96,11 +110,11 @@ foreach (['porque_bullet1', 'porque_bullet2', 'porque_bullet3'] as $key) {
         $porqueBullets[] = $cfg[$key];
     }
 }
-$defaultBulletIcons = ['✨', '🎯', '🛡️'];
-$porqueBulletIcons  = [];
-foreach (['porque_bullet1_icon', 'porque_bullet2_icon', 'porque_bullet3_icon'] as $idx => $key) {
-    $porqueBulletIcons[] = !empty($cfg[$key]) ? $cfg[$key] : $defaultBulletIcons[$idx];
-}
+/* Los campos porque_bulletN_icon del admin no se pintan en ningún sitio:
+   la tarjeta de cada bullet muestra un número correlativo, no un icono.
+   Se quitan del cálculo para no prometer una configuración que no existe.
+   Si algún día se quieren iconos ahí, hay que añadirlos primero al HTML
+   de .porque-benefit-card. */
 $porqueMediaPath = $val('porque_media_path', BASE_URL . '/public/img/producto/uso-1.png');
 
 // ===== TESTIMONIOS =====
@@ -121,9 +135,12 @@ $test3Photo = $val('test3_photo_path', BASE_URL . '/public/img/producto/uso-1.pn
 
 // ===== TESTIMONIOS WHATSAPP (editable) =====
 $waEnabled    = isset($cfg['wa_enabled']) ? (int)$cfg['wa_enabled'] : 1;
-$waTitle      = $cfg['wa_title'] ?? '📱 Testimonios Reales de WhatsApp';
-$waSubtitle   = $cfg['wa_subtitle'] ?? 'Capturas reales de conversaciones con nuestros clientes';
-$waFooterNote = $cfg['wa_footer_note'] ?? '💡 Desliza para ver más • Capturas 100% reales de WhatsApp';
+/* Era el único título de la página en Title Case y con emoji delante.
+   Pasa a la misma voz que los otros once: frase en oración, sin icono. */
+$waTitle      = $stripLeadingEmoji($cfg['wa_title'] ?? 'Conversaciones reales con nuestros clientes');
+$waSubtitle   = $cfg['wa_subtitle'] ?? 'Capturas sin retocar, tal como llegaron';
+/* wa_footer_note no se pinta: la nota de "desliza para ver más" la pone
+   el propio ticker (.wa-ticker__hint) con su icono de flechas. */
 
 $waItems = [];
 for ($i = 1; $i <= 5; $i++) {
@@ -180,7 +197,13 @@ $authorityGuarantee  = $cfg['authority_guarantee']  ?? 'Garantía de satisfacci�
 $footerText   = $cfg['footer_text']   ?? ('© ' . date('Y') . ' Tu Marca. Todos los derechos reservados.');
 $showFooter   = (int)($cfg['show_footer'] ?? 1);
 
-// ===== CTAs dinámicas =====
+/* ===== CTAs dinámicas =====
+   Todos los botones hablan en primera persona y desde el deseo de quien
+   compra ("Quiero…", "Sí, …"), nunca desde la orden ("Comprar", "Hacer").
+   Y ninguno lleva flecha final: antes cuatro la tenían y cinco no, así que
+   al bajar por la página los botones parecían de dos familias distintas.
+   Ojo: esto son los valores por defecto. Sólo se ven cuando el campo
+   correspondiente está vacío en el admin. */
 $ctaBenefitsText       = $cfg['cta_benefits_text']
     ?? 'Ya sabes lo que hace. El siguiente paso es recibirlo en casa.';
 $ctaBenefitsButton     = $cfg['cta_benefits_button'] ?? 'Quiero aprovechar la oferta';
@@ -201,7 +224,7 @@ $ctaFaqText            = $cfg['cta_faq_text']
     ?? 'Dudas resueltas. Esto solo falta: hacer tu pedido.';
 $ctaFaqButton          = $cfg['cta_faq_button'] ?? 'Sí, quiero pedirlo ahora';
 
-$ctaStickyMobileText   = $cfg['cta_sticky_mobile_text'] ?? '🔥 Aprovechar oferta hoy';
+$ctaStickyMobileText   = $stripLeadingEmoji($cfg['cta_sticky_mobile_text'] ?? 'Quiero aprovechar la oferta hoy');
 
 // ===== CTAs DE SECCIÓN — visibilidad =====
 $showCtaBenefits        = (int)($cfg['show_cta_benefits']        ?? 1);
@@ -211,13 +234,13 @@ $showCtaTestimonials    = (int)($cfg['show_cta_testimonials']    ?? 1);
 $showCtaFaq             = (int)($cfg['show_cta_faq']             ?? 1);
 $showCtaComoFunciona    = (int)($cfg['show_cta_como_funciona']   ?? 1);
 $ctaComoFuncionaText    = $cfg['cta_como_funciona_text']   ?? 'Así de simple. ¿Listo para empezar?';
-$ctaComoFuncionaButton  = $cfg['cta_como_funciona_button'] ?? 'Hacer mi pedido ahora →';
+$ctaComoFuncionaButton  = $cfg['cta_como_funciona_button'] ?? 'Quiero hacer mi pedido ahora';
 $showCtaComparison      = (int)($cfg['show_cta_comparison']      ?? 1);
-$ctaComparisonButton    = $cfg['cta_comparison_button']    ?? 'Quiero experimentar la diferencia →';
+$ctaComparisonButton    = $cfg['cta_comparison_button']    ?? 'Quiero experimentar la diferencia';
 $showCtaParaQuien       = (int)($cfg['show_cta_para_quien']      ?? 1);
-$ctaParaQuienButton     = $cfg['cta_para_quien_button']    ?? 'Sí, es para mí →';
+$ctaParaQuienButton     = $cfg['cta_para_quien_button']    ?? 'Sí, es para mí';
 $showCtaWaTestimonios   = (int)($cfg['show_cta_wa_testimonios']  ?? 1);
-$ctaWaTestimoniasButton = $cfg['cta_wa_testimonios_button'] ?? 'Yo también lo quiero →';
+$ctaWaTestimoniasButton = $cfg['cta_wa_testimonios_button'] ?? 'Yo también lo quiero';
 
 // ===== PARA QUIÉN ES =====
 $paraQuienSiItems = [];
@@ -284,33 +307,34 @@ $heroBadgeCustomers= htmlspecialchars($cfg['hero_badge_customers'] ?? '+3.200 cl
 $announcementItems = [];
 for ($i = 1; $i <= 6; $i++) {
     $k = "announcement_item_{$i}";
-    if (!empty($cfg[$k])) $announcementItems[] = $cfg[$k];
+    if (!empty($cfg[$k])) $announcementItems[] = $stripLeadingEmoji($cfg[$k]);
 }
 if (empty($announcementItems)) {
+    /* Sin emoji: la barra los pinta en color sobre un fondo de tema y cada
+       teléfono los dibuja distinto. Aquí el ritmo lo dan las mayúsculas y
+       el espaciado de letra, que ya trae el CSS. */
     $announcementItems = [
-        '🔥 Quedan pocas unidades',
-        '🚚 Envío gratis a todo el país',
-        '💳 Pago contraentrega',
-        '⭐ ' . $heroBadgeCustomers,
-        '📦 Empaque discreto y seguro',
+        'Quedan pocas unidades',
+        'Envío gratis a todo el país',
+        'Pago contraentrega',
+        $heroBadgeCustomers,
+        'Empaque discreto y seguro',
     ];
 }
 
 // ===== HERO TRUST ROW =====
-$stripLeadingEmoji = fn(string $t): string => trim(preg_replace('/^[^\p{L}\p{N}]+/u', '', $t));
 $heroTrust1 = $stripLeadingEmoji($cfg['hero_trust_1'] ?? 'Pago al recibir');
 $heroTrust2 = $stripLeadingEmoji($cfg['hero_trust_2'] ?? 'Envío gratis');
 $heroTrust3 = $stripLeadingEmoji($cfg['hero_trust_3'] ?? 'Cambios sin problema');
 
 // ===== CÓMO FUNCIONA =====
 $cfTitle      = $cfg['cf_title']       ?? 'Así de simple es recibirlo en casa';
-$cfStep1Icon  = $cfg['cf_step1_icon']  ?? '📋';
+/* Los campos cf_stepN_icon tampoco se pintan: los tres pasos usan el
+   juego fijo $cfSvg que se define más abajo, junto al HTML. */
 $cfStep1Title = $cfg['cf_step1_title'] ?? 'Haz tu pedido';
 $cfStep1Desc  = $cfg['cf_step1_desc']  ?? 'Llena el formulario en menos de 2 minutos. Sin registro previo ni tarjeta de crédito.';
-$cfStep2Icon  = $cfg['cf_step2_icon']  ?? '📦';
 $cfStep2Title = $cfg['cf_step2_title'] ?? 'Empacamos y enviamos';
 $cfStep2Desc  = $cfg['cf_step2_desc']  ?? 'Al día siguiente hábil despachamos tu pedido, empacado con cuidado hacia tu puerta.';
-$cfStep3Icon  = $cfg['cf_step3_icon']  ?? '🏠';
 $cfStep3Title = $cfg['cf_step3_title'] ?? 'Lo recibes y pagas';
 $cfStep3Desc  = $cfg['cf_step3_desc']  ?? 'El mensajero llega a tu casa. Revisas el producto y pagas solo cuando estás satisfecho.';
 
@@ -318,13 +342,19 @@ $cfStep3Desc  = $cfg['cf_step3_desc']  ?? 'El mensajero llega a tu casa. Revisas
 $showGarantia  = (int)($cfg['show_garantia']  ?? 1);
 $garantiaTitle = $cfg['garantia_title'] ?? 'Tu compra está 100% protegida';
 $garantiaDesc  = $cfg['garantia_desc']  ?? 'Si el producto llega dañado, diferente a lo descrito o simplemente no te convence, te lo solucionamos. Sin burocracia, sin excusas. Nuestra promesa es tu tranquilidad.';
-$garantiaItem1 = $cfg['garantia_item1'] ?? '💳 Pagas solo cuando recibes el producto en tus manos';
-$garantiaItem2 = $cfg['garantia_item2'] ?? '🚚 Envío gratis incluido a cualquier ciudad';
-$garantiaItem3 = $cfg['garantia_item3'] ?? '🔄 Si llega dañado o incorrecto, lo reponemos';
-$garantiaItem4 = $cfg['garantia_item4'] ?? '💬 Asesor en WhatsApp disponible para ti';
+/* Sin emoji delante: esta sección ya pone su propio icono SVG por tarjeta,
+   y de hecho $stripIcon() borraba el emoji al pintar — o sea que estos
+   caracteres nunca llegaban a verse. */
+$garantiaItem1 = $cfg['garantia_item1'] ?? 'Pagas solo cuando recibes el producto en tus manos';
+$garantiaItem2 = $cfg['garantia_item2'] ?? 'Envío gratis incluido a cualquier ciudad';
+$garantiaItem3 = $cfg['garantia_item3'] ?? 'Si llega dañado o incorrecto, lo reponemos';
+$garantiaItem4 = $cfg['garantia_item4'] ?? 'Asesor en WhatsApp disponible para ti';
 
 // ===== SECCIONES FIJAS (no reordenables) =====
-$showTrustStrip      = (int)($cfg['show_trust_strip']      ?? 1);
+/* show_trust_strip quedó huérfano: la tira de transportadoras se movió al
+   pie del formulario (.form-carriers) y allí se muestra siempre. El
+   interruptor sigue en el admin sin efecto — conviene retirarlo también
+   de la vista del editor. */
 $showAnnouncementBar = (int)($cfg['show_announcement_bar'] ?? 1);
 $showStickyBar       = (int)($cfg['show_sticky_bar']       ?? 1);
 $showComparison      = (int)($cfg['show_comparison']       ?? 1) && $_comparisonHasData;
@@ -343,7 +373,9 @@ $formTitle    = $cfg['form_title']    ?? 'Haz tu pedido — Pago al recibir';
 $formSubtitle = $cfg['form_subtitle'] ?? 'Sin adelantos · El mensajero llega a tu puerta';
 
 // ===== TÍTULOS DE SECCIÓN =====
-$galleryTitle     = $cfg['gallery_title']     ?? 'Galería';
+/* "Galería" era la única etiqueta de catálogo entre doce títulos que
+   hablan de lo que gana quien compra. */
+$galleryTitle     = $cfg['gallery_title']     ?? 'Míralo por todos lados';
 $testimoniosTitle = $cfg['testimonios_title'] ?? 'Lo que cuentan nuestros clientes';
 $paraQuienTitle   = $cfg['para_quien_title']  ?? '¿Este producto es para ti?';
 $faqTitle         = $cfg['faq_title']         ?? 'Preguntas frecuentes';
@@ -365,6 +397,7 @@ $theme = in_array($cfg['theme'] ?? '', [
     'natural-sage',
     'obsidian',
     'blanc-luxe',
+    'midnight-amber',
 ], true) ? $cfg['theme'] : 'dark-luxury';
 
 // Colores base (5 existentes)
@@ -373,6 +406,36 @@ $secondaryColor  = $cfg['secondary_color']  ?? null;
 $accentColor     = $cfg['accent_color']     ?? null;
 $backgroundColor = $cfg['background_color'] ?? null;
 $textColor       = $cfg['text_color']       ?? null;
+
+/* ═══════════════════════════════════════════════════════════════
+   JUEGO DE ICONOS
+   Un solo set de trazo, heredando el color con currentColor, para toda
+   la landing. Antes convivían estos SVG con emoji del sistema sueltos
+   (⭐ 🛡️ ✅ 💳 🔄 🔥 ⚠️ 📲): en Android los pinta Noto en color y chocan
+   de frente con la paleta del tema, además de verse de otro tamaño y
+   otra alineación en cada teléfono.
+   Vive aquí arriba porque lo usan secciones repartidas por todo el
+   archivo, desde el hero hasta el popup de salida.
+   ═══════════════════════════════════════════════════════════════ */
+$micoUser   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+$micoBag    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>';
+$micoBox    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>';
+$micoPaint  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12.5" r="1" fill="currentColor" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.12-.29-.29-.44-.65-.44-1.13A1.64 1.64 0 0114.43 16h2c3.05 0 5.55-2.5 5.55-5.55C21.96 6.01 17.46 2 12 2z"/></svg>';
+$micoPhone  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>';
+$micoHouse  = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+$micoStore  = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M3 9l2.45-4.9A2 2 0 017.24 3h9.52a2 2 0 011.8 1.1L21 9"/><line x1="9" y1="3" x2="9" y2="9"/><line x1="15" y1="3" x2="15" y2="9"/></svg>';
+$micoCheck  = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+$micoLock   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+$micoCard   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
+$micoTruck  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+$micoSwap   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
+
+// Los que sustituyen a los emoji sueltos que quedaban por la página.
+$micoStar   = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26 6.85.72-5.1 4.6 1.42 6.72L12 16.9l-6.07 3.4L7.35 13.6 2.25 9l6.85-.72z"/></svg>';
+$micoShield = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+$micoFlame  = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2s1.5 3.2-.8 5.6C9 9.9 7 11.4 7 14.2A5.2 5.2 0 0012.2 19 5 5 0 0017 14.1c0-2.4-1.4-3.6-1.4-3.6s-.5 1.6-1.7 1.9c.6-2.6-.6-5.6-1.9-7.2-.6-.8-1-2.2 0-3.2z"/></svg>';
+$micoAlert  = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+$micoShare  = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>';
 
 // Colores extendidos (6 nuevos)
 $colorGold       = $cfg['color_gold']       ?? null;
@@ -420,7 +483,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <?php endif; ?>
 
     <!-- Fuentes: cargadas como link (no @import) para no bloquear el CSS principal -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap">
+    <!-- Sólo Montserrat. Lora era una serif y hacía que los párrafos se
+         leyeran como columna de periódico en vez de como interfaz de
+         producto. Quitarla además ahorra una petición de fuente entera:
+         menos peso en el webview de Facebook, que es por donde entra
+         todo el tráfico. -->
+    <!-- Oswald para los titulares, Montserrat para el resto.
+         Oswald es condensada: mete más letra en el mismo ancho, y en un
+         móvil eso es la diferencia entre un titular de dos líneas y uno
+         de cuatro. Es lo que da el aire compacto de los titulares que
+         funcionan en anuncios. Sólo se piden los dos pesos que se usan
+         (600 y 700) para no cargar la familia entera. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Oswald:wght@500;600;700&display=swap">
 
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/style.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/order-modal.css">
@@ -518,7 +592,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
             <!-- ✅ NUEVO: Badge flotante sobre la imagen -->
             <div class="hero-image-badge">
-                ⭐ <?= $heroBadgeStars ?> · <?= $heroBadgeCustomers ?>
+                <span class="hero-image-badge__ico" aria-hidden="true"><?= $micoStar ?></span>
+                <?= $heroBadgeStars ?> · <?= $heroBadgeCustomers ?>
             </div>
         </div>
     </header>
@@ -616,6 +691,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <!-- BENEFICIOS — tarjetas horizontales con foto por beneficio -->
         <section class="container benefits-section">
             <div class="benefit-cards-outer">
+                <!-- El eyebrow sustituye a la línea dorada que había bajo el
+                     título: da el mismo golpe de ritmo sin el aire de
+                     cabecera de revista. -->
+                <span class="section-eyebrow">Por qué lo vas a querer</span>
                 <h2 class="section-title"><?= htmlspecialchars($benefitsTitle) ?></h2>
 
                 <div class="benefit-cards-list">
@@ -707,8 +786,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         data-color-images="<?= htmlspecialchars(json_encode($cv['images'], JSON_UNESCAPED_UNICODE)) ?>"
                         aria-pressed="<?= $cIdx === 0 ? 'true' : 'false' ?>"
                         aria-label="<?= htmlspecialchars($cv['name']) ?>"
-                        title="<?= htmlspecialchars($cv['name']) ?>">
-                        <span class="gallery-color-pill__radio" aria-hidden="true"></span>
+                        title="<?= htmlspecialchars($cv['name']) ?>"
+                        style="--cv-color:<?= htmlspecialchars($cv['hex']) ?>">
+                        <!-- El punto muestra el color real de la variante. Antes
+                             era un radio button genérico: el comprador leía el
+                             nombre pero no veía el color, teniendo el dato a mano. -->
+                        <span class="gallery-color-pill__swatch" aria-hidden="true"></span>
                         <span class="gallery-color-pill__name"><?= htmlspecialchars($cv['name']) ?></span>
                     </button>
                     <?php endforeach; ?>
@@ -1039,7 +1122,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             'Respaldado por garantía y miles de clientes',
                         ];
                         foreach ($displayBullets as $idx => $pb):
-                            $icon = $porqueBulletIcons[$idx] ?? '✅';
                         ?>
                         <div class="porque-benefit-card animate-fadeup">
                             <span class="porque-benefit-card__num"><?= $idx + 1 ?></span>
@@ -1067,7 +1149,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <div class="para-quien-card__header">
                         <span class="para-quien-card__icon" aria-hidden="true">
                             <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="13" cy="13" r="13" fill="#4caf7d"/>
+                                <circle cx="13" cy="13" r="13" fill="currentColor"/>
                                 <path d="M7.5 13.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </span>
@@ -1088,7 +1170,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <div class="para-quien-card__header">
                         <span class="para-quien-card__icon" aria-hidden="true">
                             <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="13" cy="13" r="13" fill="#e05c5c"/>
+                                <circle cx="13" cy="13" r="13" fill="currentColor"/>
                                 <path d="M9 9l8 8M17 9l-8 8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
                             </svg>
                         </span>
@@ -1112,7 +1194,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
             : ($producto['imagen_principal'] ?? null);
         ?>
         <section class="testimonios-ticker-section">
-            <h2 class="section-title" style="text-align:center; padding: 0 var(--space-md) var(--space-md);"><?= htmlspecialchars($testimoniosTitle) ?></h2>
+            <span class="section-eyebrow">Casos reales</span>
+            <h2 class="section-title"><?= htmlspecialchars($testimoniosTitle) ?></h2>
             <div class="testimonios-ticker" aria-label="Testimonios de clientes">
                 <div class="testimonios-ticker__track">
                     <?php
@@ -1157,6 +1240,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <section class="wa-testimonios-section">
             <div class="container">
                 <div class="section-header">
+                    <span class="section-eyebrow">Prueba real</span>
                     <h2 class="section-title"><?= htmlspecialchars($waTitle) ?></h2>
                     <p class="subtitle"><?= htmlspecialchars($waSubtitle) ?></p>
                 </div>
@@ -1317,8 +1401,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
         <!-- TABLA COMPARATIVA -->
         <?php
-            $svgX     = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="#e05c5c"/><path d="M9 9l8 8M17 9l-8 8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
-            $svgCheck = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="#4caf7d"/><path d="M7.5 13.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            $svgX     = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="currentColor"/><path d="M9 9l8 8M17 9l-8 8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
+            $svgCheck = '<svg width="18" height="18" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13" cy="13" r="13" fill="currentColor"/><path d="M7.5 13.5l4 4 7-8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
             $stripIcon = fn($t) => trim(preg_replace('/^[\x{1F000}-\x{1FFFF}\x{2600}-\x{27BF}❌✅✓✗✔☑×✘\s]+/u', '', $t));
         ?>
         <?php ob_start(); if ($showComparison): ?>
@@ -1363,8 +1447,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
             </div>
             <?php if ($showCtaComparison): ?>
-            <div class="comparison-cta">
-                <a href="#form-pedido" class="btn-primary">
+            <div class="comparison-cta section-cta">
+                <!-- Sin .btn-cta-section este era el único CTA de la página que
+                     en móvil salía en pastilla estrecha y una talla más grande
+                     que los demás: rompía la columna al bajar. -->
+                <a href="#form-pedido" class="btn-primary btn-cta-section">
                     <?= htmlspecialchars($ctaComparisonButton) ?>
                 </a>
             </div>
@@ -1389,7 +1476,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <div class="garantia-inner">
                     <div class="garantia-seal" aria-hidden="true"><?= $gSvgShield ?></div>
                     <div class="garantia-body">
-                        <h3><?= htmlspecialchars($garantiaTitle) ?></h3>
+                        <!-- h2 como el resto de títulos de sección: era el único
+                             que bajaba a h3 y saltaba un nivel del esquema. -->
+                        <h2><?= htmlspecialchars($garantiaTitle) ?></h2>
                         <?php if (!empty($garantiaDesc)): ?>
                         <p class="garantia-desc"><?= htmlspecialchars($garantiaDesc) ?></p>
                         <?php endif; ?>
@@ -1447,11 +1536,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <div class="authority-stat__label">pedidos entregados</div>
                     </div>
                     <div class="authority-stat">
-                        <div class="authority-stat__num">⭐ <?= htmlspecialchars($authorityRating) ?></div>
+                        <div class="authority-stat__num"><span class="authority-stat__ico" aria-hidden="true"><?= $micoStar ?></span><?= htmlspecialchars($authorityRating) ?></div>
                         <div class="authority-stat__label">calificación promedio</div>
                     </div>
                     <div class="authority-stat">
-                        <div class="authority-stat__num">🛡️</div>
+                        <div class="authority-stat__num authority-stat__num--ico" aria-hidden="true"><?= $micoShield ?></div>
                         <div class="authority-stat__label"><?= htmlspecialchars($authorityGuarantee) ?></div>
                     </div>
                 </div>
@@ -1475,13 +1564,13 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <?php endif; ?>
             </div>
             <div class="offer-anchor__perks">
-                <span>✅ Envío gratis</span>
-                <span>💳 Pago al recibir</span>
-                <span>🔄 Garantía de cambio</span>
+                <span><?= $micoTruck ?> Envío gratis</span>
+                <span><?= $micoCard ?> Pago al recibir</span>
+                <span><?= $micoSwap ?> Garantía de cambio</span>
             </div>
             <?php if ($urgencyStock <= 10): ?>
             <p class="offer-anchor__scarcity">
-                ⚠️ Solo quedan <strong id="offerAnchorStock"><?= $urgencyStock ?></strong> unidades a este precio
+                <?= $micoAlert ?> Solo quedan <strong id="offerAnchorStock"><?= $urgencyStock ?></strong> unidades a este precio
             </p>
             <?php endif; ?>
         </div>
@@ -1509,20 +1598,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <!-- ══════════════════════════════════════════════════════
              MODAL DE PEDIDO
         ══════════════════════════════════════════════════════════ -->
-        <?php
-        $micoUser   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
-        $micoBag    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>';
-        $micoBox    = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>';
-        $micoPaint  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12.5" r="1" fill="currentColor" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.12-.29-.29-.44-.65-.44-1.13A1.64 1.64 0 0114.43 16h2c3.05 0 5.55-2.5 5.55-5.55C21.96 6.01 17.46 2 12 2z"/></svg>';
-        $micoPhone  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>';
-        $micoHouse  = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
-        $micoStore  = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M3 9l2.45-4.9A2 2 0 017.24 3h9.52a2 2 0 011.8 1.1L21 9"/><line x1="9" y1="3" x2="9" y2="9"/><line x1="15" y1="3" x2="15" y2="9"/></svg>';
-        $micoCheck  = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-        $micoLock   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
-        $micoCard   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
-        $micoTruck  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
-        $micoSwap   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
-        ?>
+                <!-- El juego de iconos vive ahora al principio del archivo, junto al
+             resto de la configuracion: lo usan tambien secciones que van
+             muy por encima de esta. -->
+
         <!-- ══════════════════════════════════════════════════════
              FORMULARIO DE PEDIDO
              Vive aquí, en el flujo de la página, NO dentro del modal.
@@ -1869,7 +1948,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                 </div>
                                 <div class="order-summary__row" id="summarySaveRow" style="display:none;">
                                     <span>Ahorras</span>
-                                    <strong id="summarySave" style="color:var(--success,#22c55e);"></strong>
+                                    <strong id="summarySave" style="color:var(--positivo);"></strong>
                                 </div>
                                 <div class="order-summary__row">
                                     <span>Envío</span>
@@ -1933,7 +2012,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         </div>
                         <div class="order-success__icon-wrap">
                             <svg class="success-check-svg" width="38" height="38" viewBox="0 0 24 24" fill="none"
-                                stroke="var(--success,#22c55e)" stroke-width="2.5"
+                                stroke="var(--positivo)" stroke-width="2.5"
                                 stroke-linecap="round" stroke-linejoin="round">
                                 <polyline class="success-check-path" points="20 6 9 17 4 12"/>
                             </svg>
@@ -1974,7 +2053,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <a id="shareWaBtn"
                             href="https://wa.me/?text=<?= urlencode('¡Acabo de pedir ' . ($producto['nombre'] ?? 'este producto') . '! Te lo recomiendo 👉 ' . (isset($_SERVER['HTTP_HOST']) ? 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] : '')) ?>"
                             class="order-success__share-btn" target="_blank" rel="noopener">
-                            📲 Recomendar a un amigo
+                            <?= $micoShare ?> Recomendar a un amigo
                         </a>
                     </div>
                 </div>
@@ -2480,7 +2559,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <div class="exit-popup__backdrop" id="exitPopupBackdrop"></div>
         <div class="exit-popup__box">
             <button class="exit-popup__close" id="exitPopupClose" aria-label="Cerrar">×</button>
-            <div class="exit-popup__badge">🔥 ¡Espera un momento!</div>
+            <div class="exit-popup__badge"><span class="exit-popup__badge-ico" aria-hidden="true"><?= $micoFlame ?></span> ¡Espera un momento!</div>
             <h3 id="exitPopupTitle">Tu precio especial está a punto de perderse</h3>
             <p>Llevas un rato viendo este producto. Asegura tu descuento antes de que expire.</p>
             <div class="exit-popup__timer">
@@ -2497,7 +2576,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <?php endif; ?>
             </div>
             <a href="#form-pedido" class="btn-primary exit-popup__cta" id="exitPopupCta">
-                ✅ Quiero aprovecharlo ahora
+                <?= $micoCheck ?> Quiero aprovecharlo ahora
             </a>
             <button class="exit-popup__dismiss" id="exitPopupDismiss">
                 No gracias, prefiero perder el descuento

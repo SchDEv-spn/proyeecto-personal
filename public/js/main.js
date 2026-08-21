@@ -44,7 +44,47 @@ document.addEventListener('DOMContentLoaded', function () {
     initPixelEvents();
     initWaLinksIAB();
     initVideoControls();
+    initTickerLectura();
 });
+
+
+/* ══════════════════════════════════════════════════════════════
+   TICKER DE TESTIMONIOS — que se pueda leer con el dedo
+   El carrusel de testimonios avanza solo con una animación CSS y la
+   única pausa que tenía vivía en @media (hover: hover), o sea sólo en
+   escritorio. En un celular — que es de donde viene el 100% del
+   tráfico — el texto se mueve sin parar y no hay forma de detenerlo:
+   la prueba social más fuerte de la página era ilegible.
+   Al primer toque se congela para siempre y el contenedor pasa a
+   arrastrarse a mano, como el ticker de WhatsApp.
+   ══════════════════════════════════════════════════════════════ */
+function initTickerLectura() {
+    var tickers = document.querySelectorAll('.testimonios-ticker');
+    if (!tickers.length) return;
+
+    tickers.forEach(function (ticker) {
+        var track = ticker.querySelector('.testimonios-ticker__track');
+        if (!track) return;
+
+        function congelar() {
+            if (ticker.classList.contains('is-leyendo')) return;
+
+            /* La animación mueve el track con transform. Si se corta en
+               seco, el track salta al origen y las tarjetas que el
+               usuario estaba mirando desaparecen de golpe. Se congela
+               en el sitio: se lee el desplazamiento actual, se fija
+               como margen y recién ahí se quita la animación. */
+            var x = new DOMMatrixReadOnly(getComputedStyle(track).transform).m41;
+            ticker.classList.add('is-leyendo');
+            track.style.transform = 'none';
+            ticker.scrollLeft = -x;
+        }
+
+        ['pointerdown', 'touchstart', 'wheel'].forEach(function (evt) {
+            ticker.addEventListener(evt, congelar, { passive: true, once: true });
+        });
+    });
+}
 
 
 /* ══════════════════════════════════════════════════════════════
