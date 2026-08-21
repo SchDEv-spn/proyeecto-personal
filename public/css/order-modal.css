@@ -596,3 +596,70 @@ body.modal-open { overflow: hidden; }
         96%           { transform: scale(0.995); }
     }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   PANEL DEL FORMULARIO
+   Hasta ahora el formulario se leía como una sección más de texto,
+   con el mismo fondo que el resto de la landing. Aquí es donde se
+   compra: tiene que verse como una pieza aparte, con su propio marco
+   y un acento arriba que diga "esto es lo importante".
+   ══════════════════════════════════════════════════════════════ */
+.pedido-panel {
+    position: relative;
+    background: var(--bg-layer2);
+    border: 1px solid var(--gold-border);
+    border-radius: 22px;
+    padding: 22px 14px 24px;
+    overflow: hidden;
+    box-shadow: 0 18px 44px -28px rgba(0, 0, 0, 0.55);
+}
+
+/* Filo de acento en el borde superior */
+.pedido-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+        transparent,
+        var(--gold) 22%,
+        var(--gold) 78%,
+        transparent);
+    opacity: 0.9;
+}
+
+/* ── Kicker: en qué punto está y cuánto falta ─────────────────── */
+.pedido-kicker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin: 0 0 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+
+.pedido-kicker__punto {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .pedido-kicker__punto {
+        animation: pedido-latido 1.9s ease-in-out infinite;
+    }
+    @keyframes pedido-latido {
+        0%, 100% { opacity: 1;   transform: scale(1); }
+        50%      { opacity: 0.4; transform: scale(0.8); }
+    }
+}
+
+@media (min-width: 640px) {
+    .pedido-panel { padding: 26px 26px 30px; }
+}

@@ -1558,6 +1558,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
              y el POST nativo funciona: el servidor valida igual.
         ══════════════════════════════════════════════════════════ -->
         <section id="form-pedido" class="pedido-section" aria-label="Formulario de pedido">
+            <!-- Panel: el formulario tiene que verse como una pieza aparte del
+                 resto de la landing, no como una seccion mas de texto. -->
+            <div class="pedido-panel">
+
+                <!-- Impulso, no adorno: dice en que punto esta y cuanto falta -->
+                <p class="pedido-kicker">
+                    <span class="pedido-kicker__punto" aria-hidden="true"></span>
+                    <?= htmlspecialchars($cfg['form_kicker'] ?? 'Último paso · te toma menos de 1 minuto') ?>
+                </p>
+
                 <!-- Barra del producto -->
                 <div class="order-modal-product-bar">
                     <div class="order-modal-product-bar__imgwrap">
@@ -1997,6 +2007,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
                 </div><!-- /.form-box -->
                 </div><!-- /.order-modal-body -->
+            </div><!-- /.pedido-panel -->
         </section>
 
         <script>
