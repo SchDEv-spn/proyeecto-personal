@@ -7533,8 +7533,10 @@ img[loading="lazy"].loaded {
 
 /* ── NIVEL 2 · EL RELLENO, por densidad ───────────────────── */
 
-/* Estándar: texto de párrafo dentro de la caja */
-.benefit-card-h,
+/* Estándar: texto de párrafo dentro de la caja.
+   Beneficios queda fuera a propósito: su foto va a sangre, hasta el
+   borde de la tarjeta, así que el relleno lo pone el texto y no la
+   caja. Ver el bloque BENEFICIOS más abajo. */
 .testimonios-ticker__card,
 .step-card,
 .para-quien-card,
@@ -7571,72 +7573,67 @@ img[loading="lazy"].loaded {
     box-shadow: var(--card-shadow), 0 0 60px color-mix(in srgb, var(--gold) 8%, transparent);
 }
 
-/* Dentro de una tarjeta el texto va a la izquierda, siempre. El texto
-   centrado dentro de una caja es justo lo que hace que un bloque
-   parezca una columna de periódico y no una ficha de producto. */
-.benefit-card-h__text,
+/* Dentro de una tarjeta el texto va a la izquierda: el texto centrado
+   dentro de una caja es lo que hace que un bloque parezca una columna
+   de periódico y no una ficha de producto.
+   El pie de foto de beneficios es la excepción — son una o dos líneas
+   bajo una imagen a sangre, y ahí centrado equilibra la tarjeta en vez
+   de descolgarse a un lado. */
 .testimonios-ticker__text {
     text-align: left;
 }
 
 
 /* ── BENEFICIOS ───────────────────────────────────────────────
-   La tarjeta pasa de "foto arriba, pie de foto centrado debajo" a la
-   disposición de la referencia: miniatura cuadrada a la izquierda,
-   texto a la derecha. Es sólo un cambio de dirección del flex — el
-   HTML no se toca.
-   Con foto en vez de icono porque el contenido de esta sección son
-   fotos; el chip cuadrado le da el mismo papel visual que tiene el
-   icono en la referencia. */
+   Rejilla 2×2 con la foto grande arriba y el pie de foto debajo, en
+   todos los tamaños. Se probó la disposición horizontal — miniatura de
+   56px a la izquierda, texto a la derecha — y aunque encaja mejor con
+   la referencia visual, esa referencia usa ICONOS y esta sección usa
+   FOTOS de producto. Una foto reducida a un chip de 56px no se ve, y
+   aquí la foto es el argumento: enseña el producto en uso.
+   Así que la caja sí sale del sistema (fondo, radio y sombra), pero la
+   disposición la manda el contenido.
+
+   La tarjeta no lleva padding a propósito: la foto tiene que llegar
+   hasta el borde. El relleno lo pone el texto. */
 .benefit-card-h {
-    flex-direction: row;
-    align-items: center;
-    gap: 14px;
-    overflow: visible;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    overflow: hidden;
 }
 
 .benefit-card-h__img {
-    width: 56px;
-    height: 56px;
-    aspect-ratio: auto;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     flex-shrink: 0;
-    border-radius: var(--chip-radius);
+    border-radius: 0;
     overflow: hidden;
 }
 
 .benefit-card-h__text {
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.5;
-    color: var(--cream-dim);
-    padding: 0;
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--cream);
+    padding: 11px 12px 14px;
+    text-align: center;
 }
 
-/* Sin foto la tarjeta ya no necesita altura mínima ni centrarse: la da
-   el padding del sistema, igual que todas las demás. */
+/* Sin foto no hay nada que enmarcar: la tarjeta se centra y recupera un
+   alto mínimo para que no quede una pastilla aplastada junto a las que
+   sí llevan imagen. */
 .benefit-card-h:not(:has(.benefit-card-h__img)) {
-    justify-content: flex-start;
-    min-height: 0;
-    padding: var(--card-pad);
+    justify-content: center;
+    min-height: 110px;
+    padding: 16px 14px;
 }
 
-/* El listado deja de ser rejilla de dos columnas y pasa a pila de
-   tarjetas anchas. En un móvil, dos columnas obligan a partir cada
-   frase en cuatro líneas de seis caracteres. */
 .benefit-cards-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: var(--card-gap);
-}
-
-/* En escritorio una sola columna dejaría tarjetas de 1100px de ancho con
-   una miniatura de 56px perdida en la esquina. A partir de tablet vuelven
-   dos columnas, pero ya con la disposición nueva dentro de cada una. */
-@media (min-width: 640px) {
-    .benefit-cards-list {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-    }
 }
 
 
