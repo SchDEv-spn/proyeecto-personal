@@ -394,11 +394,17 @@ document.addEventListener('DOMContentLoaded', () => {
         function showPopup() {
             if (popupShown) return;
 
-            /* Nunca por encima de alguien que está haciendo el pedido:
-               el modal usa z-index 9000 y el popup 200, así que aparecería
-               invisible detrás, se gastaría para la sesión y dejaría el
-               scroll del body bloqueado. */
-            if (document.body.classList.contains('modal-open')) return;
+            /* Nunca por encima de alguien que ya llegó al formulario: el popup
+               es para quien se va sin verlo. Antes el formulario vivía en un
+               modal y bastaba mirar la clase modal-open; ahora vive al final
+               de la página, así que la señal equivalente es que la sección
+               esté a la vista. */
+            var form = document.getElementById('form-pedido');
+            if (form) {
+                var r = form.getBoundingClientRect();
+                var alto = window.innerHeight || document.documentElement.clientHeight;
+                if (r.top < alto && r.bottom > 0) return;
+            }
 
             popupShown = true;
             ssSet(SESSION_KEY_SHOWN, '1');
@@ -459,14 +465,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (closeBtn) closeBtn.addEventListener('click', hidePopup);
         if (dismiss)  dismiss.addEventListener('click', hidePopup);
         if (cta) {
-            cta.addEventListener('click', function () {
-                hidePopup();
-                // Pequeño delay para que el scroll sea suave
-                setTimeout(function () {
-                    var form = document.getElementById('form-pedido');
-                    if (form) form.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-            });
+            /* El CTA es <a href="#form-pedido">: del salto se encarga el
+               manejador global de la landing, que lo hace instantáneo y
+               descontando la barra de anuncios. Aquí solo se cierra el popup;
+               antes había un scrollIntoView suave a los 100ms que llegaba
+               después y pisaba ese salto. */
+            cta.addEventListener('click', hidePopup);
         }
 
         document.addEventListener('keydown', function (e) {

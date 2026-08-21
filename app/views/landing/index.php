@@ -1576,15 +1576,23 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </div>
                 </div>
 
-                <!-- Trust line compacta -->
-                <div class="order-modal-trust-line">
+                <!-- Garantías destacadas: envío gratis y pago contraentrega son
+                     las dos objeciones que más frenan la compra contraentrega,
+                     así que van como pastillas grandes, no como letra chica. -->
+                <div class="trust-badges">
+                    <span class="trust-badge trust-badge--envio">
+                        <span class="trust-badge__ico" aria-hidden="true"><?= $micoTruck ?></span>
+                        <span class="trust-badge__txt">Envío <strong>GRATIS</strong></span>
+                    </span>
+                    <span class="trust-badge trust-badge--cod">
+                        <span class="trust-badge__ico" aria-hidden="true"><?= $micoCard ?></span>
+                        <span class="trust-badge__txt">Pagas <strong>al recibirlo</strong></span>
+                    </span>
                     <?php if ($ahorro > 0): ?>
-                    <span class="order-modal-trust-line__saving">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></span>
-                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
+                    <span class="trust-badge trust-badge--ahorro">
+                        <span class="trust-badge__txt">Ahorras <strong>$<?= number_format($ahorro, 0, ',', '.') ?></strong></span>
+                    </span>
                     <?php endif; ?>
-                    <span>Envío gratis</span>
-                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
-                    <span>Pagas al recibirlo</span>
                 </div>
 
                 <!-- Título y subtítulo del formulario -->
@@ -1995,6 +2003,19 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 var raiz = document.documentElement;
                 var previo = raiz.style.scrollBehavior;
                 raiz.style.scrollBehavior = 'auto';
+
+                /* La barra de anuncios está fija arriba (65px): sin descontarla
+                   el salto deja la foto y el precio del producto tapados. Se
+                   mide en vivo porque su alto depende del texto y del tema. */
+                var fija = document.querySelector('.announcement-bar');
+                var margen = 0;
+                if (fija) {
+                    var cs = getComputedStyle(fija);
+                    if (cs.position === 'fixed' && cs.display !== 'none') {
+                        margen = Math.round(fija.getBoundingClientRect().height) + 8;
+                    }
+                }
+                seccion.style.scrollMarginTop = margen + 'px';
                 seccion.scrollIntoView({ block: 'start' });
                 raiz.style.scrollBehavior = previo;
 
