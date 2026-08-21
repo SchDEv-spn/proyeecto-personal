@@ -30,21 +30,36 @@ function fetchWithTimeout(url, options, ms) {
     return promise;
 }
 
+/* Cada modulo se arranca aislado. Antes colgaban de una sola cadena y el
+   primero que lanzara se llevaba a todos los siguientes: un fallo en la
+   galeria dejaba sin ejecutar initPixelEvents(), o sea que se perdian los
+   eventos del pixel de una campana que se esta pagando, y nadie se enteraba.
+   Ahora un modulo roto solo se rompe a si mismo y deja el rastro en consola. */
+function arrancar(nombre, fn) {
+    if (typeof fn !== 'function') return;
+    try {
+        fn();
+    } catch (err) {
+        if (window.console && console.error) console.error('[landing] falló ' + nombre + ':', err);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
-    initTipoEntrega();
-    initDepartamentoMunicipio();
-    initSlider();
-    initAccordion();
-    initGallery();
-    initRecentOrders();
-    initScrollAnimations();
-    initStickyVisibility();
-    initLazyImages();
-    initTelInput();
-    initPixelEvents();
-    initWaLinksIAB();
-    initVideoControls();
-    initTickerLectura();
+    /* El orden importa: los dos primeros son el formulario. */
+    arrancar('initTipoEntrega', initTipoEntrega);
+    arrancar('initDepartamentoMunicipio', initDepartamentoMunicipio);
+    arrancar('initPixelEvents', initPixelEvents);
+    arrancar('initTelInput', initTelInput);
+    arrancar('initWaLinksIAB', initWaLinksIAB);
+    arrancar('initSlider', initSlider);
+    arrancar('initAccordion', initAccordion);
+    arrancar('initGallery', initGallery);
+    arrancar('initRecentOrders', initRecentOrders);
+    arrancar('initScrollAnimations', initScrollAnimations);
+    arrancar('initStickyVisibility', initStickyVisibility);
+    arrancar('initLazyImages', initLazyImages);
+    arrancar('initVideoControls', initVideoControls);
+    arrancar('initTickerLectura', initTickerLectura);
 });
 
 
@@ -90,93 +105,80 @@ function initTickerLectura() {
 /* ══════════════════════════════════════════════════════════════
    DEPARTAMENTO / MUNICIPIO
    ══════════════════════════════════════════════════════════════ */
+/* Los dos selects llegan ya llenos desde PHP: el de departamentos con sus
+   28 opciones y el de municipios con los 1.091 del pais repartidos en un
+   <optgroup> por departamento. Asi el formulario se puede completar aunque
+   este archivo no llegue a ejecutarse nunca — que es lo que pasaba con el
+   fetch anterior en cuanto algo fallaba dentro del navegador de Facebook.
+
+   Lo unico que hace el JS es guardar los grupos aparte y volver a colgar
+   solo el del departamento elegido, para que el comprador no tenga que
+   buscar su pueblo entre mil. Es una mejora, no un requisito. */
 function initDepartamentoMunicipio() {
-    const selectDept = document.getElementById('departamento');
-    const selectMun = document.getElementById('municipio');
+    var selectDept = document.getElementById('departamento');
+    var selectMun  = document.getElementById('municipio');
 
     if (!selectDept || !selectMun) return;
 
-    fetchWithTimeout((window.BASE_URL||'')+'/public/js/colombia.json', {}, 10000)
-        .then(response => {
-            if (!response.ok) throw new Error('No se pudo cargar colombia.json');
-            return response.json();
-        })
-        .then(data => {
-            const excluidos = [
-                'Amazonas',
-                'Guaviare',
-                'Vichada',
-                'San Andrés y Providencia',
-                'San Andres y Providencia',
-                'San Andrés Islas',
-                'San Andres Islas'
-            ];
+    var placeholder = selectMun.querySelector('option[value=""]');
 
-            const departamentos = data.filter(d => !excluidos.includes(d.departamento));
+    /* Lo que el servidor dejo marcado tras un envio con errores: hay que
+       leerlo ANTES de descolgar los grupos, porque al sacarlos del select
+       el valor seleccionado se pierde. */
+    var munInicial = selectMun.value;
 
-            const oldDept = selectDept.dataset.old || '';
-            const oldMun = selectMun.dataset.old || '';
+    var grupos = {};
+    var todos  = selectMun.querySelectorAll('optgroup');
+    if (!todos.length) return; // el HTML no trae la lista: no hay nada que filtrar
 
-            departamentos.forEach(dep => {
-                const opt = document.createElement('option');
-                opt.value = dep.departamento;
-                opt.textContent = dep.departamento;
-                selectDept.appendChild(opt);
-            });
+    Array.prototype.forEach.call(todos, function (g) {
+        grupos[g.getAttribute('data-dep') || g.label] = g;
+        selectMun.removeChild(g);
+    });
 
-            if (oldDept) selectDept.value = oldDept;
+    function poblarMunicipios(preseleccion) {
+        var dep = selectDept.value;
 
-            function poblarMunicipios() {
-                const deptSeleccionado = selectDept.value;
-                selectMun.innerHTML = '';
+        var visible = selectMun.querySelector('optgroup');
+        if (visible) selectMun.removeChild(visible);
 
-                if (!deptSeleccionado) {
-                    const ph = document.createElement('option');
-                    ph.value = '';
-                    ph.textContent = 'Selecciona primero un departamento';
-                    selectMun.appendChild(ph);
-                    return;
-                }
+        if (placeholder) {
+            placeholder.textContent = dep
+                ? 'Selecciona un municipio'
+                : 'Selecciona primero un departamento';
+        }
 
-                const ph = document.createElement('option');
-                ph.value = '';
-                ph.textContent = 'Selecciona un municipio';
-                selectMun.appendChild(ph);
+        if (dep && grupos[dep]) selectMun.appendChild(grupos[dep]);
 
-                const depObj = departamentos.find(d => d.departamento === deptSeleccionado);
-                const municipios = depObj && Array.isArray(depObj.ciudades) ? depObj.ciudades : [];
+        /* Asignar un valor que ya no esta en la lista deja el select en '',
+           que es justo lo que queremos al cambiar de departamento. */
+        selectMun.value = preseleccion || '';
+    }
 
-                municipios.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m;
-                    opt.textContent = m;
-                    selectMun.appendChild(opt);
-                });
-            }
+    selectDept.addEventListener('change', function () { poblarMunicipios(''); });
+    poblarMunicipios(munInicial);
 
-            selectDept.addEventListener('change', poblarMunicipios);
-            poblarMunicipios();
+    if (selectMun.value) mostrarETA(selectDept.value, selectMun.value);
 
-            if (oldMun) {
-                selectMun.value = oldMun;
-                mostrarETA(selectDept.value, oldMun);
-            }
-
-            selectMun.addEventListener('change', function () {
-                mostrarETA(selectDept.value, this.value);
-            });
-        })
-        .catch(err => console.error('Error cargando departamentos/municipios:', err));
+    selectMun.addEventListener('change', function () {
+        mostrarETA(selectDept.value, this.value);
+    });
 }
 
 function calcDeliveryDays(dept, city) {
+    /* Los nombres tienen que coincidir EXACTO con los de app/data/colombia.php,
+       que es de donde salen los <option>. 'Bogotá D.C.' y 'Cartagena' no
+       coincidian con 'Bogotá' y 'Cartagena de Indias', asi que las dos plazas
+       mas grandes del pais mostraban 3 dias en vez de 2.
+       Amazonas y Vichada ya no estan en la lista de departamentos con
+       cobertura, asi que tampoco pintan nada aqui. */
     const express = new Set([
-        'Bogotá D.C.', 'Medellín', 'Cali', 'Barranquilla', 'Bucaramanga',
+        'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Bucaramanga',
         'Pereira', 'Manizales', 'Ibagué', 'Cúcuta', 'Villavicencio',
-        'Cartagena', 'Santa Marta', 'Neiva', 'Armenia', 'Pasto',
+        'Cartagena de Indias', 'Santa Marta', 'Neiva', 'Armenia', 'Pasto',
         'Montería', 'Valledupar', 'Sincelejo', 'Popayán', 'Tunja',
     ]);
-    const slow = new Set(['Amazonas', 'Chocó', 'Guainía', 'Vaupés', 'Vichada', 'Putumayo', 'Caquetá']);
+    const slow = new Set(['Chocó', 'Guainía', 'Vaupés', 'Putumayo', 'Caquetá']);
 
     if (express.has(city)) return 2;
     if (slow.has(dept)) return 5;
@@ -226,13 +228,22 @@ function initTipoEntrega() {
         let tipoSeleccionado = '';
         radiosEntrega.forEach(r => { if (r.checked) tipoSeleccionado = r.value; });
 
-        const esDomicilio = tipoSeleccionado === 'domicilio';
+        /* Mientras no haya elegido nada, la direccion se queda visible: es como
+           llega del servidor y es lo que necesita quien no tenga JS. Solo se
+           esconde cuando dice expresamente que recoge en oficina. */
+        const esOficina = tipoSeleccionado === 'oficina';
 
-        grupoDireccion.style.display = esDomicilio ? 'block' : 'none';
-        if (esDomicilio) { inputDireccion.setAttribute('required', 'required'); } else { inputDireccion.removeAttribute('required'); }
-        if (!esDomicilio) inputDireccion.value = '';
+        grupoDireccion.style.display = esOficina ? 'none' : 'block';
+        if (esOficina) {
+            inputDireccion.removeAttribute('required');
+            inputDireccion.value = '';
+        } else {
+            inputDireccion.setAttribute('required', 'required');
+        }
 
-        if (grupoNota) grupoNota.style.display = esDomicilio ? 'block' : 'none';
+        /* La nota es para el mensajero: solo tiene sentido con domicilio.
+           Quien recoge en oficina no tiene a quien dejarle una indicacion. */
+        if (grupoNota) grupoNota.style.display = esOficina ? 'none' : 'block';
     }
 
     radiosEntrega.forEach(r => r.addEventListener('change', actualizarDireccion));
@@ -606,140 +617,12 @@ function initPixelEvents() {
 }
 
 /* ============================================================
-   FORMULARIO — validación única + submit AJAX
+   FORMULARIO — el envio del pedido vive en public/js/order-submit.js
+   Se saco de aqui a proposito: es lo unico de la landing que no puede
+   fallar, y en este archivo compartia suerte con los carruseles, la
+   galeria y los videos. Un error de sintaxis en cualquiera de ellos
+   dejaba el formulario sin manejador de envio.
    ============================================================ */
-(function () {
-    const form = document.getElementById('formPedido');
-    const errorsBox = document.getElementById('stepperErrors');
-    const successBox = document.getElementById('stepperSuccess');
-    if (!form) return;
-
-    function validar() {
-        const errors = [];
-
-        const nombre = form.querySelector('#nombre');
-        const apellidos = form.querySelector('#apellidos');
-        const telefono = form.querySelector('#telefono');
-        const depto = form.querySelector('#departamento');
-        const muni = form.querySelector('#municipio');
-        const entrega = form.querySelector('input[name="tipo_entrega"]:checked');
-        const dir = form.querySelector('#direccion');
-
-        if (!nombre?.value.trim()) errors.push('El nombre es obligatorio.');
-        if (!apellidos?.value.trim()) errors.push('Los apellidos son obligatorios.');
-
-        const tel = telefono?.value.trim() ?? '';
-        if (!tel) errors.push('El número de WhatsApp es obligatorio.');
-        else if (!/^3\d{9}$/.test(tel)) errors.push('Número inválido (10 dígitos, empieza en 3).');
-
-        const mode = form.querySelector('#pricingMode')?.value ?? 'individual';
-        if (mode === 'combo') {
-            const blocks = form.querySelectorAll('.combo-block');
-            if (!blocks.length) errors.push('Debes tener al menos 1 combo.');
-            else blocks.forEach((b, idx) => {
-                b.querySelectorAll('select.combo-color').forEach(s => {
-                    if (!s.value) errors.push(`Selecciona el color del combo ${idx + 1}.`);
-                });
-            });
-        } else {
-            const colorSelects = form.querySelectorAll('select[name="color_item[]"]');
-            if (colorSelects.length) {
-                let alguno = false;
-                colorSelects.forEach(s => { if (s.value) alguno = true; });
-                if (!alguno) errors.push('Selecciona al menos un color.');
-            }
-        }
-
-        if (!depto?.value) errors.push('Selecciona un departamento.');
-        if (!muni?.value) errors.push('Selecciona un municipio.');
-        if (!entrega) errors.push('Selecciona cómo quieres recibir tu pedido.');
-        if (entrega?.value === 'domicilio' && !dir?.value.trim())
-            errors.push('La dirección es obligatoria para envío a domicilio.');
-
-        return errors;
-    }
-
-    function mostrarErrores(errors) {
-        if (!errorsBox) return;
-        if (!errors.length) { errorsBox.style.display = 'none'; return; }
-        const ul = document.createElement('ul');
-        errors.forEach(e => {
-            const li = document.createElement('li');
-            li.textContent = e;
-            ul.appendChild(li);
-        });
-        errorsBox.replaceChildren(ul);
-        errorsBox.style.display = 'block';
-        errorsBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const errors = validar();
-        if (errors.length) { mostrarErrores(errors); return; }
-        mostrarErrores([]);
-
-        const btnText = document.getElementById('btnSubmitText');
-        const btnSpinner = document.getElementById('btnSubmitSpinner');
-        const btnSubmit = document.getElementById('btnSubmit');
-
-        btnSubmit.disabled = true;
-        if (btnText) btnText.style.display = 'none';
-        if (btnSpinner) btnSpinner.style.display = 'inline';
-
-        fetchWithTimeout(form.action, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            body: new FormData(form),
-        }, 15000)
-            .then(r => r.json())
-            .then(function (res) {
-                btnSubmit.disabled = false;
-                if (btnText) btnText.style.display = 'inline';
-                if (btnSpinner) btnSpinner.style.display = 'none';
-
-                if (res.ok) {
-                    form.style.display = 'none';
-                    if (successBox) {
-                        if (res.pedido_id) {
-                            const numEl = document.getElementById('orderSuccessNum');
-                            const valEl = document.getElementById('orderSuccessNumVal');
-                            if (numEl && valEl) { valEl.textContent = '#' + res.pedido_id; numEl.style.display = ''; }
-                        }
-                        successBox.style.display = 'block';
-                        successBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                    if (typeof fbq === 'function') {
-                        // ✅ Lead — cliente potencial (pedido contraentrega registrado)
-                        fbq('track', 'Lead', {
-                            value: res.precio_total || window.landingProductPrice || 0,
-                            currency: 'COP',
-                            content_name: window.landingProductName || '',
-                        });
-                        // ✅ Purchase — conversión de venta
-                        fbq('track', 'Purchase', {
-                            value: res.precio_total || window.landingProductPrice || 0,
-                            currency: 'COP',
-                            content_name: window.landingProductName || '',
-                            content_ids: [String(res.pedido_id || '')],
-                            content_type: 'product',
-                            num_items: 1,
-                        });
-                    }
-                } else {
-                    mostrarErrores(res.errores && res.errores.length
-                        ? res.errores
-                        : ['No pudimos registrar tu pedido. Inténtalo de nuevo o escríbenos por WhatsApp.']);
-                }
-            })
-            .catch(function () {
-                btnSubmit.disabled = false;
-                if (btnText) btnText.style.display = 'inline';
-                if (btnSpinner) btnSpinner.style.display = 'none';
-                mostrarErrores(['Error de conexión. Verifica tu internet e inténtalo de nuevo.']);
-            });
-    });
-})();
 
 /* ══════════════════════════════════════════════════════════════
    CONTROLES DE VIDEO — tap para pausar + botón de volumen

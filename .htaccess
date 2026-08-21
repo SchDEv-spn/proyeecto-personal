@@ -1,3 +1,14 @@
+# Comprimir texto. La landing pinta los 1.091 municipios del pais dentro
+# del propio HTML — es lo que permite que el formulario se pueda llenar sin
+# JavaScript — y sin compresion eso son 137 KB de mas por visita. Comprimido
+# baja a unos 11 KB, bastante menos que los 192 KB del JSON que reemplaza.
+# El IfModule lo vuelve inofensivo donde el modulo no este cargado.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
 RewriteEngine On
 
 # Redirigir slug obsoleto a slug nuevo (301 permanente)

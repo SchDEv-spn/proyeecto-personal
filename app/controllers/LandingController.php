@@ -134,8 +134,6 @@ class LandingController extends Controller
         $direccion    = trim($_POST['direccion']    ?? '');
         $notaEntrega  = trim($_POST['nota_entrega'] ?? '');
 
-        $confirmPurchase = isset($_POST['confirm_purchase']) && $_POST['confirm_purchase'] == '1';
-
         // Arrays color/cantidad (estos son los que tu JS genera SIEMPRE)
         $colorItems = $_POST['color_item'] ?? [];
         $qtyItems   = $_POST['qty_item']   ?? [];
@@ -151,7 +149,6 @@ class LandingController extends Controller
             'tipo_entrega'     => $tipoEntrega,
             'direccion'        => $direccion,
             'nota_entrega'     => $notaEntrega,
-            'confirm_purchase' => $confirmPurchase ? 1 : 0,
             'color_item'       => $colorItems,
             'qty_item'         => $qtyItems,
             'pricing_mode'     => $pricingMode,
@@ -159,10 +156,30 @@ class LandingController extends Controller
             'combo_price_2'    => $comboPrice2,
         ];
 
+        /* Limites de las columnas de `pedidos`. Sin esto, un texto mas largo
+           que la columna no era un error de validacion sino una PDOException
+           sin capturar: 500 con el cuerpo vacio, el JSON del navegador
+           reventaba y el comprador terminaba leyendo "Error de conexion,
+           verifica tu internet" por un pedido que murio en la base de datos.
+           Una direccion larga de verdad cabe de sobra en 255. */
+        $limites = [
+            'nombre'       => ['valor' => $nombre,       'max' => 100, 'msg' => 'El nombre es demasiado largo.'],
+            'apellidos'    => ['valor' => $apellidos,    'max' => 100, 'msg' => 'Los apellidos son demasiado largos.'],
+            'telefono'     => ['valor' => $telefono,     'max' => 30,  'msg' => 'El número de WhatsApp es demasiado largo.'],
+            'departamento' => ['valor' => $departamento, 'max' => 100, 'msg' => 'El departamento no es válido.'],
+            'municipio'    => ['valor' => $municipio,    'max' => 100, 'msg' => 'El municipio no es válido.'],
+            'direccion'    => ['valor' => $direccion,    'max' => 255, 'msg' => 'La dirección es demasiado larga (máximo 255 caracteres).'],
+            'nota_entrega' => ['valor' => $notaEntrega,  'max' => 500, 'msg' => 'La indicación para el mensajero es demasiado larga (máximo 500 caracteres).'],
+        ];
+
         // Validaciones base
         $errores = [];
         if ($nombre === '')       $errores[] = "El nombre es obligatorio.";
         if ($apellidos === '')    $errores[] = "Los apellidos son obligatorios.";
+
+        foreach ($limites as $campo) {
+            if (mb_strlen($campo['valor']) > $campo['max']) $errores[] = $campo['msg'];
+        }
 
         // ── Teléfono: no vacío + formato colombiano (10 dígitos, empieza en 3) ──
         if ($telefono === '') {
@@ -173,7 +190,17 @@ class LandingController extends Controller
 
         if ($departamento === '') $errores[] = "Selecciona un departamento.";
         if ($municipio === '')    $errores[] = "Selecciona un municipio.";
-        if ($tipoEntrega === '')  $errores[] = "Selecciona cómo quieres recibir tu pedido.";
+
+        /* tipo_entrega es un ENUM en la base. Antes solo se comprobaba que no
+           llegara vacio, asi que cualquier otro valor pasaba la validacion y
+           reventaba en el INSERT. La lista blanca hace de esto un error
+           normal del formulario y no un 500. */
+        if ($tipoEntrega === '') {
+            $errores[] = "Selecciona cómo quieres recibir tu pedido.";
+        } elseif (!in_array($tipoEntrega, ['domicilio', 'oficina'], true)) {
+            $errores[] = "La forma de entrega seleccionada no es válida.";
+        }
+
         if ($tipoEntrega === 'domicilio' && $direccion === '') {
             $errores[] = "La dirección es obligatoria para envío a domicilio.";
         }
@@ -299,7 +326,11 @@ class LandingController extends Controller
             'municipio'        => $municipio,
             'tipo_entrega'     => $tipoEntrega,
             'direccion'        => ($tipoEntrega === 'domicilio') ? $direccion : null,
-            'nota_entrega'     => $notaEntrega ?: null,
+            /* La nota es para el mensajero: solo existe si hay a quien
+               entregársela. Igual que direccion, se descarta en el servidor
+               y no solo se oculta en el formulario, para que un POST directo
+               no la cuele en un pedido de recogida en oficina. */
+            'nota_entrega'     => ($tipoEntrega === 'domicilio' && $notaEntrega !== '') ? $notaEntrega : null,
 
             // unitarios
             'precio_venta'     => $precioVenta,
@@ -314,17 +345,56 @@ class LandingController extends Controller
             'estado'           => 'nuevo',
         ];
 
+        /* Red de seguridad del guardado. Las validaciones de arriba cubren lo
+           que sabemos que puede venir mal del formulario, pero si algo mas
+           falla en la base — la conexion, un cambio de esquema, un deadlock —
+           no puede escaparse como excepcion: el 500 llega al navegador con el
+           cuerpo vacio, response.json() revienta y el comprador lee un
+           "revisa tu internet" que no tiene nada que ver con lo que paso.
+           Aqui se registra el error de verdad y se responde con un mensaje
+           honesto que ademas le deja la salida por WhatsApp. */
         $pedidoId = 0;
-        if (method_exists($pedidoModel, 'crearConId')) {
-            $pedidoId = (int)$pedidoModel->crearConId($pedidoData);
-        } else {
-            $pedidoModel->crear($pedidoData);
+        try {
+            if (method_exists($pedidoModel, 'crearConId')) {
+                $pedidoId = (int)$pedidoModel->crearConId($pedidoData);
+            } else {
+                $pedidoModel->crear($pedidoData);
+            }
+
+            // Guardar detalle en pedido_colores
+            if ($pedidoId > 0 && !empty($items)) {
+                $pedidoColorModel = new PedidoColor();
+                $pedidoColorModel->sync($pedidoId, $items);
+            }
+        } catch (Throwable $e) {
+            error_log('[Pedido] No se pudo guardar: ' . $e->getMessage());
+
+            $errorGuardado = 'No pudimos registrar tu pedido en este momento. '
+                . 'Inténtalo de nuevo en un minuto o escríbenos por WhatsApp y lo tomamos nosotros.';
+
+            if ($esAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['ok' => false, 'errores' => [$errorGuardado]]);
+                exit;
+            }
+
+            $this->view('landing/index', [
+                'producto' => $producto,
+                'colores'  => $coloresPermitidos,
+                'errores'  => [$errorGuardado],
+                'old'      => $old,
+                'success'  => '',
+                'config'   => $config,
+            ]);
+            return;
         }
 
-        // Guardar detalle en pedido_colores
-        if ($pedidoId > 0 && !empty($items)) {
-            $pedidoColorModel = new PedidoColor();
-            $pedidoColorModel->sync($pedidoId, $items);
+        // Cerrar el embudo de analítica: el último paso se marca desde el
+        // servidor, no desde el navegador, porque el JS puede no llegar a
+        // ejecutarse tras el envío (redirección, pestaña cerrada, webview
+        // de Facebook matando la página).
+        if ($pedidoId > 0 && !empty($_POST['track_sid'])) {
+            (new LandingAnalytics())->marcarPedido((string)$_POST['track_sid'], $pedidoId);
         }
 
         // Notificación Telegram
@@ -354,8 +424,11 @@ class LandingController extends Controller
             exit;
         }
 
+        /* El ancla importa: la pantalla de confirmacion vive donde estaba el
+           formulario, a pantalla y media de scroll. Sin #form-pedido el
+           comprador aterriza arriba del todo y no ve que su pedido entro. */
         $_SESSION['success'] = "Tu pedido se ha registrado correctamente.";
-        header("Location: " . BASE_URL . "/Landing/index?producto_id=" . $productoId);
+        header("Location: " . BASE_URL . "/Landing/index?producto_id=" . $productoId . "#form-pedido");
         exit;
     }
 
@@ -404,8 +477,16 @@ class LandingController extends Controller
                 CURLOPT_POSTFIELDS     => $body,
                 CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT        => 5,
-                CURLOPT_SSL_VERIFYPEER => false,
+                /* La notificacion sale antes de responderle al comprador, asi
+                   que su espera es este timeout. 5s es demasiado para algo que
+                   no afecta al pedido: si Telegram no contesta en 2s, el aviso
+                   se pierde y queda en el log, pero la compra no se frena. */
+                CURLOPT_TIMEOUT        => 2,
+                CURLOPT_CONNECTTIMEOUT => 2,
+                /* Verificar el certificado: no hay razon para hablar con la API
+                   de Telegram sin comprobar con quien se esta hablando. */
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
             ]);
             $resp = curl_exec($ch);
             $err  = curl_error($ch);
@@ -462,5 +543,43 @@ class LandingController extends Controller
             'old'               => [],
             'pedidos_recientes' => $pedidosRecientes,
         ]);
+    }
+
+    /**
+     * Endpoint de analítica: recibe los lotes de eventos de la landing.
+     *
+     * Lo llama public/js/landing-track.js con navigator.sendBeacon, que solo
+     * dispara y olvida: no lee la respuesta ni reintenta. Por eso responde
+     * siempre 204 y nunca un error — un fallo aquí no puede convertirse en
+     * un error visible ni en un reintento del navegador.
+     *
+     * Sin CSRF a propósito: es un endpoint público de escritura acotada
+     * (tipos en lista blanca, tope de eventos por sesión, campos recortados)
+     * y el token de sesión no aporta nada contra el único abuso posible,
+     * que es inflar las visitas.
+     */
+    public function track(): void
+    {
+        http_response_code(204);
+        header('Content-Type: text/plain');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
+
+        // sendBeacon manda el cuerpo como Blob: no hay $_POST, se lee crudo.
+        // El tope de 16 KB evita que un cliente roto llene la memoria.
+        $crudo = file_get_contents('php://input', false, null, 0, 16384);
+        if ($crudo === false || $crudo === '') return;
+
+        $payload = json_decode($crudo, true);
+        if (!is_array($payload)) return;
+
+        $payload['env'] = es_entorno_local() ? 'local' : 'produccion';
+
+        $analytics = new LandingAnalytics();
+        $analytics->registrar($payload, (string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+
+        // Limpieza oportunista del detalle antiguo: sin cron en el hosting,
+        // una de cada 200 peticiones paga el coste de mantener la tabla a raya.
+        if (random_int(1, 200) === 1) $analytics->purgarEventosViejos();
     }
 }

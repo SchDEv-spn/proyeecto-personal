@@ -66,9 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── Flechas (desktop) ────────────────────────────────────
+  /* Sin ?. — es sintaxis de 2020 y este archivo se sirve sin build: en un
+     WebView viejo no falla la flecha, falla el archivo entero al parsearlo. */
   const outer = container.closest('.testimonials-slider-outer');
-  outer?.querySelector('.slider-arrow--prev')?.addEventListener('click', () => goTo(Math.max(0, current - 1)));
-  outer?.querySelector('.slider-arrow--next')?.addEventListener('click', () => goTo(Math.min(slides.length - 1, current + 1)));
+  const flechaPrev = outer && outer.querySelector('.slider-arrow--prev');
+  const flechaNext = outer && outer.querySelector('.slider-arrow--next');
+  if (flechaPrev) flechaPrev.addEventListener('click', () => goTo(Math.max(0, current - 1)));
+  if (flechaNext) flechaNext.addEventListener('click', () => goTo(Math.min(slides.length - 1, current + 1)));
 
   // ── Tocar card no activo (peek) navega a él ──────────────
   slides.forEach((slide, i) => {
@@ -89,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   scheduleNext();
   container.addEventListener('pointerdown', () => clearTimeout(autoplayTimer), { passive: true });
-  outer?.addEventListener('click', () => scheduleNext());
+  if (outer) outer.addEventListener('click', () => scheduleNext());
 });
 
 /* ============================================================

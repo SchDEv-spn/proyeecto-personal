@@ -16,6 +16,15 @@ $ahorro = max(0, $precio_regular - $precio_venta);
 $config = $config ?? [];
 $cfg    = $config;
 
+/* Errores y confirmacion del envio del pedido.
+   Se normalizan aqui arriba porque el formulario los necesita mucho antes
+   de donde estaban definidos. El controlador ya los pasaba, pero la vista
+   nunca los pintaba: quien enviaba el formulario sin JavaScript veia la
+   pagina recargarse con sus datos intactos y ni una palabra de que habia
+   fallado — o de que su pedido si se habia guardado. */
+$errores = (isset($errores) && is_array($errores)) ? $errores : [];
+$success = trim((string)($success ?? ''));
+
 /* El contador de pedidos recientes se calculaba aquí pero no se pinta en
    ninguna parte de la landing — la sección que lo mostraba se retiró y el
    cálculo se quedó huérfano. Si se quiere recuperar, el sitio es el
@@ -1710,10 +1719,26 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
             </div>
 
-            <div id="stepperErrors" class="error" style="display:none;" role="alert" aria-live="assertive"></div>
+            <!-- Los errores que devuelve el servidor se pintan aqui mismo, en el
+                 contenedor que el JS ya usa para los suyos. Asi el aviso es el
+                 mismo haya o no JavaScript, y un envio rechazado nunca vuelve
+                 en silencio. -->
+            <div id="stepperErrors" class="error" style="display:<?= $errores ? 'block' : 'none' ?>;" role="alert" aria-live="assertive">
+                <?php if ($errores): ?>
+                <ul>
+                    <?php foreach ($errores as $_err): ?>
+                    <li><?= htmlspecialchars($_err) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+            </div>
 
             <div class="form-box">
-                <form id="formPedido" action="<?= BASE_URL ?>/Landing/enviarPedido" method="POST" novalidate>
+                <!-- Con el pedido ya guardado se esconde el formulario y se deja
+                     la pantalla de exito, que vive mas abajo dentro de este mismo
+                     .form-box (por eso se oculta el <form> y no el contenedor).
+                     Es lo mismo que hace main.js tras el envio por AJAX. -->
+                <form id="formPedido" action="<?= BASE_URL ?>/Landing/enviarPedido" method="POST" novalidate<?= $success !== '' ? ' style="display:none;"' : '' ?>>
                     <input type="hidden" name="producto_id" value="<?= htmlspecialchars($producto['id'] ?? 1) ?>">
 
                     <!-- ══════════════════════════════
@@ -1797,8 +1822,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                         <button type="button" class="qty-btn qty-btn--big" data-action="plus" aria-label="Más">+</button>
                                     </div>
                                 </div>
+                                <!-- El tope es 5 por color, el mismo que aplica el servidor.
+                                     Llegaba hasta 10 aqui, asi que se podia armar un pedido
+                                     de 6 y perderlo al final con un "la cantidad por color
+                                     debe estar entre 1 y 5" despues de llenar todo. -->
                                 <select name="qty_item[]" class="qty-item-sel" aria-hidden="true" tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:0">
-                                    <?php for ($i = 1; $i <= 10; $i++): ?>
+                                    <?php for ($i = 1; $i <= 5; $i++): ?>
                                     <option value="<?= $i ?>"><?= $i ?></option>
                                     <?php endfor; ?>
                                 </select>
@@ -1863,18 +1892,43 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <p class="form-step__sub">Último paso — ya casi tienes tu pedido</p>
                         </div>
 
+                        <?php
+                        /* Departamentos y municipios se pintan COMPLETOS desde PHP.
+                           Antes llegaban por fetch de un JSON de 192 KB y los dos
+                           selects nacían vacíos: si ese fetch no completaba — y en
+                           el navegador de Facebook, de donde viene la pauta, basta
+                           un error de sintaxis en cualquier .js para que nada corra —
+                           los dos campos quedaban sin opciones. Como el servidor los
+                           exige, el formulario era imposible de enviar y el pedido se
+                           perdía sin que nadie se enterara.
+                           Ahora el HTML ya trae todo: sin JS el comprador escoge de
+                           una lista larga agrupada por departamento y el pedido sale.
+                           Con JS, initDepartamentoMunicipio() deja visible solo el
+                           grupo del departamento elegido, igual que antes. */
+                        $ubicaciones = require __DIR__ . '/../../data/colombia.php';
+                        $oldDep = (string)($old['departamento'] ?? '');
+                        $oldMun = (string)($old['municipio'] ?? '');
+                        ?>
                         <div class="form-group">
                             <label for="departamento" class="form-label-lg">¿En qué departamento vives?</label>
-                            <select id="departamento" name="departamento" required class="select-lg"
-                                data-old="<?= htmlspecialchars($old['departamento'] ?? '') ?>">
+                            <select id="departamento" name="departamento" required class="select-lg">
                                 <option value="">— Escoge tu departamento —</option>
+                                <?php foreach ($ubicaciones as $_dep => $_muns): ?>
+                                <option value="<?= htmlspecialchars($_dep) ?>"<?= $_dep === $oldDep ? ' selected' : '' ?>><?= htmlspecialchars($_dep) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="municipio" class="form-label-lg">¿En qué pueblo o ciudad?</label>
-                            <select id="municipio" name="municipio" required class="select-lg"
-                                data-old="<?= htmlspecialchars($old['municipio'] ?? '') ?>">
-                                <option value="">Primero elige el departamento</option>
+                            <select id="municipio" name="municipio" required class="select-lg">
+                                <option value=""><?= $oldDep !== '' ? '— Escoge tu municipio —' : 'Primero elige el departamento' ?></option>
+                                <?php foreach ($ubicaciones as $_dep => $_muns): ?>
+                                <optgroup label="<?= htmlspecialchars($_dep) ?>" data-dep="<?= htmlspecialchars($_dep) ?>">
+                                    <?php foreach ($_muns as $_mun): ?>
+                                    <option value="<?= htmlspecialchars($_mun) ?>"<?= ($_dep === $oldDep && $_mun === $oldMun) ? ' selected' : '' ?>><?= htmlspecialchars($_mun) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                                <?php endforeach; ?>
                             </select>
                         </div>
 
@@ -1902,7 +1956,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             </div>
                         </div>
 
-                        <div class="form-group" id="grupo-direccion" style="display:none;">
+                        <!-- Direccion y nota nacen VISIBLES. Estaban en display:none
+                             esperando a que el JS las mostrara al elegir domicilio, asi
+                             que sin JavaScript el comprador no tenia donde escribir su
+                             direccion — y el servidor la exige para envio a domicilio:
+                             otro callejon sin salida. Ahora initTipoEntrega() las
+                             esconde cuando se elige recoger en oficina, que es la
+                             direccion correcta de la mejora: se oculta lo que sobra,
+                             no se revela lo imprescindible. -->
+                        <div class="form-group" id="grupo-direccion">
                             <label for="direccion" class="form-label-lg">¿Cuál es la dirección?</label>
                             <input type="text" id="direccion" name="direccion" class="input-lg"
                                 placeholder="Ej: Calle 5 # 10-20, frente a la escuela"
@@ -1911,7 +1973,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <p class="field-hint">Escríbela bien para que el mensajero llegue sin problema</p>
                         </div>
 
-                        <div class="form-group" id="grupo-nota-entrega" style="display:none;">
+                        <div class="form-group" id="grupo-nota-entrega">
                             <label for="nota_entrega" class="form-label-lg">
                                 ¿Alguna indicación para el mensajero?
                                 <span class="tag-optional"> — opcional</span>
@@ -1995,7 +2057,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
 
                 <!-- PANTALLA DE ÉXITO -->
-                <div id="stepperSuccess" style="display:none;">
+                <div id="stepperSuccess" style="display:<?= $success !== '' ? 'block' : 'none' ?>;">
                     <div class="order-success" style="position:relative;">
                         <div class="success-confetti" aria-hidden="true">
                             <div class="confetti-p"></div><div class="confetti-p"></div>
@@ -2103,9 +2165,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
 
         <script>
-        /* ── Stepper — 3 pasos siempre ─────────────────────────── */
+        /* ── Stepper — 3 pasos siempre ───────────────────────────
+           Sin sintaxis ES2020 (?. y ??) a proposito. Este bloque va inline en
+           la pagina y no pasa por ningun build: en un WebView viejo — el
+           navegador de Facebook, que es por donde entra la pauta — el
+           encadenamiento opcional no se degrada, tira un error de parseo que
+           se lleva por delante TODO el bloque, incluidos los colores y la
+           cantidad. Se escribe en sintaxis que cualquier motor entiende. */
         (function () {
-            const form = document.getElementById('formPedido');
+            var form = document.getElementById('formPedido');
             if (!form) return;
 
             /* El formulario se muestra de corrido, en un solo scroll: los 3
@@ -2115,268 +2183,224 @@ $colorBorder     = $cfg['color_border']     ?? null;
                Para recuperarlo basta con volver a poner la clase js-pasos
                en .order-modal-body (el CSS y el resto del script siguen ahí). */
 
-            let current = 1;
-            const errBox    = document.getElementById('stepperErrors');
-            const indicator = document.getElementById('stepperIndicator');
+            var current = 1;
+            var errBox    = document.getElementById('stepperErrors');
+            var indicator = document.getElementById('stepperIndicator');
 
             function showErrors(errs) {
                 if (!errBox) return;
                 if (!errs.length) { errBox.style.display = 'none'; errBox.innerHTML = ''; return; }
-                errBox.innerHTML = '<ul>' + errs.map(e => '<li>' + e + '</li>').join('') + '</ul>';
+                var ul = document.createElement('ul');
+                errs.forEach(function (e) {
+                    var li = document.createElement('li');
+                    li.textContent = e;
+                    ul.appendChild(li);
+                });
+                errBox.innerHTML = '';
+                errBox.appendChild(ul);
                 errBox.style.display = 'block';
                 errBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
+            function valorDe(sel) {
+                var el = form.querySelector(sel);
+                return (el && el.value) ? el.value.trim() : '';
+            }
+
             function validateStep(n) {
-                const errs = [];
+                var errs = [];
                 if (n === 1) {
-                    const nombre    = form.querySelector('#nombre');
-                    const apellidos = form.querySelector('#apellidos');
-                    const tel       = form.querySelector('#telefono');
-                    if (!nombre?.value.trim())    errs.push('El nombre es obligatorio.');
-                    if (!apellidos?.value.trim()) errs.push('El apellido es obligatorio.');
-                    const tv = tel?.value.trim() ?? '';
+                    if (!valorDe('#nombre'))    errs.push('El nombre es obligatorio.');
+                    if (!valorDe('#apellidos')) errs.push('El apellido es obligatorio.');
+                    var tv = valorDe('#telefono');
                     if (!tv)                       errs.push('El número de WhatsApp es obligatorio.');
                     else if (!/^3\d{9}$/.test(tv)) errs.push('El número debe tener 10 dígitos y empezar en 3.');
                 } else if (n === 2) {
-                    const wrap = document.getElementById('colorRowsWrap');
+                    var wrap = document.getElementById('colorRowsWrap');
                     if (wrap) {
-                        const anyColor = Array.from(wrap.querySelectorAll('.color-item-sel')).some(s => s.value !== '');
-                        if (!anyColor) errs.push('Toca el color que quieres pedir.');
+                        var sels = wrap.querySelectorAll('.color-item-sel');
+                        var alguno = false;
+                        Array.prototype.forEach.call(sels, function (s) { if (s.value !== '') alguno = true; });
+                        if (!alguno) errs.push('Toca el color que quieres pedir.');
                     }
                 }
                 return errs;
             }
 
-            const progressFill   = document.getElementById('modalProgressFill');
-            const floatingTotal  = document.getElementById('modalFloatingTotal');
-            const floatingAmt    = document.getElementById('modalFloatingTotalAmt');
-            const PROGRESS_MAP   = { 1: '10%', 2: '48%', 3: '82%' };
+            var progressFill   = document.getElementById('modalProgressFill');
+            var floatingTotal  = document.getElementById('modalFloatingTotal');
+            var floatingAmt    = document.getElementById('modalFloatingTotalAmt');
+            var PROGRESS_MAP   = { 1: '10%', 2: '48%', 3: '82%' };
 
             function updateIndicator(n) {
                 if (!indicator) return;
-                indicator.querySelectorAll('.stepper-node').forEach(el => {
-                    const s = parseInt(el.dataset.step, 10);
+                Array.prototype.forEach.call(indicator.querySelectorAll('.stepper-node'), function (el) {
+                    var s = parseInt(el.dataset.step, 10);
                     el.classList.toggle('is-active', s === n);
                     el.classList.toggle('is-done', s < n);
                 });
-                indicator.querySelectorAll('.stepper-connector').forEach(el => {
+                Array.prototype.forEach.call(indicator.querySelectorAll('.stepper-connector'), function (el) {
                     el.classList.toggle('is-done', parseInt(el.dataset.after, 10) < n);
                 });
                 if (progressFill) progressFill.style.width = PROGRESS_MAP[n] || '10%';
                 if (floatingTotal) floatingTotal.classList.toggle('is-hidden', n === 3);
             }
 
-            function updateFloatingTotal() {
-                setTimeout(() => {
-                    const summaryTotal = document.getElementById('summaryTotal');
-                    const pricePreview = document.getElementById('pricePreviewAmt');
-                    const src = summaryTotal?.textContent?.trim() || pricePreview?.textContent?.trim() || '';
-                    if (!src) return;
+            /* El precio lo calcula pricing-summary.js y lo anuncia con
+               'landing:precio' ya formateado. Aqui solo se reparte a los
+               sitios que lo muestran. Antes esto leia el textContent del
+               resumen dentro de un setTimeout, confiando en que el otro
+               script hubiera escrito primero. */
+            function repartirTotal(texto) {
+                if (!texto) return;
 
-                    if (floatingAmt) floatingAmt.textContent = src;
+                if (floatingAmt) floatingAmt.textContent = texto;
 
-                    // Actualizar precio en la barra del producto (header del modal)
-                    const barPrice = document.getElementById('modalBarPrice');
-                    if (barPrice) barPrice.textContent = src;
+                var barPrice = document.getElementById('modalBarPrice');
+                if (barPrice) barPrice.textContent = texto;
 
-                    // Actualizar texto del botón de confirmar (preserva el ícono SVG)
-                    const submitText = document.getElementById('btnSubmitText');
-                    if (submitText) {
-                        // El span contiene un SVG + texto — reemplazamos solo el texto final
-                        const svgEl = submitText.querySelector('svg');
-                        if (svgEl) {
-                            // Remover nodos de texto y mantener el SVG
-                            Array.from(submitText.childNodes).forEach(n => {
-                                if (n.nodeType === Node.TEXT_NODE) n.remove();
-                            });
-                            submitText.appendChild(document.createTextNode(' Confirmar mi pedido — pago ' + src + ' al recibirlo'));
-                        } else {
-                            submitText.textContent = '✓ Confirmar mi pedido — pago ' + src + ' al recibirlo';
-                        }
-                    }
-                }, 0);
+                var submitText = document.getElementById('btnSubmitText');
+                if (!submitText) return;
+
+                /* El span lleva un SVG delante del texto: se cambian solo los
+                   nodos de texto para no perder el icono. */
+                var svgEl = submitText.querySelector('svg');
+                var frase = ' Confirmar mi pedido — pago ' + texto + ' al recibirlo';
+                if (svgEl) {
+                    Array.prototype.slice.call(submitText.childNodes).forEach(function (n) {
+                        if (n.nodeType === 3) n.parentNode.removeChild(n);
+                    });
+                    submitText.appendChild(document.createTextNode(frase));
+                } else {
+                    submitText.textContent = '✓' + frase;
+                }
+            }
+
+            document.addEventListener('landing:precio', function (e) {
+                repartirTotal(e.detail && e.detail.texto);
+            });
+
+            function recalcular() {
+                document.dispatchEvent(new Event('landing:recalc'));
             }
 
             function goTo(n) {
-                form.querySelectorAll('.form-step').forEach(el => {
+                Array.prototype.forEach.call(form.querySelectorAll('.form-step'), function (el) {
                     el.classList.toggle('is-active', parseInt(el.dataset.step, 10) === n);
                 });
                 updateIndicator(n);
                 current = n;
-                const scroll = document.getElementById('orderModalScroll');
+                var scroll = document.getElementById('orderModalScroll');
                 if (scroll) scroll.scrollTo({ top: 0, behavior: 'smooth' });
-                requestAnimationFrame(() => {
-                    const step = form.querySelector(`.form-step[data-step="${n}"]`);
-                    const first = step?.querySelector('input:not([type=hidden]):not([type=radio]), select');
-                    first?.focus();
+                requestAnimationFrame(function () {
+                    var step = form.querySelector('.form-step[data-step="' + n + '"]');
+                    var first = step ? step.querySelector('input:not([type=hidden]):not([type=radio]), select') : null;
+                    if (first) first.focus();
                 });
             }
 
-            /* Actualizar total flotante cuando cambia el precio */
-            document.addEventListener('landing:recalc', updateFloatingTotal);
-            updateFloatingTotal();
-
-            form.querySelectorAll('.btn-step-next').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const errs = validateStep(current);
+            Array.prototype.forEach.call(form.querySelectorAll('.btn-step-next'), function (btn) {
+                btn.addEventListener('click', function () {
+                    var errs = validateStep(current);
                     if (errs.length) { showErrors(errs); return; }
                     showErrors([]);
                     goTo(parseInt(btn.dataset.next, 10));
                 });
             });
-            form.querySelectorAll('.btn-step-prev').forEach(btn => {
-                btn.addEventListener('click', () => { showErrors([]); goTo(parseInt(btn.dataset.prev, 10)); });
+            Array.prototype.forEach.call(form.querySelectorAll('.btn-step-prev'), function (btn) {
+                btn.addEventListener('click', function () { showErrors([]); goTo(parseInt(btn.dataset.prev, 10)); });
             });
 
             /* ── Color pills (paso 2 con colores) ─────────────── */
-            const colorRowsWrap = document.getElementById('colorRowsWrap');
-
-            function syncCantidadTotal() {
-                let t = 0;
-                if (colorRowsWrap) {
-                    colorRowsWrap.querySelectorAll('.color-row').forEach(row => {
-                        const cSel = row.querySelector('.color-item-sel');
-                        const qSel = row.querySelector('.qty-item-sel');
-                        if (cSel?.value) t += parseInt(qSel?.value || '1', 10);
-                    });
-                }
-                const cantEl = form.querySelector('#cantidad_total');
-                if (cantEl) cantEl.value = Math.max(1, t);
-                const badge = document.getElementById('modalCartBadge');
-                if (badge) badge.textContent = Math.max(1, t);
-                document.dispatchEvent(new Event('landing:recalc'));
-            }
+            var colorRowsWrap = document.getElementById('colorRowsWrap');
 
             function updateColorSummary() {
-                const sumEl = document.getElementById('colorSelSummary');
-                const txtEl = document.getElementById('colorSelText');
+                var sumEl = document.getElementById('colorSelSummary');
+                var txtEl = document.getElementById('colorSelText');
                 if (!sumEl || !txtEl || !colorRowsWrap) return;
-                const parts = [];
-                colorRowsWrap.querySelectorAll('.color-row').forEach(row => {
-                    const cSel = row.querySelector('.color-item-sel');
-                    const qSel = row.querySelector('.qty-item-sel');
-                    if (cSel?.value) parts.push(cSel.value + ' ×' + (qSel?.value || '1'));
+                var parts = [];
+                Array.prototype.forEach.call(colorRowsWrap.querySelectorAll('.color-row'), function (row) {
+                    var cSel = row.querySelector('.color-item-sel');
+                    var qSel = row.querySelector('.qty-item-sel');
+                    if (cSel && cSel.value) parts.push(cSel.value + ' ×' + ((qSel && qSel.value) || '1'));
                 });
                 txtEl.textContent = parts.join(' · ');
                 sumEl.style.display = parts.length ? 'flex' : 'none';
             }
 
-            function calcOrderTotal(unit, d2, d3, act, qty) {
-                if (act !== 1 || qty <= 1) return unit * qty;
-                let total = unit;
-                if (qty >= 2) total += unit * (1 - d2 / 100);
-                if (qty >= 3) total += (qty - 2) * unit * (1 - d3 / 100);
-                return total;
-            }
-
-            function updateOrderSummary(qty) {
-                const box = document.getElementById('orderSummary');
-                if (!box) return;
-                const unit = parseFloat(box.dataset.priceUnit) || 0;
-                const d2   = parseInt(box.dataset.d2, 10) || 15;
-                const d3   = parseInt(box.dataset.d3, 10) || 20;
-                const act  = parseInt(box.dataset.act, 10) || 1;
-                const subtotal = unit * qty;
-                const total    = calcOrderTotal(unit, d2, d3, act, qty);
-                const discount = subtotal - total;
-                const fmt = n => '$' + Math.round(n).toLocaleString('es-CO');
-
-                const qtyEl     = document.getElementById('summaryQty');
-                const qtyWordEl = document.getElementById('summaryQtyWord');
-                const subEl     = document.getElementById('summarySubtotal');
-                const discEl    = document.getElementById('summaryDiscount');
-                const saveRow   = document.getElementById('summarySaveRow');
-                const saveEl    = document.getElementById('summarySave');
-                const totalEl   = document.getElementById('summaryTotal');
-
-                if (qtyEl)     qtyEl.textContent = qty;
-                if (qtyWordEl) qtyWordEl.textContent = qty === 1 ? 'unidad' : 'unidades';
-                if (subEl)     subEl.textContent = fmt(subtotal);
-                if (discEl)    discEl.textContent = discount > 0 ? '-' + fmt(discount) : fmt(0);
-                if (saveRow)   saveRow.style.display = discount > 0 ? 'flex' : 'none';
-                if (saveEl)    saveEl.textContent = fmt(discount);
-                if (totalEl)   totalEl.textContent = fmt(total);
-            }
-
-            function updatePricePreview(qty) {
-                const strip = document.getElementById('pricePreviewStrip');
-                const amtEl = document.getElementById('pricePreviewAmt');
-                if (!strip || !amtEl) return;
-                const unit = parseFloat(strip.dataset.unit) || 0;
-                const d2   = parseInt(strip.dataset.d2, 10) || 15;
-                const d3   = parseInt(strip.dataset.d3, 10) || 20;
-                const act  = parseInt(strip.dataset.act, 10) || 1;
-                const total = calcOrderTotal(unit, d2, d3, act, qty);
-                amtEl.textContent = '$' + Math.round(total).toLocaleString('es-CO');
-                updateOrderSummary(qty);
-                // Notificar para que updateFloatingTotal() sincronice barra y botón submit
-                document.dispatchEvent(new Event('landing:recalc'));
-            }
+            /* Tope por color: el mismo 5 que aplica el servidor. */
+            var MAX_POR_COLOR = 5;
 
             function initColorRow(row) {
-                const pills    = row.querySelectorAll('.color-pill');
-                const qtyWrap  = row.querySelector('.color-row__qty-wrap');
-                const qtyValEl = row.querySelector('.qty-val-big');
-                const cSel     = row.querySelector('.color-item-sel');
-                const qSel     = row.querySelector('.qty-item-sel');
+                var pills    = row.querySelectorAll('.color-pill');
+                var qtyWrap  = row.querySelector('.color-row__qty-wrap');
+                var qtyValEl = row.querySelector('.qty-val-big');
+                var cSel     = row.querySelector('.color-item-sel');
+                var qSel     = row.querySelector('.qty-item-sel');
 
-                pills.forEach(pill => {
-                    pill.addEventListener('click', () => {
-                        pills.forEach(p => p.classList.remove('is-selected'));
+                Array.prototype.forEach.call(pills, function (pill) {
+                    pill.addEventListener('click', function () {
+                        Array.prototype.forEach.call(pills, function (p) { p.classList.remove('is-selected'); });
                         pill.classList.add('is-selected');
                         if (cSel) cSel.value = pill.dataset.color;
                         if (qtyWrap) qtyWrap.style.display = '';
-                        const addBtn = document.getElementById('addColorRowBtn');
+                        var addBtn = document.getElementById('addColorRowBtn');
                         if (addBtn) addBtn.style.display = '';
                         updateColorSummary();
-                        syncCantidadTotal();
-                        updatePricePreview(parseInt(form.querySelector('#cantidad_total')?.value || '1', 10));
+                        recalcular();
                     });
                 });
 
-                const btnMinus = row.querySelector('.qty-btn[data-action="minus"]');
-                const btnPlus  = row.querySelector('.qty-btn[data-action="plus"]');
+                var btnMinus = row.querySelector('.qty-btn[data-action="minus"]');
+                var btnPlus  = row.querySelector('.qty-btn[data-action="plus"]');
                 if (btnMinus && btnPlus && qSel) {
-                    function syncQty() {
-                        const v = parseInt(qSel.value, 10);
+                    var syncQty = function () {
+                        var v = parseInt(qSel.value, 10);
                         if (qtyValEl) qtyValEl.textContent = v;
                         btnMinus.disabled = v <= 1;
-                    }
-                    btnMinus.addEventListener('click', () => {
-                        const v = parseInt(qSel.value, 10);
-                        if (v > 1) { qSel.value = v - 1; qSel.dispatchEvent(new Event('change',{bubbles:true})); syncQty(); updateColorSummary(); syncCantidadTotal(); updatePricePreview(parseInt(form.querySelector('#cantidad_total')?.value||'1',10)); }
+                        btnPlus.disabled  = v >= MAX_POR_COLOR;
+                    };
+                    btnMinus.addEventListener('click', function () {
+                        var v = parseInt(qSel.value, 10);
+                        if (v > 1) { qSel.value = v - 1; syncQty(); updateColorSummary(); recalcular(); }
                     });
-                    btnPlus.addEventListener('click', () => {
-                        const v = parseInt(qSel.value, 10);
-                        if (v < 10) { qSel.value = v + 1; qSel.dispatchEvent(new Event('change',{bubbles:true})); syncQty(); updateColorSummary(); syncCantidadTotal(); updatePricePreview(parseInt(form.querySelector('#cantidad_total')?.value||'1',10)); }
+                    btnPlus.addEventListener('click', function () {
+                        var v = parseInt(qSel.value, 10);
+                        if (v < MAX_POR_COLOR) { qSel.value = v + 1; syncQty(); updateColorSummary(); recalcular(); }
                     });
                     syncQty();
                 }
 
-                const removeBtn = row.querySelector('.btn-remove-color-row');
+                var removeBtn = row.querySelector('.btn-remove-color-row');
                 if (removeBtn) {
-                    removeBtn.addEventListener('click', () => { row.remove(); updateColorSummary(); syncCantidadTotal(); });
+                    removeBtn.addEventListener('click', function () {
+                        row.parentNode.removeChild(row);
+                        updateColorSummary();
+                        recalcular();
+                    });
                 }
             }
 
             if (colorRowsWrap) {
-                colorRowsWrap.querySelectorAll('.color-row').forEach(initColorRow);
+                Array.prototype.forEach.call(colorRowsWrap.querySelectorAll('.color-row'), initColorRow);
 
-                document.getElementById('addColorRowBtn')?.addEventListener('click', () => {
-                    const tmpl = colorRowsWrap.querySelector('.color-row');
+                var addBtn = document.getElementById('addColorRowBtn');
+                if (addBtn) addBtn.addEventListener('click', function () {
+                    var tmpl = colorRowsWrap.querySelector('.color-row');
                     if (!tmpl) return;
-                    const newRow = tmpl.cloneNode(true);
-                    newRow.querySelectorAll('.color-pill').forEach(p => p.classList.remove('is-selected'));
-                    const nCSel = newRow.querySelector('.color-item-sel');
-                    const nQSel = newRow.querySelector('.qty-item-sel');
-                    const nWrap = newRow.querySelector('.color-row__qty-wrap');
-                    const nVal  = newRow.querySelector('.qty-val-big');
+                    var newRow = tmpl.cloneNode(true);
+                    Array.prototype.forEach.call(newRow.querySelectorAll('.color-pill'), function (p) {
+                        p.classList.remove('is-selected');
+                    });
+                    var nCSel = newRow.querySelector('.color-item-sel');
+                    var nQSel = newRow.querySelector('.qty-item-sel');
+                    var nWrap = newRow.querySelector('.color-row__qty-wrap');
+                    var nVal  = newRow.querySelector('.qty-val-big');
                     if (nCSel) nCSel.value = '';
                     if (nQSel) nQSel.value = '1';
                     if (nWrap) nWrap.style.display = 'none';
                     if (nVal)  nVal.textContent = '1';
-                    const rem = document.createElement('button');
+                    var rem = document.createElement('button');
                     rem.type = 'button'; rem.className = 'btn-remove-color-row'; rem.textContent = '✕ Quitar';
                     newRow.appendChild(rem);
                     colorRowsWrap.appendChild(newRow);
@@ -2386,37 +2410,33 @@ $colorBorder     = $cfg['color_border']     ?? null;
             }
 
             /* ── Cantidad sin colores (paso 2) ─────────────────── */
-            const qMinus   = document.getElementById('qtyMinus');
-            const qPlus    = document.getElementById('qtyPlus');
-            const qDisplay = document.getElementById('qtyDisplay');
-            const qInput   = document.getElementById('cantidad_total');
-            const qUnitLbl = document.getElementById('qtyUnitLbl');
+            var qMinus   = document.getElementById('qtyMinus');
+            var qPlus    = document.getElementById('qtyPlus');
+            var qDisplay = document.getElementById('qtyDisplay');
+            var qInput   = document.getElementById('cantidad_total');
             if (qMinus && qPlus && qDisplay && qInput) {
-                let qty = parseInt(qInput.value, 10) || 1;
-                function renderQty() {
+                var qty = parseInt(qInput.value, 10) || 1;
+                var renderQty = function () {
                     qDisplay.textContent = qty;
                     qInput.value = qty;
-                    if (qUnitLbl) qUnitLbl.textContent = qty === 1 ? 'unidad' : 'unidades';
                     qMinus.disabled = qty <= 1;
-                    const badge = document.getElementById('modalCartBadge');
-                    if (badge) badge.textContent = qty;
-                    updatePricePreview(qty);
-                    document.dispatchEvent(new Event('landing:recalc'));
-                }
+                    qPlus.disabled  = qty >= 10;
+                    /* El resto — insignia, tira de precio, resumen y boton —
+                       lo escribe pricing-summary.js al recalcular. */
+                    recalcular();
+                };
                 renderQty();
-                qMinus.addEventListener('click', () => { if (qty > 1)  { qty--; renderQty(); } });
-                qPlus.addEventListener('click',  () => { if (qty < 10) { qty++; renderQty(); } });
+                qMinus.addEventListener('click', function () { if (qty > 1)  { qty--; renderQty(); } });
+                qPlus.addEventListener('click',  function () { if (qty < 10) { qty++; renderQty(); } });
             }
-
-            updatePricePreview(1);
 
             /* ── Validación en tiempo real del teléfono ─────────── */
             (function () {
-                const tel  = form.querySelector('#telefono');
-                const hint = document.getElementById('telHint');
+                var tel  = form.querySelector('#telefono');
+                var hint = document.getElementById('telHint');
                 if (!tel || !hint) return;
                 tel.addEventListener('input', function () {
-                    const v = tel.value.trim();
+                    var v = tel.value.trim();
                     if (!v) {
                         tel.classList.remove('tel-valid', 'tel-invalid');
                         hint.className = 'tel-hint';
@@ -2432,22 +2452,25 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         tel.classList.add('tel-invalid');
                         tel.classList.remove('tel-valid');
                         hint.className = 'tel-hint err';
-                        hint.textContent = v.length < 10
-                            ? `Faltan ${10 - v.length} dígito${10 - v.length !== 1 ? 's' : ''}`
-                            : !v.startsWith('3')
-                                ? 'Debe empezar en 3'
-                                : 'Revisa el número';
+                        var faltan = 10 - v.length;
+                        if (v.length < 10) {
+                            hint.textContent = 'Faltan ' + faltan + ' dígito' + (faltan !== 1 ? 's' : '');
+                        } else if (v.charAt(0) !== '3') {
+                            hint.textContent = 'Debe empezar en 3';
+                        } else {
+                            hint.textContent = 'Revisa el número';
+                        }
                     }
                 });
             })();
 
             /* ── Fallback para navegadores sin :has() (Facebook IAB) ─── */
             (function () {
-                const radios = form.querySelectorAll('input[name="tipo_entrega"]');
+                var radios = form.querySelectorAll('input[name="tipo_entrega"]');
                 if (!radios.length) return;
                 function syncCards() {
-                    radios.forEach(function (r) {
-                        const card = r.closest('.radio-card--lg');
+                    Array.prototype.forEach.call(radios, function (r) {
+                        var card = r.closest('.radio-card--lg');
                         if (!card) return;
                         if (r.checked) {
                             card.classList.add('is-checked');
@@ -2456,7 +2479,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         }
                     });
                 }
-                radios.forEach(function (r) { r.addEventListener('change', syncCards); });
+                Array.prototype.forEach.call(radios, function (r) { r.addEventListener('change', syncCards); });
                 syncCards();
             })();
         })();
@@ -2510,7 +2533,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
         window.landingSuccess = <?= json_encode($success,        JSON_UNESCAPED_UNICODE) ?>;
         window.landingProductName = <?= json_encode($nombreProducto, JSON_UNESCAPED_UNICODE) ?>;
         window.landingProductPrice = <?= json_encode($precioProducto) ?>;
+        window.landingProductId = <?= (int)($producto['id'] ?? 0) ?>;
+        window.landingTrackUrl = <?= json_encode(BASE_URL . '/Landing/track') ?>;
     </script>
+
+    <!-- Analítica propia del embudo (ver public/js/landing-track.js).
+         A diferencia de Clarity y el Pixel, esta SÍ corre en local: guarda
+         la visita marcada como entorno "local" y el panel filtra producción
+         por defecto, así se puede probar el tracking sin ensuciar los datos. -->
+    <script src="<?= BASE_URL ?>/public/js/landing-track.js" defer></script>
 
     <?php
     $colores      = $colores ?? [];
@@ -2526,6 +2557,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
     </div>
 
     <script src="<?= BASE_URL ?>/public/js/pricing-summary.js" defer></script>
+    <!-- El envio del pedido va aparte y no dentro de main.js: es lo unico que
+         no puede fallar, y alli compartia archivo con carruseles y videos. -->
+    <script src="<?= BASE_URL ?>/public/js/order-submit.js" defer></script>
     <script src="<?= BASE_URL ?>/public/js/funcionesLandin.js" defer></script>
 
     <!-- Botón WhatsApp flotante -->
