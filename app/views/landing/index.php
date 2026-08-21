@@ -550,32 +550,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
             markMuted();
             video.play().catch(function () {});
         }
-
-        /* ── Controles de video: tap-to-pause + mute toggle ── */
-        wrap.addEventListener('click', function (e) {
-            /* Mute / unmute */
-            var volBtn = e.target.closest('.caract-vol-btn');
-            if (volBtn) {
-                e.stopPropagation();
-                var isNowUnmuted = volBtn.classList.toggle('is-unmuted');
-                var volVid = wrap.querySelector('video');
-                if (volVid) volVid.muted = !isNowUnmuted;
-                return;
-            }
-            /* Tap to pause / play */
-            var tap = e.target.closest('.caract-video-tap');
-            if (tap) {
-                var video = wrap.querySelector('video');
-                if (!video) return;
-                if (video.paused) {
-                    video.play();
-                    wrap.classList.remove('is-paused');
-                } else {
-                    video.pause();
-                    wrap.classList.add('is-paused');
-                }
-            }
-        });
     })();
     </script>
     <?php endif; ?>
@@ -942,33 +916,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     }, 900);
                 }
 
-                /* ── Controles de video: tap-to-pause + mute toggle ── */
-                track.addEventListener('click', function(e) {
-                    /* Mute / unmute */
-                    var volBtn = e.target.closest('.caract-vol-btn');
-                    if (volBtn) {
-                        e.stopPropagation();
-                        var isNowUnmuted = volBtn.classList.toggle('is-unmuted');
-                        var volWrap = volBtn.closest('.caract-video-wrap');
-                        var volVid  = volWrap && volWrap.querySelector('video');
-                        if (volVid) volVid.muted = !isNowUnmuted;
-                        return;
-                    }
-                    /* Tap to pause / play */
-                    var tap = e.target.closest('.caract-video-tap');
-                    if (tap) {
-                        var wrap  = tap.closest('.caract-video-wrap');
-                        var video = wrap && wrap.querySelector('video');
-                        if (!video) return;
-                        if (video.paused) {
-                            video.play();
-                            wrap.classList.remove('is-paused');
-                        } else {
-                            video.pause();
-                            wrap.classList.add('is-paused');
-                        }
-                    }
-                });
+                /* Los controles de video (tap para pausar, botón de volumen)
+                   los maneja initVideoControls() en main.js, delegado en el
+                   documento para todos los videos de la landing. */
             })();
             </script>
         </section>
@@ -1041,8 +991,28 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <!-- Imagen / video arriba -->
                 <div class="porque-card__media">
                     <?php if ($porqueMediaType === 'video'): ?>
-                        <video src="<?= htmlspecialchars($porqueMediaPath) ?>"
-                               autoplay muted loop playsinline></video>
+                        <!-- Mismo envoltorio que el hero y el carrusel: sin él este
+                             video se quedaba mudo y sin forma de pausarlo ni de
+                             subirle el volumen. Los controles los maneja
+                             initVideoControls() en main.js. -->
+                        <div class="caract-video-wrap">
+                            <video src="<?= htmlspecialchars($porqueMediaPath) ?>"
+                                   autoplay muted loop playsinline preload="metadata"></video>
+                            <div class="caract-video-tap" aria-hidden="true"></div>
+                            <div class="caract-play-overlay" aria-hidden="true">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="rgba(255,255,255,0.92)" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            </div>
+                            <button class="caract-vol-btn" type="button" aria-label="Silenciar / activar sonido">
+                                <svg class="caract-vol-icon caract-vol-icon--muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                    <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+                                </svg>
+                                <svg class="caract-vol-icon caract-vol-icon--sound" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                                </svg>
+                            </button>
+                        </div>
                     <?php else: ?>
                         <img src="<?= htmlspecialchars($porqueMediaPath) ?>"
                              alt="<?= htmlspecialchars($porqueTitle) ?>"

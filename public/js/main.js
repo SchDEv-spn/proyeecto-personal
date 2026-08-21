@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initTelInput();
     initPixelEvents();
     initWaLinksIAB();
+    initVideoControls();
 });
 
 
@@ -699,3 +700,57 @@ function initPixelEvents() {
             });
     });
 })();
+
+/* ══════════════════════════════════════════════════════════════
+   CONTROLES DE VIDEO — tap para pausar + botón de volumen
+   Un solo manejador delegado en el documento para TODOS los videos
+   de la landing. Antes había dos copias casi idénticas (una en el
+   script del hero y otra en el del carrusel de características) y el
+   video de "Por qué te encantará" se quedaba sin controles: se
+   reproducía mudo y sin forma de activarle el sonido ni de pausarlo.
+   Al estar delegado también cubre los videos que aparezcan después,
+   como los slides del carrusel.
+   ══════════════════════════════════════════════════════════════ */
+function initVideoControls() {
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest) return;
+
+        /* Silenciar / activar sonido */
+        var volBtn = e.target.closest('.caract-vol-btn');
+        if (volBtn) {
+            e.stopPropagation();
+            e.preventDefault();
+            var volWrap = volBtn.closest('.caract-video-wrap');
+            var volVid  = volWrap && volWrap.querySelector('video');
+            if (!volVid) return;
+
+            var activar = !volBtn.classList.contains('is-unmuted');
+            volBtn.classList.toggle('is-unmuted', activar);
+            volVid.muted = !activar;
+
+            /* Si estaba pausado, activar el sonido también lo reanuda:
+               nadie sube el volumen de un video quieto. */
+            if (activar && volVid.paused) {
+                volVid.play().catch(function () {});
+                if (volWrap) volWrap.classList.remove('is-paused');
+            }
+            return;
+        }
+
+        /* Tocar el video para pausar o reanudar */
+        var tap = e.target.closest('.caract-video-tap');
+        if (!tap) return;
+
+        var wrap  = tap.closest('.caract-video-wrap');
+        var video = wrap && wrap.querySelector('video');
+        if (!video) return;
+
+        if (video.paused) {
+            video.play().catch(function () {});
+            wrap.classList.remove('is-paused');
+        } else {
+            video.pause();
+            wrap.classList.add('is-paused');
+        }
+    });
+}
