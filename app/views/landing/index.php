@@ -387,18 +387,12 @@ $accentColor     = $config['accent_color']     ?? '#730dad';
 $backgroundColor = $config['background_color'] ?? '#f5f5f5';
 $textColor       = $config['text_color']       ?? '#222222';
 
-// Tema
-$theme = in_array($cfg['theme'] ?? '', [
-    'dark-luxury',
-    'light-luxury',
-    'bold-conversion',
-    'minimal-clean',
-    'femme-rose',
-    'natural-sage',
-    'obsidian',
-    'blanc-luxe',
-    'midnight-amber',
-], true) ? $cfg['theme'] : 'dark-luxury';
+/* Tema — la lista válida sale de app/config/themes.php, que es la misma
+   que usan el editor y el controlador. Cuando cada sitio mantenía su
+   propia copia, bastaba olvidar una para que un tema dejara de
+   funcionar sin dar ningún error. */
+$temasValidos = require dirname(__DIR__, 2) . '/config/themes.php';
+$theme = isset($temasValidos[$cfg['theme'] ?? '']) ? $cfg['theme'] : 'dark-luxury';
 
 // Colores base (5 existentes)
 $primaryColor    = $cfg['primary_color']    ?? null;

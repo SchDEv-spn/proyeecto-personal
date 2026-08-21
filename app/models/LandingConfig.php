@@ -2,6 +2,20 @@
 
 class LandingConfig extends Model
 {
+    /**
+     * Temas válidos, desde la fuente única app/config/themes.php.
+     * Se cachea en estático porque el guardado la consulta una vez por
+     * fila y el archivo no cambia dentro de una petición.
+     */
+    public static function temasValidos(): array
+    {
+        static $temas = null;
+        if ($temas === null) {
+            $temas = require dirname(__DIR__) . '/config/themes.php';
+        }
+        return $temas;
+    }
+
     public function obtenerPorProducto(int $productoId)
     {
         $sql = "SELECT * FROM landing_config WHERE producto_id = :producto_id LIMIT 1";
@@ -370,16 +384,13 @@ class LandingConfig extends Model
         $stmt = $this->db->prepare($sql);
 
         $ok = $stmt->execute([
-            ':theme'           => in_array($data['theme'] ?? '', [
-                'dark-luxury',
-                'light-luxury',
-                'bold-conversion',
-                'minimal-clean',
-                'femme-rose',
-                'natural-sage',
-                'obsidian',
-                'blanc-luxe',
-            ], true) ? $data['theme'] : 'dark-luxury',
+            /* Quinta y última copia de la lista de temas: ésta era la que
+               seguía rechazando midnight-amber después de arreglar las
+               otras cuatro. Ahora sale de app/config/themes.php como
+               todas. */
+            ':theme'           => isset(self::temasValidos()[$data['theme'] ?? ''])
+                ? $data['theme']
+                : 'dark-luxury',
 
             ':hero_title'         => $data['hero_title']       ?? null,
             ':hero_subtitle'      => $data['hero_subtitle']    ?? null,

@@ -364,12 +364,14 @@ class AdminLandingController extends Controller
         $data['background_color'] = $_POST['background_color'] ?: null;
         $data['text_color']       = $_POST['text_color']       ?: null;
 
-        // Tema
-        $data['theme'] = in_array(
-            trim($_POST['theme'] ?? ''),
-            ['dark-luxury', 'light-luxury', 'bold-conversion', 'minimal-clean', 'femme-rose', 'natural-sage', 'obsidian', 'blanc-luxe'],
-            true
-        ) ? trim($_POST['theme']) : 'dark-luxury';
+        /* Tema — la lista sale de app/config/themes.php, no se escribe aquí.
+           Cuando esta whitelist se mantenía a mano se quedó sin
+           midnight-amber, así que el servidor lo rechazaba y guardaba
+           'dark-luxury' sin decir nada: el admin elegía un tema y la
+           landing salía con los colores del anterior. */
+        $temas = require dirname(__DIR__) . '/config/themes.php';
+        $temaPedido = trim($_POST['theme'] ?? '');
+        $data['theme'] = isset($temas[$temaPedido]) ? $temaPedido : 'dark-luxury';
 
         // Colores extendidos — solo guardar si son hex válidos
         $extendedColors = [
