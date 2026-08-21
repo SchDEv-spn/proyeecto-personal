@@ -1559,8 +1559,43 @@ $colorBorder     = $cfg['color_border']     ?? null;
              si el JS falla (11% de sesiones), el formulario sigue visible
              y el POST nativo funciona: el servidor valida igual.
         ══════════════════════════════════════════════════════════ -->
-        <section id="form-pedido" class="pedido-section" aria-labelledby="pedidoSectionTitle">
-            <h2 id="pedidoSectionTitle" class="pedido-section__title"><?= htmlspecialchars($formTitle ?? "Completa tu pedido") ?></h2>
+        <section id="form-pedido" class="pedido-section" aria-label="Formulario de pedido">
+                <!-- Barra del producto -->
+                <div class="order-modal-product-bar">
+                    <div class="order-modal-product-bar__imgwrap">
+                        <img src="<?= htmlspecialchars($modalProductImg) ?>"
+                             alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>"
+                             class="order-modal-product-bar__img" loading="eager">
+                        <span class="order-modal-product-bar__badge" id="modalCartBadge">1</span>
+                    </div>
+                    <div class="order-modal-product-bar__info">
+                        <p class="order-modal-product-bar__name" id="orderModalProductName">
+                            <?= htmlspecialchars($producto['nombre'] ?? '') ?>
+                        </p>
+                        <p class="order-modal-product-bar__price" id="modalBarPrice">
+                            $<?= number_format($precio_venta, 0, ',', '.') ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Trust line compacta -->
+                <div class="order-modal-trust-line">
+                    <?php if ($ahorro > 0): ?>
+                    <span class="order-modal-trust-line__saving">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></span>
+                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
+                    <?php endif; ?>
+                    <span>Envío gratis</span>
+                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
+                    <span>Pagas al recibirlo</span>
+                </div>
+
+                <!-- Título y subtítulo del formulario -->
+                <?php if (!empty($formTitle)): ?>
+                <h2 class="order-modal-form-title"><?= htmlspecialchars($formTitle) ?></h2>
+                <?php endif; ?>
+                <p class="order-modal-intro-text">
+                    <?= htmlspecialchars($formSubtitle) ?>
+                </p>
                 <div class="order-modal-body">
 
                     <!-- Barra de progreso -->
@@ -1938,72 +1973,38 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div><!-- /.order-modal-body -->
         </section>
 
-        <div id="orderModal" class="order-modal-overlay" hidden
-             role="dialog" aria-modal="true" aria-labelledby="orderModalProductName">
-            <div class="order-modal-card" id="orderModalCard">
+        <script>
+        /* ── CTA → formulario: salto instantáneo ──────────────────
+           Los CTAs son anclas nativas <a href="#form-pedido">, así que
+           funcionan aunque no haya JavaScript. Esto solo mejora el salto:
+           el scroll suave del CSS recorre ~1.900px en un par de segundos
+           y cualquier toque de la pantalla lo cancela a mitad de camino,
+           dejando al comprador en tierra de nadie. Instantáneo es más
+           rápido y no se puede interrumpir. */
+        (function () {
+            var seccion = document.getElementById('form-pedido');
+            if (!seccion) return;
 
-                <button class="order-modal-close" id="orderModalClose" aria-label="Cerrar pedido">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M2 2L14 14M14 2L2 14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-                    </svg>
-                </button>
+            document.addEventListener('click', function (e) {
+                var cta = e.target.closest ? e.target.closest('a[href="#form-pedido"]') : null;
+                if (!cta) return;
+                e.preventDefault();
 
-                <div class="order-modal-card__scroll" id="orderModalScroll">
+                /* scrollIntoView con behavior:'auto' NO es instantaneo: hereda el
+                   scroll-behavior:smooth que style.css pone en <html>. Se apaga
+                   un instante para que el salto sea inmediato y no se pueda
+                   cancelar con un toque a mitad de camino. */
+                var raiz = document.documentElement;
+                var previo = raiz.style.scrollBehavior;
+                raiz.style.scrollBehavior = 'auto';
+                seccion.scrollIntoView({ block: 'start' });
+                raiz.style.scrollBehavior = previo;
 
-                <!-- Barra del producto -->
-                <div class="order-modal-product-bar">
-                    <div class="order-modal-product-bar__imgwrap">
-                        <img src="<?= htmlspecialchars($modalProductImg) ?>"
-                             alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>"
-                             class="order-modal-product-bar__img" loading="eager">
-                        <span class="order-modal-product-bar__badge" id="modalCartBadge">1</span>
-                    </div>
-                    <div class="order-modal-product-bar__info">
-                        <p class="order-modal-product-bar__name" id="orderModalProductName">
-                            <?= htmlspecialchars($producto['nombre'] ?? '') ?>
-                        </p>
-                        <p class="order-modal-product-bar__price" id="modalBarPrice">
-                            $<?= number_format($precio_venta, 0, ',', '.') ?>
-                        </p>
-                    </div>
-                </div>
+                if (history.replaceState) history.replaceState(null, '', '#form-pedido');
+            });
+        })();
+        </script>
 
-                <!-- Trust line compacta -->
-                <div class="order-modal-trust-line">
-                    <?php if ($ahorro > 0): ?>
-                    <span class="order-modal-trust-line__saving">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></span>
-                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
-                    <?php endif; ?>
-                    <span>Envío gratis</span>
-                    <span class="order-modal-trust-line__dot" aria-hidden="true">·</span>
-                    <span>Pagas al recibirlo</span>
-                </div>
-
-                <!-- Título y subtítulo del formulario -->
-                <?php if (!empty($formTitle)): ?>
-                <h2 class="order-modal-form-title"><?= htmlspecialchars($formTitle) ?></h2>
-                <?php endif; ?>
-                <p class="order-modal-intro-text">
-                    <?= htmlspecialchars($formSubtitle) ?>
-                </p>
-
-                <!-- Cuerpo del formulario -->
-                <!-- El cuerpo del formulario se inserta aquí por JS al abrir el modal -->
-                <div class="order-modal-slot" id="orderModalSlot"></div>
-
-                </div><!-- /.order-modal-card__scroll -->
-
-                <!-- Total flotante — visible en pasos 1 y 2 -->
-                <div class="modal-floating-total is-hidden" id="modalFloatingTotal">
-                    <div>
-                        <div class="modal-floating-total__label">Total a pagar al recibirlo</div>
-                        <div class="modal-floating-total__shipping">Envío gratis incluido</div>
-                    </div>
-                    <span class="modal-floating-total__amount" id="modalFloatingTotalAmt">$<?= number_format($precio_venta, 0, ',', '.') ?></span>
-                </div>
-
-            </div><!-- /.order-modal-card -->
-        </div><!-- /#orderModal -->
 
         <script>
         /* ── Stepper — 3 pasos siempre ─────────────────────────── */
@@ -2011,12 +2012,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
             const form = document.getElementById('formPedido');
             if (!form) return;
 
-            /* Marca que el modo "un paso a la vez" está vivo. Sin esta clase
-               el CSS muestra los 3 pasos seguidos y oculta los botones de
-               navegación, para que el formulario siga siendo usable si este
-               script no llega a ejecutarse. */
-            const cuerpoPasos = form.closest('.order-modal-body');
-            if (cuerpoPasos) cuerpoPasos.classList.add('js-pasos');
+            /* El formulario se muestra de corrido, en un solo scroll: los 3
+               pasos visibles y sin navegación entre ellos. El paso a paso
+               tenía sentido dentro del modal, con espacio contado; en la
+               página solo escondía cuánto faltaba y añadía dos toques.
+               Para recuperarlo basta con volver a poner la clase js-pasos
+               en .order-modal-body (el CSS y el resto del script siguen ahí). */
 
             let current = 1;
             const errBox    = document.getElementById('stepperErrors');
@@ -2364,109 +2365,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
             })();
         })();
         </script>
-
-    <script>
-    /* ── Modal de pedido — open / close ──────────────────────── */
-    (function () {
-        var modal    = document.getElementById('orderModal');
-        var card     = document.getElementById('orderModalCard');
-        var closeBtn = document.getElementById('orderModalClose');
-        if (!modal || !closeBtn) return;
-
-        var trampaFoco = window.crearTrampaFoco ? window.crearTrampaFoco(modal) : null;
-
-        /* ── Formulario prestado ──────────────────────────────────
-           El formulario vive en <section id="form-pedido"> dentro de la
-           página, no aquí. Este script lo trae al modal la primera vez
-           que se abre y oculta la sección. Si este script nunca corre
-           (error de JS), la sección se queda visible y el pedido se
-           puede hacer igual con el POST nativo del formulario. */
-        var seccion = document.getElementById('form-pedido');
-        var slot    = document.getElementById('orderModalSlot');
-        var cuerpo  = seccion ? seccion.querySelector('.order-modal-body') : null;
-
-        if (seccion && cuerpo) seccion.classList.add('pedido-section--en-modal');
-
-        function traerFormulario() {
-            if (!slot || !cuerpo || cuerpo.parentNode === slot) return;
-            slot.appendChild(cuerpo);
-        }
-
-        function openModal() {
-            traerFormulario();
-            modal.removeAttribute('hidden');
-            document.body.classList.add('modal-open');
-            var scroll = document.getElementById('orderModalScroll');
-            if (scroll) scroll.scrollTop = 0;
-            /* Enfocar el primer campo visible */
-            var first = card ? card.querySelector('.form-step.is-active input:not([type="hidden"])') : null;
-            if (trampaFoco) trampaFoco.activar(first);
-            else if (first) setTimeout(function () { first.focus(); }, 80);
-        }
-
-        /* ── Mantener el campo enfocado visible cuando aparece el teclado ── */
-        function scrollFocusedIntoView() {
-            var el = document.activeElement;
-            if (!el || !card || !card.contains(el)) return;
-            if (!/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
-            el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        }
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', scrollFocusedIntoView);
-        }
-        if (card) {
-            card.addEventListener('focusin', function (e) {
-                if (!/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-                setTimeout(scrollFocusedIntoView, 300);
-            });
-        }
-
-        function closeModal() {
-            modal.setAttribute('hidden', '');
-            document.body.classList.remove('modal-open');
-            if (trampaFoco) trampaFoco.desactivar();
-            setTimeout(function () {
-                if (typeof window.dispararFomo === 'function') window.dispararFomo();
-            }, 400);
-        }
-
-        /* Interceptar todos los CTAs usando event delegation
-           (funciona para elementos que aparecen DESPUÉS del script, como el sticky mobile) */
-        document.addEventListener('click', function (e) {
-            var target = e.target.closest('a[href="#form-pedido"]');
-            if (target) {
-                e.preventDefault();
-                openModal();
-            }
-        });
-
-        closeBtn.addEventListener('click', closeModal);
-
-        /* Cerrar al hacer clic fuera del card */
-        modal.addEventListener('click', function (e) {
-            if (e.target === modal) closeModal();
-        });
-
-        /* Cerrar con ESC */
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && !modal.hasAttribute('hidden')) closeModal();
-        });
-
-        /* Auto-abrir si el servidor devolvió éxito (recarga tras submit) */
-        if (typeof window.landingSuccess !== 'undefined' && window.landingSuccess) {
-            openModal();
-        }
-
-        /* Sincronizar precio del header del modal con el total del resumen */
-        var summaryTotal = document.getElementById('summaryTotal');
-        var modalTotal   = document.getElementById('modalTotalPrice');
-        if (summaryTotal && modalTotal) {
-            new MutationObserver(function () {
-                modalTotal.textContent = summaryTotal.textContent;
-            }).observe(summaryTotal, { childList: true, characterData: true, subtree: true });
-        }
-    })();
-    </script>
 
     </main>
 

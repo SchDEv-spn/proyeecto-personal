@@ -412,34 +412,33 @@ body.modal-open { overflow: hidden; }
 .confetti-p:nth-child(8)  { left: 82%; background: #60a5fa;               animation-delay: 0.18s; }
 .confetti-p:nth-child(9)  { left: 90%; background: var(--success,#22c55e);animation-delay: 0.07s; width:9px; }
 .confetti-p:nth-child(10) { left: 5%;  background: #f472b6;               animation-delay: 0.13s; height:5px; }
-
 /* ══════════════════════════════════════════════════════════════
-   FORMULARIO EN PÁGINA — fallback sin JavaScript
-   El formulario vive en <section id="form-pedido">. Cuando el JS del
-   modal arranca, añade .pedido-section--en-modal y la sección
-   desaparece porque el modal se lleva el formulario prestado.
-   Si el JS falla, nada de esto ocurre y el formulario queda visible
-   e igual de funcional (el servidor valida el POST nativo).
+   FORMULARIO DE PEDIDO EN PÁGINA
+   Vive al final de la landing, en <section id="form-pedido">, y todos
+   los CTAs son anclas nativas que apuntan ahí. Ya no hay modal: el
+   overlay obligaba a bloquear el scroll del body, atrapar el foco y
+   pelear con el teclado, que es lo más frágil dentro del WebView de
+   Facebook, de donde viene el 87% del tráfico. Como ancla nativa el
+   botón funciona aunque todo el JavaScript esté muerto.
    ══════════════════════════════════════════════════════════════ */
 .pedido-section {
     max-width: 640px;
     margin: 0 auto;
-    padding: 32px 16px 48px;
+    padding: 8px 16px 56px;
+    scroll-margin-top: 12px;
 }
 
-.pedido-section__title {
-    font-size: 1.5rem;
-    line-height: 1.25;
-    text-align: center;
-    margin: 0 0 20px;
-}
-
-/* JS vivo: el modal se encarga, la sección sobra */
-.pedido-section--en-modal { display: none; }
-
-/* Sin el stepper activo: los 3 pasos seguidos y sin navegación por pasos */
+/* Los 3 bloques de corrido, en un solo scroll, sin navegación por pasos.
+   Volver a poner .js-pasos en .order-modal-body restaura el paso a paso. */
 .order-modal-body:not(.js-pasos) .form-step { display: block; }
 .order-modal-body:not(.js-pasos) .btn-step-next,
 .order-modal-body:not(.js-pasos) .btn-step-prev,
 .order-modal-body:not(.js-pasos) .form-stepper-indicator,
 .order-modal-body:not(.js-pasos) .modal-progress-bar { display: none; }
+
+/* Separación entre bloques ahora que se ven los tres seguidos */
+.order-modal-body:not(.js-pasos) .form-step + .form-step {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(128, 128, 128, 0.18);
+}
