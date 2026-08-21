@@ -7108,10 +7108,12 @@ img[loading="lazy"].loaded {
     color: #56605A;
 }
 
-/* Zona pulsable mínima de 44px sin agrandar el icono */
-.caract-vol-btn {
-    position: relative;
-}
+/* Zona pulsable mínima de 44px sin agrandar el icono.
+   OJO: aquí había un position:relative que pisaba el position:absolute
+   de arriba y sacaba el botón de encima del video — en el hero caía
+   abajo a la izquierda y en "por qué te encantará" desaparecía, porque
+   ese contenedor recorta lo que se sale. El ::after no lo necesita: el
+   propio botón ya es un ancestro posicionado. */
 .caract-vol-btn::after {
     content: "";
     position: absolute;
@@ -7137,3 +7139,67 @@ img[loading="lazy"].loaded {
 
 /* El pie iba en #575757 sobre #050505 (2.8:1) */
 .footer-text { color: #9AA3A6; }
+
+/* ══════════════════════════════════════════════════════════════
+   BOTÓN DE VOLUMEN — descubrible, no adivinable
+   Los videos arrancan mudos (autoplay con sonido lo bloquean los
+   navegadores, y sonido sorpresa espanta al que llega desde Facebook).
+   El problema es que un icono gris de 34px no le dice a nadie que ese
+   video TIENE audio: el argumento de venta se pierde. Mientras está
+   mudo el botón se abre en pastilla con texto; al activar el sonido se
+   recoge al icono redondo de siempre.
+   ══════════════════════════════════════════════════════════════ */
+.caract-vol-btn {
+    width: auto;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 12px 0 9px;
+    gap: 7px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.62);
+}
+
+.caract-vol-btn__txt {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    color: #fff;
+}
+
+/* Con el sonido ya activado sobra el texto: vuelve al círculo */
+.caract-vol-btn.is-unmuted {
+    width: 34px;
+    min-width: 0;
+    padding: 0;
+    gap: 0;
+    background: rgba(0, 0, 0, 0.42);
+}
+
+.caract-vol-btn.is-unmuted .caract-vol-btn__txt {
+    display: none;
+}
+
+/* En el carrusel de características hay varios videos a la vez y el
+   espacio es corto: ahí basta el icono. */
+.caract-section .caract-vol-btn {
+    width: 34px;
+    min-width: 0;
+    padding: 0;
+    gap: 0;
+}
+
+.caract-section .caract-vol-btn__txt {
+    display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .caract-vol-btn:not(.is-unmuted) {
+        animation: vol-llamada 4s ease-in-out 1.5s 3;
+    }
+    @keyframes vol-llamada {
+        0%, 82%, 100% { transform: scale(1); }
+        88%           { transform: scale(1.08); }
+        94%           { transform: scale(0.98); }
+    }
+}
