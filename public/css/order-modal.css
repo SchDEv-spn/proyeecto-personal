@@ -493,3 +493,106 @@ body.modal-open { overflow: hidden; }
     padding-top: 24px;
     border-top: 1px solid rgba(128, 128, 128, 0.18);
 }
+
+/* ── PROMESA DE CERO RIESGO ────────────────────────────────────
+   Va justo antes del primer campo. En una venta contraentrega el
+   comprador no duda del producto a estas alturas: duda de si le van a
+   sacar la plata. Tres frases cortas contestan eso mejor que un párrafo.
+   Ojo con la redacción: solo promete lo que el pago contraentrega
+   garantiza de verdad. "Lo revisas antes de pagar" NO se puede prometer
+   — varias transportadoras no dejan abrir el paquete antes del pago. */
+.promesa-riesgo {
+    list-style: none;
+    margin: 4px auto 18px;
+    padding: 12px 14px;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--success) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--success) 24%, transparent);
+}
+
+.promesa-riesgo__item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--cream);
+    text-align: left;
+}
+
+.promesa-riesgo__item strong {
+    font-weight: 800;
+    color: var(--success);
+}
+
+.promesa-riesgo__check {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--success);
+}
+
+.promesa-riesgo__check svg {
+    width: 15px;
+    height: 15px;
+}
+
+@supports not (background: color-mix(in srgb, red 10%, blue)) {
+    .promesa-riesgo {
+        background: var(--bg-layer2);
+        border-color: var(--gold-border);
+    }
+}
+
+/* ── Menos preámbulo antes del primer campo ────────────────────
+   El comprador que llega aquí ya decidió: cada línea de texto entre el
+   botón y el primer input es un freno. Se comprimen los encabezados de
+   cada bloque sin quitar su contenido. */
+.pedido-section .order-modal-form-title {
+    margin-bottom: 4px;
+}
+
+.pedido-section .order-modal-intro-text {
+    margin-bottom: 6px;
+}
+
+.pedido-section .form-step__head {
+    margin-bottom: 14px;
+}
+
+.pedido-section .form-step__head .step-emoji {
+    transform: scale(0.72);
+    margin-bottom: -6px;
+    opacity: 0.75;
+}
+
+/* El primer bloque no necesita presentarse: el comprador acaba de leer
+   el título del formulario dos líneas más arriba. */
+.pedido-section .form-step[data-step="1"] .form-step__sub {
+    display: none;
+}
+
+/* El encabezado del primer bloque no aporta: "¿A nombre de quién va el
+   pedido?" con su ícono ocupa media pantalla para decir lo que ya dicen
+   las etiquetas "Tu nombre" y "Tu apellido" justo debajo. Los bloques 2
+   y 3 sí conservan el suyo, porque ahí el cambio de tema no es obvio. */
+.pedido-section .form-step[data-step="1"] .form-step__head {
+    display: none;
+}
+
+/* Un latido lento en la pastilla de envío gratis: es el argumento que
+   más pesa y merece que el ojo lo encuentre. Nada de movimiento para
+   quien pidió reducirlo en su sistema. */
+@media (prefers-reduced-motion: no-preference) {
+    .trust-badge--envio {
+        animation: latido-envio 3.2s ease-in-out infinite;
+    }
+    @keyframes latido-envio {
+        0%, 88%, 100% { transform: scale(1); }
+        92%           { transform: scale(1.045); }
+        96%           { transform: scale(0.995); }
+    }
+}
