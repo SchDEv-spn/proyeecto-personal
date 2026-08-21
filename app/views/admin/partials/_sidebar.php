@@ -8,6 +8,8 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
     $activeNav = 'productos';
 } elseif (strpos($currentPath, '/AdminPedidos/') !== false) {
     $activeNav = 'pedidos';
+} elseif (strpos($currentPath, '/AdminEstadisticas/') !== false) {
+    $activeNav = 'estadisticas';
 } elseif (strpos($currentPath, '/AdminMarketing/') !== false) {
     $activeNav = 'marketing';
 } elseif (strpos($currentPath, '/AdminPlantillasWa/') !== false) {
@@ -40,6 +42,11 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
         <a href="<?= BASE_URL ?>/AdminProductos/index" class="<?= $activeNav === 'productos' ? 'active' : '' ?>">
             <i class="fas fa-shopping-bag"></i>
             <span>Productos</span>
+        </a>
+
+        <a href="<?= BASE_URL ?>/AdminEstadisticas/index" class="<?= $activeNav === 'estadisticas' ? 'active' : '' ?>">
+            <i class="fas fa-chart-simple"></i>
+            <span>Estadísticas</span>
         </a>
 
         <span class="sidebar-section-label">Herramientas</span>
