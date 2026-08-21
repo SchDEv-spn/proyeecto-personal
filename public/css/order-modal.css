@@ -424,7 +424,7 @@ body.modal-open { overflow: hidden; }
 .pedido-section {
     max-width: 640px;
     margin: 0 auto;
-    padding: 8px 16px 56px;
+    padding: 8px 16px 28px;
     scroll-margin-top: 12px;
 }
 

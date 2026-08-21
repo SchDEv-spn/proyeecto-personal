@@ -2969,16 +2969,21 @@ select option {
   overflow: hidden;
 }
 
-/* espaciador físico para que el sticky no tape contenido en mobile */
+/* Espaciador físico para que la barra sticky no tape contenido en móvil.
+   Colapsa cuando la barra se esconde — que es justo al llegar al
+   formulario, al final de la página: ahí los 88px reservados quedaban
+   como un hueco vacío debajo del footer. Por defecto se mantiene, porque
+   sin JavaScript la barra se muestra igual y sí necesita el espacio. */
 .sticky-spacer {
   display: none;
 }
 @media (max-width: 1023px) {
-  .sticky-spacer { display: block; height: 88px; }
-}
-
-#form-pedido {
-  padding-bottom: calc(var(--space-xl) + 56px);
+  .sticky-spacer {
+    display: block;
+    height: 88px;
+    transition: height 0.3s ease;
+  }
+  body.sticky-cta-oculto .sticky-spacer { height: 0; }
 }
 
 /* ── SKELETON LOADERS (lazy img placeholder) ──────────────── */
@@ -3177,18 +3182,20 @@ img[loading="lazy"].loaded {
     height: 26px;
     width: auto;
     object-fit: contain;
-    opacity: 0.65;
-    filter: brightness(0) invert(1); /* blanco para fondos oscuros */
+    /* Negro por defecto: 6 de los 8 temas son claros. Antes el default era
+       blanco y se listaban los temas claros uno por uno, así que los logos
+       desaparecían en bold-conversion y blanc-luxe, que faltaban en la lista.
+       Al revés solo hay que acordarse de los dos temas oscuros. */
+    filter: brightness(0);
+    opacity: 0.45;
     flex-shrink: 0;
 }
 
-/* Temas claros: logos en negro */
-[data-theme="light-luxury"] .form-carriers__track img,
-[data-theme="minimal-clean"] .form-carriers__track img,
-[data-theme="femme-rose"] .form-carriers__track img,
-[data-theme="natural-sage"] .form-carriers__track img {
-    filter: brightness(0);
-    opacity: 0.45;
+/* Temas oscuros: logos en blanco */
+[data-theme="dark-luxury"] .form-carriers__track img,
+[data-theme="obsidian"] .form-carriers__track img {
+    filter: brightness(0) invert(1);
+    opacity: 0.65;
 }
 
 /* ── ORDER SUCCESS ────────────────────────────────────────── */

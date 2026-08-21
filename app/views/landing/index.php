@@ -453,9 +453,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             }
         </style>
     <?php endif; ?>
-
-    <!-- Sin defer: el script inline del modal lo usa durante el parseo -->
-    <script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
+    <!-- modal-a11y.js ya no se carga aquí: su trampa de foco solo la usaba el modal de pedido -->
     <script src="<?= BASE_URL ?>/public/js/main.js" defer></script>
 </head>
 
@@ -2377,12 +2375,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <?php endif; ?>
 
 
-
-    <!-- espaciador para que el sticky nunca tape contenido -->
-    <div class="sticky-spacer" aria-hidden="true"></div>
-
     <!-- CTA sticky para móviles -->
     <?php if ($showCtaSticky): ?>
+    <!-- Espaciador: solo si la barra existe; antes reservaba 88px aunque no hubiera barra -->
+    <div class="sticky-spacer" aria-hidden="true"></div>
     <aside class="cta-sticky-mobile" aria-label="Comprar ahora">
         <div class="csm-info">
             <?php if (!empty($producto['imagen_principal'])): ?>

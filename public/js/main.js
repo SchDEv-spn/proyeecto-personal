@@ -417,6 +417,10 @@ function initStickyVisibility() {
         const visible = entries[0].isIntersecting;
         sticky.style.transform = visible ? 'translateY(100%)' : 'translateY(0)';
         sticky.style.opacity = visible ? '0' : '1';
+
+        /* Con la barra escondida, el espaciador que le reserva sitio deja un
+           hueco vacío al final de la página. La clase lo colapsa. */
+        document.body.classList.toggle('sticky-cta-oculto', visible);
     }, { threshold: 0.1 });
 
     observer.observe(form);
