@@ -14,6 +14,7 @@
  *   · initLazyImages            — marcar imágenes loaded
  *   · initTelInput              — inputmode="tel" en WhatsApp
  *   · initWaLinksIAB            — WhatsApp links en Facebook IAB
+ *   · initVideoAutoplay         — play/pause por IntersectionObserver
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -59,6 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
     arrancar('initStickyVisibility', initStickyVisibility);
     arrancar('initLazyImages', initLazyImages);
     arrancar('initVideoControls', initVideoControls);
+    arrancar('initVideoAutoplay', initVideoAutoplay);
     arrancar('initTickerLectura', initTickerLectura);
 });
 
@@ -77,7 +79,7 @@ function initTickerLectura() {
     var tickers = document.querySelectorAll('.testimonios-ticker');
     if (!tickers.length) return;
 
-    tickers.forEach(function (ticker) {
+    Array.prototype.forEach.call(tickers, function (ticker) {
         var track = ticker.querySelector('.testimonios-ticker__track');
         if (!track) return;
 
@@ -226,7 +228,7 @@ function initTipoEntrega() {
 
     function actualizarDireccion() {
         let tipoSeleccionado = '';
-        radiosEntrega.forEach(r => { if (r.checked) tipoSeleccionado = r.value; });
+        Array.prototype.forEach.call(radiosEntrega, r => { if (r.checked) tipoSeleccionado = r.value; });
 
         /* Mientras no haya elegido nada, la direccion se queda visible: es como
            llega del servidor y es lo que necesita quien no tenga JS. Solo se
@@ -246,7 +248,7 @@ function initTipoEntrega() {
         if (grupoNota) grupoNota.style.display = esOficina ? 'none' : 'block';
     }
 
-    radiosEntrega.forEach(r => r.addEventListener('change', actualizarDireccion));
+    Array.prototype.forEach.call(radiosEntrega, r => r.addEventListener('change', actualizarDireccion));
     actualizarDireccion();
 }
 
@@ -292,7 +294,7 @@ function initAccordion() {
     const items = document.querySelectorAll('.accordion-item');
     if (!items.length) return;
 
-    items.forEach(item => {
+    Array.prototype.forEach.call(items, item => {
         const header = item.querySelector('.accordion-header');
         const body = item.querySelector('.accordion-body');
         if (!header || !body) return;
@@ -301,7 +303,7 @@ function initAccordion() {
             const isOpen = item.classList.contains('open');
 
             // Cerrar todos
-            items.forEach(i => {
+            Array.prototype.forEach.call(items, i => {
                 i.classList.remove('open');
                 const b = i.querySelector('.accordion-body');
                 if (b) {
@@ -391,7 +393,7 @@ function initGallery() {
     }, { passive: true });
 
     // Marcar imágenes loaded (skeleton CSS)
-    document.querySelectorAll('[data-product-gallery] img').forEach(img => {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-product-gallery] img'), img => {
         if (img.complete) img.classList.add('loaded');
         else img.addEventListener('load', () => img.classList.add('loaded'));
     });
@@ -446,7 +448,7 @@ function initScrollAnimations() {
         });
     }, { threshold: 0.12, rootMargin: '0px 0px -32px 0px' });
 
-    targets.forEach(el => {
+    Array.prototype.forEach.call(targets, el => {
         el.style.opacity = '0';
         observer.observe(el);
     });
@@ -483,7 +485,7 @@ function initStickyVisibility() {
    LAZY LOADING — quita el skeleton CSS cuando la imagen carga
    ══════════════════════════════════════════════════════════════ */
 function initLazyImages() {
-    document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+    Array.prototype.forEach.call(document.querySelectorAll('img[loading="lazy"]'), img => {
         if (img.complete) {
             img.classList.add('loaded');
         } else {
@@ -515,7 +517,7 @@ function initWaLinksIAB() {
 
     var isAndroid = /Android/i.test(ua);
 
-    document.querySelectorAll('a[href*="wa.me"]').forEach(function (link) {
+    Array.prototype.forEach.call(document.querySelectorAll('a[href*="wa.me"]'), function (link) {
         link.addEventListener('click', function (e) {
             e.preventDefault();
             var href = link.href;
@@ -535,7 +537,21 @@ function initWaLinksIAB() {
                     'end';
                 window.location.href = intentUri;
             } else {
-                // iOS: whatsapp:// funciona dentro del Facebook IAB de iOS
+                // iOS: a diferencia del intent:// de Android, whatsapp://
+                // no trae un fallback nativo — si WhatsApp no está
+                // instalado, el sistema muestra un error y ahí se acaba.
+                // Si la página sigue visible pasado un instante es que no
+                // hubo con qué abrirlo: se manda a wa.me, que sí funciona
+                // siempre (WhatsApp Web o la ficha de la App Store).
+                var waUrl = 'https://wa.me/' + phone + (text ? '?text=' + encodeURIComponent(text) : '');
+                var yaSeFue = false;
+                document.addEventListener('visibilitychange', function marcarSalida() {
+                    if (document.hidden) yaSeFue = true;
+                    document.removeEventListener('visibilitychange', marcarSalida);
+                });
+                setTimeout(function () {
+                    if (!yaSeFue) window.location.href = waUrl;
+                }, 1500);
                 window.location.href = 'whatsapp://send?phone=' + phone +
                     (text ? '&text=' + encodeURIComponent(text) : '');
             }
@@ -578,42 +594,37 @@ function initPixelEvents() {
     }
     window.addEventListener('scroll', onScroll, { passive: true });
 
-    // AddToCart: primera vez que el usuario toca cualquier campo del form
-    var form = document.getElementById('formPedido');
-    if (form) {
-        var firstInputs = form.querySelectorAll('input, select, textarea');
-        firstInputs.forEach(function (el) {
-            el.addEventListener('focus', function onFirstFocus() {
-                if (addToCartFired) return;
-                addToCartFired = true;
-                fbq('track', 'AddToCart', {
-                    value: window.landingProductPrice || 0,
-                    currency: 'COP',
-                    content_name: window.landingProductName || '',
-                });
-                firstInputs.forEach(function (inp) {
-                    inp.removeEventListener('focus', onFirstFocus);
-                });
-            }, { once: true });
+    // AddToCart: elegir color o tocar +/- de cantidad — intención real,
+    // a diferencia de "tocó cualquier campo" (disparaba con solo escribir
+    // el nombre). Delegado en el document porque "agregar otro color"
+    // clona filas nuevas con sus propios botones .color-pill/.qty-btn.
+    document.addEventListener('click', function (e) {
+        if (addToCartFired || !e.target.closest) return;
+        if (!e.target.closest('.color-pill, .qty-btn')) return;
+        addToCartFired = true;
+        fbq('track', 'AddToCart', {
+            value: window.landingProductPrice || 0,
+            currency: 'COP',
+            content_name: window.landingProductName || '',
         });
-    }
+    });
 
-    // InitiateCheckout: sección del form entra en viewport
-    var formSection = document.getElementById('form-pedido');
-    if (formSection && 'IntersectionObserver' in window) {
-        var checkoutObserver = new IntersectionObserver(function (entries) {
-            if (entries[0].isIntersecting && !initiateCheckoutFired) {
-                initiateCheckoutFired = true;
-                fbq('track', 'InitiateCheckout', {
-                    value: window.landingProductPrice || 0,
-                    currency: 'COP',
-                    content_name: window.landingProductName || '',
-                });
-                checkoutObserver.disconnect();
-            }
-        }, { threshold: 0.3 });
-        checkoutObserver.observe(formSection);
-    }
+    // InitiateCheckout: clic real en un CTA hacia el formulario — antes
+    // disparaba solo con que la sección entrara en pantalla, y eso lo
+    // produce cualquiera que llegue al final haciendo scroll, con o sin
+    // intención de comprar. El submit del form ya es el paso siguiente
+    // (Lead/Purchase), así que un clic dentro de #formPedido no cuenta aquí.
+    document.addEventListener('click', function (e) {
+        if (initiateCheckoutFired || !e.target.closest) return;
+        var cta = e.target.closest('a[href="#form-pedido"], .btn-primary');
+        if (!cta || cta.closest('#formPedido')) return;
+        initiateCheckoutFired = true;
+        fbq('track', 'InitiateCheckout', {
+            value: window.landingProductPrice || 0,
+            currency: 'COP',
+            content_name: window.landingProductName || '',
+        });
+    });
 }
 
 /* ============================================================
@@ -676,4 +687,39 @@ function initVideoControls() {
             wrap.classList.add('is-paused');
         }
     });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   AUTOPLAY POR VIEWPORT — hero, "por qué te encantará" y carrusel
+   de características pueden traer varios <video> a la vez en la
+   misma página. Con el atributo autoplay los cuatro arrancan juntos
+   al cargar y en Android de gama baja se agotan los decodificadores
+   de hardware: algunos simplemente no arrancan, sin error. Aquí cada
+   uno arranca solo al entrar en pantalla y se pausa al salir — nunca
+   más de uno o dos reproduciéndose a la vez.
+   Respeta la pausa manual: si el usuario lo detuvo con el tap
+   (.is-paused, ver initVideoControls), no lo reanuda solo.
+   ══════════════════════════════════════════════════════════════ */
+function initVideoAutoplay() {
+    if (!('IntersectionObserver' in window)) return;
+
+    var wraps = document.querySelectorAll('.caract-video-wrap');
+    if (!wraps.length) return;
+
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            var video = entry.target.querySelector('video');
+            if (!video) return;
+
+            if (entry.isIntersecting) {
+                if (!entry.target.classList.contains('is-paused')) {
+                    video.play().catch(function () {});
+                }
+            } else {
+                video.pause();
+            }
+        });
+    }, { threshold: 0.25 });
+
+    Array.prototype.forEach.call(wraps, function (wrap) { observer.observe(wrap); });
 }

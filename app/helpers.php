@@ -57,6 +57,32 @@ function es_video(?string $path): bool
 }
 
 /**
+ * Id del Facebook Pixel de la landing — única fuente de verdad.
+ * Vive aquí y no repetido en la vista y en el controlador (Conversions API
+ * necesita el mismo id que el pixel del navegador para poder deduplicar).
+ * Pendiente moverlo a landing_config por producto (ver AUDITORIA.md M8).
+ */
+function fb_pixel_id(): string
+{
+    return '1248724310406936';
+}
+
+/**
+ * URL de un asset estático (CSS/JS) con ?v=<filemtime> para romper la
+ * caché en cada deploy. El .htaccess manda Cache-Control: max-age de un
+ * año solo para peticiones CON ?v= — sin la versión, ese año de caché
+ * dejaría a un visitante recurrente con el CSS/JS de antes del último
+ * deploy, ya que la URL no cambió.
+ */
+function asset_url(string $relativePath): string
+{
+    $relativePath = ltrim($relativePath, '/');
+    $fsPath       = __DIR__ . '/../' . $relativePath;
+    $v            = is_file($fsPath) ? filemtime($fsPath) : time();
+    return BASE_URL . '/' . $relativePath . '?v=' . $v;
+}
+
+/**
  * Precio total con descuento multicantidad. Única fuente de verdad: antes
  * existían dos copias (LandingController y Pedido) con reglas distintas — la
  * del modelo tenía 15% y 20% escritos a mano e ignoraba la configuración

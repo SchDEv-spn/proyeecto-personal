@@ -9,6 +9,15 @@
     AddOutputFilterByType DEFLATE image/svg+xml
 </IfModule>
 
+# Caché larga solo para peticiones versionadas (?v=<filemtime>, ver
+# asset_url() en app/helpers.php). Sin el ?v= no se manda esta cabecera:
+# cachear un año sin forma de invalidar rompería el siguiente deploy.
+<IfModule mod_headers.c>
+    <If "%{QUERY_STRING} =~ /(^|&)v=/">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </If>
+</IfModule>
+
 RewriteEngine On
 
 # Redirigir slug obsoleto a slug nuevo (301 permanente)

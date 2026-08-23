@@ -158,21 +158,46 @@
 
                 if (typeof fbq === 'function') {
                     var valor = res.precio_total || window.landingProductPrice || 0;
+                    var cantidad = res.cantidad_total || 1;
+                    var productId = String(window.landingProductId || '');
+
+                    // Advanced Matching: refresca el init con los datos que el
+                    // cliente ya dio en el formulario, antes de trackear Lead
+                    // y Purchase — mejora el emparejamiento justo en el
+                    // tráfico de in-app browser, donde las cookies valen poco.
+                    var telLocal = valorDe('#telefono').replace(/\D/g, '');
+                    fbq('init', window.landingPixelId, {
+                        fn: valorDe('#nombre').toLowerCase(),
+                        ln: valorDe('#apellidos').toLowerCase(),
+                        ph: telLocal ? '57' + telLocal : '',
+                        ct: valorDe('#municipio').toLowerCase(),
+                        st: valorDe('#departamento').toLowerCase(),
+                        country: 'co'
+                    });
+
                     // Lead — cliente potencial (pedido contraentrega registrado)
                     fbq('track', 'Lead', {
                         value: valor,
                         currency: 'COP',
                         content_name: window.landingProductName || ''
                     });
-                    // Purchase — conversión de venta
+                    // Purchase — conversión de venta. content_ids usa el id del
+                    // PRODUCTO (igual que ViewContent) para que Facebook pueda
+                    // unir vista y compra; el id del pedido va en eventID, para
+                    // deduplicar con el envío server-side del día que exista.
                     fbq('track', 'Purchase', {
                         value: valor,
                         currency: 'COP',
                         content_name: window.landingProductName || '',
-                        content_ids: [String(res.pedido_id || '')],
+                        content_ids: [productId],
                         content_type: 'product',
-                        num_items: 1
-                    });
+                        num_items: cantidad,
+                        contents: [{
+                            id: productId,
+                            quantity: cantidad,
+                            item_price: cantidad ? (valor / cantidad) : valor
+                        }]
+                    }, { eventID: 'pedido_' + (res.pedido_id || '') });
                 }
             })
             .catch(function () {

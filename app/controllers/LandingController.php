@@ -31,8 +31,25 @@ class LandingController extends Controller
         return ($combos * $comboPrice2) + ($sobra * $precioVenta);
     }
 
+    /**
+     * session_start() manda Cache-Control: no-store por el cache_limiter
+     * "nocache" (el de por defecto), y eso le impide al navegador restaurar
+     * la página desde el bfcache al volver de WhatsApp o del hilo de
+     * Facebook — la recarga entera y vuelve a disparar PageView/ViewContent.
+     * Solo se pisa aquí, no globalmente: el resto del sitio (admin, auth)
+     * conserva la protección por defecto contra el botón atrás.
+     */
+    private function permitirBfcache(): void
+    {
+        header_remove('Pragma');
+        header_remove('Expires');
+        header('Cache-Control: no-cache, must-revalidate');
+    }
+
     public function index()
     {
+        $this->permitirBfcache();
+
         $productoModel = new Producto();
 
         $productoId = (int)($_GET['producto_id'] ?? ($_GET['id'] ?? 0));
@@ -54,6 +71,8 @@ class LandingController extends Controller
 
         $success = $_SESSION['success'] ?? '';
         unset($_SESSION['success']);
+        $successPedido = $_SESSION['success_pedido'] ?? null;
+        unset($_SESSION['success_pedido']);
 
         $configModel = new LandingConfig();
         $config      = $configModel->obtenerPorProducto($productoId) ?? [];
@@ -70,6 +89,7 @@ class LandingController extends Controller
             'errores'           => [],
             'old'               => [],
             'success'           => $success,
+            'success_pedido'    => $successPedido,
             'config'            => $config,
             'pedidos_recientes' => $pedidosRecientes,
         ]);
@@ -133,6 +153,13 @@ class LandingController extends Controller
         $tipoEntrega  = trim($_POST['tipo_entrega'] ?? '');
         $direccion    = trim($_POST['direccion']    ?? '');
         $notaEntrega  = trim($_POST['nota_entrega'] ?? '');
+
+        // Atribución de Facebook (fbclid/_fbp/_fbc): los pone landing-track.js
+        // vía JS, así que en el POST nativo sin JS simplemente llegan vacíos.
+        // Recortados por si alguien postea directo al endpoint sin pasar por el form.
+        $fbclid = mb_substr(trim($_POST['fbclid'] ?? ''), 0, 255);
+        $fbp    = mb_substr(trim($_POST['fbp']    ?? ''), 0, 255);
+        $fbc    = mb_substr(trim($_POST['fbc']    ?? ''), 0, 255);
 
         // Arrays color/cantidad (estos son los que tu JS genera SIEMPRE)
         $colorItems = $_POST['color_item'] ?? [];
@@ -343,6 +370,10 @@ class LandingController extends Controller
             'utilidad_total'   => $utilidadTotal,
 
             'estado'           => 'nuevo',
+
+            'fbclid'           => $fbclid,
+            'fbp'              => $fbp,
+            'fbc'              => $fbc,
         ];
 
         /* Red de seguridad del guardado. Las validaciones de arriba cubren lo
@@ -413,12 +444,34 @@ class LandingController extends Controller
             'producto'    => $producto['nombre'] ?? '',
         ]);
 
+        // Conversions API — mismo eventID que el navegador (order-submit.js)
+        // para que Facebook deduplique en vez de contar la venta dos veces.
+        // pixel_id puede guardarse como '' (campo del admin en blanco) y no
+        // como NULL, así que ?? no cubriría ese caso — igual que $val() en
+        // la vista pública.
+        $pixelIdCfg = trim((string)($config['pixel_id'] ?? ''));
+        $this->enviarPurchaseCapi([
+            'pedido_id'      => $pedidoId,
+            'nombre'         => $nombre,
+            'apellidos'      => $apellidos,
+            'telefono'       => $telefono,
+            'municipio'      => $municipio,
+            'departamento'   => $departamento,
+            'producto_id'    => $productoId,
+            'precio_total'   => $precioTotal,
+            'cantidad_total' => $cantidadTotal,
+            'fbp'            => $fbp,
+            'fbc'            => $fbc,
+            'pixel_id'       => $pixelIdCfg !== '' ? $pixelIdCfg : fb_pixel_id(),
+        ]);
+
         if ($esAjax) {
             header('Content-Type: application/json');
             echo json_encode([
                 'ok'          => true,
                 'pedido_id'   => $pedidoId,
                 'precio_total'=> $precioTotal,
+                'cantidad_total' => $cantidadTotal,
                 'mensaje'     => 'Tu pedido se ha registrado correctamente. En breve un asesor te contactará por WhatsApp.',
             ]);
             exit;
@@ -426,10 +479,118 @@ class LandingController extends Controller
 
         /* El ancla importa: la pantalla de confirmacion vive donde estaba el
            formulario, a pantalla y media de scroll. Sin #form-pedido el
-           comprador aterriza arriba del todo y no ve que su pedido entro. */
+           comprador aterriza arriba del todo y no ve que su pedido entro.
+           Sin JS no hay fetch que dispare Lead/Purchase en el navegador, así
+           que la vista los dispara ella misma leyendo success_pedido
+           (ver window.landingSuccessPedido en la vista). */
         $_SESSION['success'] = "Tu pedido se ha registrado correctamente.";
-        header("Location: " . BASE_URL . "/Landing/index?producto_id=" . $productoId . "#form-pedido");
+        $_SESSION['success_pedido'] = [
+            'pedido_id'      => $pedidoId,
+            'precio_total'   => $precioTotal,
+            'cantidad_total' => $cantidadTotal,
+        ];
+        $destino = !empty($producto['slug'])
+            ? BASE_URL . '/producto/' . rawurlencode($producto['slug'])
+            : BASE_URL . '/Landing/index?producto_id=' . $productoId;
+        header("Location: " . $destino . "#form-pedido");
         exit;
+    }
+
+    /**
+     * Envía el evento Purchase server-side a la Conversions API de Facebook,
+     * con el mismo event_id que usa el pixel del navegador (order-submit.js:
+     * 'pedido_' + id) para que Facebook deduplique en vez de contar dos
+     * conversiones por la misma venta.
+     *
+     * Sin esto, cualquier Purchase que el navegador no llegue a disparar
+     * (webview de Facebook matando la página, JS roto, ad blocker) es una
+     * venta invisible para Facebook — que optimiza la pauta con lo que le
+     * llega. Nunca debe romper ni retrasar la confirmación del pedido: si
+     * falla algo aquí, el pedido ya está guardado y el comprador ya vio su
+     * confirmación.
+     *
+     * Necesita un access token de la Conversions API del pixel (Events
+     * Manager → pixel → Configuración → Conversions API → Generar token de
+     * acceso). Ver AUDITORIA.md C3 para cómo activarlo.
+     */
+    private function enviarPurchaseCapi(array $d): void
+    {
+        if (es_entorno_local()) return; // igual que el pixel del navegador: no ensuciar datos reales
+
+        $token = getenv('FB_CAPI_TOKEN');
+        if (!$token) return; // no configurado todavía: no-op silencioso
+
+        try {
+            $cantidad = max(1, (int)($d['cantidad_total'] ?? 1));
+            $valor    = (float)($d['precio_total'] ?? 0);
+
+            $userData = ['country' => [hash('sha256', 'co')]];
+            if (!empty($d['telefono']))     $userData['ph'] = [hash('sha256', '57' . preg_replace('/\D/', '', $d['telefono']))];
+            if (!empty($d['nombre']))       $userData['fn'] = [hash('sha256', mb_strtolower(trim($d['nombre'])))];
+            if (!empty($d['apellidos']))    $userData['ln'] = [hash('sha256', mb_strtolower(trim($d['apellidos'])))];
+            if (!empty($d['municipio']))    $userData['ct'] = [hash('sha256', mb_strtolower(trim($d['municipio'])))];
+            if (!empty($d['departamento'])) $userData['st'] = [hash('sha256', mb_strtolower(trim($d['departamento'])))];
+            if (!empty($d['fbp']))          $userData['fbp'] = $d['fbp'];
+            if (!empty($d['fbc']))          $userData['fbc'] = $d['fbc'];
+            if (!empty($_SERVER['REMOTE_ADDR']))     $userData['client_ip_address'] = $_SERVER['REMOTE_ADDR'];
+            if (!empty($_SERVER['HTTP_USER_AGENT'])) $userData['client_user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+
+            $payload = [
+                'data' => [[
+                    'event_name'       => 'Purchase',
+                    'event_time'       => time(),
+                    'event_id'         => 'pedido_' . $d['pedido_id'],
+                    'action_source'    => 'website',
+                    'event_source_url' => (!empty($_SERVER['HTTP_HOST']) ? 'https://' . $_SERVER['HTTP_HOST'] : '') . BASE_URL . '/producto/' . rawurlencode((string)($d['producto_id'] ?? '')),
+                    'user_data'        => $userData,
+                    'custom_data'      => [
+                        'value'        => $valor,
+                        'currency'     => 'COP',
+                        'content_ids'  => [(string)($d['producto_id'] ?? '')],
+                        'content_type' => 'product',
+                        'num_items'    => $cantidad,
+                        'contents'     => [[
+                            'id'         => (string)($d['producto_id'] ?? ''),
+                            'quantity'   => $cantidad,
+                            'item_price' => $cantidad ? ($valor / $cantidad) : $valor,
+                        ]],
+                    ],
+                ]],
+            ];
+
+            if (!function_exists('curl_init')) {
+                error_log('[FB CAPI] cURL no disponible en este servidor');
+                return;
+            }
+
+            $pixelId = trim((string)($d['pixel_id'] ?? '')) ?: fb_pixel_id();
+            $url = 'https://graph.facebook.com/v19.0/' . $pixelId . '/events?access_token=' . urlencode($token);
+            $ch  = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => json_encode($payload),
+                CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 3,
+                CURLOPT_CONNECTTIMEOUT => 2,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+            ]);
+            $resp = curl_exec($ch);
+            $err  = curl_error($ch);
+            curl_close($ch);
+
+            if ($err) {
+                error_log('[FB CAPI] cURL error: ' . $err);
+            } else {
+                $decoded = json_decode($resp, true);
+                if (empty($decoded['events_received'])) {
+                    error_log('[FB CAPI] API error: ' . $resp);
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('[FB CAPI] Excepción: ' . $e->getMessage());
+        }
     }
 
     private function notificarTelegram(array $d): void
@@ -507,6 +668,8 @@ class LandingController extends Controller
 
     public function verPorSlug($slug)
     {
+        $this->permitirBfcache();
+
         $slug = trim((string)$slug);
         if ($slug === '') {
             header("Location: " . BASE_URL . "/");
@@ -527,6 +690,8 @@ class LandingController extends Controller
 
         $success = $_SESSION['success'] ?? '';
         unset($_SESSION['success']);
+        $successPedido = $_SESSION['success_pedido'] ?? null;
+        unset($_SESSION['success_pedido']);
 
         $productoColorModel = new ProductoColor();
         $colores = $productoColorModel->obtenerActivosPorProducto($productoId);
@@ -539,6 +704,7 @@ class LandingController extends Controller
             'colores'           => $colores,
             'config'            => $config,
             'success'           => $success,
+            'success_pedido'    => $successPedido,
             'errores'           => [],
             'old'               => [],
             'pedidos_recientes' => $pedidosRecientes,

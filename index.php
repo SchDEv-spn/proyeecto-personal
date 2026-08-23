@@ -28,7 +28,11 @@ $_cfgFile = __DIR__ . '/app/config/config.php';
 $_baseCfg = file_exists($_cfgFile) ? (require $_cfgFile) : [];
 define('BASE_URL', rtrim(($_baseCfg['base_url'] ?? ''), '/'));
 // Exportar claves del config como env vars (para código que usa getenv())
-foreach (['telegram_bot_token' => 'TELEGRAM_BOT_TOKEN', 'telegram_chat_id' => 'TELEGRAM_CHAT_ID'] as $_k => $_v) {
+foreach ([
+    'telegram_bot_token' => 'TELEGRAM_BOT_TOKEN',
+    'telegram_chat_id'   => 'TELEGRAM_CHAT_ID',
+    'fb_capi_token'      => 'FB_CAPI_TOKEN', // Conversions API del Pixel — ver AUDITORIA.md C3
+] as $_k => $_v) {
     if (!empty($_baseCfg[$_k]) && !getenv($_v)) putenv($_v . '=' . $_baseCfg[$_k]);
 }
 unset($_cfgFile, $_baseCfg, $_k, $_v);

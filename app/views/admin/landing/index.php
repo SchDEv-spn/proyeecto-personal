@@ -1416,7 +1416,7 @@
                           <div class="admin-form-group admin-form-group--full">
                             <label for="cta_sticky_mobile_text">Texto del botón fijo inferior</label>
                             <input type="text" id="cta_sticky_mobile_text" name="cta_sticky_mobile_text"
-                              value="<?= htmlspecialchars($config['cta_sticky_mobile_text'] ?? '🔥 Aprovechar oferta hoy') ?>">
+                              value="<?= htmlspecialchars($config['cta_sticky_mobile_text'] ?? 'Lo quiero ahora') ?>">
                           </div>
                         </div>
                       </div>
@@ -1431,6 +1431,28 @@
                               placeholder="ej. 573001234567"
                               aria-describedby="wa_phone_hint">
                             <small id="wa_phone_hint">Formato: código de país + número sin + ni espacios. Ej: 573001234567</small>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="mini-card">
+                        <div class="mini-card-title"><i class="fas fa-chart-line" aria-hidden="true"></i> Analítica de esta landing</div>
+                        <div class="form-grid">
+                          <div class="admin-form-group">
+                            <label for="pixel_id">ID del Facebook Pixel</label>
+                            <input type="text" id="pixel_id" name="pixel_id"
+                              value="<?= htmlspecialchars($config['pixel_id'] ?? '') ?>"
+                              placeholder="Vacío = <?= htmlspecialchars(fb_pixel_id()) ?> (por defecto)"
+                              aria-describedby="pixel_id_hint">
+                            <small id="pixel_id_hint">Déjalo vacío para usar el pixel por defecto del sitio.</small>
+                          </div>
+                          <div class="admin-form-group">
+                            <label for="clarity_id">ID de Microsoft Clarity</label>
+                            <input type="text" id="clarity_id" name="clarity_id"
+                              value="<?= htmlspecialchars($config['clarity_id'] ?? '') ?>"
+                              placeholder="Vacío = wm68pleap5 (por defecto)"
+                              aria-describedby="clarity_id_hint">
+                            <small id="clarity_id_hint">Déjalo vacío para usar el proyecto de Clarity por defecto.</small>
                           </div>
                         </div>
                       </div>

@@ -60,8 +60,9 @@ class AdminEstadisticasController extends Controller
         // la vista lo explica en vez de mostrar un panel lleno de ceros.
         if (!$analytics->instalado()) {
             $this->view('admin/estadisticas/index', [
-                'instalado' => false,
-                'productos' => $this->productos(),
+                'instalado'    => false,
+                'productos'    => $this->productos(),
+                'pixel_activo' => !es_entorno_local(),
             ]);
             return;
         }
@@ -81,6 +82,7 @@ class AdminEstadisticasController extends Controller
 
         $this->view('admin/estadisticas/index', [
             'instalado'    => true,
+            'pixel_activo' => !es_entorno_local(),
             'dias'         => $dias,
             'producto_id'  => $productoId,
             'entorno'      => $entorno,

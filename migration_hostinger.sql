@@ -213,5 +213,21 @@ CREATE TABLE IF NOT EXISTS app_settings (
     UNIQUE KEY uq_key (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- ── pedidos: atribución de Facebook (fbclid, _fbp, _fbc) ──
+-- Sin esto ningún pedido se puede unir a un anuncio ni reenviar a la
+-- Conversions API (ver AUDITORIA.md C3).
+ALTER TABLE pedidos
+    ADD COLUMN IF NOT EXISTS fbclid VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS fbp    VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS fbc    VARCHAR(255) NULL;
+
+-- ── landing_config: Pixel de Facebook y Clarity por producto ──
+-- Antes vivían escritos a mano en la vista — cambiarlos exigía tocar
+-- código y hacer push a main (ver AUDITORIA.md M8). Vacío = usa el
+-- valor por defecto (fb_pixel_id() en app/helpers.php).
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS pixel_id   VARCHAR(50) NULL,
+    ADD COLUMN IF NOT EXISTS clarity_id VARCHAR(50) NULL;
+
 -- ── Fin de migración ──
 SELECT 'Migración completada OK' AS resultado;

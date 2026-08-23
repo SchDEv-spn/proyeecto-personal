@@ -13,6 +13,7 @@ function ssSet(key, val) {
    los dots y maneja los clicks en cards/flechas.
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+ try {
   const container = document.querySelector('.testimonials-slider-container');
   if (!container) return;
 
@@ -94,12 +95,14 @@ document.addEventListener('DOMContentLoaded', () => {
   scheduleNext();
   container.addEventListener('pointerdown', () => clearTimeout(autoplayTimer), { passive: true });
   if (outer) outer.addEventListener('click', () => scheduleNext());
+ } catch (e) { console.error('[landing] falló el carrusel de testimonios:', e); }
 });
 
 /* ============================================================
    MEJORA #1 — Urgencia hero: countdown sesión + viewers fake
    ============================================================ */
 
+try {
 (function () {
 
     /* ---------- 1. COUNTDOWN PERSISTENTE POR SESIÓN ----------
@@ -223,11 +226,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 })();
+} catch (e) { console.error('[landing] falló countdown/stock/viewers:', e); }
 
 /* ============================================================
    MEJORA #3 — FOMO Notifications + Social Proof counter
    ============================================================ */
 
+try {
 (function () {
 
     /* ---------- 1. FOMO TOASTS ----------
@@ -334,10 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 })();
+} catch (e) { console.error('[landing] falló FOMO/social proof counter:', e); }
 
 /* ============================================================
    MEJORA #4 — Sticky Price Bar
    ============================================================ */
+try {
 (function () {
     function init() {
         var bar  = document.getElementById('stickyPriceBar');
@@ -373,10 +380,12 @@ document.addEventListener('DOMContentLoaded', () => {
         init();
     }
 })();
+} catch (e) { console.error('[landing] falló la sticky price bar:', e); }
 
 /* ============================================================
    MEJORA #4 — Exit Intent Popup
    ============================================================ */
+try {
 (function () {
     var SESSION_KEY_SHOWN = 'lp_exit_shown';
     var POPUP_DURATION_MS = 3 * 60 * 1000; // 3 minutos
@@ -488,28 +497,32 @@ document.addEventListener('DOMContentLoaded', () => {
         init();
     }
 })();
+} catch (e) { console.error('[landing] falló el popup de salida:', e); }
 
 /* MEJORA #4 — slider removido, ahora es layout estático de dos columnas */
 
 /* ============================================================
    MEJORA #6A — Sticky mobile CTA: siempre visible
    ============================================================ */
+try {
 (function () {
     var bar = document.querySelector('.cta-sticky-mobile');
     if (!bar) return;
     bar.classList.remove('is-hidden');
     document.body.classList.add('sticky-cta-visible');
 })();
+} catch (e) { console.error('[landing] falló la sticky CTA móvil:', e); }
 
 /* ============================================================
    MEJORA #6C — Scroll reveal: fade+slide al entrar en viewport
    Las clases se añaden por JS para que sin JS todo sea visible.
    ============================================================ */
+try {
 (function () {
     if (!('IntersectionObserver' in window)) return;
 
     function addReveal(selector, stagger) {
-        document.querySelectorAll(selector).forEach(function (el, i) {
+        Array.prototype.forEach.call(document.querySelectorAll(selector), function (el, i) {
             el.classList.add('reveal');
             if (stagger && i > 0 && i <= 4) el.dataset.delay = i;
         });
@@ -542,13 +555,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
 
-    document.querySelectorAll('.reveal').forEach(function (el) {
+    Array.prototype.forEach.call(document.querySelectorAll('.reveal'), function (el) {
         observer.observe(el);
     });
 })();
+} catch (e) { console.error('[landing] falló el scroll reveal:', e); }
 /* ============================================================
    WA TESTIMONIOS — Drag-to-scroll + snap + loop seamless
    ============================================================ */
+try {
 (function () {
   var ticker = document.getElementById('waTickerScroll');
   if (!ticker) return;
@@ -610,3 +625,4 @@ document.addEventListener('DOMContentLoaded', () => {
     ticker.scrollLeft = scrollStart - (e.pageX - ticker.offsetLeft - startX);
   });
 })();
+} catch (e) { console.error('[landing] falló el ticker de WhatsApp:', e); }

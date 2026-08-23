@@ -63,12 +63,20 @@ class Pedido extends Model
         $notaEntrega = isset($data['nota_entrega']) ? trim((string)$data['nota_entrega']) : null;
         if ($notaEntrega === '') $notaEntrega = null;
 
+        // Atribución de Facebook — sin esto un pedido no se puede unir a un
+        // anuncio ni reenviar a la Conversions API (ver AUDITORIA.md C3).
+        $fbclid = trim((string)($data['fbclid'] ?? ''));
+        $fbp    = trim((string)($data['fbp']    ?? ''));
+        $fbc    = trim((string)($data['fbc']    ?? ''));
+
         $sql = "INSERT INTO pedidos
             (nombre, apellidos, telefono, color, cantidad_total, departamento, municipio, tipo_entrega, direccion, nota_entrega,
-             producto_id, precio_venta, precio_proveedor, utilidad, descuento_total, precio_total, utilidad_total, estado)
+             producto_id, precio_venta, precio_proveedor, utilidad, descuento_total, precio_total, utilidad_total, estado,
+             fbclid, fbp, fbc)
             VALUES
             (:nombre, :apellidos, :telefono, :color, :cantidad_total, :departamento, :municipio, :tipo_entrega, :direccion, :nota_entrega,
-             :producto_id, :precio_venta, :precio_proveedor, :utilidad, :descuento_total, :precio_total, :utilidad_total, :estado)";
+             :producto_id, :precio_venta, :precio_proveedor, :utilidad, :descuento_total, :precio_total, :utilidad_total, :estado,
+             :fbclid, :fbp, :fbc)";
 
         $stmt = $this->db->prepare($sql);
 
@@ -91,6 +99,9 @@ class Pedido extends Model
             ':precio_total'     => $precioTotal,
             ':utilidad_total'   => $utilidadTotal,
             ':estado'           => $estado,
+            ':fbclid'           => $fbclid !== '' ? $fbclid : null,
+            ':fbp'              => $fbp    !== '' ? $fbp    : null,
+            ':fbc'              => $fbc    !== '' ? $fbc    : null,
         ]);
 
         if (!$ok) return 0;

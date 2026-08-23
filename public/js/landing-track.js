@@ -252,6 +252,30 @@
             form.appendChild(oculto);
         } catch (e) { /* formulario intacto si algo falla */ }
 
+        // Atribución a Facebook: sin esto ningún pedido se puede unir a un
+        // anuncio ni reenviar a la Conversions API (ver AUDITORIA.md C3).
+        // fbclid viene de la URL del clic; _fbp/_fbc los deja la cookie del
+        // propio Pixel si ya cargó (puede no estar lista en el primer
+        // pageview — por eso fbc también se reconstruye a mano desde fbclid).
+        try {
+            var leerCookie = function (nombre) {
+                var m = document.cookie.match(new RegExp('(?:^|; )' + nombre + '=([^;]*)'));
+                return m ? decodeURIComponent(m[1]) : '';
+            };
+            var fbclid = new URLSearchParams(location.search).get('fbclid') || '';
+            var fbp = leerCookie('_fbp');
+            var fbc = leerCookie('_fbc') || (fbclid ? 'fb.1.' + Date.now() + '.' + fbclid : '');
+
+            [['fbclid', fbclid], ['fbp', fbp], ['fbc', fbc]].forEach(function (par) {
+                if (!par[1]) return;
+                var campoOculto = document.createElement('input');
+                campoOculto.type  = 'hidden';
+                campoOculto.name  = par[0];
+                campoOculto.value = par[1];
+                form.appendChild(campoOculto);
+            });
+        } catch (e) { /* sin atribución, el pedido se guarda igual */ }
+
         // Orden de aparición de los campos = orden en que se abandonan.
         // Con eso la tabla del panel se lee de arriba abajo como el propio
         // formulario y el campo donde se corta la fila es el problema.

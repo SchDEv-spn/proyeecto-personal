@@ -50,7 +50,7 @@ tienda_mvc/
 │
 └── public/
     ├── css/               # ~11 archivos CSS (sin bundler)
-    ├── js/                # main.js, funciones.js, pricing-combo.js, etc.
+    ├── js/                # main.js, funciones.js, etc.
     ├── img/               # Imágenes estáticas
     └── uploads/           # Imágenes dinámicas (productos/, landing/)
 ```

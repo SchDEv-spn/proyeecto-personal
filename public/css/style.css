@@ -3161,7 +3161,7 @@ select option {
   padding: 12px 20px !important;
   font-size: 14px !important;
   line-height: 1.3;
-  max-height: calc(1.3em * 2 + 24px);
+  max-height: calc(1.3em * 3 + 24px);
   overflow: hidden;
 }
 
@@ -4015,7 +4015,7 @@ img[loading="lazy"].loaded {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--gold-border);
+        color: var(--gold-light);
         font-size: 1.6rem;
         flex-shrink: 0;
         padding-bottom: 20px;
@@ -5161,6 +5161,11 @@ img[loading="lazy"].loaded {
 /* ── FORM SECTION — fondo diferenciado ───────────────────── */
 #form-pedido {
     background: var(--bg-layer2) !important;
+    /* Sin esto el salto nativo a #form-pedido (clic en CTA sin JS, o el
+       redirect tras el POST nativo) deja la cabecera de "pedido registrado"
+       tapada bajo la barra fija de 66px. El JS inline ya lo compensaba,
+       pero solo cuando corría. */
+    scroll-margin-top: 74px;
 }
 #form-pedido::before {
     background: linear-gradient(90deg, transparent, var(--gold), transparent) !important;
@@ -5475,6 +5480,12 @@ img[loading="lazy"].loaded {
     font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
+    /* El texto mide 16px de alto — difícil de acertar y es una salida a
+       WhatsApp. El padding agranda el área de toque a 44px sin mover el
+       layout de alrededor (el margen negativo lo compensa). */
+    display: inline-block;
+    padding: 14px 6px;
+    margin: -14px -6px;
 }
 .form-wa-fallback a:hover {
     text-decoration: underline;
@@ -5945,18 +5956,38 @@ img[loading="lazy"].loaded {
     gap: 5px 12px !important;
   }
 
-  /* Imagen hero en mobile: teaser recortado */
+  /* Imagen hero en mobile: teaser recortado.
+     Mismo problema que tenía el vídeo (ver nota abajo): con max-height y
+     el ancho fijo en 100%, el 16:9 se rompía un poco en viewports anchos
+     (hasta ~3.7% de más recorte cerca de 767px). Con height fijo + width
+     auto, aspect-ratio calcula el ancho correcto y centra. */
   .hero-media img {
-    max-height: 52vw !important;
+    height: 52vw !important;
+    width: auto !important;
+    max-width: 100% !important;
     min-height: 180px !important;
     object-position: center 15% !important;
+    margin: 0 auto !important;
   }
-  /* Video hero en mobile: portrait completo 9/16 */
+  /* Video hero en mobile: portrait 9/16, con tope — sin él se come casi
+     toda la primera pantalla y el titular, precio y CTA quedan bajo el
+     pliegue. Esta es la regla que de verdad manda (!important + más
+     tarde en la cascada que la de la línea ~1461).
+     OJO: el ancho NO puede quedarse en 100% aquí. Con width:100% fijo +
+     max-height, el alto se recorta pero el ancho no lo sigue: la caja
+     dejaba de ser 9:16 (verticaly) y quedaba casi cuadrada — el vídeo se
+     veía "achatado" hacia lo horizontal en vez de vertical. Fijando el
+     ALTO y dejando el ancho en auto, aspect-ratio calcula el ancho
+     correcto (9/16 del alto) y el vídeo queda centrado, más angosto que
+     el contenedor pero con la proporción real. */
   .hero-media video {
     aspect-ratio: 9 / 16 !important;
-    max-height: none !important;
+    height: 52svh !important;
+    width: auto !important;
+    max-width: 100% !important;
     min-height: unset !important;
     object-position: center !important;
+    margin: 0 auto !important;
   }
 }
 
@@ -6111,6 +6142,12 @@ img[loading="lazy"].loaded {
     text-align: center;
     border-radius: 10px;
     position: relative;
+    /* 44px es el mínimo recomendado para el dedo — este es el paso donde el
+       comprador elige lo que va a pedir, sin margen para toques fallidos. */
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 .color-pill:hover { border-color: var(--gold); color: var(--cream); }
 .color-pill.is-selected {
@@ -6378,7 +6415,12 @@ img[loading="lazy"].loaded {
 }
 .radio-group--cards-lg .radio-card--lg:has(input:checked) .radio-card__note,
 .radio-group--cards-lg .radio-card--lg.is-checked .radio-card__note {
-    color: var(--gold-border);
+    /* --gold-border es para bordes: en la mayoría de temas es un tinte
+       semitransparente y se nota poco como texto, pero en Midnight Amber
+       es un azul oscuro sólido casi idéntico al fondo de la tarjeta
+       seleccionada — el texto quedaba invisible. --gold-light (el acento
+       del tema) sí está pensado para ser un color visible. */
+    color: var(--gold-light);
     font-weight: 600;
 }
 

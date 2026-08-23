@@ -216,6 +216,10 @@ class AdminLandingController extends Controller
             // ===== WhatsApp flotante =====
             'wa_phone' => preg_replace('/\D/', '', trim($_POST['wa_phone'] ?? '573023959721')),
 
+            // ===== Analítica — vacío usa el valor por defecto del código =====
+            'pixel_id'   => mb_substr(trim($_POST['pixel_id']   ?? ''), 0, 50),
+            'clarity_id' => mb_substr(trim($_POST['clarity_id'] ?? ''), 0, 50),
+
             // ===== Hero badge =====
             'hero_badge_stars'    => trim($_POST['hero_badge_stars']    ?? '4.9'),
             'hero_badge_customers'=> trim($_POST['hero_badge_customers']?? '+3.200 clientes felices'),

@@ -90,6 +90,12 @@
 
             <section class="material-content">
 
+                <?php $pixel_activo = $pixel_activo ?? false; ?>
+                <span class="pixel-status <?= $pixel_activo ? 'pixel-status--on' : 'pixel-status--off' ?>">
+                    <i class="fas fa-circle" aria-hidden="true"></i>
+                    Pixel: <?= $pixel_activo ? 'activo' : 'apagado (entorno local)' ?>
+                </span>
+
             <?php if (!$instalado): ?>
 
                 <div class="panel">
@@ -604,6 +610,25 @@
         margin-bottom: var(--sp-4); padding: 9px 14px; border-radius: 8px;
         background: #FEF9C3; color: #713F12;
         font-size: var(--text-sm); font-weight: 600;
+    }
+
+    /* Si el Pixel se apaga (.env con APP_ENV=local en producción, por
+       error), hoy no se entera nadie mientras la pauta sigue gastando.
+       El estado "activo" es discreto a propósito: solo debe llamar la
+       atención cuando algo está mal. */
+    .pixel-status {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 11px; border-radius: 999px;
+        font-size: var(--text-xs); font-weight: 700;
+    }
+    .pixel-status i { font-size: 7px; }
+    .pixel-status--on {
+        background: rgba(22,163,74,.10); color: #15803d;
+        border: 1px solid rgba(22,163,74,.22);
+    }
+    .pixel-status--off {
+        background: #FEF9C3; color: #713F12;
+        border: 1px solid rgba(113,63,18,.22);
     }
     .stats-aviso form { margin-left: auto; }
     .btn-aviso {

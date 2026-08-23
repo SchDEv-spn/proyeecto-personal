@@ -58,15 +58,15 @@ $heroSubtitle    = $val('hero_subtitle', 'Subtítulo potente que explique el ben
 $heroSubtitle2   = trim($cfg['hero_subtitle_2'] ?? '');
 $heroSubtitle3   = trim($cfg['hero_subtitle_3'] ?? '');
 $heroSubtitles   = array_filter([$heroSubtitle, $heroSubtitle2, $heroSubtitle3], fn($s) => $s !== '');
-$heroNote        = $cfg['hero_note']         ?? 'Promoción válida solo por tiempo limitado.';
-$heroButtonText  = $cfg['hero_button_text']  ?? '¡Necesito el mío!';
-$heroMediaType   = $cfg['hero_media_type']   ?? 'imagen';
+$heroNote        = $val('hero_note', 'Promoción válida solo por tiempo limitado.');
+$heroButtonText  = $val('hero_button_text', '¡Necesito el mío!');
+$heroMediaType   = $val('hero_media_type', 'imagen');
 $heroMediaPath   = $val('hero_media_path', (!empty($producto['imagen_principal']) ? $producto['imagen_principal'] : BASE_URL . '/public/img/producto/uso-1.png'));
 
-$benefitsMediaType = $cfg['benefits_media_type'] ?? 'imagen';
-$porqueMediaType   = $cfg['porque_media_type']   ?? 'imagen';
+$benefitsMediaType = $val('benefits_media_type', 'imagen');
+$porqueMediaType   = $val('porque_media_type', 'imagen');
 // ===== BENEFICIOS =====
-$benefitsTitle = $cfg['benefits_title'] ?? 'Beneficios clave para ti';
+$benefitsTitle = $val('benefits_title', 'Beneficios clave para ti');
 
 $benefits = [];
 for ($i = 1; $i <= 4; $i++) {
@@ -104,14 +104,14 @@ if (!empty($cfg['color_variants'])) {
 
 // ===== COUNTDOWN =====
 // Sin los dos puntos finales: era el único título de la página que los llevaba.
-$countdownTitle = $cfg['countdown_title'] ?? 'La promoción termina en';
-$countdownText  = $cfg['countdown_text']  ?? 'Después de que el contador llegue a cero, el precio puede volver a la normalidad.';
+$countdownTitle = $val('countdown_title', 'La promoción termina en');
+$countdownText  = $val('countdown_text', 'Después de que el contador llegue a cero, el precio puede volver a la normalidad.');
 
 // ===== POR QUÉ TE ENCANTARÁ =====
-$porqueTitle = $cfg['porque_title'] ?? '¿Por qué te encantará este producto?';
-$porqueText  = $cfg['porque_text']
-    ?? 'Aquí explicas de forma emocional y concreta qué hace que este producto sea diferente:
-       qué sentirán, qué problema deja de existir, qué resultado obtienen.';
+$porqueTitle = $val('porque_title', '¿Por qué te encantará este producto?');
+$porqueText  = $val('porque_text',
+    'Aquí explicas de forma emocional y concreta qué hace que este producto sea diferente:
+       qué sentirán, qué problema deja de existir, qué resultado obtienen.');
 
 $porqueBullets = [];
 foreach (['porque_bullet1', 'porque_bullet2', 'porque_bullet3'] as $key) {
@@ -127,27 +127,27 @@ foreach (['porque_bullet1', 'porque_bullet2', 'porque_bullet3'] as $key) {
 $porqueMediaPath = $val('porque_media_path', BASE_URL . '/public/img/producto/uso-1.png');
 
 // ===== TESTIMONIOS =====
-$test1Name  = $cfg['test1_name']       ?? 'María G.';
-$test1City  = $cfg['test1_city']       ?? 'Bogotá';
-$test1Text  = $cfg['test1_text']       ?? 'Desde que lo uso, mi día a día es mucho más fácil. Llegó rápido y en perfecto estado.';
+$test1Name  = $val('test1_name', 'María G.');
+$test1City  = $val('test1_city', 'Bogotá');
+$test1Text  = $val('test1_text', 'Desde que lo uso, mi día a día es mucho más fácil. Llegó rápido y en perfecto estado.');
 $test1Photo = $val('test1_photo_path', BASE_URL . '/public/img/producto/uso-1.png');
 
-$test2Name  = $cfg['test2_name']       ?? 'Carlos R.';
-$test2City  = $cfg['test2_city']       ?? 'Medellín';
-$test2Text  = $cfg['test2_text']       ?? 'Muy buena atención, me explicaron todo por WhatsApp y el producto es tal cual a las fotos.';
+$test2Name  = $val('test2_name', 'Carlos R.');
+$test2City  = $val('test2_city', 'Medellín');
+$test2Text  = $val('test2_text', 'Muy buena atención, me explicaron todo por WhatsApp y el producto es tal cual a las fotos.');
 $test2Photo = $val('test2_photo_path', BASE_URL . '/public/img/producto/uso-1.png');
 
-$test3Name  = $cfg['test3_name']       ?? 'Laura P.';
-$test3City  = $cfg['test3_city']       ?? 'Cali';
-$test3Text  = $cfg['test3_text']       ?? 'Lo recomiendo totalmente. Me dieron confianza con el pago contraentrega y cumplió 10/10.';
+$test3Name  = $val('test3_name', 'Laura P.');
+$test3City  = $val('test3_city', 'Cali');
+$test3Text  = $val('test3_text', 'Lo recomiendo totalmente. Me dieron confianza con el pago contraentrega y cumplió 10/10.');
 $test3Photo = $val('test3_photo_path', BASE_URL . '/public/img/producto/uso-1.png');
 
 // ===== TESTIMONIOS WHATSAPP (editable) =====
 $waEnabled    = isset($cfg['wa_enabled']) ? (int)$cfg['wa_enabled'] : 1;
 /* Era el único título de la página en Title Case y con emoji delante.
    Pasa a la misma voz que los otros once: frase en oración, sin icono. */
-$waTitle      = $stripLeadingEmoji($cfg['wa_title'] ?? 'Conversaciones reales con nuestros clientes');
-$waSubtitle   = $cfg['wa_subtitle'] ?? 'Capturas sin retocar, tal como llegaron';
+$waTitle      = $stripLeadingEmoji($val('wa_title', 'Conversaciones reales con nuestros clientes'));
+$waSubtitle   = $val('wa_subtitle', 'Capturas sin retocar, tal como llegaron');
 /* wa_footer_note no se pinta: la nota de "desliza para ver más" la pone
    el propio ticker (.wa-ticker__hint) con su icono de flechas. */
 
@@ -162,14 +162,14 @@ for ($i = 1; $i <= 5; $i++) {
 }
 
 // ===== FAQ =====
-$faq1_q = $cfg['faq1_q'] ?? '¿Cuánto tarda en llegar mi pedido?';
-$faq1_a = $cfg['faq1_a'] ?? 'Los tiempos de entrega pueden variar según tu ciudad, pero normalmente tu pedido llega entre 2 y 5 días hábiles después de la confirmación.';
+$faq1_q = $val('faq1_q', '¿Cuánto tarda en llegar mi pedido?');
+$faq1_a = $val('faq1_a', 'Los tiempos de entrega pueden variar según tu ciudad, pero normalmente tu pedido llega entre 2 y 5 días hábiles después de la confirmación.');
 
-$faq2_q = $cfg['faq2_q'] ?? '¿Puedo pagar contraentrega?';
-$faq2_a = $cfg['faq2_a'] ?? 'Sí, en la mayoría de las ciudades manejamos pago contraentrega: pagas solo cuando el mensajero te entrega el producto.';
+$faq2_q = $val('faq2_q', '¿Puedo pagar contraentrega?');
+$faq2_a = $val('faq2_a', 'Sí, en la mayoría de las ciudades manejamos pago contraentrega: pagas solo cuando el mensajero te entrega el producto.');
 
-$faq3_q = $cfg['faq3_q'] ?? '¿Qué pasa si el producto llega dañado o con problemas?';
-$faq3_a = $cfg['faq3_a'] ?? 'Si el producto llega con algún defecto o no es lo que esperabas, te ayudamos con cambio o solución según nuestra política de garantía.';
+$faq3_q = $val('faq3_q', '¿Qué pasa si el producto llega dañado o con problemas?');
+$faq3_a = $val('faq3_a', 'Si el producto llega con algún defecto o no es lo que esperabas, te ayudamos con cambio o solución según nuestra política de garantía.');
 
 $faq4_q = $cfg['faq4_q'] ?? '';
 $faq4_a = $cfg['faq4_a'] ?? '';
@@ -179,9 +179,9 @@ $faq6_q = $cfg['faq6_q'] ?? '';
 $faq6_a = $cfg['faq6_a'] ?? '';
 
 // ===== TABLA COMPARATIVA =====
-$comparisonTitle        = $cfg['comparison_title']           ?? 'La diferencia que hace este producto';
-$comparisonLabelWithout = $cfg['comparison_label_without']   ?? 'Sin el producto';
-$comparisonLabelWith    = $cfg['comparison_label_with']      ?? 'Con el producto';
+$comparisonTitle        = $val('comparison_title', 'La diferencia que hace este producto');
+$comparisonLabelWithout = $val('comparison_label_without', 'Sin el producto');
+$comparisonLabelWith    = $val('comparison_label_with', 'Con el producto');
 $comparisonImgWith  = $cfg['comparison_img_with']    ?? '';
 $comparisonImgWithout = $cfg['comparison_img_without'] ?? '';
 $comparisonRows  = [];
@@ -196,11 +196,11 @@ $_comparisonHasData = !empty($comparisonRows) || !empty($comparisonImgWithout) |
 
 // ===== AUTORIDAD / CREDIBILIDAD =====
 $authorityEnabled    = (int)($cfg['authority_enabled']    ?? 1);
-$authorityTitle      = $cfg['authority_title']      ?? '¿Por qué confiar en nosotros?';
-$authorityYears      = $cfg['authority_years']      ?? '3';
-$authorityDeliveries = $cfg['authority_deliveries'] ?? '5.000+';
-$authorityRating     = $cfg['authority_rating']     ?? '4.9';
-$authorityGuarantee  = $cfg['authority_guarantee']  ?? 'Garantía de satisfacción';
+$authorityTitle      = $val('authority_title', '¿Por qué confiar en nosotros?');
+$authorityYears      = $val('authority_years', '3');
+$authorityDeliveries = $val('authority_deliveries', '5.000+');
+$authorityRating     = $val('authority_rating', '4.9');
+$authorityGuarantee  = $val('authority_guarantee', 'Garantía de satisfacción');
 
 // ===== FOOTER =====
 $footerText   = $cfg['footer_text']   ?? ('© ' . date('Y') . ' Tu Marca. Todos los derechos reservados.');
@@ -213,27 +213,22 @@ $showFooter   = (int)($cfg['show_footer'] ?? 1);
    al bajar por la página los botones parecían de dos familias distintas.
    Ojo: esto son los valores por defecto. Sólo se ven cuando el campo
    correspondiente está vacío en el admin. */
-$ctaBenefitsText       = $cfg['cta_benefits_text']
-    ?? 'Ya sabes lo que hace. El siguiente paso es recibirlo en casa.';
-$ctaBenefitsButton     = $cfg['cta_benefits_button'] ?? 'Quiero aprovechar la oferta';
+$ctaBenefitsText       = $val('cta_benefits_text', 'Ya sabes lo que hace. El siguiente paso es recibirlo en casa.');
+$ctaBenefitsButton     = $val('cta_benefits_button', 'Quiero aprovechar la oferta');
 
-$ctaGalleryText        = $cfg['cta_gallery_text']
-    ?? 'Lo que ves es lo que llega. Sin sorpresas, sin excusas.';
-$ctaGalleryButton      = $cfg['cta_gallery_button'] ?? 'Lo quiero igual que en las fotos';
+$ctaGalleryText        = $val('cta_gallery_text', 'Lo que ves es lo que llega. Sin sorpresas, sin excusas.');
+$ctaGalleryButton      = $val('cta_gallery_button', 'Lo quiero igual que en las fotos');
 
-$ctaPorqueText         = $cfg['cta_porque_text']
-    ?? 'Miles lo recibieron. Tú eres el siguiente.';
-$ctaPorqueButton       = $cfg['cta_porque_button'] ?? 'Quiero sentir ese cambio';
+$ctaPorqueText         = $val('cta_porque_text', 'Miles lo recibieron. Tú eres el siguiente.');
+$ctaPorqueButton       = $val('cta_porque_button', 'Quiero sentir ese cambio');
 
-$ctaTestimonialsText   = $cfg['cta_testimonials_text']
-    ?? 'Ellos ya lo tienen. Tu pedido tarda menos de 2 minutos.';
-$ctaTestimonialsButton = $cfg['cta_testimonials_button'] ?? 'Quiero ser el próximo en recibirlo';
+$ctaTestimonialsText   = $val('cta_testimonials_text', 'Ellos ya lo tienen. Tu pedido tarda menos de 2 minutos.');
+$ctaTestimonialsButton = $val('cta_testimonials_button', 'Quiero ser el próximo en recibirlo');
 
-$ctaFaqText            = $cfg['cta_faq_text']
-    ?? 'Dudas resueltas. Esto solo falta: hacer tu pedido.';
-$ctaFaqButton          = $cfg['cta_faq_button'] ?? 'Sí, quiero pedirlo ahora';
+$ctaFaqText            = $val('cta_faq_text', 'Dudas resueltas. Esto solo falta: hacer tu pedido.');
+$ctaFaqButton          = $val('cta_faq_button', 'Sí, quiero pedirlo ahora');
 
-$ctaStickyMobileText   = $stripLeadingEmoji($cfg['cta_sticky_mobile_text'] ?? 'Quiero aprovechar la oferta hoy');
+$ctaStickyMobileText   = $stripLeadingEmoji($val('cta_sticky_mobile_text', 'Lo quiero ahora'));
 
 // ===== CTAs DE SECCIÓN — visibilidad =====
 $showCtaBenefits        = (int)($cfg['show_cta_benefits']        ?? 1);
@@ -242,14 +237,14 @@ $showCtaPorque          = (int)($cfg['show_cta_porque']          ?? 1);
 $showCtaTestimonials    = (int)($cfg['show_cta_testimonials']    ?? 1);
 $showCtaFaq             = (int)($cfg['show_cta_faq']             ?? 1);
 $showCtaComoFunciona    = (int)($cfg['show_cta_como_funciona']   ?? 1);
-$ctaComoFuncionaText    = $cfg['cta_como_funciona_text']   ?? 'Así de simple. ¿Listo para empezar?';
-$ctaComoFuncionaButton  = $cfg['cta_como_funciona_button'] ?? 'Quiero hacer mi pedido ahora';
+$ctaComoFuncionaText    = $val('cta_como_funciona_text', 'Así de simple. ¿Listo para empezar?');
+$ctaComoFuncionaButton  = $val('cta_como_funciona_button', 'Quiero hacer mi pedido ahora');
 $showCtaComparison      = (int)($cfg['show_cta_comparison']      ?? 1);
-$ctaComparisonButton    = $cfg['cta_comparison_button']    ?? 'Quiero experimentar la diferencia';
+$ctaComparisonButton    = $val('cta_comparison_button', 'Quiero experimentar la diferencia');
 $showCtaParaQuien       = (int)($cfg['show_cta_para_quien']      ?? 1);
-$ctaParaQuienButton     = $cfg['cta_para_quien_button']    ?? 'Sí, es para mí';
+$ctaParaQuienButton     = $val('cta_para_quien_button', 'Sí, es para mí');
 $showCtaWaTestimonios   = (int)($cfg['show_cta_wa_testimonios']  ?? 1);
-$ctaWaTestimoniasButton = $cfg['cta_wa_testimonios_button'] ?? 'Yo también lo quiero';
+$ctaWaTestimoniasButton = $val('cta_wa_testimonios_button', 'Yo también lo quiero');
 
 // ===== PARA QUIÉN ES =====
 $paraQuienSiItems = [];
@@ -280,7 +275,7 @@ if (empty($paraQuienNoItems)) {
 }
 
 // ===== CARACTERÍSTICAS =====
-$caractSectionTitle = $cfg['caract_section_title'] ?? 'Características del producto';
+$caractSectionTitle = $val('caract_section_title', 'Características del producto');
 $caractItems = [];
 for ($i = 1; $i <= 4; $i++) {
     if (!(int)($cfg["caract{$i}_active"] ?? 1)) continue;
@@ -308,9 +303,9 @@ $showFaqs         = (int)($cfg['show_faqs']          ?? 1);
 // ===== URGENCIA / WA / BADGE =====
 $urgencyStock      = max(1, (int)($cfg['urgency_stock']      ?? 12));
 $countdownMinutes  = max(1, (int)($cfg['countdown_minutes']  ?? 25));
-$waPhone           = (string)preg_replace('/\D/', '', $cfg['wa_phone'] ?? '573023959721');
-$heroBadgeStars    = htmlspecialchars($cfg['hero_badge_stars']     ?? '4.9');
-$heroBadgeCustomers= htmlspecialchars($cfg['hero_badge_customers'] ?? '+3.200 clientes felices');
+$waPhone           = (string)preg_replace('/\D/', '', $val('wa_phone', '573023959721'));
+$heroBadgeStars    = htmlspecialchars($val('hero_badge_stars', '4.9'));
+$heroBadgeCustomers= htmlspecialchars($val('hero_badge_customers', '+3.200 clientes felices'));
 
 // ===== ANNOUNCEMENT BAR =====
 $announcementItems = [];
@@ -332,32 +327,32 @@ if (empty($announcementItems)) {
 }
 
 // ===== HERO TRUST ROW =====
-$heroTrust1 = $stripLeadingEmoji($cfg['hero_trust_1'] ?? 'Pago al recibir');
-$heroTrust2 = $stripLeadingEmoji($cfg['hero_trust_2'] ?? 'Envío gratis');
-$heroTrust3 = $stripLeadingEmoji($cfg['hero_trust_3'] ?? 'Cambios sin problema');
+$heroTrust1 = $stripLeadingEmoji($val('hero_trust_1', 'Pago al recibir'));
+$heroTrust2 = $stripLeadingEmoji($val('hero_trust_2', 'Envío gratis'));
+$heroTrust3 = $stripLeadingEmoji($val('hero_trust_3', 'Cambios sin problema'));
 
 // ===== CÓMO FUNCIONA =====
-$cfTitle      = $cfg['cf_title']       ?? 'Así de simple es recibirlo en casa';
+$cfTitle      = $val('cf_title', 'Así de simple es recibirlo en casa');
 /* Los campos cf_stepN_icon tampoco se pintan: los tres pasos usan el
    juego fijo $cfSvg que se define más abajo, junto al HTML. */
-$cfStep1Title = $cfg['cf_step1_title'] ?? 'Haz tu pedido';
-$cfStep1Desc  = $cfg['cf_step1_desc']  ?? 'Llena el formulario en menos de 2 minutos. Sin registro previo ni tarjeta de crédito.';
-$cfStep2Title = $cfg['cf_step2_title'] ?? 'Empacamos y enviamos';
-$cfStep2Desc  = $cfg['cf_step2_desc']  ?? 'Al día siguiente hábil despachamos tu pedido, empacado con cuidado hacia tu puerta.';
-$cfStep3Title = $cfg['cf_step3_title'] ?? 'Lo recibes y pagas';
-$cfStep3Desc  = $cfg['cf_step3_desc']  ?? 'El mensajero llega a tu casa. Revisas el producto y pagas solo cuando estás satisfecho.';
+$cfStep1Title = $val('cf_step1_title', 'Haz tu pedido');
+$cfStep1Desc  = $val('cf_step1_desc', 'Llena el formulario en menos de 2 minutos. Sin registro previo ni tarjeta de crédito.');
+$cfStep2Title = $val('cf_step2_title', 'Empacamos y enviamos');
+$cfStep2Desc  = $val('cf_step2_desc', 'Al día siguiente hábil despachamos tu pedido, empacado con cuidado hacia tu puerta.');
+$cfStep3Title = $val('cf_step3_title', 'Lo recibes y pagas');
+$cfStep3Desc  = $val('cf_step3_desc', 'El mensajero llega a tu casa. Revisas el producto y pagas solo cuando estás satisfecho.');
 
 // ===== GARANTÍA =====
 $showGarantia  = (int)($cfg['show_garantia']  ?? 1);
-$garantiaTitle = $cfg['garantia_title'] ?? 'Tu compra está 100% protegida';
-$garantiaDesc  = $cfg['garantia_desc']  ?? 'Si el producto llega dañado, diferente a lo descrito o simplemente no te convence, te lo solucionamos. Sin burocracia, sin excusas. Nuestra promesa es tu tranquilidad.';
+$garantiaTitle = $val('garantia_title', 'Tu compra está 100% protegida');
+$garantiaDesc  = $val('garantia_desc', 'Si el producto llega dañado, diferente a lo descrito o simplemente no te convence, te lo solucionamos. Sin burocracia, sin excusas. Nuestra promesa es tu tranquilidad.');
 /* Sin emoji delante: esta sección ya pone su propio icono SVG por tarjeta,
    y de hecho $stripIcon() borraba el emoji al pintar — o sea que estos
    caracteres nunca llegaban a verse. */
-$garantiaItem1 = $cfg['garantia_item1'] ?? 'Pagas solo cuando recibes el producto en tus manos';
-$garantiaItem2 = $cfg['garantia_item2'] ?? 'Envío gratis incluido a cualquier ciudad';
-$garantiaItem3 = $cfg['garantia_item3'] ?? 'Si llega dañado o incorrecto, lo reponemos';
-$garantiaItem4 = $cfg['garantia_item4'] ?? 'Asesor en WhatsApp disponible para ti';
+$garantiaItem1 = $val('garantia_item1', 'Pagas solo cuando recibes el producto en tus manos');
+$garantiaItem2 = $val('garantia_item2', 'Envío gratis incluido a cualquier ciudad');
+$garantiaItem3 = $val('garantia_item3', 'Si llega dañado o incorrecto, lo reponemos');
+$garantiaItem4 = $val('garantia_item4', 'Asesor en WhatsApp disponible para ti');
 
 // ===== SECCIONES FIJAS (no reordenables) =====
 /* show_trust_strip quedó huérfano: la tira de transportadoras se movió al
@@ -370,7 +365,7 @@ $showComparison      = (int)($cfg['show_comparison']       ?? 1) && $_comparison
 $showResumenOferta   = (int)($cfg['show_resumen_oferta']   ?? 1);
 $showPriceBox        = (int)($cfg['show_price_box'] ?? 1);
 $regaloImagePath     = $cfg['regalo_image_path'] ?? '';
-$regaloLabel         = $cfg['regalo_label']       ?? 'Cartera a juego incluida de regalo';
+$regaloLabel         = $val('regalo_label', 'Cartera a juego incluida de regalo');
 $showRegalo          = (int)($cfg['show_regalo']  ?? 1) && !empty($regaloImagePath);
 $showCtaSticky       = (int)($cfg['show_cta_sticky']       ?? 1);
 $showWhatsappBtn     = (int)($cfg['show_whatsapp_btn']     ?? 1);
@@ -378,16 +373,16 @@ $showFomo            = (int)($cfg['show_fomo']             ?? 1);
 $showExitPopup       = (int)($cfg['show_exit_popup']       ?? 1);
 
 // ===== FORM HEADER =====
-$formTitle    = $cfg['form_title']    ?? 'Haz tu pedido — Pago al recibir';
-$formSubtitle = $cfg['form_subtitle'] ?? 'Sin adelantos · El mensajero llega a tu puerta';
+$formTitle    = $val('form_title', 'Haz tu pedido — Pago al recibir');
+$formSubtitle = $val('form_subtitle', 'Sin adelantos · El mensajero llega a tu puerta');
 
 // ===== TÍTULOS DE SECCIÓN =====
 /* "Galería" era la única etiqueta de catálogo entre doce títulos que
    hablan de lo que gana quien compra. */
-$galleryTitle     = $cfg['gallery_title']     ?? 'Míralo por todos lados';
-$testimoniosTitle = $cfg['testimonios_title'] ?? 'Lo que cuentan nuestros clientes';
-$paraQuienTitle   = $cfg['para_quien_title']  ?? '¿Este producto es para ti?';
-$faqTitle         = $cfg['faq_title']         ?? 'Preguntas frecuentes';
+$galleryTitle     = $val('gallery_title', 'Míralo por todos lados');
+$testimoniosTitle = $val('testimonios_title', 'Lo que cuentan nuestros clientes');
+$paraQuienTitle   = $val('para_quien_title', '¿Este producto es para ti?');
+$faqTitle         = $val('faq_title', 'Preguntas frecuentes');
 
 // Colores con fallback
 $primaryColor    = $config['primary_color']    ?? '#3c7a4a';
@@ -456,13 +451,31 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <title><?= htmlspecialchars($heroTitle) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="<?= htmlspecialchars(mb_substr($heroSubtitle, 0, 155)) ?>">
+    <meta name="theme-color" content="<?= htmlspecialchars($primaryColor ?: '#0A0A0A') ?>">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= BASE_URL ?>/public/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="<?= BASE_URL ?>/public/icons/icon-192.png">
     <script>window.BASE_URL = '<?= BASE_URL ?>';</script>
 
     <?php
-    $ogImage = !empty($heroMediaPath) ? 'https://' . $_SERVER['HTTP_HOST'] . $heroMediaPath : '';
-    $ogUrl   = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-    $ogDesc  = mb_substr(strip_tags($heroSubtitle), 0, 200);
+    // og:image nunca puede ser el propio vídeo del hero: Facebook no lo
+    // renderiza como preview. Si el hero es vídeo, usar el poster o la
+    // primera imagen de galería (con $val() porque hero_poster_path puede
+    // guardarse como '' y no como NULL — ?? no cubriría ese caso).
+    $ogImagePath = es_video($heroMediaPath)
+        ? $val('hero_poster_path', $galleryPaths[0] ?? ($producto['imagen_principal'] ?? ''))
+        : $heroMediaPath;
+    $ogImage = !empty($ogImagePath) ? 'https://' . $_SERVER['HTTP_HOST'] . $ogImagePath : '';
+
+    // og:url / canonical desde el slug limpio: la URL real trae fbclid y
+    // utm_* de cada clic de anuncio, y cada visitante declararía una
+    // canónica distinta.
+    $canonicalPath = !empty($producto['slug'])
+        ? BASE_URL . '/producto/' . rawurlencode($producto['slug'])
+        : $_SERVER['REQUEST_URI'];
+    $ogUrl  = 'https://' . $_SERVER['HTTP_HOST'] . $canonicalPath;
+    $ogDesc = mb_substr(strip_tags($heroSubtitle), 0, 200);
     ?>
+    <link rel="canonical" href="<?= htmlspecialchars($ogUrl) ?>">
     <!-- Open Graph — Facebook retargeting y previews -->
     <meta property="og:type"        content="product">
     <meta property="og:title"       content="<?= htmlspecialchars($heroTitle) ?>">
@@ -499,8 +512,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
          (600 y 700) para no cargar la familia entera. -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Oswald:wght@500;600;700&display=swap">
 
-    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/style.css">
-    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/order-modal.css">
+    <link rel="stylesheet" href="<?= asset_url('public/css/style.css') ?>">
+    <link rel="stylesheet" href="<?= asset_url('public/css/order-modal.css') ?>">
 
     <?php
     // Solo emitir vars que el admin haya configurado explícitamente.
@@ -531,7 +544,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </style>
     <?php endif; ?>
     <!-- modal-a11y.js ya no se carga aquí: su trampa de foco solo la usaba el modal de pedido -->
-    <script src="<?= BASE_URL ?>/public/js/main.js" defer></script>
+    <script src="<?= asset_url('public/js/main.js') ?>" defer></script>
 </head>
 
 
@@ -567,8 +580,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <div class="caract-video-wrap" id="heroVideoWrap">
                     <video src="<?= htmlspecialchars($heroMediaPath) ?>"
                         <?php if (!empty($cfg['hero_poster_path'])): ?>poster="<?= htmlspecialchars($cfg['hero_poster_path']) ?>"<?php endif; ?>
-                        autoplay muted loop playsinline
-                        preload="auto"
+                        muted loop playsinline
+                        preload="metadata"
                         style="max-width:100%; border-radius:10px;"></video>
                     <div class="caract-video-tap" aria-hidden="true"></div>
                     <div class="caract-play-overlay" aria-hidden="true">
@@ -937,7 +950,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <div class="caract-media">
                             <?php if (($cItem['media_type'] ?? 'image') === 'video'): ?>
                             <div class="caract-video-wrap">
-                                <video autoplay muted loop playsinline preload="metadata">
+                                <video muted loop playsinline preload="metadata">
                                     <source src="<?= htmlspecialchars($cItem['media_path']) ?>">
                                 </video>
                                 <div class="caract-video-tap" aria-hidden="true"></div>
@@ -1085,7 +1098,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                              initVideoControls() en main.js. -->
                         <div class="caract-video-wrap">
                             <video src="<?= htmlspecialchars($porqueMediaPath) ?>"
-                                   autoplay muted loop playsinline preload="metadata"></video>
+                                   muted loop playsinline preload="metadata"></video>
                             <div class="caract-video-tap" aria-hidden="true"></div>
                             <div class="caract-play-overlay" aria-hidden="true">
                                 <svg width="48" height="48" viewBox="0 0 24 24" fill="rgba(255,255,255,0.92)" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -2047,10 +2060,14 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <p class="form-carriers__label">Enviamos con:</p>
                     <div class="form-carriers__ticker">
                         <div class="form-carriers__track">
+                            <?php /* width= fijo al ratio real de cada logo: sin el, el navegador no
+                                     sabe cuanto sitio reservarle a una imagen lazy antes de cargarla
+                                     y la caja nace en 0px de ancho — la tira de transportadoras se ve
+                                     vacia un instante y salta al llegar cada logo. */ ?>
                             <?php foreach ([1,2] as $_dup): ?>
-                            <img src="<?= BASE_URL ?>/public/img/transportadoras/interrapidisimo.png" alt="Interrapidísimo" height="26" loading="lazy" decoding="async">
-                            <img src="<?= BASE_URL ?>/public/img/transportadoras/envia.png"           alt="Envía"           height="26" loading="lazy" decoding="async">
-                            <img src="<?= BASE_URL ?>/public/img/transportadoras/coordinadora.png"    alt="Coordinadora"    height="26" loading="lazy" decoding="async">
+                            <img src="<?= BASE_URL ?>/public/img/transportadoras/interrapidisimo.png" alt="Interrapidísimo" width="127" height="26" loading="lazy" decoding="async">
+                            <img src="<?= BASE_URL ?>/public/img/transportadoras/envia.png"           alt="Envía"           width="128" height="26" loading="lazy" decoding="async">
+                            <img src="<?= BASE_URL ?>/public/img/transportadoras/coordinadora.png"    alt="Coordinadora"    width="85"  height="26" loading="lazy" decoding="async">
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -2526,22 +2543,26 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
     <?php
     $success        = $success ?? '';
+    $successPedido  = $success_pedido ?? null;
     $precioProducto = (float)($producto['precio_venta'] ?? 0);
     $nombreProducto = $producto['nombre'] ?? 'Producto';
+    $pixelId        = $val('pixel_id', fb_pixel_id());
     ?>
     <script>
         window.landingSuccess = <?= json_encode($success,        JSON_UNESCAPED_UNICODE) ?>;
+        window.landingSuccessPedido = <?= json_encode($successPedido) ?>;
         window.landingProductName = <?= json_encode($nombreProducto, JSON_UNESCAPED_UNICODE) ?>;
         window.landingProductPrice = <?= json_encode($precioProducto) ?>;
         window.landingProductId = <?= (int)($producto['id'] ?? 0) ?>;
         window.landingTrackUrl = <?= json_encode(BASE_URL . '/Landing/track') ?>;
+        window.landingPixelId = <?= json_encode($pixelId) ?>;
     </script>
 
     <!-- Analítica propia del embudo (ver public/js/landing-track.js).
          A diferencia de Clarity y el Pixel, esta SÍ corre en local: guarda
          la visita marcada como entorno "local" y el panel filtra producción
          por defecto, así se puede probar el tracking sin ensuciar los datos. -->
-    <script src="<?= BASE_URL ?>/public/js/landing-track.js" defer></script>
+    <script src="<?= asset_url('public/js/landing-track.js') ?>" defer></script>
 
     <?php
     $colores      = $colores ?? [];
@@ -2556,11 +2577,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
         data-colors='<?= htmlspecialchars((string)($colorsJson ?: '[]'), ENT_QUOTES, "UTF-8") ?>'>
     </div>
 
-    <script src="<?= BASE_URL ?>/public/js/pricing-summary.js" defer></script>
+    <script src="<?= asset_url('public/js/pricing-summary.js') ?>" defer></script>
     <!-- El envio del pedido va aparte y no dentro de main.js: es lo unico que
          no puede fallar, y alli compartia archivo con carruseles y videos. -->
-    <script src="<?= BASE_URL ?>/public/js/order-submit.js" defer></script>
-    <script src="<?= BASE_URL ?>/public/js/funcionesLandin.js" defer></script>
+    <script src="<?= asset_url('public/js/order-submit.js') ?>" defer></script>
+    <script src="<?= asset_url('public/js/funcionesLandin.js') ?>" defer></script>
 
     <!-- Botón WhatsApp flotante -->
     <?php if ($showWhatsappBtn): ?>
@@ -2624,7 +2645,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             t=b.createElement(e);t.async=!0;t.src=v;
             s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)
         }(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-        fbq('init','1248724310406936');
+        fbq('init',<?= json_encode($pixelId) ?>);
         fbq('track','PageView');
         fbq('track','ViewContent',{
             content_name: <?= json_encode($producto['nombre'] ?? 'Producto') ?>,
@@ -2633,14 +2654,46 @@ $colorBorder     = $cfg['color_border']     ?? null;
             value:        <?= json_encode((float)($producto['precio_venta'] ?? 0)) ?>,
             currency:     'COP'
         });
+
+        // Red de seguridad: si el pedido se guardó por el POST nativo (sin
+        // fetch, sin JS en el momento del envío), order-submit.js nunca llegó
+        // a disparar Lead/Purchase. Esta página sí carga con JS, así que los
+        // dispara aquí, leyendo lo que el servidor dejó en la sesión.
+        if (window.landingSuccess && window.landingSuccessPedido) {
+            (function () {
+                var sp = window.landingSuccessPedido;
+                var cantidad = sp.cantidad_total || 1;
+                var productId = <?= json_encode((string)($producto['id'] ?? '')) ?>;
+                var nombreProd = <?= json_encode($producto['nombre'] ?? 'Producto') ?>;
+
+                fbq('track', 'Lead', {
+                    value: sp.precio_total || 0,
+                    currency: 'COP',
+                    content_name: nombreProd
+                });
+                fbq('track', 'Purchase', {
+                    value: sp.precio_total || 0,
+                    currency: 'COP',
+                    content_name: nombreProd,
+                    content_ids: [productId],
+                    content_type: 'product',
+                    num_items: cantidad,
+                    contents: [{
+                        id: productId,
+                        quantity: cantidad,
+                        item_price: cantidad ? (sp.precio_total / cantidad) : (sp.precio_total || 0)
+                    }]
+                }, { eventID: 'pedido_' + sp.pedido_id });
+            })();
+        }
     </script>
     <noscript>
         <img height="1" width="1" style="display:none"
-             src="https://www.facebook.com/tr?id=1248724310406936&ev=PageView&noscript=1">
+             src="https://www.facebook.com/tr?id=<?= urlencode($pixelId) ?>&ev=PageView&noscript=1">
     </noscript>
 
     <!-- Microsoft Clarity -->
-    <?php $clarityId = 'wm68pleap5'; ?>
+    <?php $clarityId = $val('clarity_id', 'wm68pleap5'); ?>
     <?php if ($clarityId !== ''): ?>
     <script>
         (function(c,l,a,r,i,t,y){
@@ -2650,7 +2703,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         })(window,document,"clarity","script","<?= htmlspecialchars($clarityId) ?>");
     </script>
     <?php endif; // fin bloque Clarity ?>
-    <script src="<?= BASE_URL ?>/public/js/clarity-tags.js"></script>
+    <script src="<?= asset_url('public/js/clarity-tags.js') ?>"></script>
     <?php endif; // fin analytics solo-produccion ?>
 
 </body>
