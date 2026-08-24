@@ -6167,6 +6167,27 @@ img[loading="lazy"].loaded {
     line-height: 1;
 }
 
+/* Color y cantidad nativos — es lo que ve quien no tiene JavaScript.
+   Nacen visibles desde PHP; initColorRow() los esconde al montar las
+   pastillas. Sin esto, un producto con colores era imposible de pedir
+   con el JS caído: el servidor exige color y no había control alguno. */
+.color-row__nativo {
+    display: grid;
+    grid-template-columns: 1fr 96px;
+    gap: 10px;
+    align-items: end;
+}
+.color-row__nativo-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cream-dim);
+}
+.color-row__nativo-campo .select-lg { width: 100%; }
+
 /* Sección de cantidad por color (aparece al seleccionar pill) */
 .color-row__qty-wrap {
     margin-top: 12px;

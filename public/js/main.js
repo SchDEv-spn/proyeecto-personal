@@ -12,7 +12,6 @@
  *   · initScrollAnimations      — fade-up con IntersectionObserver
  *   · initStickyVisibility      — ocultar sticky al llegar al form
  *   · initLazyImages            — marcar imágenes loaded
- *   · initTelInput              — inputmode="tel" en WhatsApp
  *   · initWaLinksIAB            — WhatsApp links en Facebook IAB
  *   · initVideoAutoplay         — play/pause por IntersectionObserver
  * ─────────────────────────────────────────────────────────────
@@ -50,7 +49,6 @@ document.addEventListener('DOMContentLoaded', function () {
     arrancar('initTipoEntrega', initTipoEntrega);
     arrancar('initDepartamentoMunicipio', initDepartamentoMunicipio);
     arrancar('initPixelEvents', initPixelEvents);
-    arrancar('initTelInput', initTelInput);
     arrancar('initWaLinksIAB', initWaLinksIAB);
     arrancar('initSlider', initSlider);
     arrancar('initAccordion', initAccordion);
@@ -495,15 +493,14 @@ function initLazyImages() {
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   TEL INPUT — teclado numérico en campo WhatsApp (mobile)
-   ══════════════════════════════════════════════════════════════ */
-function initTelInput() {
-    const tel = document.getElementById('telefono');
-    if (!tel) return;
-    tel.setAttribute('inputmode', 'tel');
-    tel.setAttribute('autocomplete', 'tel');
-}
+/* initTelInput() vivia aqui y solo hacia dano: pisaba lo que el HTML ya
+   declara bien en el campo de WhatsApp.
+     autocomplete="tel-national" -> "tel"     inputmode="numeric" -> "tel"
+   "tel" hace que el navegador autocomplete el numero internacional entero
+   (+573001234567), que revienta contra la propia validacion ^3\d{9}$ del
+   formulario y del servidor; "tel-national" es justo el que devuelve los 10
+   digitos que se piden. El teclado de "numeric" tampoco trae + * # de sobra.
+   El HTML manda: aqui no hay nada que arreglar en caliente. */
 
 /* ══════════════════════════════════════════════════════════════
    FACEBOOK IAB — WhatsApp links

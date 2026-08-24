@@ -1810,41 +1810,78 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
                         <input type="hidden" id="cantidad_total" name="cantidad_total" value="1">
 
+                        <?php
+                        /* Las pastillas de color son <button> que sin JavaScript no hacen
+                           nada, y el <select> que de verdad viaja en el POST estaba
+                           escondido con pointer-events:none y aria-hidden. Resultado:
+                           quien no tuviera JS no tenia NINGUNA forma de elegir color y el
+                           servidor lo exige — el pedido se rechazaba con "Selecciona color
+                           y cantidad en todas las filas" y no habia manera de arreglarlo.
+                           Mismo callejon sin salida que ya se tapo en departamento/municipio
+                           y en la direccion.
+                           Ahora los controles nativos nacen VISIBLES y es initColorRow()
+                           quien los esconde al montar las pastillas: se oculta lo que
+                           sobra, nunca se revela lo imprescindible.
+                           Se repintan ademas los colores que el comprador ya habia elegido:
+                           un envio rechazado sin JS le borraba la seleccion. */
+                        $oldColores = (isset($old['color_item']) && is_array($old['color_item'])) ? $old['color_item'] : [];
+                        $oldCants   = (isset($old['qty_item'])   && is_array($old['qty_item']))   ? $old['qty_item']   : [];
+                        if (!$oldColores) $oldColores = [''];
+                        ?>
                         <div id="colorRowsWrap">
-                            <div class="color-row" data-row="0">
+                            <?php foreach ($oldColores as $_i => $_colorSel):
+                                $_colorSel = (string)$_colorSel;
+                                $_cantSel  = (int)($oldCants[$_i] ?? 1);
+                                if ($_cantSel < 1 || $_cantSel > 5) $_cantSel = 1;
+                            ?>
+                            <div class="color-row" data-row="<?= (int)$_i ?>">
                                 <p class="color-row__lbl">Elige el color:</p>
-                                <div class="color-pills-wrap">
+                                <div class="color-pills-wrap" role="group" aria-label="Colores disponibles" style="display:none;">
                                     <?php foreach ($colores as $c): ?>
-                                    <button type="button" class="color-pill" data-color="<?= htmlspecialchars($c) ?>">
+                                    <button type="button" class="color-pill<?= $c === $_colorSel ? ' is-selected' : '' ?>"
+                                        data-color="<?= htmlspecialchars($c) ?>"
+                                        aria-pressed="<?= $c === $_colorSel ? 'true' : 'false' ?>">
                                         <?= htmlspecialchars($c) ?>
                                     </button>
                                     <?php endforeach; ?>
                                 </div>
-                                <!-- Selects ocultos — los leen backend y pricing-summary.js -->
-                                <select name="color_item[]" class="color-item-sel" aria-hidden="true" tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:0">
-                                    <option value=""></option>
-                                    <?php foreach ($colores as $c): ?>
-                                    <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+
+                                <!-- Controles nativos: los unicos que funcionan sin JS.
+                                     initColorRow() los esconde en cuanto monta las pastillas. -->
+                                <div class="color-row__nativo">
+                                    <label class="color-row__nativo-campo">
+                                        <span>Color</span>
+                                        <select name="color_item[]" class="color-item-sel select-lg">
+                                            <option value="">— Escoge un color —</option>
+                                            <?php foreach ($colores as $c): ?>
+                                            <option value="<?= htmlspecialchars($c) ?>"<?= $c === $_colorSel ? ' selected' : '' ?>><?= htmlspecialchars($c) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </label>
+                                    <label class="color-row__nativo-campo">
+                                        <span>Cantidad</span>
+                                        <!-- El tope es 5 por color, el mismo que aplica el servidor.
+                                             Llegaba hasta 10 aqui, asi que se podia armar un pedido
+                                             de 6 y perderlo al final con un "la cantidad por color
+                                             debe estar entre 1 y 5" despues de llenar todo. -->
+                                        <select name="qty_item[]" class="qty-item-sel select-lg">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                            <option value="<?= $i ?>"<?= $i === $_cantSel ? ' selected' : '' ?>><?= $i ?></option>
+                                            <?php endfor; ?>
+                                        </select>
+                                    </label>
+                                </div>
+
                                 <div class="color-row__qty-wrap" style="display:none;">
                                     <p class="color-row__qty-lbl">¿Cuántos de ese color?</p>
                                     <div class="qty-stepper qty-stepper--big">
                                         <button type="button" class="qty-btn qty-btn--big" data-action="minus" aria-label="Menos">−</button>
-                                        <span class="qty-val-big">1</span>
+                                        <span class="qty-val-big" aria-live="polite"><?= $_cantSel ?></span>
                                         <button type="button" class="qty-btn qty-btn--big" data-action="plus" aria-label="Más">+</button>
                                     </div>
                                 </div>
-                                <!-- El tope es 5 por color, el mismo que aplica el servidor.
-                                     Llegaba hasta 10 aqui, asi que se podia armar un pedido
-                                     de 6 y perderlo al final con un "la cantidad por color
-                                     debe estar entre 1 y 5" despues de llenar todo. -->
-                                <select name="qty_item[]" class="qty-item-sel" aria-hidden="true" tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;height:0">
-                                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                                    <option value="<?= $i ?>"><?= $i ?></option>
-                                    <?php endfor; ?>
-                                </select>
                             </div>
+                            <?php endforeach; ?>
                         </div>
 
                         <button type="button" id="addColorRowBtn" class="btn-add-color-row" style="display:none;">
@@ -1953,8 +1990,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <p class="form-label-lg">¿Cómo quieres recibirlo?</p>
                             <div class="radio-group--cards radio-group--cards-lg">
                                 <label class="radio-card radio-card--lg">
+                                    <?php /* Domicilio viene marcado por defecto. Antes no habia
+                                             ninguno marcado, pero la direccion SI se veia y SI era
+                                             obligatoria: el comprador la llenaba, daba a confirmar
+                                             y recibia "Selecciona como quieres recibir tu pedido"
+                                             por algo que nunca supo que tenia que tocar. Es ademas
+                                             lo que promete toda la landing: el mensajero llega a
+                                             tu puerta. Recoger en oficina sigue a un toque. */ ?>
                                     <input type="radio" name="tipo_entrega" value="domicilio"
-                                        <?= (!empty($old['tipo_entrega']) && $old['tipo_entrega'] === 'domicilio') ? 'checked' : '' ?>>
+                                        <?= (empty($old['tipo_entrega']) || $old['tipo_entrega'] === 'domicilio') ? 'checked' : '' ?>>
                                     <span class="radio-card__icon"><?= $micoHouse ?></span>
                                     <span class="radio-card__main">Me lo llevan a mi casa</span>
                                     <span class="radio-card__note">Te lo entregan en la puerta</span>
@@ -2355,10 +2399,23 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 var cSel     = row.querySelector('.color-item-sel');
                 var qSel     = row.querySelector('.qty-item-sel');
 
+                /* Los <select> nativos vienen visibles del servidor para que el
+                   pedido se pueda hacer sin JavaScript. Si este codigo corre, ya
+                   hay JS: mandan las pastillas y los selects pasan a ser el
+                   transporte del valor, no la interfaz. */
+                var nativo    = row.querySelector('.color-row__nativo');
+                var pillsWrap = row.querySelector('.color-pills-wrap');
+                if (nativo)    nativo.style.display = 'none';
+                if (pillsWrap) pillsWrap.style.display = '';
+
                 Array.prototype.forEach.call(pills, function (pill) {
                     pill.addEventListener('click', function () {
-                        Array.prototype.forEach.call(pills, function (p) { p.classList.remove('is-selected'); });
+                        Array.prototype.forEach.call(pills, function (p) {
+                            p.classList.remove('is-selected');
+                            p.setAttribute('aria-pressed', 'false');
+                        });
                         pill.classList.add('is-selected');
+                        pill.setAttribute('aria-pressed', 'true');
                         if (cSel) cSel.value = pill.dataset.color;
                         if (qtyWrap) qtyWrap.style.display = '';
                         var addBtn = document.getElementById('addColorRowBtn');
@@ -2367,6 +2424,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         recalcular();
                     });
                 });
+
+                /* Color que ya venia elegido del servidor (envio rechazado sin
+                   fetch): la fila nace con la cantidad y el boton de anadir a la
+                   vista, igual que si lo acabara de tocar. */
+                if (cSel && cSel.value) {
+                    if (qtyWrap) qtyWrap.style.display = '';
+                    var addBtnIni = document.getElementById('addColorRowBtn');
+                    if (addBtnIni) addBtnIni.style.display = '';
+                }
 
                 var btnMinus = row.querySelector('.qty-btn[data-action="minus"]');
                 var btnPlus  = row.querySelector('.qty-btn[data-action="plus"]');
@@ -2400,6 +2466,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
             if (colorRowsWrap) {
                 Array.prototype.forEach.call(colorRowsWrap.querySelectorAll('.color-row'), initColorRow);
+                updateColorSummary();
 
                 var addBtn = document.getElementById('addColorRowBtn');
                 if (addBtn) addBtn.addEventListener('click', function () {
@@ -2408,6 +2475,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     var newRow = tmpl.cloneNode(true);
                     Array.prototype.forEach.call(newRow.querySelectorAll('.color-pill'), function (p) {
                         p.classList.remove('is-selected');
+                        p.setAttribute('aria-pressed', 'false');
                     });
                     var nCSel = newRow.querySelector('.color-item-sel');
                     var nQSel = newRow.querySelector('.qty-item-sel');
