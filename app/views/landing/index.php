@@ -1654,24 +1654,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </div>
                 </div>
 
-                <!-- Garantías destacadas: envío gratis y pago contraentrega son
-                     las dos objeciones que más frenan la compra contraentrega,
-                     así que van como pastillas grandes, no como letra chica. -->
-                <div class="trust-badges">
-                    <span class="trust-badge trust-badge--envio">
-                        <span class="trust-badge__ico" aria-hidden="true"><?= $micoTruck ?></span>
-                        <span class="trust-badge__txt">Envío <strong>GRATIS</strong></span>
-                    </span>
-                    <span class="trust-badge trust-badge--cod">
-                        <span class="trust-badge__ico" aria-hidden="true"><?= $micoCard ?></span>
-                        <span class="trust-badge__txt">Pagas <strong>al recibirlo</strong></span>
-                    </span>
-                    <?php if ($ahorro > 0): ?>
-                    <span class="trust-badge trust-badge--ahorro">
-                        <span class="trust-badge__txt">Ahorras <strong>$<?= number_format($ahorro, 0, ',', '.') ?></strong></span>
-                    </span>
-                    <?php endif; ?>
-                </div>
+                <?php /* Aquí vivían tres pastillas — Envío GRATIS · Pagas al recibirlo ·
+                         Ahorras $X — y decían exactamente lo mismo que las tres promesas
+                         de dos líneas más abajo y que la fila de confianza del pie del
+                         formulario. En la zona del formulario "pagas al recibir" salía
+                         seis veces y "gratis" tres antes de la primera casilla: media
+                         pantalla de móvil convenciendo a alguien que ya bajó a comprar.
+                         Se quedan las promesas, que son las que hablan del miedo real
+                         ("si no llega, no pagas"). El ahorro sigue en la barra de oferta
+                         y en el resumen final. */ ?>
 
                 <!-- Título y subtítulo del formulario -->
                 <?php if (!empty($formTitle)): ?>
@@ -1712,7 +1703,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <span class="stepper-node__num">1</span>
                         <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none"><polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
-                    <span class="stepper-node__label"><?= $micoUser ?> ¿Quién eres?</span>
+                    <span class="stepper-node__label"><?= $micoBag ?> ¿Qué pides?</span>
                 </div>
                 <div class="stepper-connector" data-after="1"></div>
                 <div class="stepper-node" data-step="2">
@@ -1720,7 +1711,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <span class="stepper-node__num">2</span>
                         <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none"><polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
-                    <span class="stepper-node__label"><?= $micoBag ?> ¿Qué pides?</span>
+                    <span class="stepper-node__label"><?= $micoBox ?> ¿A dónde?</span>
                 </div>
                 <div class="stepper-connector" data-after="2"></div>
                 <div class="stepper-node" data-step="3">
@@ -1728,7 +1719,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <span class="stepper-node__num">3</span>
                         <svg class="stepper-node__check" viewBox="0 0 14 14" fill="none"><polyline points="2 7 6 11 12 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
-                    <span class="stepper-node__label"><?= $micoBox ?> ¿A dónde?</span>
+                    <span class="stepper-node__label"><?= $micoUser ?> ¿Quién eres?</span>
                 </div>
             </div>
 
@@ -1755,56 +1746,27 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <input type="hidden" name="producto_id" value="<?= htmlspecialchars($producto['id'] ?? 1) ?>">
 
                     <!-- ══════════════════════════════
-                         PASO 1 — DATOS PERSONALES
+                         PASO 1 — QUÉ QUIERE PEDIR
+
+                         El orden es deliberado: qué pides → a dónde → quién
+                         eres. Antes se pedía el WhatsApp de entrada, o sea el
+                         dato más caro en el momento más barato: el comprador
+                         todavía no había invertido nada en el pedido. Elegir
+                         color es gratis, es un toque y compromete — a partir
+                         de ahí el pedido ya se siente suyo. Y deja el teléfono
+                         pegado al botón, justo después de ver el total.
                     ══════════════════════════════════ -->
                     <div class="form-step is-active" data-step="1">
-                        <div class="form-step__head">
-                            <div class="step-emoji" aria-hidden="true"><?= $micoUser ?></div>
-                            <h3 class="form-step__title">¿A nombre de quién va el pedido?</h3>
-                            <p class="form-step__sub">Así sabemos cómo llamarte cuando te contactemos</p>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="nombre" class="form-label-lg">Tu nombre</label>
-                            <input type="text" id="nombre" name="nombre" required class="input-lg"
-                                placeholder="Ej: María"
-                                autocomplete="given-name"
-                                value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
-                        </div>
-                        <div class="form-group">
-                            <label for="apellidos" class="form-label-lg">Tu apellido</label>
-                            <input type="text" id="apellidos" name="apellidos" required class="input-lg"
-                                placeholder="Ej: González"
-                                autocomplete="family-name"
-                                value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
-                        </div>
-                        <div class="form-group">
-                            <label for="telefono" class="form-label-lg"><?= $micoPhone ?> Tu número de WhatsApp</label>
-                            <input type="tel" id="telefono" name="telefono" required class="input-lg"
-                                placeholder="Ej: 3001234567"
-                                maxlength="10" autocomplete="tel-national" inputmode="numeric"
-                                value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
-                            <p class="tel-hint" id="telHint">Solo 10 números · empieza por 3 · por aquí te avisamos cuando salga tu pedido</p>
-                        </div>
-
-                        <div class="form-step__nav form-step__nav--end">
-                            <button type="button" class="btn-step-next btn-next-lg" data-next="2">
-                                Siguiente <span aria-hidden="true">→</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ══════════════════════════════
-                         PASO 2 — QUÉ QUIERE PEDIR
-                    ══════════════════════════════════ -->
-                    <div class="form-step" data-step="2">
 
                         <?php if ($hasColors): ?>
                         <!-- Con colores: pills visuales -->
+                        <?php /* Sin subtítulo: el título ya pregunta, y debajo venía
+                                 además "Elige el color:" — tres veces la misma
+                                 instrucción seguida. La pregunta vive en el
+                                 encabezado del bloque y nada más. */ ?>
                         <div class="form-step__head">
                             <div class="step-emoji" aria-hidden="true"><?= $micoPaint ?></div>
                             <h3 class="form-step__title">¿Cuál color te gusta?</h3>
-                            <p class="form-step__sub">Toca el color que quieres pedir</p>
                         </div>
 
                         <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
@@ -1835,7 +1797,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                 if ($_cantSel < 1 || $_cantSel > 5) $_cantSel = 1;
                             ?>
                             <div class="color-row" data-row="<?= (int)$_i ?>">
-                                <p class="color-row__lbl">Elige el color:</p>
                                 <div class="color-pills-wrap" role="group" aria-label="Colores disponibles" style="display:none;">
                                     <?php foreach ($colores as $c): ?>
                                     <button type="button" class="color-pill<?= $c === $_colorSel ? ' is-selected' : '' ?>"
@@ -1896,7 +1857,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <div class="form-step__head">
                             <div class="step-emoji" aria-hidden="true"><?= $micoBag ?></div>
                             <h3 class="form-step__title">¿Cuántos vas a pedir?</h3>
-                            <p class="form-step__sub">Elige la cantidad que deseas recibir</p>
                         </div>
 
                         <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
@@ -1924,22 +1884,21 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             </span>
                         </div>
 
-                        <div class="form-step__nav">
-                            <button type="button" class="btn-step-prev" data-prev="1">← Atrás</button>
-                            <button type="button" class="btn-step-next btn-next-lg" data-next="3">
+                        <div class="form-step__nav form-step__nav--end">
+                            <button type="button" class="btn-step-next btn-next-lg" data-next="2">
                                 Siguiente <span aria-hidden="true">→</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- ══════════════════════════════
-                         PASO 3 — ENTREGA
+                         PASO 2 — A DÓNDE
                     ══════════════════════════════════ -->
-                    <div class="form-step" data-step="3">
+                    <div class="form-step" data-step="2">
                         <div class="form-step__head">
                             <div class="step-emoji" aria-hidden="true"><?= $micoBox ?></div>
                             <h3 class="form-step__title">¿A dónde te lo enviamos?</h3>
-                            <p class="form-step__sub">Último paso — ya casi tienes tu pedido</p>
+                            <p class="form-step__sub">Envío gratis a todo el país</p>
                         </div>
 
                         <?php
@@ -1959,9 +1918,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         $oldDep = (string)($old['departamento'] ?? '');
                         $oldMun = (string)($old['municipio'] ?? '');
                         ?>
+                        <?php /* Los campos llevan sustantivo corto, no pregunta: la
+                                 pregunta ya la hace el título del bloque ("¿A dónde te
+                                 lo enviamos?") y debajo venían otras tres seguidas.
+                                 Una columna de sustantivos se escanea de un vistazo;
+                                 una de preguntas hay que leerla entera. */ ?>
                         <div class="form-group">
-                            <label for="departamento" class="form-label-lg">¿En qué departamento vives?</label>
-                            <select id="departamento" name="departamento" required class="select-lg">
+                            <label for="departamento" class="form-label-lg">Departamento</label>
+                            <select id="departamento" name="departamento" required class="select-lg"
+                                autocomplete="address-level1">
                                 <option value="">— Escoge tu departamento —</option>
                                 <?php foreach ($ubicaciones as $_dep => $_muns): ?>
                                 <option value="<?= htmlspecialchars($_dep) ?>"<?= $_dep === $oldDep ? ' selected' : '' ?>><?= htmlspecialchars($_dep) ?></option>
@@ -1969,8 +1934,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="municipio" class="form-label-lg">¿En qué pueblo o ciudad?</label>
-                            <select id="municipio" name="municipio" required class="select-lg">
+                            <label for="municipio" class="form-label-lg">Ciudad o municipio</label>
+                            <select id="municipio" name="municipio" required class="select-lg"
+                                autocomplete="address-level2">
+                                <?php /* El mismo texto que vuelve a escribir poblarMunicipios()
+                                         en main.js: si no coinciden, el placeholder cambia solo
+                                         por tocar el departamento. */ ?>
                                 <option value=""><?= $oldDep !== '' ? '— Escoge tu municipio —' : 'Primero elige el departamento' ?></option>
                                 <?php foreach ($ubicaciones as $_dep => $_muns): ?>
                                 <optgroup label="<?= htmlspecialchars($_dep) ?>" data-dep="<?= htmlspecialchars($_dep) ?>">
@@ -1986,8 +1955,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <?= $micoBox ?> Llega estimado el: <strong id="deliveryETADate"></strong>
                         </div>
 
-                        <div class="form-group">
-                            <p class="form-label-lg">¿Cómo quieres recibirlo?</p>
+                        <?php /* fieldset/legend y no <p>: asi el grupo de radios tiene
+                                 nombre accesible de verdad. Con el <p> suelto, un lector
+                                 de pantalla anunciaba las dos tarjetas sin decir nunca
+                                 de que decision formaban parte. */ ?>
+                        <fieldset class="form-group form-fieldset">
+                            <legend class="form-label-lg">¿Cómo quieres recibirlo?</legend>
                             <div class="radio-group--cards radio-group--cards-lg">
                                 <label class="radio-card radio-card--lg">
                                     <?php /* Domicilio viene marcado por defecto. Antes no habia
@@ -2011,7 +1984,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                     <span class="radio-card__note">Interrapidísimo más cercana</span>
                                 </label>
                             </div>
-                        </div>
+                        </fieldset>
 
                         <!-- Direccion y nota nacen VISIBLES. Estaban en display:none
                              esperando a que el JS las mostrara al elegir domicilio, asi
@@ -2022,7 +1995,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                              direccion correcta de la mejora: se oculta lo que sobra,
                              no se revela lo imprescindible. -->
                         <div class="form-group" id="grupo-direccion">
-                            <label for="direccion" class="form-label-lg">¿Cuál es la dirección?</label>
+                            <label for="direccion" class="form-label-lg">Dirección</label>
                             <input type="text" id="direccion" name="direccion" class="input-lg"
                                 placeholder="Ej: Calle 5 # 10-20, frente a la escuela"
                                 autocomplete="street-address"
@@ -2032,12 +2005,64 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                         <div class="form-group" id="grupo-nota-entrega">
                             <label for="nota_entrega" class="form-label-lg">
-                                ¿Alguna indicación para el mensajero?
+                                Indicaciones para el mensajero
                                 <span class="tag-optional"> — opcional</span>
                             </label>
                             <textarea id="nota_entrega" name="nota_entrega" rows="2"
                                 placeholder="Ej: Portón verde · Solo en las tardes"
                                 style="resize:vertical;"><?= htmlspecialchars($old['nota_entrega'] ?? '') ?></textarea>
+                        </div>
+
+                        <div class="form-step__nav">
+                            <button type="button" class="btn-step-prev" data-prev="1">← Atrás</button>
+                            <button type="button" class="btn-step-next btn-next-lg" data-next="3">
+                                Siguiente <span aria-hidden="true">→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════
+                         PASO 3 — QUIÉN ERES
+
+                         Va al final a propósito: el teléfono es el dato que
+                         más cuesta dar, y aquí llega después de que el
+                         comprador ya eligió color y dirección y ya vio el
+                         total. Es el punto de máxima intención de toda la
+                         página.
+                    ══════════════════════════════════ -->
+                    <div class="form-step" data-step="3">
+                        <div class="form-step__head">
+                            <div class="step-emoji" aria-hidden="true"><?= $micoUser ?></div>
+                            <h3 class="form-step__title">¿A nombre de quién va el pedido?</h3>
+                            <p class="form-step__sub">Te escribimos por WhatsApp para confirmarlo</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nombre" class="form-label-lg">Tu nombre</label>
+                            <input type="text" id="nombre" name="nombre" required class="input-lg"
+                                placeholder="Ej: María"
+                                autocomplete="given-name"
+                                value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="apellidos" class="form-label-lg">Tu apellido</label>
+                            <input type="text" id="apellidos" name="apellidos" required class="input-lg"
+                                placeholder="Ej: González"
+                                autocomplete="family-name"
+                                value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="telefono" class="form-label-lg"><?= $micoPhone ?> Tu número de WhatsApp</label>
+                            <input type="tel" id="telefono" name="telefono" required class="input-lg"
+                                placeholder="Ej: 3001234567"
+                                maxlength="10" autocomplete="tel-national" inputmode="numeric"
+                                value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
+                            <?php /* La pista dice el PORQUÉ, no el formato. La regla —
+                                     10 dígitos, empieza en 3 — ya la enseña la validación
+                                     en vivo de más abajo en el momento en que hace falta
+                                     ("Faltan 3 dígitos", "Debe empezar en 3"), así que
+                                     aquí sobraba y hacía la pista de dos renglones. */ ?>
+                            <p class="tel-hint" id="telHint">Por aquí te avisamos cuando salga tu pedido</p>
                         </div>
 
                         <!-- Resumen de compra -->
@@ -2055,7 +2080,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                     <span><strong id="summaryQty">1</strong> <span id="summaryQtyWord">unidad</span></span>
                                     <strong id="summarySubtotal">$0</strong>
                                 </div>
-                                <div class="order-summary__row">
+                                <?php /* El resumen decía cantidad, descuento, envío y total,
+                                         pero nunca QUÉ COLOR. En un producto de varios colores
+                                         la confirmación tiene que nombrar lo que va en la caja:
+                                         es lo único que el comprador no puede verificar
+                                         después. Lo llena pricing-summary.js. */ ?>
+                                <div class="order-summary__row" id="summaryColorRow" style="display:none;">
+                                    <span>Color</span>
+                                    <strong id="summaryColor"></strong>
+                                </div>
+                                <div class="order-summary__row" id="summaryDiscountRow" style="display:none;">
                                     <span>Descuento</span>
                                     <strong id="summaryDiscount">$0</strong>
                                 </div>
@@ -2082,10 +2116,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             </button>
                         </div>
 
+                        <?php /* Solo lo que no se ha dicho ya arriba. "Pagas al recibirlo"
+                                 y "Envío gratis" salían aquí por cuarta y quinta vez. */ ?>
                         <div class="form-trust-row">
                             <span><?= $micoLock ?> Datos seguros</span>
-                            <span><?= $micoCard ?> Pagas al recibirlo</span>
-                            <span><?= $micoTruck ?> Envío gratis</span>
                             <span><?= $micoSwap ?> Cambios sin problema</span>
                         </div>
                         <p class="form-note">Te llamamos por WhatsApp para confirmar antes de enviarlo.</p>
@@ -2268,15 +2302,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 return (el && el.value) ? el.value.trim() : '';
             }
 
+            /* Sigue el orden nuevo del formulario: 1 que pides, 2 a donde,
+               3 quien eres. Solo se usa si se vuelve a encender .js-pasos. */
             function validateStep(n) {
                 var errs = [];
                 if (n === 1) {
-                    if (!valorDe('#nombre'))    errs.push('El nombre es obligatorio.');
-                    if (!valorDe('#apellidos')) errs.push('El apellido es obligatorio.');
-                    var tv = valorDe('#telefono');
-                    if (!tv)                       errs.push('El número de WhatsApp es obligatorio.');
-                    else if (!/^3\d{9}$/.test(tv)) errs.push('El número debe tener 10 dígitos y empezar en 3.');
-                } else if (n === 2) {
                     var wrap = document.getElementById('colorRowsWrap');
                     if (wrap) {
                         var sels = wrap.querySelectorAll('.color-item-sel');
@@ -2284,6 +2314,19 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         Array.prototype.forEach.call(sels, function (s) { if (s.value !== '') alguno = true; });
                         if (!alguno) errs.push('Toca el color que quieres pedir.');
                     }
+                } else if (n === 2) {
+                    if (!valorDe('#departamento')) errs.push('Selecciona un departamento.');
+                    if (!valorDe('#municipio'))    errs.push('Selecciona un municipio.');
+                    var entrega = form.querySelector('input[name="tipo_entrega"]:checked');
+                    if (entrega && entrega.value === 'domicilio' && !valorDe('#direccion')) {
+                        errs.push('La dirección es obligatoria para envío a domicilio.');
+                    }
+                } else if (n === 3) {
+                    if (!valorDe('#nombre'))    errs.push('El nombre es obligatorio.');
+                    if (!valorDe('#apellidos')) errs.push('El apellido es obligatorio.');
+                    var tv = valorDe('#telefono');
+                    if (!tv)                       errs.push('El número de WhatsApp es obligatorio.');
+                    else if (!/^3\d{9}$/.test(tv)) errs.push('El número debe tener 10 dígitos y empezar en 3.');
                 }
                 return errs;
             }
@@ -2525,7 +2568,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     if (!v) {
                         tel.classList.remove('tel-valid', 'tel-invalid');
                         hint.className = 'tel-hint';
-                        hint.textContent = 'Solo 10 números · empieza por 3 · por aquí te avisamos cuando salga tu pedido';
+                        hint.textContent = 'Por aquí te avisamos cuando salga tu pedido';
                         return;
                     }
                     if (/^3\d{9}$/.test(v)) {

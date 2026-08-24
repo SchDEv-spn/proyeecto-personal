@@ -292,9 +292,20 @@
 
         // Los colores se eligen con botones, no con el select visible: sin
         // esto un pedido con color se vería como formulario nunca tocado.
+        //
+        // La etiqueta se saca del propio select en vez de escribirla a mano:
+        // era '04-color' fija y al reordenar el formulario — el color pasó a
+        // ser el primer campo — dejó de coincidir con la numeración del resto
+        // y la tabla del panel se leía desordenada. Ahora sigue al DOM sola.
+        var etiquetaColor = (function () {
+            var sel = form.querySelector('select[name="color_item[]"]');
+            if (!sel) return '01-color';
+            var idx = Array.prototype.indexOf.call(campos, sel);
+            return ('0' + (idx + 1)).slice(-2) + '-color';
+        })();
         form.addEventListener('click', function (e) {
             var pill = e.target.closest && e.target.closest('.color-pill');
-            if (pill) hito('campo:color', 'campo', '04-color');
+            if (pill) hito('campo:color', 'campo', etiquetaColor);
         });
 
         form.addEventListener('submit', function () {

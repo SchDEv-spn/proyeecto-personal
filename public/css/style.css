@@ -6113,13 +6113,28 @@ img[loading="lazy"].loaded {
 /* ── Color pills ──────────────────────────────────────────── */
 .color-row { margin-bottom: 16px; }
 
-.color-row__lbl {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--cream-dim);
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+/* El grupo "¿Cómo quieres recibirlo?" pasó de <p> + <div> a fieldset/legend
+   para que tenga nombre accesible. El navegador le pone borde y padding
+   propios: se le quitan para que se vea exactamente igual que antes. */
+.form-fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0 0 var(--space-md);
+    min-width: 0;
+}
+.form-fieldset > legend {
+    padding: 0;
+    display: block;
+}
+
+/* La fila ya no lleva un "ELIGE EL COLOR:" encima: el título del bloque
+   ("¿Cuál color te gusta?") lo dice y no hace falta repetirlo. Las filas
+   extra — las que salen de "quiero otro color diferente" — se separan con
+   una línea en vez de con otra etiqueta. */
+.color-row + .color-row {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gold-border);
 }
 
 .color-pills-wrap {

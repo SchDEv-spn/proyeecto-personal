@@ -27,15 +27,11 @@
         return (el && el.value) ? el.value.trim() : '';
     }
 
+    /* El orden de los errores sigue el orden del formulario — que pides, a
+       donde, quien eres. Si la lista va en otro orden, el comprador tiene que
+       buscar hacia arriba y hacia abajo el campo de cada linea. */
     function validar() {
         var errors = [];
-
-        if (!valorDe('#nombre'))    errors.push('El nombre es obligatorio.');
-        if (!valorDe('#apellidos')) errors.push('Los apellidos son obligatorios.');
-
-        var tel = valorDe('#telefono');
-        if (!tel) errors.push('El número de WhatsApp es obligatorio.');
-        else if (!/^3\d{9}$/.test(tel)) errors.push('Número inválido (10 dígitos, empieza en 3).');
 
         var modeEl = form.querySelector('#pricingMode');
         var mode = (modeEl && modeEl.value) ? modeEl.value : 'individual';
@@ -79,6 +75,13 @@
         else if (entrega.value === 'domicilio' && !valorDe('#direccion')) {
             errors.push('La dirección es obligatoria para envío a domicilio.');
         }
+
+        if (!valorDe('#nombre'))    errors.push('El nombre es obligatorio.');
+        if (!valorDe('#apellidos')) errors.push('Los apellidos son obligatorios.');
+
+        var tel = valorDe('#telefono');
+        if (!tel) errors.push('El número de WhatsApp es obligatorio.');
+        else if (!/^3\d{9}$/.test(tel)) errors.push('Número inválido (10 dígitos, empieza en 3).');
 
         return errors;
     }

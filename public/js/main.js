@@ -142,10 +142,12 @@ function initDepartamentoMunicipio() {
         var visible = selectMun.querySelector('optgroup');
         if (visible) selectMun.removeChild(visible);
 
+        /* Mismos textos que pinta el PHP: si no coinciden, el placeholder
+           cambia de redaccion solo por tocar el departamento. */
         if (placeholder) {
             placeholder.textContent = dep
-                ? 'Selecciona un municipio'
-                : 'Selecciona primero un departamento';
+                ? '— Escoge tu municipio —'
+                : 'Primero elige el departamento';
         }
 
         if (dep && grupos[dep]) selectMun.appendChild(grupos[dep]);

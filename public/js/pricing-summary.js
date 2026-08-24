@@ -153,6 +153,27 @@ document.addEventListener('DOMContentLoaded', function () {
     var saveRow = document.getElementById('summarySaveRow');
     if (saveRow) saveRow.style.display = ahorroTotal > 0 ? 'flex' : 'none';
 
+    /* Una linea de "Descuento $0" no informa de nada: solo ensucia el
+       resumen justo donde el comprador comprueba lo que va a pagar. */
+    var discountRow = document.getElementById('summaryDiscountRow');
+    if (discountRow) discountRow.style.display = discount > 0 ? 'flex' : 'none';
+
+    /* Que color va en la caja. Es el unico dato del pedido que el comprador
+       no puede verificar despues de darle a confirmar. */
+    var colorRow = document.getElementById('summaryColorRow');
+    if (colorRow) {
+      var partes = [];
+      Array.prototype.forEach.call(form.querySelectorAll('.color-row'), function (fila) {
+        var cSel = fila.querySelector('.color-item-sel');
+        var qSel = fila.querySelector('select[name="qty_item[]"]');
+        if (!cSel || !cSel.value) return;
+        var q = parseInt((qSel && qSel.value) || '1', 10);
+        partes.push(q > 1 ? cSel.value + ' ×' + q : cSel.value);
+      });
+      texto('summaryColor', partes.join(' · '));
+      colorRow.style.display = partes.length ? 'flex' : 'none';
+    }
+
     // Tira de precio del paso 2 y insignia del carrito: mismo numero, mismo formato.
     texto('pricePreviewAmt', formatCOP(totalPay));
     texto('modalCartBadge', String(units));

@@ -248,6 +248,10 @@ body.modal-open { overflow: hidden; }
    dos objeciones que frenan la compra contraentrega: tienen que verse.
    Los colores salen de las variables del tema para que funcionen en
    los 8 temas sin excepciones. */
+/* SIN USAR desde que las tres pastillas salieron del formulario (decían lo
+   mismo que las promesas de dos líneas más abajo). Se conservan por si se
+   quieren recuperar: basta con volver a pintar el <div class="trust-badges">
+   en la vista. Si no se recuperan, este bloque se puede borrar entero. */
 .trust-badges {
     display: flex;
     flex-wrap: wrap;
@@ -574,19 +578,14 @@ body.modal-open { overflow: hidden; }
     opacity: 0.75;
 }
 
-/* El primer bloque no necesita presentarse: el comprador acaba de leer
-   el título del formulario dos líneas más arriba. */
-.pedido-section .form-step[data-step="1"] .form-step__sub {
-    display: none;
-}
-
-/* El encabezado del primer bloque no aporta: "¿A nombre de quién va el
-   pedido?" con su ícono ocupa media pantalla para decir lo que ya dicen
-   las etiquetas "Tu nombre" y "Tu apellido" justo debajo. Los bloques 2
-   y 3 sí conservan el suyo, porque ahí el cambio de tema no es obvio. */
-.pedido-section .form-step[data-step="1"] .form-step__head {
-    display: none;
-}
+/* Estas dos reglas escondían el encabezado del primer bloque, y tenían
+   sentido cuando el primer bloque era "¿A nombre de quién va el pedido?":
+   ese título repetía lo que ya decían las etiquetas "Tu nombre" y "Tu
+   apellido" justo debajo.
+   Con el formulario reordenado el primer bloque es la elección de color, y
+   ahí el encabezado es imprescindible: sin él aparecen cuatro pastillas
+   sueltas — Negro, Camel, Vino tinto, Verde oliva — sin nada que diga qué
+   son ni qué hay que hacer con ellas. Los encabezados se quedan. */
 
 /* Un latido lento en la pastilla de envío gratis: es el argumento que
    más pesa y merece que el ojo lo encuentre. Nada de movimiento para
