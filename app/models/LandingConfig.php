@@ -16,6 +16,51 @@ class LandingConfig extends Model
         return $temas;
     }
 
+    /**
+     * Slug de tema definitivo para un valor guardado.
+     *
+     * Al pasar de nueve temas a cinco quedaron landings apuntando a
+     * slugs que ya no existen. Sin esto el validador no los reconoce y
+     * cae al tema por defecto EN SILENCIO: una landing en 'obsidian'
+     * amanece con los colores de otro tema y no hay nada en ningún log
+     * que lo explique. Es el mismo fallo que ya costó caro cuando se
+     * añadió midnight-amber y se olvidó una de las cinco whitelists.
+     *
+     * Cada tema declara en 'alias' los slugs retirados que hereda, así
+     * que 'obsidian' resuelve a 'relojes' y no a un tema cualquiera.
+     * Un slug desconocido de verdad sí cae al por defecto, que es lo
+     * único que se puede hacer con él.
+     */
+    public static function resolverTema(?string $slug): string
+    {
+        $temas = self::temasValidos();
+
+        if ($slug !== null && isset($temas[$slug])) {
+            return $slug;
+        }
+
+        static $alias = null;
+        if ($alias === null) {
+            $alias = [];
+            foreach ($temas as $destino => $t) {
+                foreach ($t['alias'] ?? [] as $viejo) {
+                    $alias[$viejo] = $destino;
+                }
+            }
+        }
+
+        return $alias[$slug] ?? self::temaPorDefecto();
+    }
+
+    /**
+     * El primero de la lista. Antes estaba escrito a mano como
+     * 'dark-luxury' en cuatro sitios, y ese slug ya no existe.
+     */
+    public static function temaPorDefecto(): string
+    {
+        return array_key_first(self::temasValidos());
+    }
+
     public function obtenerPorProducto(int $productoId)
     {
         $sql = "SELECT * FROM landing_config WHERE producto_id = :producto_id LIMIT 1";
@@ -390,10 +435,9 @@ class LandingConfig extends Model
             /* Quinta y última copia de la lista de temas: ésta era la que
                seguía rechazando midnight-amber después de arreglar las
                otras cuatro. Ahora sale de app/config/themes.php como
-               todas. */
-            ':theme'           => isset(self::temasValidos()[$data['theme'] ?? ''])
-                ? $data['theme']
-                : 'dark-luxury',
+               todas, y pasa por resolverTema() para que un slug retirado
+               herede su sucesor en vez de caer al por defecto sin avisar. */
+            ':theme'           => self::resolverTema($data['theme'] ?? null),
 
             ':hero_title'         => $data['hero_title']       ?? null,
             ':hero_subtitle'      => $data['hero_subtitle']    ?? null,

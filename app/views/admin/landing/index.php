@@ -1509,28 +1509,55 @@
                       <div class="theme-selector__grid">
 
                         <?php
-                        // Las tarjetas salen de la fuente única de temas.
-                        $temasCfg   = require dirname(__DIR__, 3) . '/config/themes.php';
-                        $themeCards = [];
-                        foreach ($temasCfg as $slug => $t) {
-                            $themeCards[$slug] = ['name' => $t['nombre'], 'desc' => $t['desc']];
-                        }
-                        $currentTheme = $config['theme'] ?? 'dark-luxury';
-                        foreach ($themeCards as $themeVal => $themeData):
+                        /* Las tarjetas salen de la fuente única de temas, y ahora
+                           también sus colores: la miniatura se pinta con tres vars
+                           en línea en vez de con una regla por tema escrita a mano
+                           en admin-unified.css. Un color que cambie en themes.php
+                           cambia aquí solo. */
+                        $temasCfg = LandingConfig::temasValidos();
+
+                        /* resolverTema() en vez de un slug escrito aquí: una landing
+                           guardada con uno de los nombres viejos tiene que aparecer
+                           con su tarjeta ya marcada, no con la del primero. */
+                        $currentTheme = LandingConfig::resolverTema($config['theme'] ?? null);
+
+                        /* Un tema claro necesita contorno en la miniatura o se funde
+                           con el fondo del editor. Se deduce de la luminancia de su
+                           propio fondo en vez de con una lista aparte que mantener. */
+                        $esClaro = function (string $hex): bool {
+                            $hex = ltrim($hex, '#');
+                            if (strlen($hex) !== 6) return false;
+                            $c = [];
+                            foreach ([0, 2, 4] as $i) {
+                                $v = hexdec(substr($hex, $i, 2)) / 255;
+                                $c[] = $v <= 0.03928 ? $v / 12.92 : pow(($v + 0.055) / 1.055, 2.4);
+                            }
+                            return (0.2126 * $c[0] + 0.7152 * $c[1] + 0.0722 * $c[2]) > 0.5;
+                        };
+
+                        foreach ($temasCfg as $themeVal => $themeData):
+                            $pal   = $themeData['paleta'];
+                            $vars  = '--tp-bg:'  . $pal['background_color']
+                                   . ';--tp-fg:' . $pal['text_color']
+                                   . ';--tp-cta:' . $themeData['cta'];
+                            if ($esClaro($pal['background_color'])) {
+                                $vars .= ';--tp-edge:rgba(0,0,0,.10)';
+                            }
                         ?>
                         <label class="theme-card <?= $currentTheme === $themeVal ? 'theme-card--active' : '' ?>">
-                          <input type="radio" name="theme" value="<?= $themeVal ?>"
+                          <input type="radio" name="theme" value="<?= htmlspecialchars($themeVal) ?>"
                             <?= $currentTheme === $themeVal ? 'checked' : '' ?>
-                            onchange="applyThemePreview('<?= $themeVal ?>')">
-                          <div class="theme-card__preview theme-card__preview--<?= $themeVal ?>">
+                            onchange="applyThemePreview('<?= htmlspecialchars($themeVal) ?>')">
+                          <div class="theme-card__preview" style="<?= htmlspecialchars($vars) ?>">
                             <span class="theme-card__mock-header"></span>
                             <span class="theme-card__mock-line"></span>
                             <span class="theme-card__mock-line theme-card__mock-line--short"></span>
                             <span class="theme-card__mock-btn"></span>
                           </div>
                           <div class="theme-card__info">
-                            <strong><?= $themeData['name'] ?></strong>
-                            <small><?= $themeData['desc'] ?></small>
+                            <span class="theme-card__nicho"><?= htmlspecialchars($themeData['nicho']) ?></span>
+                            <strong><?= htmlspecialchars($themeData['nombre']) ?></strong>
+                            <small><?= htmlspecialchars($themeData['desc']) ?></small>
                           </div>
                         </label>
                         <?php endforeach; ?>

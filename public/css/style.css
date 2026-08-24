@@ -138,873 +138,83 @@
 }
 
 /* ============================================================
-   SISTEMA DE TEMAS — agregar justo después del bloque :root
-   Cada tema sobreescribe las vars estructurales.
-   Las vars de personalización del admin se aplican encima
-   via el <style> inline en el <head> del template.
+   SISTEMA DE TEMAS — cinco temas, uno por nicho
+   ============================================================
+   Cada tema sobreescribe las vars estructurales. Las vars de
+   personalización del admin se aplican encima via el <style> inline
+   en el <head> del template.
+
+   ── LA RECETA ────────────────────────────────────────────────
+   Aquí había nueve temas. Cuatro eran variaciones del mismo sitio
+   (tres rosas y un negro sin dorado) y, salvo midnight-amber, ninguno
+   estaba diseñado: estaban parcheados. Cada tema claro arrastraba unos
+   cincuenta selectores propios repintando componente a componente
+   —.benefit-item, .step-card, .porque-card, .garantia-card…— y varios
+   con !important, peleando contra el sistema de tarjetas del final del
+   archivo y volviendo a dibujar el borde que ese sistema quita a
+   propósito.
+
+   midnight-amber necesitaba DOS selectores. Esa es toda la diferencia,
+   y no es de gusto: un tema que necesita cincuenta parches es un tema
+   cuyos tokens están mal puestos.
+
+   Los cinco siguen ahora la misma receta:
+
+     1. Capas de fondo en hex SÓLIDO. Nada de rgba sobre un fondo que
+        no controlas: la tarjeta de natural-sage era
+        rgba(45,106,79,0.05) sobre #f4f7f4 — eso no es sutil, es
+        invisible, y por eso hacía falta el parche que la repintaba de
+        blanco.
+     2. El borde, teñido con el color del propio tema. Ni blanco ni
+        negro con alfa: un blanco al 8% sobre un fondo azul no es
+        "sutil", es gris frío, y recorta la caja en vez de disimularla.
+     3. --cream-dim y --cream-muted en hex MEDIDO. En color-mix con
+        transparente el resultado depende del fondo, así que el mismo
+        token cumplía sobre una tarjeta y fallaba sobre otra.
+     4. --cta propio, distinto del acento decorativo. Ver "EL ACENTO DE
+        ACCIÓN" al final del archivo.
+
+   ── LOS DOS ACENTOS EN TEMA CLARO ────────────────────────────
+   --accent-color alimenta --gold-light, y --gold-light se usa como
+   COLOR DE TEXTO en treinta sitios de este archivo. En un tema oscuro
+   el acento "light" es el más claro de los dos y contrasta de sobra.
+   En un tema CLARO es al revés: el que contrasta es el OSCURO.
+
+   natural-sage tenía --accent-color: #52b788, un verde pastel: 1,99:1
+   sobre su propia tarjeta. blanc-luxe tenía #e8a4b8: 1,81:1. Ese es
+   literalmente el texto que no se leía.
+
+   Así que en salud y belleza el par va invertido —el "light" es el tono
+   PROFUNDO— y está comentado en cada bloque para que no se "arregle"
+   por error.
+
+   ── COMPROBADO, NO ESTIMADO ──────────────────────────────────
+   Los cinco pasan 4,5:1 (WCAG AA, texto normal) en: texto sobre
+   tarjeta, texto sobre fondo, --cream-dim, --cream-muted, --gold-light,
+   --gold, texto del botón sobre --gold, y --cta-text sobre los DOS
+   extremos del degradado del botón. Ese último es el que más se escapa:
+   el blanco aguanta sobre el extremo oscuro y se cae sobre el claro.
+
+   La separación entre --cta y el acento se mide por distancia
+   perceptual (ΔE en Lab), no por contraste: el par de midnight-amber
+   (ámbar #f0a83c / naranja #f4621e) da 1,57:1 de contraste —parecería
+   fallar— y sin embargo son inconfundibles, porque lo que los separa es
+   el tono, no la luminosidad. Su ΔE = 38,6 es el listón; los cuatro
+   temas nuevos lo superan.
+
+   Para volver a medirlo: php contraste_temas.php
    ============================================================ */
 
 
-/* ── TEMA 1: DARK LUXURY (default) ───────────────────────── */
-/* Ya definido en :root — este bloque existe solo como          */
-/* referencia explícita y para el selector data-theme          */
-[data-theme="dark-luxury"] {
-  --primary-color:    #d4a853;
-  --secondary-color:  #6b4c1e;
-  --accent-color:     #f0c472;
-  --background-color: #080808;
-  --text-color:       #f5ede0;
-
-  --bg-base:       #080808;
-  --bg-layer1:     #121010;
-  --bg-layer2:     #1c1814;
-  --bg-layer3:     #261f18;
-  --bg-card:       rgba(255,255,255,0.045);
-  --bg-card-hover: rgba(255,255,255,0.08);
-
-  --gold:          var(--primary-color);
-  --gold-light:    var(--accent-color);
-  --gold-dim:      color-mix(in srgb, var(--primary-color) 15%, transparent);
-  --gold-border:   color-mix(in srgb, var(--primary-color) 32%, transparent);
-
-  --cream:         var(--text-color);
-  --cream-dim:     color-mix(in srgb, var(--text-color) 60%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 50%, transparent);
-
-  --success:       #4caf7d;
-  --error:         #e05c5c;
-  --countdown-color: var(--gold-light);
-
-  --shadow-gold:   0 0 28px color-mix(in srgb, var(--primary-color) 25%, transparent);
-  --shadow-card:   0 8px 32px rgba(0,0,0,0.6);
-  --shadow-deep:   0 24px 64px rgba(0,0,0,0.75);
-
-  --announcement-bg: linear-gradient(90deg, #080808 0%, #1e1508 50%, #080808 100%);
-  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,168,83,0.09) 0%, transparent 70%);
-  --input-bg:        #1c1814;
-  --input-border:    rgba(255,255,255,0.1);
-  --form-bg:         #1c1814;
-  --price-box-bg:    #1c1814;
-}
-
-
-/* logos blancos → negros en todos los temas claros */
-[data-theme="light-luxury"],
-[data-theme="bold-conversion"],
-[data-theme="minimal-clean"],
-[data-theme="femme-rose"],
-[data-theme="natural-sage"],
-[data-theme="blanc-luxe"] {
-  --carrier-invert: 0;
-  --btn-text: #ffffff;
-}
-
-/* ── TEMA 2: LIGHT LUXURY (Borgoña) ──────────────────────── */
-[data-theme="light-luxury"] {
-  --primary-color:    #8b2252;
-  --secondary-color:  #4a1228;
-  --accent-color:     #b5436e;
-  --background-color: #fdf8f5;
-  --text-color:       #1a1014;
-
-  --bg-base:       #fdf8f5;
-  --bg-layer1:     #f7f0ec;
-  --bg-layer2:     #f0e5e0;
-  --bg-layer3:     #e8d8d0;
-  --bg-card:       rgba(139,34,82,0.04);
-  --bg-card-hover: rgba(139,34,82,0.08);
-
-  --gold:          var(--primary-color);
-  --gold-light:    var(--accent-color);
-  --gold-dim:      color-mix(in srgb, var(--primary-color) 12%, transparent);
-  --gold-border:   color-mix(in srgb, var(--primary-color) 22%, transparent);
-
-  --cream:         var(--text-color);
-  --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
-
-  --success:       #2e7d32;
-  --error:         #c62828;
-  --countdown-color: var(--primary-color);
-
-  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 18%, transparent);
-  --shadow-card:   0 4px 20px rgba(0,0,0,0.08);
-  --shadow-deep:   0 12px 40px rgba(0,0,0,0.12);
-
-  --announcement-bg: linear-gradient(90deg, #4a1228 0%, #6e1c3e 50%, #4a1228 100%);
-  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(139,34,82,0.06) 0%, transparent 70%);
-  --input-bg:        #ffffff;
-  --input-border:    rgba(139,34,82,0.15);
-  --form-bg:         #f7f0ec;
-  --price-box-bg:    #ffffff;
-}
-
-/* Ajustes específicos light-luxury que no se pueden cubrir con vars */
-[data-theme="light-luxury"] body {
-  color: var(--text-color);
-  background-color: var(--bg-base);
-}
-
-[data-theme="light-luxury"] .testimonial,
-[data-theme="light-luxury"] .whatsapp-card,
-[data-theme="light-luxury"] .accordion-item,
-[data-theme="light-luxury"] .order-summary,
-[data-theme="light-luxury"] .countdown,
-[data-theme="light-luxury"] .form-box {
-  border-color: var(--gold-border);
-  background: var(--bg-card);
-}
-
-[data-theme="light-luxury"] input[type="text"],
-[data-theme="light-luxury"] input[type="tel"],
-[data-theme="light-luxury"] input[type="email"],
-[data-theme="light-luxury"] select,
-[data-theme="light-luxury"] textarea {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--text-color);
-}
-
-[data-theme="light-luxury"] .accordion-header {
-  color: var(--text-color);
-}
-
-[data-theme="light-luxury"] .hero-trust-badge {
-  background: rgba(255,255,255,0.9);
-  color: var(--primary-color);
-}
-
-[data-theme="light-luxury"] .price-box {
-  background: var(--price-box-bg);
-  box-shadow: var(--shadow-card);
-}
-
-[data-theme="light-luxury"] #countdown-timer {
-  color: var(--primary-color);
-  text-shadow: none;
-}
-
-[data-theme="light-luxury"] .benefit-item {
-  background: rgba(255,255,255,0.7);
-  border-color: var(--gold-border);
-  color: var(--cream-dim);
-}
-
-[data-theme="light-luxury"] .section-title {
-  color: var(--text-color);
-}
-
-[data-theme="light-luxury"] .dot {
-  background: var(--bg-layer3);
-}
-
-[data-theme="light-luxury"] .radio-group label {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--cream-dim);
-}
-
-[data-theme="light-luxury"] .announcement-bar {
-  background: var(--announcement-bg);
-  border-bottom-color: var(--gold-border);
-}
-
-
-/* ── TEMA 3: BOLD CONVERSION (Naranja) ───────────────────── */
-[data-theme="bold-conversion"] {
-  --primary-color:    #e76f51;
-  --secondary-color:  #264653;
-  --accent-color:     #f4a261;
-  --background-color: #ffffff;
-  --text-color:       #1a1410;
-
-  --bg-base:       #ffffff;
-  --bg-layer1:     #fdf8f5;
-  --bg-layer2:     #faf0ea;
-  --bg-layer3:     #f5e6dc;
-  --bg-card:       rgba(231,111,81,0.04);
-  --bg-card-hover: rgba(231,111,81,0.08);
-
-  --gold:          var(--primary-color);
-  --gold-light:    var(--accent-color);
-  --gold-dim:      color-mix(in srgb, var(--primary-color) 10%, transparent);
-  --gold-border:   color-mix(in srgb, var(--primary-color) 25%, transparent);
-
-  --cream:         var(--text-color);
-  --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
-
-  --success:       #2d6a4f;
-  --error:         #c62828;
-  --countdown-color: var(--primary-color);
-
-  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 22%, transparent);
-  --shadow-card:   0 4px 16px rgba(0,0,0,0.07);
-  --shadow-deep:   0 12px 40px rgba(0,0,0,0.1);
-
-  --announcement-bg: linear-gradient(90deg, #8b3215 0%, #a8401e 50%, #8b3215 100%);
-  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(231,111,81,0.07) 0%, transparent 70%);
-  --input-bg:        #ffffff;
-  --input-border:    rgba(0,0,0,0.12);
-  --form-bg:         #fdf8f5;
-  --price-box-bg:    #fff8f5;
-}
-
-[data-theme="bold-conversion"] body {
-  color: var(--text-color);
-  background-color: var(--bg-base);
-}
-
-[data-theme="bold-conversion"] .announcement-bar__item {
-  color: rgba(255,255,255,0.95);
-}
-
-[data-theme="bold-conversion"] input[type="text"],
-[data-theme="bold-conversion"] input[type="tel"],
-[data-theme="bold-conversion"] input[type="email"],
-[data-theme="bold-conversion"] select,
-[data-theme="bold-conversion"] textarea {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--text-color);
-}
-
-[data-theme="bold-conversion"] .accordion-header,
-[data-theme="bold-conversion"] .section-title {
-  color: var(--text-color);
-}
-
-[data-theme="bold-conversion"] #countdown-timer {
-  color: var(--primary-color);
-  text-shadow: none;
-}
-
-[data-theme="bold-conversion"] .benefit-item {
-  background: rgba(255,255,255,0.8);
-  color: var(--cream-dim);
-}
-
-[data-theme="bold-conversion"] .hero-trust-badge {
-  background: rgba(255,255,255,0.95);
-  color: var(--primary-color);
-}
-
-[data-theme="bold-conversion"] .price-box {
-  background: var(--price-box-bg);
-}
-
-[data-theme="bold-conversion"] .radio-group label {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--cream-dim);
-}
-
-[data-theme="bold-conversion"] .testimonial {
-  background: var(--bg-card);
-  border-color: var(--gold-border);
-}
-
-[data-theme="bold-conversion"] .announcement-bar {
-  background: var(--announcement-bg);
-  border-bottom: none;
-}
-
-
-/* ── TEMA 4: MINIMAL CLEAN (Azul marino) ─────────────────── */
-[data-theme="minimal-clean"] {
-  --primary-color:    #1a2e4a;
-  --secondary-color:  #0f1d30;
-  --accent-color:     #2563eb;
-  --background-color: #f8fafc;
-  --text-color:       #0f1d30;
-
-  --bg-base:       #f8fafc;
-  --bg-layer1:     #f0f4f8;
-  --bg-layer2:     #e8edf4;
-  --bg-layer3:     #dde5ef;
-  --bg-card:       rgba(26,46,74,0.04);
-  --bg-card-hover: rgba(26,46,74,0.08);
-
-  --gold:          var(--primary-color);
-  --gold-light:    var(--accent-color);
-  --gold-dim:      color-mix(in srgb, var(--primary-color) 10%, transparent);
-  --gold-border:   color-mix(in srgb, var(--primary-color) 20%, transparent);
-
-  --cream:         var(--text-color);
-  --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
-
-  --success:       #1b5e20;
-  --error:         #b71c1c;
-  --countdown-color: var(--accent-color);
-
-  --shadow-gold:   0 0 20px color-mix(in srgb, var(--primary-color) 15%, transparent);
-  --shadow-card:   0 4px 16px rgba(0,0,0,0.07);
-  --shadow-deep:   0 12px 40px rgba(0,0,0,0.1);
-
-  --announcement-bg: linear-gradient(90deg, #0f1d30 0%, #1a2e4a 50%, #0f1d30 100%);
-  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(37,99,235,0.06) 0%, transparent 70%);
-  --input-bg:        #ffffff;
-  --input-border:    rgba(26,46,74,0.15);
-  --form-bg:         #f0f4f8;
-  --price-box-bg:    #ffffff;
-  --btn-text:        #ffffff;
-}
-
-[data-theme="minimal-clean"] body {
-  color: var(--text-color);
-  background-color: var(--bg-base);
-}
-
-[data-theme="minimal-clean"] .announcement-bar {
-  background: var(--announcement-bg);
-  border-bottom: none;
-}
-
-[data-theme="minimal-clean"] .announcement-bar__item {
-  color: rgba(255,255,255,0.85);
-  letter-spacing: 0.12em;
-}
-
-[data-theme="minimal-clean"] h1,
-[data-theme="minimal-clean"] h2,
-[data-theme="minimal-clean"] h3,
-[data-theme="minimal-clean"] .section-title {
-  font-family: var(--font-display);
-  color: var(--text-color);
-  letter-spacing: -0.03em;
-}
-
-[data-theme="minimal-clean"] .btn-primary {
-  background: var(--primary-color);
-  color: #ffffff;
-  box-shadow: none;
-}
-
-[data-theme="minimal-clean"] .btn-primary:hover::before {
-  background: rgba(255,255,255,0.1);
-}
-
-[data-theme="minimal-clean"] input[type="text"],
-[data-theme="minimal-clean"] input[type="tel"],
-[data-theme="minimal-clean"] input[type="email"],
-[data-theme="minimal-clean"] select,
-[data-theme="minimal-clean"] textarea {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--text-color);
-}
-
-[data-theme="minimal-clean"] .accordion-header {
-  color: var(--text-color);
-}
-
-[data-theme="minimal-clean"] #countdown-timer {
-  color: var(--countdown-color);
-  text-shadow: none;
-  font-family: var(--font-display);
-  font-weight: 300;
-  letter-spacing: 0.02em;
-}
-
-[data-theme="minimal-clean"] .benefit-item {
-  background: rgba(0,0,0,0.02);
-  border-color: rgba(0,0,0,0.08);
-  color: var(--cream-dim);
-}
-
-[data-theme="minimal-clean"] .benefit-item::before {
-  content: '—';
-  color: var(--text-color);
-}
-
-[data-theme="minimal-clean"] .why-list li::before {
-  content: '—';
-  color: var(--text-color);
-}
-
-[data-theme="minimal-clean"] .hero-trust-badge {
-  background: rgba(255,255,255,0.95);
-  border-color: rgba(0,0,0,0.15);
-  color: #111111;
-}
-
-[data-theme="minimal-clean"] .price-box {
-  background: var(--price-box-bg);
-  border-color: rgba(0,0,0,0.12);
-}
-
-[data-theme="minimal-clean"] .price-box .new {
-  color: var(--text-color);
-}
-
-[data-theme="minimal-clean"] .price-box .save {
-  background: #111111;
-  color: #ffffff;
-}
-
-[data-theme="minimal-clean"] .testimonial {
-  background: var(--bg-card);
-  border-color: rgba(0,0,0,0.08);
-  box-shadow: var(--shadow-card);
-}
-
-[data-theme="minimal-clean"] .radio-group label {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--cream-dim);
-}
-
-[data-theme="minimal-clean"] .cta-sticky-mobile {
-  border-top-color: rgba(0,0,0,0.08);
-  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
-}
-
-[data-theme="minimal-clean"] .dot {
-  border-color: rgba(0,0,0,0.2);
-}
-
-[data-theme="minimal-clean"] .dot.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-
-/* ── TEMA 5: FEMME ROSE ───────────────────────────────────── */
-[data-theme="femme-rose"] {
-  --primary-color:    #c94a6b;
-  --secondary-color:  #7a1f3d;
-  --accent-color:     #e87d9a;
-  --background-color: #fff5f7;
-  --text-color:       #2d1420;
-
-  --bg-base:       #fff5f7;
-  --bg-layer1:     #ffedf1;
-  --bg-layer2:     #ffe0e7;
-  --bg-layer3:     #ffd0db;
-  --bg-card:       rgba(255,255,255,0.82);
-  --bg-card-hover: rgba(255,255,255,0.95);
-
-  --gold:          var(--primary-color);
-  --gold-light:    var(--accent-color);
-  --gold-dim:      color-mix(in srgb, var(--primary-color) 12%, transparent);
-  --gold-border:   color-mix(in srgb, var(--primary-color) 22%, transparent);
-
-  --cream:         var(--text-color);
-  --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
-
-  --success:       #2e7d32;
-  --error:         #c62828;
-  --countdown-color: var(--primary-color);
-
-  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 20%, transparent);
-  --shadow-card:   0 4px 20px rgba(0,0,0,0.07);
-  --shadow-deep:   0 12px 40px rgba(0,0,0,0.1);
-
-  --announcement-bg: linear-gradient(90deg, #7a1f3d 0%, #a82d55 50%, #7a1f3d 100%);
-  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,74,107,0.07) 0%, transparent 70%);
-  --input-bg:        #ffffff;
-  --input-border:    rgba(201,74,107,0.18);
-  --form-bg:         #ffedf1;
-  --price-box-bg:    #ffffff;
-}
-
-[data-theme="femme-rose"] body {
-  color: var(--text-color);
-  background-color: var(--bg-base);
-}
-
-[data-theme="femme-rose"] .announcement-bar__item {
-  color: rgba(255,255,255,0.95);
-}
-
-[data-theme="femme-rose"] input[type="text"],
-[data-theme="femme-rose"] input[type="tel"],
-[data-theme="femme-rose"] input[type="email"],
-[data-theme="femme-rose"] select,
-[data-theme="femme-rose"] textarea {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--text-color);
-}
-
-[data-theme="femme-rose"] .accordion-header,
-[data-theme="femme-rose"] .section-title {
-  color: var(--text-color);
-}
-
-[data-theme="femme-rose"] #countdown-timer {
-  color: var(--primary-color);
-  text-shadow: none;
-}
-
-[data-theme="femme-rose"] .benefit-item {
-  background: rgba(255,255,255,0.75);
-  border-color: var(--gold-border);
-  color: var(--cream-dim);
-}
-
-[data-theme="femme-rose"] .hero-trust-badge {
-  background: rgba(255,255,255,0.9);
-  color: var(--primary-color);
-}
-
-[data-theme="femme-rose"] .price-box {
-  background: var(--price-box-bg);
-  box-shadow: var(--shadow-card);
-}
-
-[data-theme="femme-rose"] .testimonial,
-[data-theme="femme-rose"] .whatsapp-card,
-[data-theme="femme-rose"] .accordion-item,
-[data-theme="femme-rose"] .order-summary,
-[data-theme="femme-rose"] .form-box {
-  border-color: var(--gold-border);
-  background: var(--bg-card);
-}
-
-[data-theme="femme-rose"] .radio-group label {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--cream-dim);
-}
-
-[data-theme="femme-rose"] .announcement-bar {
-  background: var(--announcement-bg);
-  border-bottom: none;
-}
-
-[data-theme="femme-rose"] .dot { background: var(--bg-layer3); }
-[data-theme="femme-rose"] .dot.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-
-/* ── TEMA 6: NATURAL SAGE ─────────────────────────────────── */
-[data-theme="natural-sage"] {
-  --primary-color:    #2d6a4f;
-  --secondary-color:  #1b4332;
-  --accent-color:     #52b788;
-  --background-color: #f4f7f4;
-  --text-color:       #1a2e22;
-
-  --bg-base:       #f4f7f4;
-  --bg-layer1:     #eaf2eb;
-  --bg-layer2:     #dceade;
-  --bg-layer3:     #cce3d0;
-  --bg-card:       rgba(45,106,79,0.05);
-  --bg-card-hover: rgba(45,106,79,0.09);
-
-  --gold:          var(--primary-color);
-  --gold-light:    var(--accent-color);
-  --gold-dim:      color-mix(in srgb, var(--primary-color) 12%, transparent);
-  --gold-border:   color-mix(in srgb, var(--primary-color) 22%, transparent);
-
-  --cream:         var(--text-color);
-  --cream-dim:     color-mix(in srgb, var(--text-color) 65%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
-
-  --success:       #40916c;
-  --error:         #b71c1c;
-  --countdown-color: var(--primary-color);
-
-  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 18%, transparent);
-  --shadow-card:   0 4px 20px rgba(0,0,0,0.07);
-  --shadow-deep:   0 12px 40px rgba(0,0,0,0.1);
-
-  --announcement-bg: linear-gradient(90deg, #1b4332 0%, #2d6a4f 50%, #1b4332 100%);
-  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(45,106,79,0.07) 0%, transparent 70%);
-  --input-bg:        #ffffff;
-  --input-border:    rgba(45,106,79,0.18);
-  --form-bg:         #eaf2ec;
-  --price-box-bg:    #ffffff;
-}
-
-[data-theme="natural-sage"] body {
-  color: var(--text-color);
-  background-color: var(--bg-base);
-}
-
-[data-theme="natural-sage"] .announcement-bar__item {
-  color: rgba(255,255,255,0.95);
-}
-
-[data-theme="natural-sage"] input[type="text"],
-[data-theme="natural-sage"] input[type="tel"],
-[data-theme="natural-sage"] input[type="email"],
-[data-theme="natural-sage"] select,
-[data-theme="natural-sage"] textarea {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--text-color);
-}
-
-[data-theme="natural-sage"] .accordion-header,
-[data-theme="natural-sage"] .section-title {
-  color: var(--text-color);
-}
-
-[data-theme="natural-sage"] #countdown-timer {
-  color: var(--primary-color);
-  text-shadow: none;
-}
-
-[data-theme="natural-sage"] .benefit-item {
-  background: rgba(255,255,255,0.75);
-  border-color: var(--gold-border);
-  color: var(--cream-dim);
-}
-
-[data-theme="natural-sage"] .hero-trust-badge {
-  background: rgba(255,255,255,0.9);
-  color: var(--primary-color);
-}
-
-[data-theme="natural-sage"] .price-box {
-  background: var(--price-box-bg);
-  box-shadow: var(--shadow-card);
-}
-
-[data-theme="natural-sage"] .testimonial,
-[data-theme="natural-sage"] .whatsapp-card,
-[data-theme="natural-sage"] .accordion-item,
-[data-theme="natural-sage"] .order-summary,
-[data-theme="natural-sage"] .form-box {
-  border-color: var(--gold-border);
-  background: var(--bg-card);
-}
-
-[data-theme="natural-sage"] .radio-group label {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--cream-dim);
-}
-
-[data-theme="natural-sage"] .announcement-bar {
-  background: var(--announcement-bg);
-  border-bottom: none;
-}
-
-[data-theme="natural-sage"] .dot { background: var(--bg-layer3); }
-[data-theme="natural-sage"] .dot.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-
-/* ── TEMA 7: BLANC LUXE (Rosa · Pastel · Femenino) ──────── */
-[data-theme="blanc-luxe"] {
-  --primary-color:    #c4687a;
-  --secondary-color:  #a04060;
-  --accent-color:     #e8a4b8;
-  --background-color: #fff8f6;
-  --text-color:       #4a2535;
-
-  --bg-base:       #fff6f8;
-  --bg-layer1:     #fdeef1;
-  --bg-layer2:     #f8e4e8;
-  --bg-layer3:     #f2d4da;
-  --bg-card:       rgba(255,255,255,0.82);
-  --bg-card-hover: rgba(255,255,255,0.96);
-
-  --gold:          var(--primary-color);
-  --gold-light:    var(--accent-color);
-  --gold-dim:      color-mix(in srgb, var(--primary-color) 12%, transparent);
-  --gold-border:   color-mix(in srgb, var(--primary-color) 22%, transparent);
-
-  --cream:         var(--text-color);
-  --cream-dim:     color-mix(in srgb, var(--text-color) 62%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 62%, transparent);
-
-  --success:       #3a7c5c;
-  --error:         var(--error);
-  --countdown-color: var(--primary-color);
-
-  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 18%, transparent);
-  --shadow-card:   0 2px 16px rgba(180,80,100,0.08), 0 1px 4px rgba(180,80,100,0.04);
-  --shadow-deep:   0 12px 48px rgba(180,80,100,0.12);
-
-  --announcement-bg: linear-gradient(90deg, #8a2a42 0%, #b83a5a 50%, #8a2a42 100%);
-  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(196,104,122,0.08) 0%, transparent 70%);
-  --input-bg:        #ffffff;
-  --input-border:    rgba(196,104,122,0.28);
-  --form-bg:         #fdf5f6;
-  --price-box-bg:    #ffffff;
-}
-
-[data-theme="blanc-luxe"] body {
-  color: var(--text-color);
-  background-color: var(--bg-base);
-}
-
-[data-theme="blanc-luxe"] .announcement-bar {
-  background: var(--announcement-bg);
-  border-bottom: none;
-}
-
-[data-theme="blanc-luxe"] .announcement-bar__item {
-  color: rgba(255,255,255,0.95);
-}
-
-[data-theme="blanc-luxe"] input[type="text"],
-[data-theme="blanc-luxe"] input[type="tel"],
-[data-theme="blanc-luxe"] input[type="email"],
-[data-theme="blanc-luxe"] select,
-[data-theme="blanc-luxe"] textarea {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--text-color);
-}
-
-[data-theme="blanc-luxe"] .accordion-header,
-[data-theme="blanc-luxe"] .section-title {
-  color: var(--text-color);
-}
-
-[data-theme="blanc-luxe"] #countdown-timer {
-  color: var(--primary-color);
-  text-shadow: none;
-}
-
-[data-theme="blanc-luxe"] .benefit-item {
-  background: rgba(255,255,255,0.85);
-  border-color: var(--gold-border);
-  color: var(--cream-dim);
-}
-
-[data-theme="blanc-luxe"] .hero-trust-badge {
-  background: rgba(255,255,255,0.92);
-  color: var(--primary-color);
-  border: 1px solid rgba(196,104,122,0.25);
-}
-
-[data-theme="blanc-luxe"] .price-box {
-  background: var(--price-box-bg);
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--gold-border);
-}
-
-[data-theme="blanc-luxe"] .testimonial,
-[data-theme="blanc-luxe"] .whatsapp-card,
-[data-theme="blanc-luxe"] .accordion-item,
-[data-theme="blanc-luxe"] .order-summary,
-[data-theme="blanc-luxe"] .form-box {
-  border-color: var(--gold-border);
-  background: rgba(255,255,255,0.82);
-  box-shadow: var(--shadow-card);
-}
-
-[data-theme="blanc-luxe"] .radio-group label {
-  background: var(--input-bg);
-  border-color: rgba(196,104,122,0.22);
-  color: var(--cream-dim);
-}
-
-[data-theme="blanc-luxe"] .dot { background: var(--bg-layer3); }
-[data-theme="blanc-luxe"] .dot.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-
-/* ── TEMA 8: OBSIDIAN (Negro · Plata) ────────────────────── */
-[data-theme="obsidian"] {
-  --primary-color:    #b0b0b0;
-  --secondary-color:  #606060;
-  --accent-color:     #e0e0e0;
-  --background-color: #050505;
-  --text-color:       #f0f0f0;
-
-  --bg-base:       #050505;
-  --bg-layer1:     #0d0d0d;
-  --bg-layer2:     #161616;
-  --bg-layer3:     #202020;
-  --bg-card:       rgba(255,255,255,0.035);
-  --bg-card-hover: rgba(255,255,255,0.065);
-
-  --gold:          var(--primary-color);
-  --gold-light:    var(--accent-color);
-  --gold-dim:      color-mix(in srgb, var(--primary-color) 12%, transparent);
-  --gold-border:   color-mix(in srgb, var(--primary-color) 22%, transparent);
-
-  --cream:         var(--text-color);
-  --cream-dim:     color-mix(in srgb, var(--text-color) 60%, transparent);
-  --cream-muted:   color-mix(in srgb, var(--text-color) 50%, transparent);
-
-  --success:       #6acd8e;
-  --error:         #e05c5c;
-  --countdown-color: var(--gold-light);
-  --btn-text:      #0a0a0a;
-
-  --shadow-gold:   0 0 28px color-mix(in srgb, var(--primary-color) 18%, transparent);
-  --shadow-card:   0 8px 32px rgba(0,0,0,0.7);
-  --shadow-deep:   0 24px 64px rgba(0,0,0,0.85);
-
-  --announcement-bg: linear-gradient(90deg, #050505 0%, #111111 50%, #050505 100%);
-  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(176,176,176,0.05) 0%, transparent 70%);
-  --input-bg:        #0d0d0d;
-  --input-border:    rgba(255,255,255,0.08);
-  --form-bg:         #0d0d0d;
-  --price-box-bg:    #0d0d0d;
-}
-
-[data-theme="obsidian"] .announcement-bar {
-  background: var(--announcement-bg);
-  border-bottom-color: rgba(255,255,255,0.06);
-}
-
-[data-theme="obsidian"] .announcement-bar__item {
-  color: rgba(255,255,255,0.65);
-  letter-spacing: 0.1em;
-}
-
-[data-theme="obsidian"] input[type="text"],
-[data-theme="obsidian"] input[type="tel"],
-[data-theme="obsidian"] input[type="email"],
-[data-theme="obsidian"] select,
-[data-theme="obsidian"] textarea {
-  background: var(--input-bg);
-  border-color: var(--input-border);
-  color: var(--text-color);
-}
-
-[data-theme="obsidian"] .accordion-header,
-[data-theme="obsidian"] .section-title {
-  color: var(--text-color);
-}
-
-[data-theme="obsidian"] #countdown-timer {
-  color: var(--cream);
-  text-shadow: 0 0 20px rgba(255,255,255,0.15);
-}
-
-[data-theme="obsidian"] .price-box {
-  background: var(--price-box-bg);
-  box-shadow: var(--shadow-card);
-}
-
-[data-theme="obsidian"] .hero-trust-badge {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.12);
-  color: var(--cream-dim);
-}
-
-[data-theme="obsidian"] .dot { background: var(--bg-layer3); }
-[data-theme="obsidian"] .dot.active {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-/* ── TEMA 9: MIDNIGHT AMBER (Azul noche · Ámbar) ───────────
+/* ── GENÉRICO · MIDNIGHT AMBER (Azul noche · Ámbar) ────────
+   El tema de referencia, intacto salvo --cream-muted.
    El fondo no es negro sino azul noche: sobre negro puro, una tarjeta
    apenas más clara se lee como una mancha gris y todo se aplana. Con
    base azulada la tarjeta tiene de dónde despegarse y aparece la
    sensación de capas que da el aspecto "de producto".
-   El ámbar es más cálido y menos amarillo que el dorado de dark-luxury,
-   así que aguanta bloques grandes de texto en mayúscula sin cansar. */
-[data-theme="midnight-amber"] {
+   El ámbar es más cálido y menos amarillo que un dorado, así que
+   aguanta bloques grandes de texto en mayúscula sin cansar. */
+[data-theme="generico"] {
   --primary-color:    #f0a83c;
   --secondary-color:  #23304d;
   --accent-color:     #ffc46b;
@@ -1029,7 +239,10 @@
 
   --cream:         var(--text-color);
   --cream-dim:     #93a4c4;
-  --cream-muted:   #6e7f9e;
+  /* Subido desde #6e7f9e, que daba 3,87:1 sobre la tarjeta. Es el token
+     de la hora en los testimonios de WhatsApp y del aviso "desliza":
+     texto de 11-12px, justo donde un contraste flojo no perdona. */
+  --cream-muted:   #8494b3;
 
   --success:       #3ecf8e;
   --error:         #f2685f;
@@ -1038,8 +251,13 @@
   --shadow-gold:   0 0 26px color-mix(in srgb, var(--primary-color) 22%, transparent);
   --shadow-card:   0 4px 18px rgba(0,0,0,0.35);
   --shadow-deep:   0 18px 48px rgba(0,0,0,0.5);
+  --card-shadow:   0 2px 16px rgba(0,0,0,0.30);
 
-  --announcement-bg: linear-gradient(90deg, #0c1322 0%, #16203a 50%, #0c1322 100%);
+  --announcement-bg:     linear-gradient(90deg, #0c1322 0%, #16203a 50%, #0c1322 100%);
+  --announcement-text:   var(--gold-light);
+  --announcement-sep:    var(--cream-dim);
+  --announcement-border: var(--gold-border);
+
   --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(240,168,60,0.10) 0%, transparent 70%);
   --input-bg:        #141d33;
   --input-border:    rgba(255,255,255,0.10);
@@ -1048,6 +266,11 @@
 
   --btn-text: #10182b;
   --carrier-invert: 1;
+
+  /* Píldora sobre foto: cristal casi negro con el acento encima. */
+  --pill-photo-bg:     rgba(10,10,10,0.85);
+  --pill-photo-text:   var(--gold-light);
+  --pill-photo-border: var(--gold-border);
 
   /* El acento de acción. El ámbar decora toda la página — títulos,
      iconos, estrellas, eyebrows — así que el botón necesita un color
@@ -1063,10 +286,322 @@
   --cta-text: #10182b;
 }
 
-[data-theme="midnight-amber"] .announcement-bar {
-  background: var(--announcement-bg);
+
+/* ── RELOJES · NOIR OR (Negro carbón · Oro) ────────────────
+   Negro carbón, no negro puro, por la misma razón que el genérico es
+   azul noche: sobre #000 la tarjeta no tiene de dónde despegarse.
+   El oro es el de un reloj, no el de un marco dorado — menos amarillo y
+   algo apagado, para que aguante titulares grandes en mayúscula.
+   Sustituye a dark-luxury y a obsidian, que eran el mismo tema con y
+   sin color. */
+[data-theme="relojes"] {
+  --primary-color:    #d9b061;
+  --secondary-color:  #3a3226;
+  --accent-color:     #f0cd8e;
+  --background-color: #0d0d0f;
+  --text-color:       #f2efe9;
+
+  --bg-base:       #0d0d0f;
+  --bg-layer1:     #141416;
+  --bg-layer2:     #1a1a1d;
+  --bg-layer3:     #24242a;
+  --bg-card:       #1a1a1d;
+  --bg-card-hover: #212127;
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      color-mix(in srgb, var(--primary-color) 14%, transparent);
+  /* Teñido en gris cálido, no blanco con alfa: sobre carbón el blanco
+     translúcido se ve azulado y delata el contorno de cada caja. */
+  --gold-border:   #2e2e34;
+
+  --cream:         var(--text-color);
+  --cream-dim:     #aaa298;
+  --cream-muted:   #948c81;
+
+  --success:       #46c98a;
+  --error:         #ef6b62;
+  --countdown-color: var(--gold-light);
+
+  --shadow-gold:   0 0 26px color-mix(in srgb, var(--primary-color) 20%, transparent);
+  --shadow-card:   0 4px 18px rgba(0,0,0,0.45);
+  --shadow-deep:   0 18px 48px rgba(0,0,0,0.6);
+  --card-shadow:   0 2px 16px rgba(0,0,0,0.38);
+
+  --announcement-bg:     linear-gradient(90deg, #0a0a0c 0%, #1c1710 50%, #0a0a0c 100%);
+  --announcement-text:   var(--gold-light);
+  --announcement-sep:    var(--cream-dim);
+  --announcement-border: var(--gold-border);
+
+  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(217,176,97,0.09) 0%, transparent 70%);
+  --input-bg:        #141416;
+  --input-border:    rgba(255,255,255,0.10);
+  --form-bg:         #141416;
+  --price-box-bg:    #1a1a1d;
+
+  --btn-text: #14120e;
+  --carrier-invert: 1;
+
+  /* Píldora sobre foto: cristal casi negro con el acento encima. */
+  --pill-photo-bg:     rgba(10,10,10,0.85);
+  --pill-photo-text:   var(--gold-light);
+  --pill-photo-border: var(--gold-border);
+
+  /* Rojo vino. El oro decora toda la página, así que la acción necesita
+     un color exclusivo. Se descartó un naranja: en una página de reloj
+     grita y abarata. El vino es igual de inconfundible (ΔE 64 contra el
+     oro, muy por encima del listón de 38,6) y no rompe el registro.
+     Aquí el texto sí va en blanco: 7,4:1 sobre el extremo oscuro del
+     degradado y 5,8:1 sobre el claro. */
+  --cta:      #a51e2d;
+  --cta-soft: #c22638;
+  --cta-text: #ffffff;
 }
 
+
+/* ── TECNOLOGÍA · STEEL CYAN (Acero · Cian) ────────────────
+   Acero azul-verdoso con cian. Sustituye a minimal-clean, que era azul
+   marino sobre blanco: el azul chocaba con el del genérico y dos temas
+   que se parecen no son dos temas.
+   El verde-azulado de la base separa este tema del genérico sin salirse
+   del registro "producto técnico". */
+[data-theme="tecnologia"] {
+  --primary-color:    #38bdf8;
+  --secondary-color:  #1e3a4d;
+  --accent-color:     #7dd3fc;
+  --background-color: #0d1418;
+  --text-color:       #e8f2f7;
+
+  --bg-base:       #0d1418;
+  --bg-layer1:     #121b21;
+  --bg-layer2:     #17222a;
+  --bg-layer3:     #203039;
+  --bg-card:       #17222a;
+  --bg-card-hover: #1d2b35;
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      color-mix(in srgb, var(--primary-color) 14%, transparent);
+  --gold-border:   #24333d;
+
+  --cream:         var(--text-color);
+  --cream-dim:     #a3b8c5;
+  --cream-muted:   #8ba1af;
+
+  --success:       #34d399;
+  --error:         #f87171;
+  --countdown-color: var(--gold-light);
+
+  --shadow-gold:   0 0 26px color-mix(in srgb, var(--primary-color) 20%, transparent);
+  --shadow-card:   0 4px 18px rgba(0,0,0,0.40);
+  --shadow-deep:   0 18px 48px rgba(0,0,0,0.55);
+  --card-shadow:   0 2px 16px rgba(0,0,0,0.32);
+
+  --announcement-bg:     linear-gradient(90deg, #0a1015 0%, #10222c 50%, #0a1015 100%);
+  --announcement-text:   var(--gold-light);
+  --announcement-sep:    var(--cream-dim);
+  --announcement-border: var(--gold-border);
+
+  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(56,189,248,0.10) 0%, transparent 70%);
+  --input-bg:        #121b21;
+  --input-border:    rgba(255,255,255,0.10);
+  --form-bg:         #121b21;
+  --price-box-bg:    #17222a;
+
+  --btn-text: #08131a;
+  --carrier-invert: 1;
+
+  /* Píldora sobre foto: cristal casi negro con el acento encima. */
+  --pill-photo-bg:     rgba(10,10,10,0.85);
+  --pill-photo-text:   var(--gold-light);
+  --pill-photo-border: var(--gold-border);
+
+  /* Índigo. El cian decora, y el índigo está lo bastante lejos (ΔE 87)
+     para que nadie confunda un título con un botón, sin salirse de la
+     familia fría del tema. Se descartó un naranja: la distancia era aún
+     mayor pero el blanco no aguantaba el extremo claro del degradado
+     (3,3:1) y en un tema oscuro un botón con texto oscuro se apaga.
+     Con el índigo el blanco da 7,2:1 y 5,6:1. */
+  --cta:      #4f39d9;
+  --cta-soft: #6249f0;
+  --cta-text: #ffffff;
+}
+
+
+/* ── SALUD · CLINIC SAGE (Blanco · Verde clínico) ──────────
+   Primero de los dos temas CLAROS. Sustituye a natural-sage.
+
+   En claro cambia QUÉ capa es la tarjeta, no la receta: la tarjeta es
+   blanco puro (--bg-layer2) y el fondo un blanco con un punto de verde.
+   Se separan solo 1,03:1, y está bien — la profundidad la lleva la
+   sombra, no un borde, igual que en los oscuros. --bg-layer1 es el
+   tinte suave de los paneles que agrupan tarjetas, y --bg-layer3 el
+   tono hundido (puntos inactivos del carrusel, hueco de imagen).
+
+   OJO al par de acentos: aquí --accent-color es el verde PROFUNDO, no
+   uno claro. Alimenta --gold-light, que es color de TEXTO en treinta
+   sitios; natural-sage lo tenía en #52b788 y sobre blanco daba 1,99:1.
+   Si alguien "corrige" esto poniendo un verde claro porque se llama
+   light, vuelve el fallo entero. */
+[data-theme="salud"] {
+  --primary-color:    #0d6b51;
+  --secondary-color:  #094a39;
+  --accent-color:     #094a39;
+  --background-color: #f5f8f6;
+  --text-color:       #16241d;
+
+  --bg-base:       #f5f8f6;
+  --bg-layer1:     #ecf3ef;
+  --bg-layer2:     #ffffff;
+  --bg-layer3:     #dfe9e3;
+  --bg-card:       #ffffff;
+  --bg-card-hover: #f7fbf9;
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      color-mix(in srgb, var(--primary-color) 10%, transparent);
+  /* Hex sólido teñido de verde, no rgba(0,0,0,.07). El negro con alfa
+     sobre un fondo con color da un gris sucio que se ve como suciedad,
+     no como una línea. */
+  --gold-border:   #d8e4dd;
+
+  --cream:         var(--text-color);
+  --cream-dim:     #4a5c53;
+  --cream-muted:   #5a6b62;
+
+  --success:       #15803d;
+  --error:         #b91c1c;
+  --countdown-color: var(--primary-color);
+
+  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 14%, transparent);
+  /* Sombras teñidas de verde oscuro en vez de negro puro: sobre un
+     fondo claro el negro se ve como hollín y ensucia el blanco. */
+  --shadow-card:   0 4px 18px rgba(20,45,35,0.10);
+  --shadow-deep:   0 16px 44px rgba(20,45,35,0.14);
+  --card-shadow:   0 2px 14px rgba(20,45,35,0.10);
+
+  /* La barra sigue siendo oscura sobre una página clara: es el ancla
+     superior y lo que separa la landing del navegador. Por eso el texto
+     va en blanco y el borde inferior desaparece — una línea clara bajo
+     una barra oscura es un subrayado, no una separación. */
+  --announcement-bg:     linear-gradient(90deg, #094a39 0%, #0d6b51 50%, #094a39 100%);
+  --announcement-text:   #ffffff;
+  --announcement-sep:    rgba(255,255,255,0.72);
+  --announcement-border: transparent;
+
+  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(13,107,81,0.07) 0%, transparent 70%);
+  --input-bg:        #ffffff;
+  --input-border:    #cfded6;
+  --form-bg:         #ffffff;
+  --price-box-bg:    #ffffff;
+
+  --btn-text: #ffffff;
+  --carrier-invert: 0;
+
+  /* Píldora sobre foto: aquí en sólido con texto blanco. El cristal
+     negro de los temas oscuros dejaría el acento profundo de este
+     tema en 1,5:1 sobre él — ilegible. */
+  --pill-photo-bg:     var(--gold);
+  --pill-photo-text:   #ffffff;
+  --pill-photo-border: transparent;
+
+  /* Azul clínico. El verde no puede ser también el color de la acción:
+     además de decorar, aquí significa "correcto" —es el color de los ✓ y
+     de --positivo—, y un botón del mismo verde se lee como una
+     confirmación más, no como algo que hay que tocar.
+     Antes iba un teja, que contra el verde separaba de sobra (ΔE 92)
+     pero chocaba con los botones de OTROS temas: ΔE 22 contra el naranja
+     del genérico y 24 contra el vino de relojes — a ojo, el mismo botón.
+     Es un choque que ninguna medida dentro de un tema puede ver, porque
+     compara colores de la misma página; hay que comparar los cinco temas
+     entre sí, y eso lo hace ahora contraste_temas.php.
+     El azul se separa de los cuatro (mínimo ΔE 80), del verde propio
+     (43) y del verde de "correcto" (68). Y de paso es el color de la
+     confianza médica, que en este nicho no sobra.
+     Blanco a 7,5:1 y 5,6:1 sobre los dos extremos del degradado. */
+  --cta:      #0b5a80;
+  --cta-soft: #0e6f9c;
+  --cta-text: #ffffff;
+}
+
+
+/* ── BELLEZA · ROSE NUDE (Nude · Rosa profundo) ────────────
+   Segundo tema CLARO, misma receta que salud.
+   Sustituye a los tres rosas que había —light-luxury, femme-rose y
+   blanc-luxe—, que se diferenciaban en poco más que el tono del fondo.
+
+   Igual que en salud, el acento "light" es el rosa PROFUNDO. Sobre
+   blanco, el #e8a4b8 de blanc-luxe daba 1,81:1. */
+[data-theme="belleza"] {
+  --primary-color:    #a8305a;
+  --secondary-color:  #7d1f42;
+  --accent-color:     #7d1f42;
+  --background-color: #fdf7f6;
+  --text-color:       #2a161d;
+
+  --bg-base:       #fdf7f6;
+  --bg-layer1:     #faeeec;
+  --bg-layer2:     #ffffff;
+  --bg-layer3:     #f2dedb;
+  --bg-card:       #ffffff;
+  --bg-card-hover: #fffafa;
+
+  --gold:          var(--primary-color);
+  --gold-light:    var(--accent-color);
+  --gold-dim:      color-mix(in srgb, var(--primary-color) 10%, transparent);
+  --gold-border:   #ecd9dc;
+
+  --cream:         var(--text-color);
+  --cream-dim:     #5f4a51;
+  --cream-muted:   #6d565e;
+
+  --success:       #15803d;
+  --error:         #b91c1c;
+  --countdown-color: var(--primary-color);
+
+  --shadow-gold:   0 0 24px color-mix(in srgb, var(--primary-color) 14%, transparent);
+  --shadow-card:   0 4px 18px rgba(60,25,35,0.10);
+  --shadow-deep:   0 16px 44px rgba(60,25,35,0.14);
+  --card-shadow:   0 2px 14px rgba(60,25,35,0.10);
+
+  --announcement-bg:     linear-gradient(90deg, #7d1f42 0%, #a8305a 50%, #7d1f42 100%);
+  --announcement-text:   #ffffff;
+  --announcement-sep:    rgba(255,255,255,0.72);
+  --announcement-border: transparent;
+
+  --hero-radial:     radial-gradient(ellipse 80% 60% at 50% 0%, rgba(168,48,90,0.07) 0%, transparent 70%);
+  --input-bg:        #ffffff;
+  --input-border:    #e6cfd4;
+  --form-bg:         #ffffff;
+  --price-box-bg:    #ffffff;
+
+  --btn-text: #ffffff;
+  --carrier-invert: 0;
+
+  /* Píldora sobre foto: aquí en sólido con texto blanco. El cristal
+     negro de los temas oscuros dejaría el acento profundo de este
+     tema en 1,5:1 sobre él — ilegible. */
+  --pill-photo-bg:     var(--gold);
+  --pill-photo-text:   #ffffff;
+  --pill-photo-border: transparent;
+
+  /* Bronce. Rosa y oro es el par de toda la vida en cosmética.
+     Se descartaron dos antes, y por motivos distintos:
+       · Terracota, que es lo que pide el instinto junto a un rosa: ΔE 35,
+         por debajo del listón. Al lado del rosa parecía el mismo color
+         mal impreso.
+       · Violeta, que sí pasaba de sobra (ΔE 82) — pero puesto uno al
+         lado del otro en el navegador era casi el mismo botón que el
+         índigo de tecnología. Dos de cinco temas con el mismo botón no
+         son dos temas, y eso sólo se ve mirando: ninguna medida de
+         contraste lo detecta, porque compara colores DENTRO de un tema
+         y este es un choque ENTRE temas.
+     El bronce queda a ΔE 56 del rosa, 65 del verde de "correcto" y 132
+     del índigo. Blanco a 5,9:1 y 4,7:1. */
+  --cta:      #8f5709;
+  --cta-soft: #a4650a;
+  --cta-text: #ffffff;
+}
 
 /* ============================================================
    CAPA DE PERSONALIZACIÓN DEL ADMIN
@@ -1086,8 +621,6 @@
      --gold-border:    <?= $colorBorder ?? 'inherit' ?>;
    }
    ============================================================ */
-
-
 
 
 /* ── BASE ─────────────────────────────────────────────────── */
@@ -1147,7 +680,10 @@ ul, ol { list-style: none; }
      se añade un tema que no defina --announcement-bg, la barra seguirá
      siendo de su color y no negra. */
   background: var(--announcement-bg, linear-gradient(90deg, var(--bg-base) 0%, var(--bg-layer2) 50%, var(--bg-base) 100%));
-  border-bottom: 1px solid var(--gold-border);
+  /* En los temas claros la barra sigue siendo oscura —es el ancla de
+     arriba— así que el borde inferior se apaga desde el tema: una línea
+     clara justo debajo de una barra oscura no separa, subraya. */
+  border-bottom: 1px solid var(--announcement-border, var(--gold-border));
   padding: 20px var(--space-md);
   overflow: hidden;
   transform: translateZ(0);
@@ -1181,7 +717,11 @@ ul, ol { list-style: none; }
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--gold-light);
+  /* La barra es oscura en los cinco temas, también en los claros, así
+     que el texto no puede salir de --gold-light: en salud eso es un
+     verde profundo, y verde profundo sobre verde profundo no se lee.
+     Cada tema declara con qué color se escribe sobre su propia barra. */
+  color: var(--announcement-text, var(--gold-light));
 }
 
 @media (max-width: 768px) {
@@ -1195,7 +735,7 @@ ul, ol { list-style: none; }
 }
 
 .announcement-bar__item span {
-  color: var(--cream-dim);
+  color: var(--announcement-sep, var(--cream-dim));
   margin-inline: 6px;
 }
 
@@ -1297,8 +837,8 @@ h3 {
 }
 
 /* El halo iba con el dorado del tema por defecto escrito a mano
-   (201,168,76). En natural-sage, femme-rose o bold-conversion el botón
-   es verde, rosa o naranja pero el resplandor que late seguía siendo
+   (201,168,76). En los temas de salud, belleza o tecnología el botón
+   es teja, violeta o índigo pero el resplandor que late seguía siendo
    dorado. Ahora sale del color del propio tema. */
 @keyframes btn-glow-pulse {
   0%, 100% { box-shadow: 0 4px 20px color-mix(in srgb, var(--cta) 30%, transparent), 0 1px 0 rgba(255,255,255,0.18) inset; }
@@ -1478,19 +1018,25 @@ h3 {
 }
 
 /* Badge de confianza sobre la imagen */
+/* Píldora sobre la foto. Va apoyada en una imagen, no en el fondo del
+   tema, así que su superficie la fija el tema aparte: en los oscuros es
+   un cristal casi negro con el acento encima; en los claros, el acento
+   en sólido con texto blanco, porque un verde profundo sobre un cristal
+   negro no se lee (1,5:1) y eso es exactamente lo que pasaba antes de
+   que cada tema claro llevara su propio parche. */
 .hero-trust-badge {
   position: absolute;
   top: 12px;
   left: 12px;
-  background: rgba(10,10,10,0.85);
+  background: var(--pill-photo-bg, rgba(10,10,10,0.85));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--gold-border);
+  border: 1px solid var(--pill-photo-border, var(--gold-border));
   border-radius: var(--radius-pill);
   padding: 6px 14px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--gold-light);
+  color: var(--pill-photo-text, var(--gold-light));
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2354,33 +1900,6 @@ h3 {
   color: var(--cream);
 }
 
-/* light-theme overrides */
-[data-theme="light-luxury"] .testimonios-ticker__card,
-[data-theme="blanc-luxe"] .testimonios-ticker__card,
-[data-theme="femme-rose"] .testimonios-ticker__card,
-[data-theme="natural-sage"] .testimonios-ticker__card,
-[data-theme="minimal-clean"] .testimonios-ticker__card {
-  background: #ffffff;
-  border-color: rgba(0,0,0,0.07);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
-}
-
-[data-theme="light-luxury"] .testimonios-ticker__text,
-[data-theme="blanc-luxe"] .testimonios-ticker__text,
-[data-theme="femme-rose"] .testimonios-ticker__text,
-[data-theme="natural-sage"] .testimonios-ticker__text,
-[data-theme="minimal-clean"] .testimonios-ticker__text {
-  color: #1a1a1a;
-}
-
-[data-theme="light-luxury"] .testimonios-ticker__name,
-[data-theme="blanc-luxe"] .testimonios-ticker__name,
-[data-theme="femme-rose"] .testimonios-ticker__name,
-[data-theme="natural-sage"] .testimonios-ticker__name,
-[data-theme="minimal-clean"] .testimonios-ticker__name {
-  color: #555;
-}
-
 /* ── WA TESTIMONIOS TICKER ────────────────────────────────── */
 .wa-testimonios-section {
   padding-block: var(--space-xl);
@@ -2520,33 +2039,6 @@ h3 {
   background: color-mix(in srgb, var(--positivo) 12%, transparent);
   padding: 2px 6px;
   border-radius: 20px;
-}
-
-/* light-theme overrides */
-[data-theme="light-luxury"] .wa-ticker__card,
-[data-theme="blanc-luxe"] .wa-ticker__card,
-[data-theme="femme-rose"] .wa-ticker__card,
-[data-theme="natural-sage"] .wa-ticker__card,
-[data-theme="minimal-clean"] .wa-ticker__card {
-  background: #ffffff;
-  border-color: rgba(0,0,0,0.07);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
-}
-
-[data-theme="light-luxury"] .wa-ticker__text,
-[data-theme="blanc-luxe"] .wa-ticker__text,
-[data-theme="femme-rose"] .wa-ticker__text,
-[data-theme="natural-sage"] .wa-ticker__text,
-[data-theme="minimal-clean"] .wa-ticker__text {
-  color: #333;
-}
-
-[data-theme="light-luxury"] .wa-ticker__name,
-[data-theme="blanc-luxe"] .wa-ticker__name,
-[data-theme="femme-rose"] .wa-ticker__name,
-[data-theme="natural-sage"] .wa-ticker__name,
-[data-theme="minimal-clean"] .wa-ticker__name {
-  color: #111;
 }
 
 .slider-footer-note {
@@ -3567,7 +3059,6 @@ img[loading="lazy"].loaded {
 .order-success__share-btn:hover {
   background: color-mix(in srgb, var(--gold) 25%, transparent);
 }
-
 
 
 /* actualizacion v2 */
@@ -4887,7 +4378,7 @@ img[loading="lazy"].loaded {
     border: none;
     box-shadow: 0 2px 12px rgba(0,0,0,0.12);
     /* --bg-main no existe: caía siempre en el negro del respaldo, también
-       en los seis temas claros. --bg-base sí lo define cada tema. */
+       en los temas claros. --bg-base sí lo define cada tema. */
     background: var(--bg-base);
     transition: transform .2s ease, box-shadow .2s ease;
 }
@@ -5071,9 +4562,11 @@ img[loading="lazy"].loaded {
     left: auto !important;
     right: 12px !important;
     transform: none !important;
-    background: rgba(10,10,10,0.82) !important;
-    border: 1px solid var(--gold-border) !important;
-    color: var(--gold-light) !important;
+    /* Misma superficie que .hero-trust-badge: va sobre la foto, no sobre
+       el fondo del tema. Ver el comentario allí. */
+    background: var(--pill-photo-bg, rgba(10,10,10,0.82)) !important;
+    border: 1px solid var(--pill-photo-border, var(--gold-border)) !important;
+    color: var(--pill-photo-text, var(--gold-light)) !important;
     font-size: 11px !important;
     padding: 6px 12px !important;
 }
@@ -5286,22 +4779,6 @@ img[loading="lazy"].loaded {
     padding: 10px var(--space-md) !important;
     font-size: 14px;
     font-weight: 500;
-}
-
-/* ── STICKY MOBILE CTA — card style, temas claros ────────── */
-[data-theme="light-luxury"] .cta-sticky-mobile,
-[data-theme="blanc-luxe"] .cta-sticky-mobile,
-[data-theme="femme-rose"] .cta-sticky-mobile,
-[data-theme="natural-sage"] .cta-sticky-mobile,
-[data-theme="minimal-clean"] .cta-sticky-mobile {
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
-}
-[data-theme="light-luxury"] .csm-thumb,
-[data-theme="blanc-luxe"] .csm-thumb,
-[data-theme="femme-rose"] .csm-thumb,
-[data-theme="natural-sage"] .csm-thumb,
-[data-theme="minimal-clean"] .csm-thumb {
-    border-color: rgba(0,0,0,0.08);
 }
 
 /* ── STEPS — on mobile texto más visible ─────────────────── */
@@ -5620,7 +5097,6 @@ img[loading="lazy"].loaded {
     margin-top: var(--space-sm);
     animation: pulse 2s ease infinite;
 }
-
 
 
 /* ============================================================
@@ -6502,31 +5978,12 @@ img[loading="lazy"].loaded {
     margin-top: 0 !important;
 }
 
-/* minimal-clean usaba '—', unificamos a ✓ */
-[data-theme="minimal-clean"] .benefit-item::before {
-    content: '✓' !important;
-    color: var(--success) !important;
-}
-
 /* Benefit text: más legible, un toque más grande */
 .benefit-item {
     font-size: 15px !important;
     font-weight: 500 !important;
     line-height: 1.5 !important;
     color: var(--cream) !important;
-}
-
-/* En temas claros: fondo blanco suave + sombra sutil */
-[data-theme="light-luxury"] .benefit-item,
-[data-theme="bold-conversion"] .benefit-item,
-[data-theme="minimal-clean"] .benefit-item,
-[data-theme="femme-rose"] .benefit-item,
-[data-theme="natural-sage"] .benefit-item,
-[data-theme="blanc-luxe"] .benefit-item {
-    background: rgba(255,255,255,0.9) !important;
-    border: 1px solid rgba(0,0,0,0.06) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
-    color: var(--text-color) !important;
 }
 
 /* ── SECTION TITLE: 800, letra ajustada, underline sólido ─── */
@@ -6546,31 +6003,6 @@ img[loading="lazy"].loaded {
     padding: 5px 16px !important;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-}
-
-/* ── HERO IMAGE BADGE: pill verde en temas claros ─────────── */
-[data-theme="light-luxury"] .hero-image-badge,
-[data-theme="bold-conversion"] .hero-image-badge,
-[data-theme="minimal-clean"] .hero-image-badge,
-[data-theme="femme-rose"] .hero-image-badge,
-[data-theme="natural-sage"] .hero-image-badge,
-[data-theme="blanc-luxe"] .hero-image-badge {
-    background: var(--success) !important;
-    color: #fff !important;
-    border-color: transparent !important;
-    font-weight: 700 !important;
-}
-
-/* ── STEP CARDS (cómo funciona): sombra más visible en claros */
-[data-theme="light-luxury"] .step-card,
-[data-theme="bold-conversion"] .step-card,
-[data-theme="minimal-clean"] .step-card,
-[data-theme="femme-rose"] .step-card,
-[data-theme="natural-sage"] .step-card,
-[data-theme="blanc-luxe"] .step-card {
-    background: #fff !important;
-    border-color: rgba(0,0,0,0.07) !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
 }
 
 /* ── STEP NUM: tamaño más contenido para que no sature ─────── */
@@ -6671,16 +6103,6 @@ img[loading="lazy"].loaded {
     margin: 2px 0 8px !important;
 }
 
-/* Temas claros: precio en color primario */
-[data-theme="light-luxury"] .price-box .new,
-[data-theme="bold-conversion"] .price-box .new,
-[data-theme="minimal-clean"] .price-box .new,
-[data-theme="femme-rose"] .price-box .new,
-[data-theme="natural-sage"] .price-box .new,
-[data-theme="blanc-luxe"] .price-box .new {
-    color: var(--primary-color) !important;
-}
-
 /* Countdown: compacto, dígitos urgentes en rojo/naranja */
 .hero-countdown-inline {
     display: flex !important;
@@ -6711,16 +6133,6 @@ img[loading="lazy"].loaded {
     font-variant-numeric: tabular-nums !important;
 }
 
-/* Temas claros: countdown border más suave */
-[data-theme="light-luxury"] .hero-countdown-inline,
-[data-theme="bold-conversion"] .hero-countdown-inline,
-[data-theme="minimal-clean"] .hero-countdown-inline,
-[data-theme="femme-rose"] .hero-countdown-inline,
-[data-theme="natural-sage"] .hero-countdown-inline,
-[data-theme="blanc-luxe"] .hero-countdown-inline {
-    background: rgba(0,0,0,0.02) !important;
-}
-
 @media (max-width: 480px) {
     .price-box { padding: 16px 16px 12px !important; }
     .price-box .new { font-size: clamp(2.2rem, 12vw, 2.8rem) !important; }
@@ -6743,17 +6155,6 @@ img[loading="lazy"].loaded {
     max-width: 480px;
     width: 100%;
     box-shadow: 0 2px 16px rgba(0,0,0,0.13);
-}
-
-/* Temas claros: tarjeta blanca */
-[data-theme="light-luxury"] .porque-card,
-[data-theme="bold-conversion"] .porque-card,
-[data-theme="minimal-clean"] .porque-card,
-[data-theme="femme-rose"] .porque-card,
-[data-theme="natural-sage"] .porque-card,
-[data-theme="blanc-luxe"] .porque-card {
-    background: #fff !important;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.09) !important;
 }
 
 /* Imagen / video arriba — full width, sin bordes */
@@ -6791,30 +6192,12 @@ img[loading="lazy"].loaded {
     margin: 0;
 }
 
-[data-theme="light-luxury"] .porque-card__title,
-[data-theme="bold-conversion"] .porque-card__title,
-[data-theme="minimal-clean"] .porque-card__title,
-[data-theme="femme-rose"] .porque-card__title,
-[data-theme="natural-sage"] .porque-card__title,
-[data-theme="blanc-luxe"] .porque-card__title {
-    color: var(--text-color) !important;
-}
-
 /* Descripción: pequeña y gris */
 .porque-card__desc {
     font-size: 14px;
     color: var(--cream-dim);
     line-height: 1.55;
     margin: 0;
-}
-
-[data-theme="light-luxury"] .porque-card__desc,
-[data-theme="bold-conversion"] .porque-card__desc,
-[data-theme="minimal-clean"] .porque-card__desc,
-[data-theme="femme-rose"] .porque-card__desc,
-[data-theme="natural-sage"] .porque-card__desc,
-[data-theme="blanc-luxe"] .porque-card__desc {
-    color: rgba(0,0,0,0.5) !important;
 }
 
 /* Lista: ✓ verde, sin viñetas */
@@ -6835,15 +6218,6 @@ img[loading="lazy"].loaded {
     font-weight: 600;
     color: var(--cream);
     line-height: 1.3;
-}
-
-[data-theme="light-luxury"] .porque-card__list li,
-[data-theme="bold-conversion"] .porque-card__list li,
-[data-theme="minimal-clean"] .porque-card__list li,
-[data-theme="femme-rose"] .porque-card__list li,
-[data-theme="natural-sage"] .porque-card__list li,
-[data-theme="blanc-luxe"] .porque-card__list li {
-    color: var(--text-color) !important;
 }
 
 .porque-card__list li::before {
@@ -6876,16 +6250,6 @@ img[loading="lazy"].loaded {
     box-shadow: 0 2px 16px rgba(0,0,0,0.13);
 }
 
-/* En temas claros: fondo blanco azulado como la referencia */
-[data-theme="light-luxury"] .benefit-cards-outer,
-[data-theme="bold-conversion"] .benefit-cards-outer,
-[data-theme="minimal-clean"] .benefit-cards-outer,
-[data-theme="femme-rose"] .benefit-cards-outer,
-[data-theme="natural-sage"] .benefit-cards-outer {
-    border-color: rgba(0,0,0,0.06) !important;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.07) !important;
-}
-
 /* Título dentro del outer */
 .benefit-cards-outer .section-title {
     margin-bottom: var(--space-md) !important;
@@ -6914,18 +6278,6 @@ img[loading="lazy"].loaded {
 .benefit-card-h:hover {
     box-shadow: 0 6px 20px rgba(0,0,0,0.18);
     transform: translateY(-2px);
-}
-
-/* Temas claros: tarjetas blancas */
-[data-theme="light-luxury"] .benefit-card-h,
-[data-theme="bold-conversion"] .benefit-card-h,
-[data-theme="minimal-clean"] .benefit-card-h,
-[data-theme="femme-rose"] .benefit-card-h,
-[data-theme="natural-sage"] .benefit-card-h,
-[data-theme="blanc-luxe"] .benefit-card-h {
-    background: #ffffff !important;
-    border-color: rgba(0,0,0,0.06) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
 }
 
 /* Imagen: ocupa todo el ancho, ratio cuadrado */
@@ -6959,15 +6311,6 @@ img[loading="lazy"].loaded {
     text-align: center;
 }
 
-[data-theme="light-luxury"] .benefit-card-h__text,
-[data-theme="bold-conversion"] .benefit-card-h__text,
-[data-theme="minimal-clean"] .benefit-card-h__text,
-[data-theme="femme-rose"] .benefit-card-h__text,
-[data-theme="natural-sage"] .benefit-card-h__text,
-[data-theme="blanc-luxe"] .benefit-card-h__text {
-    color: var(--text-color) !important;
-}
-
 /* Sin foto: texto centrado con altura mínima */
 .benefit-card-h:not(:has(.benefit-card-h__img)) {
     justify-content: center;
@@ -6996,15 +6339,6 @@ img[loading="lazy"].loaded {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-}
-
-[data-theme="light-luxury"] .porque-card__tagline,
-[data-theme="bold-conversion"] .porque-card__tagline,
-[data-theme="minimal-clean"] .porque-card__tagline,
-[data-theme="femme-rose"] .porque-card__tagline,
-[data-theme="natural-sage"] .porque-card__tagline,
-[data-theme="blanc-luxe"] .porque-card__tagline {
-    color: rgba(0,0,0,0.62) !important; /* 5.9:1 — 0.5 daba 3.94 */
 }
 
 /* Grid de mini-cards: 1 columna en mobile, 3 en desktop */
@@ -7039,16 +6373,6 @@ img[loading="lazy"].loaded {
     box-shadow: 0 6px 20px rgba(0,0,0,0.18);
 }
 
-[data-theme="light-luxury"] .porque-benefit-card,
-[data-theme="bold-conversion"] .porque-benefit-card,
-[data-theme="minimal-clean"] .porque-benefit-card,
-[data-theme="femme-rose"] .porque-benefit-card,
-[data-theme="natural-sage"] .porque-benefit-card,
-[data-theme="blanc-luxe"] .porque-benefit-card {
-    background: color-mix(in srgb, var(--primary-color) 5%, #ffffff) !important;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.08) !important;
-}
-
 .porque-benefit-card__num {
     width: 32px;
     height: 32px;
@@ -7069,15 +6393,6 @@ img[loading="lazy"].loaded {
     font-weight: 700;
     color: var(--cream);
     line-height: 1.35;
-}
-
-[data-theme="light-luxury"] .porque-benefit-card__text,
-[data-theme="bold-conversion"] .porque-benefit-card__text,
-[data-theme="minimal-clean"] .porque-benefit-card__text,
-[data-theme="femme-rose"] .porque-benefit-card__text,
-[data-theme="natural-sage"] .porque-benefit-card__text,
-[data-theme="blanc-luxe"] .porque-benefit-card__text {
-    color: var(--text-color) !important;
 }
 
 /* En mobile: horizontal (icono izq, texto der) */
@@ -7126,18 +6441,6 @@ img[loading="lazy"].loaded {
     display: flex;
     flex-shrink: 0;
     color: var(--gold);
-}
-
-[data-theme="light-luxury"] .garantia-card,
-[data-theme="bold-conversion"] .garantia-card,
-[data-theme="minimal-clean"] .garantia-card,
-[data-theme="femme-rose"] .garantia-card,
-[data-theme="natural-sage"] .garantia-card,
-[data-theme="blanc-luxe"] .garantia-card {
-    background: rgba(255,255,255,0.75) !important;
-    border-color: rgba(0,0,0,0.08) !important;
-    color: var(--text-color) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 /* ============================================================
@@ -7417,40 +6720,6 @@ img[loading="lazy"].loaded {
     user-select: none;
 }
 
-/* Light themes — softer card shadow */
-[data-theme="light-luxury"] .caract-slide,
-[data-theme="blanc-luxe"] .caract-slide,
-[data-theme="femme-rose"] .caract-slide,
-[data-theme="natural-sage"] .caract-slide,
-[data-theme="minimal-clean"] .caract-slide {
-    border-color: rgba(0,0,0,0.07);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-}
-
-
-/* ============================================================
-   Contraste AA en temas claros
-   .caract-text y .caract-hint heredaban tonos pensados para fondo
-   oscuro y quedaban en 3.69:1 y 2.29:1 sobre las tarjetas claras.
-   ============================================================ */
-[data-theme="light-luxury"] .caract-text,
-[data-theme="bold-conversion"] .caract-text,
-[data-theme="minimal-clean"] .caract-text,
-[data-theme="femme-rose"] .caract-text,
-[data-theme="natural-sage"] .caract-text,
-[data-theme="blanc-luxe"] .caract-text {
-    color: #3F4A44;
-    opacity: 1;
-}
-
-[data-theme="light-luxury"] .caract-hint,
-[data-theme="bold-conversion"] .caract-hint,
-[data-theme="minimal-clean"] .caract-hint,
-[data-theme="femme-rose"] .caract-hint,
-[data-theme="natural-sage"] .caract-hint,
-[data-theme="blanc-luxe"] .caract-hint {
-    color: #56605A;
-}
 
 /* Zona pulsable mínima de 44px sin agrandar el icono.
    OJO: aquí había un position:relative que pisaba el position:absolute

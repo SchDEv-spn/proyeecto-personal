@@ -18,8 +18,61 @@
  *   2. Su bloque [data-theme="slug"] en public/css/style.css.
  * Nada más: el editor, el validador y la vista pública lo recogen solos.
  *
+ * -------------------------------------------------------------
+ * DE NUEVE TEMAS A CINCO
+ * -------------------------------------------------------------
+ * Había nueve y cuatro eran variaciones del mismo sitio: light-luxury,
+ * femme-rose y blanc-luxe eran tres rosas distintos, y obsidian era
+ * dark-luxury sin el dorado. Elegir entre nueve cuando cuatro se parecen
+ * no es tener más opciones, es tener que comparar.
+ *
+ * Peor: los temas claros no estaban diseñados, estaban parcheados. Cada
+ * uno arrastraba unos cincuenta selectores propios repintando componente
+ * a componente, y con ellos la legibilidad se caía. Medido con WCAG, 13
+ * de 54 comprobaciones fallaban. El caso claro es --accent-color: es el
+ * valor que alimenta --gold-light, y --gold-light se usa como COLOR DE
+ * TEXTO en treinta sitios; natural-sage lo tenía en #52b788, un verde
+ * pastel que sobre su propia tarjeta da 1,99:1. Ilegible, y no por poco.
+ *
+ * Ahora son cinco, uno por nicho, y todos siguen la receta de
+ * midnight-amber, que era el único que estaba bien:
+ *
+ *   - Capas de fondo en hex SÓLIDO (--bg-base .. --bg-layer3). Nada de
+ *     rgba sobre un fondo que no controlas: una tarjeta a
+ *     rgba(45,106,79,0.05) sobre #f4f7f4 no es "sutil", es invisible.
+ *   - Borde teñido con el color del propio tema, nunca blanco ni negro
+ *     con alfa. Un blanco al 8% sobre azul se ve gris frío y recorta la
+ *     caja en vez de disimularla.
+ *   - --cream-dim y --cream-muted en hex MEDIDO, no en color-mix con
+ *     transparente: el color-mix depende del fondo y deja de cumplir en
+ *     cuanto la tarjeta cambia de tono.
+ *   - --cta propio, distinto del acento decorativo. Ver el bloque
+ *     "EL ACENTO DE ACCIÓN" en style.css.
+ *
+ * Con eso los cinco temas necesitan CERO overrides por componente: el
+ * sistema de tarjetas de style.css hace el resto.
+ *
+ * Todos los pares de color pasan 4,5:1 (WCAG AA para texto normal), y la
+ * distancia perceptual entre --cta y el acento supera en los cinco el
+ * ΔE = 38,6 del par de midnight-amber, que es la referencia dada por
+ * buena. Ver contraste_temas.php.
+ *
  * 'paleta' son los valores que el editor escribe en los campos de color
  * al elegir el tema, y deben coincidir con el bloque CSS correspondiente.
+ *
+ * 'cta' es el color del botón de compra. Va fuera de 'paleta' porque
+ * 'paleta' son los campos que el editor guarda en la BD y el CTA lo fija
+ * el tema en CSS; aquí está sólo para que la miniatura del editor pinte
+ * el botón de verdad. Antes esas miniaturas llevaban los nueve colores
+ * escritos a mano en admin-unified.css — una sexta copia de la paleta,
+ * que es exactamente la clase de duplicado que ya falló una vez.
+ *
+ * 'alias' son los slugs retirados que resuelven a este tema. Existen
+ * porque en producción hay landings guardadas con los nombres viejos y
+ * el validador, al no reconocerlos, caía a 'dark-luxury' EN SILENCIO: la
+ * landing cambiaba de colores sola y sin dejar rastro. Con el alias, una
+ * landing en 'obsidian' pasa a 'relojes', que es su sucesor real.
+ * Ver LandingConfig::resolverTema().
  *
  * OJO: las columnas color_* de landing_config son varchar(7). Nada de
  * hex con alfa (#rrggbbaa): se truncan al guardar y dejan el color
@@ -28,153 +81,19 @@
  */
 
 return [
-    'dark-luxury' => [
-        'nombre' => 'Dark Luxury',
-        'desc'   => 'Negro · Dorado cálido · Premium',
-        'paleta' => [
-            'background_color'     => '#080808',
-            'text_color'           => '#f5ede0',
-            'primary_color'        => '#d4a853',
-            'accent_color'         => '#f0c472',
-            'secondary_color'      => '#6b4c1e',
-            'color_gold'           => '#d4a853',
-            'color_gold_light'     => '#f0c472',
-            'color_success'        => '#4caf7d',
-            'color_countdown'      => '#f0c472',
-            'color_bg_card'        => '#1c1814',
-            'color_border'         => '#d4a853',
-        ],
-    ],
 
-    'light-luxury' => [
-        'nombre' => 'Light Luxury',
-        'desc'   => 'Crema · Borgoña · Femenino',
-        'paleta' => [
-            'background_color'     => '#fdf8f5',
-            'text_color'           => '#1a1014',
-            'primary_color'        => '#8b2252',
-            'accent_color'         => '#b5436e',
-            'secondary_color'      => '#4a1228',
-            'color_gold'           => '#8b2252',
-            'color_gold_light'     => '#b5436e',
-            'color_success'        => '#2e7d32',
-            'color_countdown'      => '#8b2252',
-            'color_bg_card'        => '#f7f0ec',
-            'color_border'         => '#8b2252',
-        ],
-    ],
-
-    'bold-conversion' => [
-        'nombre' => 'Bold Conversion',
-        'desc'   => 'Blanco · Naranja · Energético',
-        'paleta' => [
-            'background_color'     => '#ffffff',
-            'text_color'           => '#1a1410',
-            'primary_color'        => '#e76f51',
-            'accent_color'         => '#f4a261',
-            'secondary_color'      => '#264653',
-            'color_gold'           => '#e76f51',
-            'color_gold_light'     => '#f4a261',
-            'color_success'        => '#2d6a4f',
-            'color_countdown'      => '#e76f51',
-            'color_bg_card'        => '#fdf8f5',
-            'color_border'         => '#e76f51',
-        ],
-    ],
-
-    'minimal-clean' => [
-        'nombre' => 'Minimal Clean',
-        'desc'   => 'Azul marino · Confianza · Tech',
-        'paleta' => [
-            'background_color'     => '#f8fafc',
-            'text_color'           => '#0f1d30',
-            'primary_color'        => '#1a2e4a',
-            'accent_color'         => '#2563eb',
-            'secondary_color'      => '#0f1d30',
-            'color_gold'           => '#1a2e4a',
-            'color_gold_light'     => '#2563eb',
-            'color_success'        => '#1b5e20',
-            'color_countdown'      => '#2563eb',
-            'color_bg_card'        => '#f0f4f8',
-            'color_border'         => '#1a2e4a',
-        ],
-    ],
-
-    'femme-rose' => [
-        'nombre' => 'Femme Rose',
-        'desc'   => 'Rosa · Fucsia · Belleza',
-        'paleta' => [
-            'background_color'     => '#fff5f7',
-            'text_color'           => '#2d1420',
-            'primary_color'        => '#c94a6b',
-            'accent_color'         => '#e87d9a',
-            'secondary_color'      => '#7a1f3d',
-            'color_gold'           => '#c94a6b',
-            'color_gold_light'     => '#e87d9a',
-            'color_success'        => '#2e7d32',
-            'color_countdown'      => '#c94a6b',
-            'color_bg_card'        => '#ffedf1',
-            'color_border'         => '#c94a6b',
-        ],
-    ],
-
-    'natural-sage' => [
-        'nombre' => 'Natural Sage',
-        'desc'   => 'Verde · Orgánico · Salud',
-        'paleta' => [
-            'background_color'     => '#f4f7f4',
-            'text_color'           => '#1a2e22',
-            'primary_color'        => '#2d6a4f',
-            'accent_color'         => '#52b788',
-            'secondary_color'      => '#1b4332',
-            'color_gold'           => '#2d6a4f',
-            'color_gold_light'     => '#52b788',
-            'color_success'        => '#1b4332',
-            'color_countdown'      => '#2d6a4f',
-            'color_bg_card'        => '#eaf2ec',
-            'color_border'         => '#2d6a4f',
-        ],
-    ],
-
-    'obsidian' => [
-        'nombre' => 'Obsidian',
-        'desc'   => 'Negro · Plata · Ultra premium',
-        'paleta' => [
-            'background_color'     => '#050505',
-            'text_color'           => '#f0f0f0',
-            'primary_color'        => '#b0b0b0',
-            'accent_color'         => '#e0e0e0',
-            'secondary_color'      => '#606060',
-            'color_gold'           => '#b0b0b0',
-            'color_gold_light'     => '#e0e0e0',
-            'color_success'        => '#6acd8e',
-            'color_countdown'      => '#e0e0e0',
-            'color_bg_card'        => '#161616',
-            'color_border'         => '#b0b0b0',
-        ],
-    ],
-
-    'blanc-luxe' => [
-        'nombre' => 'Blanc Luxe',
-        'desc'   => 'Blanco · Oro · Alta elegancia',
-        'paleta' => [
-            'background_color'     => '#fff8f6',
-            'text_color'           => '#4a2535',
-            'primary_color'        => '#c4687a',
-            'accent_color'         => '#e8a4b8',
-            'secondary_color'      => '#a04060',
-            'color_gold'           => '#c4687a',
-            'color_gold_light'     => '#e8a4b8',
-            'color_success'        => '#3a7c5c',
-            'color_countdown'      => '#c4687a',
-            'color_bg_card'        => '#fdf0ee',
-            'color_border'         => '#c4687a',
-        ],
-    ],
-
-    'midnight-amber' => [
+    /* ── GENÉRICO · Midnight Amber ────────────────────────────
+       Intacto: es la referencia de la que salen los otros cuatro.
+       Único cambio, --cream-muted de #6e7f9e a #8494b3, porque el
+       anterior daba 3,87:1 sobre la tarjeta y se usa en la hora de los
+       testimonios de WhatsApp y en el aviso de "desliza" — texto
+       pequeño, justo donde menos perdona. */
+    'generico' => [
+        'cta'    => '#f4621e',
         'nombre' => 'Midnight Amber',
-        'desc'   => 'Azul noche · Ámbar · Tarjetas',
+        'nicho'  => 'Genérico',
+        'desc'   => 'Azul noche · Ámbar · Todo terreno',
+        'alias'  => ['midnight-amber', 'bold-conversion'],
         'paleta' => [
             'background_color'     => '#0f1729',
             'text_color'           => '#e8eefc',
@@ -187,6 +106,123 @@ return [
             'color_countdown'      => '#ffc46b',
             'color_bg_card'        => '#1a2338',
             'color_border'         => '#2b3550',
+        ],
+    ],
+
+    /* ── RELOJES · Noir Or ────────────────────────────────────
+       Negro carbón, no negro puro, por la misma razón que midnight-amber
+       tampoco lo es: sobre #000 una tarjeta apenas más clara se lee como
+       una mancha gris y desaparece la sensación de capas.
+       El oro es el de un reloj, no el de un marco: menos amarillo y algo
+       apagado, para que aguante bloques grandes en mayúscula.
+       El botón va en rojo vino — el oro decora toda la página, así que la
+       acción necesita un color que no salga en ningún otro sitio. */
+    'relojes' => [
+        'cta'    => '#a51e2d',
+        'nombre' => 'Noir Or',
+        'nicho'  => 'Relojes',
+        'desc'   => 'Negro carbón · Oro · Premium',
+        'alias'  => ['dark-luxury', 'obsidian'],
+        'paleta' => [
+            'background_color'     => '#0d0d0f',
+            'text_color'           => '#f2efe9',
+            'primary_color'        => '#d9b061',
+            'accent_color'         => '#f0cd8e',
+            'secondary_color'      => '#3a3226',
+            'color_gold'           => '#d9b061',
+            'color_gold_light'     => '#f0cd8e',
+            'color_success'        => '#46c98a',
+            'color_countdown'      => '#f0cd8e',
+            'color_bg_card'        => '#1a1a1d',
+            'color_border'         => '#2e2e34',
+        ],
+    ],
+
+    /* ── TECNOLOGÍA · Steel Cyan ──────────────────────────────
+       Acero azul-verdoso y cian. El azul marino de minimal-clean se
+       descartó porque era el mismo azul que ya lleva el genérico, y dos
+       temas que se parecen no son dos temas.
+       El botón va en índigo: el cian decora, y sobre fondo oscuro el
+       índigo está lo bastante lejos para que no se confundan. */
+    'tecnologia' => [
+        'cta'    => '#4f39d9',
+        'nombre' => 'Steel Cyan',
+        'nicho'  => 'Tecnología',
+        'desc'   => 'Acero · Cian · Producto técnico',
+        'alias'  => ['minimal-clean'],
+        'paleta' => [
+            'background_color'     => '#0d1418',
+            'text_color'           => '#e8f2f7',
+            'primary_color'        => '#38bdf8',
+            'accent_color'         => '#7dd3fc',
+            'secondary_color'      => '#1e3a4d',
+            'color_gold'           => '#38bdf8',
+            'color_gold_light'     => '#7dd3fc',
+            'color_success'        => '#34d399',
+            'color_countdown'      => '#7dd3fc',
+            'color_bg_card'        => '#17222a',
+            'color_border'         => '#24333d',
+        ],
+    ],
+
+    /* ── SALUD · Clinic Sage ──────────────────────────────────
+       Tema CLARO. La tarjeta es blanco puro y el fondo un blanco con un
+       punto de verde: la profundidad la lleva la sombra, no un borde —la
+       misma regla que en los oscuros.
+       OJO con el par de acentos: en un tema claro el que contrasta es el
+       OSCURO. Por eso aquí --accent-color (que alimenta --gold-light, y
+       --gold-light es texto en treinta sitios) es el verde PROFUNDO
+       #094a39, no un verde claro. Invertir esto es exactamente lo que
+       rompía natural-sage.
+       El botón va en teja: el verde decora y además significa "correcto"
+       en los ✓, así que no puede ser también el color de la acción. */
+    'salud' => [
+        'cta'    => '#0b5a80',
+        'nombre' => 'Clinic Sage',
+        'nicho'  => 'Salud',
+        'desc'   => 'Blanco · Verde clínico · Confianza',
+        'alias'  => ['natural-sage'],
+        'paleta' => [
+            'background_color'     => '#f5f8f6',
+            'text_color'           => '#16241d',
+            'primary_color'        => '#0d6b51',
+            'accent_color'         => '#094a39',
+            'secondary_color'      => '#094a39',
+            'color_gold'           => '#0d6b51',
+            'color_gold_light'     => '#094a39',
+            'color_success'        => '#15803d',
+            'color_countdown'      => '#0d6b51',
+            'color_bg_card'        => '#ffffff',
+            'color_border'         => '#d8e4dd',
+        ],
+    ],
+
+    /* ── BELLEZA · Rose Nude ──────────────────────────────────
+       Tema CLARO, misma receta que salud. Sustituye a los tres rosas que
+       había (light-luxury, femme-rose, blanc-luxe), que se diferenciaban
+       en poco más que el tono del fondo.
+       Igual que en salud, el acento "light" es el rosa PROFUNDO: sobre
+       blanco, un rosa pastel como el #e8a4b8 de blanc-luxe daba 1,81:1.
+       El botón va en violeta — rosa y violeta es un par corriente en
+       cosmética y la distancia perceptual sobra (ΔE 82). */
+    'belleza' => [
+        'cta'    => '#8f5709',
+        'nombre' => 'Rose Nude',
+        'nicho'  => 'Belleza',
+        'desc'   => 'Nude · Rosa profundo · Cosmética',
+        'alias'  => ['femme-rose', 'light-luxury', 'blanc-luxe'],
+        'paleta' => [
+            'background_color'     => '#fdf7f6',
+            'text_color'           => '#2a161d',
+            'primary_color'        => '#a8305a',
+            'accent_color'         => '#7d1f42',
+            'secondary_color'      => '#7d1f42',
+            'color_gold'           => '#a8305a',
+            'color_gold_light'     => '#7d1f42',
+            'color_success'        => '#15803d',
+            'color_countdown'      => '#a8305a',
+            'color_bg_card'        => '#ffffff',
+            'color_border'         => '#ecd9dc',
         ],
     ],
 ];

@@ -133,7 +133,26 @@ $colorVariants = json_encode([
 /* ── 4. Landing: todo encendido, todo escrito ────────────────── */
 $landing = [
     'producto_id' => $productoId,
-    'theme'       => 'dark-luxury',
+    'theme'       => 'generico',
+
+    /* Sin colores propios a propósito. Las columnas color_* se inyectan
+       en un <style> que gana sobre el tema, así que una landing con la
+       paleta clavada se pinta igual elijas el tema que elijas. Esta
+       existe justamente para mirar los temas encima de las 14 secciones:
+       si se le clava una paleta, deja de servir para eso.
+       Van explícitas a null y no omitidas, porque el seed reescribe una
+       fila que ya existe y omitirlas dejaría la paleta anterior. */
+    'background_color' => null,
+    'text_color'       => null,
+    'primary_color'    => null,
+    'secondary_color'  => null,
+    'accent_color'     => null,
+    'color_gold'       => null,
+    'color_gold_light' => null,
+    'color_success'    => null,
+    'color_countdown'  => null,
+    'color_bg_card'    => null,
+    'color_border'     => null,
 
     // — Hero —
     'hero_title'       => '¡Ordena tu día con estilo! Bolso Orígami',

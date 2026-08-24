@@ -3962,51 +3962,43 @@ div.dataTables_paginate { display: flex; align-items: center; gap: 4px; flex-wra
   padding: var(--sp-2) var(--sp-3);
   overflow: hidden;
 }
-.theme-card__preview--dark-luxury     { background: #080808; }
-.theme-card__preview--light-luxury    { background: #fdf8f5; border: 1px solid rgba(0,0,0,.08); }
-.theme-card__preview--bold-conversion { background: #ffffff; border: 1px solid rgba(0,0,0,.08); }
-.theme-card__preview--minimal-clean   { background: #f8fafc; border: 1px solid rgba(0,0,0,.08); }
-.theme-card__preview--femme-rose      { background: #fff5f7; border: 1px solid rgba(201,74,107,.18); }
-.theme-card__preview--natural-sage    { background: #f4f7f4; border: 1px solid rgba(45,106,79,.18); }
-.theme-card__preview--obsidian        { background: #050505; }
-.theme-card__preview--blanc-luxe      { background: #fff8f6; border: 1px solid rgba(196,104,122,.18); }
+/* La miniatura se pinta con las tres variables que la tarjeta recibe en
+   línea desde app/config/themes.php: fondo, texto y color de botón.
+   Antes había una regla por tema con los colores escritos a mano —nueve
+   temas por dos reglas cada uno— y era una copia más de la paleta que
+   nadie recordaba actualizar. Si el tema cambia de color, la miniatura
+   cambia sola. */
+.theme-card__preview {
+  background: var(--tp-bg, #111);
+  /* Sólo los temas claros llevan contorno: sin él, una miniatura casi
+     blanca se funde con el fondo de la tarjeta del editor. Lo aporta la
+     propia tarjeta con --tp-edge. */
+  border: 1px solid var(--tp-edge, transparent);
+}
 
 .theme-card__mock-header { display: block; height: 7px; border-radius: 2px; width: 55%; opacity: .75; }
 .theme-card__mock-line   { display: block; height: 5px; border-radius: 2px; width: 80%; opacity: .4; }
 .theme-card__mock-line--short { width: 55%; }
 .theme-card__mock-btn    { display: block; height: 9px; border-radius: 3px; width: 45%; margin-top: 2px; }
 
-.theme-card__preview--dark-luxury .theme-card__mock-header,
-.theme-card__preview--dark-luxury .theme-card__mock-line { background: #f5ede0; }
-.theme-card__preview--dark-luxury .theme-card__mock-btn  { background: #d4a853; }
+.theme-card__mock-header,
+.theme-card__mock-line { background: var(--tp-fg, #eee); }
+.theme-card__mock-btn  { background: var(--tp-cta, #888); }
 
-.theme-card__preview--light-luxury .theme-card__mock-header,
-.theme-card__preview--light-luxury .theme-card__mock-line { background: #1a1014; }
-.theme-card__preview--light-luxury .theme-card__mock-btn  { background: #8b2252; }
-
-.theme-card__preview--bold-conversion .theme-card__mock-header,
-.theme-card__preview--bold-conversion .theme-card__mock-line { background: #1a1410; }
-.theme-card__preview--bold-conversion .theme-card__mock-btn  { background: #e76f51; }
-
-.theme-card__preview--minimal-clean .theme-card__mock-header,
-.theme-card__preview--minimal-clean .theme-card__mock-line { background: #0f1d30; }
-.theme-card__preview--minimal-clean .theme-card__mock-btn  { background: #1a2e4a; }
-
-.theme-card__preview--femme-rose .theme-card__mock-header,
-.theme-card__preview--femme-rose .theme-card__mock-line { background: #2d1420; }
-.theme-card__preview--femme-rose .theme-card__mock-btn  { background: #c94a6b; }
-
-.theme-card__preview--natural-sage .theme-card__mock-header,
-.theme-card__preview--natural-sage .theme-card__mock-line { background: #1a2e22; }
-.theme-card__preview--natural-sage .theme-card__mock-btn  { background: #2d6a4f; }
-
-.theme-card__preview--obsidian .theme-card__mock-header,
-.theme-card__preview--obsidian .theme-card__mock-line { background: #f0f0f0; }
-.theme-card__preview--obsidian .theme-card__mock-btn  { background: #b0b0b0; }
-
-.theme-card__preview--blanc-luxe .theme-card__mock-header,
-.theme-card__preview--blanc-luxe .theme-card__mock-line { background: #4a2535; }
-.theme-card__preview--blanc-luxe .theme-card__mock-btn  { background: #c4687a; }
+/* Etiqueta de nicho: lo que se busca al abrir el editor no es "cuál me
+   gusta" sino "cuál toca para este producto". */
+.theme-card__nicho {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--green-dark);
+  background: var(--green-glow);
+  border-radius: var(--r-sm);
+  padding: 2px 7px;
+  margin-bottom: 4px;
+}
 
 .theme-card__info strong { display: block; font-size: var(--text-xs); font-weight: 700; color: var(--tx); }
 .theme-card__info small  { font-size: var(--text-xs); color: var(--tx-dim); }
