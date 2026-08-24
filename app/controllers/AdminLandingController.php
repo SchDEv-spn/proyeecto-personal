@@ -372,10 +372,10 @@ class AdminLandingController extends Controller
            Cuando esta whitelist se mantenía a mano se quedó sin
            midnight-amber, así que el servidor lo rechazaba y guardaba
            'dark-luxury' sin decir nada: el admin elegía un tema y la
-           landing salía con los colores del anterior. */
-        $temas = require dirname(__DIR__) . '/config/themes.php';
-        $temaPedido = trim($_POST['theme'] ?? '');
-        $data['theme'] = isset($temas[$temaPedido]) ? $temaPedido : 'dark-luxury';
+           landing salía con los colores del anterior.
+           resolverTema() además traduce los slugs retirados en la poda de
+           nueve temas a cinco, para que no caigan al por defecto. */
+        $data['theme'] = LandingConfig::resolverTema(trim($_POST['theme'] ?? ''));
 
         // Colores extendidos — solo guardar si son hex válidos
         $extendedColors = [
@@ -812,12 +812,14 @@ class AdminLandingController extends Controller
     // ── Prompt focalizado por sección ─────────────────────────────────────────
     private function buildSeccionPrompt(string $sec, string $nombre, string $desc, string $publico, string $precio, string $extra): ?string
     {
-        $base = "Eres experto en copywriting de alta conversión para e-commerce colombiano (dropshipping).\n"
+        $base = "Eres experto en copywriting de alta conversión para e-commerce colombiano (dropshipping). No vendes el producto: vendes el alivio de un dolor concreto.\n"
               . "Producto: {$nombre}" . ($desc ? " — {$desc}" : '') . "\n"
               . "Público: {$publico}" . ($precio ? " · Precio: {$precio} COP" : '') . "\n"
               . ($extra ? "Instrucciones adicionales: {$extra}\n" : '')
-              . "REGLAS: español colombiano informal, emocional, orientado al beneficio, "
-              . "pago contraentrega, urgencia real, nombres/ciudades colombianas.\n\n"
+              . "\nANTES DE ESCRIBIR (no lo muestres en la respuesta): identifica UN solo dolor o frustración concreta que este producto resuelve para este público. Todo el copy de esta sección debe ser ese mismo dolor contado desde el ángulo de esta sección — no lo cambies ni lo generalices.\n\n"
+              . "REGLAS: español colombiano informal, emocional, orientado al beneficio (nunca a características técnicas sueltas), "
+              . "pago contraentrega, urgencia real, nombres/ciudades colombianas. Frases cortas, directo al punto, sin párrafos largos ni relleno. "
+              . "Emojis solo cuando sumen (✅🔥📦⏰😍🚚), máximo 1-2 por texto, nunca en nombres/ciudades ni en preguntas de FAQ.\n\n"
               . "Devuelve SOLO JSON válido (sin markdown). Rellena cada campo con copy real, no con descripciones.\n\n";
 
         $schemas = [
@@ -849,18 +851,18 @@ class AdminLandingController extends Controller
         if (!isset($schemas[$sec])) return null;
 
         $hints = [
-            'hero'            => 'Hero: título ≤8 palabras, promesa poderosa. Subtítulo habla al dolor. hero_note menciona pago contraentrega.',
-            'beneficios'      => 'Beneficios: orientados a resultados concretos, no a características técnicas.',
-            'caracteristicas' => 'Características: cada texto 2-3 oraciones que explican el beneficio de esa característica.',
-            'countdown'       => 'Countdown: urgencia real. El texto debe crear miedo a perder la oferta.',
-            'porque'          => 'Por qué: emocional. porque_text es el párrafo más persuasivo de la landing.',
-            'comparativa'     => 'Comparativa: TRANSFORMACIÓN emocional. Sin/Con no son specs, son situaciones de vida.',
-            'testimonios'     => 'Testimonios: nombres y ciudades colombianas 100% reales. Textos ≤100 chars, muy naturales.',
-            'paraquien'       => 'Para quién: los "Sí" generan identificación, los "No" califican y generan FOMO inverso.',
-            'wa'              => 'WhatsApp: mensajes ultra-informales, emojis naturales, como copiados del celular de un cliente feliz.',
-            'faq'             => 'FAQ: faq1 SIEMPRE sobre pago (contraentrega), faq2 sobre tiempo de envío (3-7 días hábiles Colombia).',
-            'autoridad'       => 'Autoridad: números creíbles. authority_years puede ser pequeño si la marca es nueva.',
-            'ctas'            => 'CTAs: máx 6 palabras por botón. Verbo acción + urgencia. Textos 1 oración persuasiva.',
+            'hero'            => 'Hero: título ≤8 palabras que nombra el dolor o promete su alivio (no describe el producto). Subtítulo agita ese dolor. hero_note menciona pago contraentrega.',
+            'beneficios'      => 'Beneficios: cada uno es una consecuencia concreta de seguir sin el producto, resuelta — nunca una característica técnica.',
+            'caracteristicas' => 'Características: cada texto conecta la característica física con el alivio emocional que produce (característica → por qué le importa a alguien con ese dolor).',
+            'countdown'       => 'Countdown: escasez + pérdida inminente (loss aversion) — el cliente pierde la chance de resolver su dolor, no solo "una oferta".',
+            'porque'          => 'Por qué: estructura Problema → Agitación → Solución. porque_text nombra el dolor, muestra el costo de ignorarlo, y lo resuelve. Es el párrafo más persuasivo de la landing.',
+            'comparativa'     => 'Comparativa: SIN el producto = el dolor en una escena de vida real; CON el producto = esa escena resuelta. Nunca specs.',
+            'testimonios'     => 'Testimonios: prueba social — cada uno es alguien que vivía ese mismo dolor y lo resolvió. Nombres y ciudades colombianas 100% reales. Textos ≤100 chars, muy naturales.',
+            'paraquien'       => 'Para quién: los "Sí" describen a quien tiene el dolor (identificación); los "No" describen a quien no lo tiene (califica y genera FOMO inverso).',
+            'wa'              => 'WhatsApp: prueba social informal del mismo dolor resuelto. Mensajes ultra-informales, emojis naturales, como copiados del celular de un cliente feliz.',
+            'faq'             => 'FAQ: cada pregunta es una objeción real que frena la compra (miedo a perder la plata); la respuesta baja ese riesgo. faq1 SIEMPRE sobre pago (contraentrega), faq2 sobre tiempo de envío (3-7 días hábiles Colombia).',
+            'autoridad'       => 'Autoridad: reduce el riesgo percibido de confiarle ese dolor a una marca nueva. Números creíbles; authority_years puede ser pequeño si la marca es nueva.',
+            'ctas'            => 'CTAs: directo al grano, cero rodeos. Botón ≤5 palabras, verbo de acción + urgencia (emoji opcional si suma, ej 🔥⏰). cta_*_text: una sola frase corta que empuje al clic, no una explicación.',
         ];
 
         return $base . ($hints[$sec] ?? '') . "\n\nJSON a completar:\n" . $schemas[$sec];
@@ -907,7 +909,7 @@ class AdminLandingController extends Controller
         $precioLine = $precio ? "- Precio: $precio COP" : '';
 
         return <<<PROMPT
-Eres el mejor copywriter de e-commerce colombiano. Tu especialidad es escribir textos que VENDEN para dropshipping en Colombia. Tu copy convierte porque habla exactamente como el colombiano real: cálido, directo, con urgencia genuina.
+Eres el mejor copywriter de e-commerce colombiano. Tu especialidad es escribir textos que VENDEN para dropshipping en Colombia. No vendes un producto: vendes el alivio de un dolor específico. Tu copy convierte porque habla exactamente como el colombiano real: cálido, directo, con urgencia genuina.
 
 PRODUCTO A TRABAJAR:
 - Nombre: {$nombre}
@@ -915,17 +917,36 @@ PRODUCTO A TRABAJAR:
 - Público objetivo: {$publico}
 {$precioLine}
 
+PASO 0 — ANTES DE ESCRIBIR (no lo muestres en la respuesta):
+Identifica UN solo dolor o frustración central que este producto resuelve para este público — algo concreto que la persona vive hoy sin el producto (una molestia física, una vergüenza social, una pérdida de tiempo o dinero, un miedo). Todo el copy de las ~60 variables debe ser ese mismo dolor contado desde ángulos distintos: nunca inventes un dolor nuevo por sección.
+
+CÓMO SE USA EL DOLOR EN CADA SECCIÓN (psicología de venta aplicada):
+- hero_title / hero_subtitle: nombra el dolor o la promesa de alivio inmediato — no describas el producto.
+- benefit_1 a benefit_4: cada uno es una CONSECUENCIA concreta de seguir sin el producto, resuelta — no una característica técnica.
+- caract1 a caract4: conecta cada característica física con el alivio emocional que produce (característica → por qué le importa a alguien con ese dolor).
+- countdown: escasez + pérdida inminente (el cliente pierde la oportunidad de resolver su dolor, no solo "una oferta").
+- porque_text: estructura Problema → Agitación → Solución. Nombra el dolor, muestra el costo de ignorarlo un poco más, y resuelve con el producto. Es el párrafo más persuasivo de la landing.
+- comparison_*: SIN el producto = el dolor en una escena de vida real; CON el producto = esa misma escena resuelta. Nunca specs.
+- test1-3: prueba social — cada testimonio es alguien que vivía ESE dolor y lo resolvió, en su propia voz.
+- para_quien_si_*: describen a quien tiene el dolor (identificación); para_quien_no_*: describen a quien no lo tiene (califica y genera FOMO inverso).
+- wa1-5: prueba social informal, mismo dolor resuelto, tono 100% casero.
+- faq1-6: cada pregunta es una objeción real que le impide comprar (duda = miedo a perder la plata); la respuesta baja ese riesgo.
+- authority_*: reduce el riesgo percibido de confiarle ese dolor a una marca nueva.
+- cta_*: urgencia para actuar YA y dejar de vivir con el dolor.
+
 REGLAS OBLIGATORIAS DE ESTILO (romperlas es inaceptable):
 1. Español colombiano 100% natural. Tuteo informal. NADA de "usted" en CTAs o textos de urgencia.
-2. Cada texto habla al DOLOR o DESEO del cliente, nunca a características técnicas.
+2. Cada texto conecta con el MISMO dolor identificado en el Paso 0 — nunca hables de características técnicas sueltas.
 3. PAGO CONTRAENTREGA es el argumento de confianza #1. Mencionarlo en hero_note, FAQ y testimonios.
 4. Urgencia real: "quedan pocas unidades", "solo por hoy", "la oferta termina pronto".
 5. Testimonios con nombres colombianos auténticos y ciudades colombianas reales (Bogotá, Medellín, Cali, Barranquilla, Bucaramanga, Pereira, Manizales, Santa Marta, Ibagué, Cúcuta, Cartagena).
 6. Mensajes de WhatsApp ultra-naturales: como si fueran copiados del celular de un cliente feliz (emojis reales, ortografía casi perfecta pero informal).
 7. FAQ siempre incluye: pago contraentrega, tiempo de envío (3-7 días hábiles), garantía, devoluciones.
-8. Hero title: máximo 8 palabras. Promesa de transformación o resultado.
+8. Hero title: máximo 8 palabras. Promesa de transformación o resultado, no descripción del producto.
 9. Comparativa: TRANSFORMACIÓN EMOCIONAL antes/después (no listas de specs).
-10. CTAs: cortos, con verbo de acción + urgencia. Ej: "¡Lo quiero ahora!" / "Pedir el mío →" / "Aprovechar oferta".
+10. CTAs (cta_*_button y cta_*_text): directo al grano, cero rodeos, cero explicación. Botón ≤5 palabras con verbo de acción + urgencia. Ej: "¡Lo quiero ahora! 🔥" / "Pedir el mío →" / "Aprovechar oferta ⏰".
+11. BREVEDAD en todos los campos: frases cortas, sin relleno ni párrafos largos. Si se dice en menos palabras, así se dice.
+12. Emojis solo cuando sumen al mensaje (✅🔥📦⏰😍🚚), sin saturar — 1 o 2 por texto como máximo. Nunca en nombres/ciudades de testimonios ni en preguntas de FAQ.
 
 Devuelve ÚNICAMENTE el siguiente JSON válido. Sin markdown, sin bloques de código, sin texto antes o después. Solo el JSON:
 
