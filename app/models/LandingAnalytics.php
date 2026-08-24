@@ -197,13 +197,28 @@ class LandingAnalytics extends Model
         $scroll   = max(0, min(100, (int)($payload['sc'] ?? 0)));
         $duracion = max(0, min(65535, (int)($payload['dur'] ?? 0)));
 
+        /* El COALESCE de fuera no es decoración: GREATEST() devuelve NULL en
+           cuanto UNO de sus argumentos es NULL. Sin él,
+
+               campo_max = GREATEST(COALESCE(campo_max, ?), ?)
+
+           con un lote sin eventos de campo ($campo === null) se evaluaba a
+           GREATEST('09-nombre', NULL) = NULL y BORRABA el máximo ya guardado.
+           Como el navegador manda un lote cada 8 segundos y otro al salir,
+           casi ninguna sesión llegaba al panel con su campo_max puesto: la
+           tabla "Dónde abandonan el formulario" salía vacía aunque
+           landing_eventos tuviera cientos de eventos de campo, y lo poco que
+           sobrevivía eran las sesiones que abandonaron en los 8 segundos
+           siguientes a tocar el campo — o sea, un sesgo, no una muestra.
+           Con el COALESCE de fuera, un lote sin novedad deja el valor como
+           estaba en vez de tirarlo. */
         $stmt = $this->db->prepare(
             'UPDATE landing_sesiones SET
                 paso_max     = GREATEST(paso_max, ?),
                 scroll_max   = GREATEST(scroll_max, ?),
                 duracion_seg = GREATEST(duracion_seg, ?),
-                seccion_max  = GREATEST(COALESCE(seccion_max, ?), ?),
-                campo_max    = GREATEST(COALESCE(campo_max, ?), ?),
+                seccion_max  = COALESCE(GREATEST(COALESCE(seccion_max, ?), ?), seccion_max),
+                campo_max    = COALESCE(GREATEST(COALESCE(campo_max, ?), ?), campo_max),
                 eventos      = eventos + ?,
                 visto_en     = NOW()
               WHERE id = ? LIMIT 1'
