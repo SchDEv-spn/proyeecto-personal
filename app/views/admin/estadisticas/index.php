@@ -220,6 +220,73 @@
                     </div>
                 </div>
 
+                <?php
+                /* La tarjeta "Pedidos" cuenta los que el embudo pudo atribuir a
+                   una sesión, y la conversión sale de ahí — numerador y
+                   denominador del mismo sitio, que es lo correcto. Pero ese
+                   número es más bajo que el de /AdminPedidos, porque un pedido
+                   hecho sin JavaScript no deja sesión que enlazar. Sin esta
+                   línea, la diferencia parece que uno de los dos paneles miente.
+                   En la vista local no se calcula: `pedidos` no distingue
+                   entorno y mezclaría pruebas con tráfico real. */
+                $pedidosReales = $pedidos_reales ?? null;
+                $atribuidos    = (int)($resumen['pedidos'] ?? 0);
+
+                /** "1 pedido" / "4 pedidos", sin dejar frases como "Los 1 pedidos". */
+                $nPedidos = fn(int $n) => number_format($n, 0, ',', '.') . ' pedido' . ($n === 1 ? '' : 's');
+
+                if ($pedidosReales !== null && ($pedidosReales > 0 || $atribuidos > 0)):
+                    $sinRastreo = max(0, $pedidosReales - $atribuidos);
+                    $pctAtrib   = $pedidosReales > 0 ? round($atribuidos * 100 / $pedidosReales) : 0;
+
+                    /* El icono se elige aquí y no dentro de cada rama porque el
+                       contenedor es flex: el <i> y el <span> del texto tienen que
+                       ser sus dos únicos hijos. Con el texto suelto, cada <strong>
+                       se convertía en un elemento flex más y la frase se partía en
+                       columnas. */
+                    $icono = $sinRastreo > 0
+                        ? 'fa-triangle-exclamation'
+                        : ($pedidosReales === 0 ? 'fa-circle-info' : 'fa-circle-check');
+                ?>
+                <p class="stats-hint stats-atribucion">
+                    <i class="fas <?= $icono ?>" aria-hidden="true"></i>
+                    <span>
+                    <?php if ($sinRastreo > 0): ?>
+                        En este periodo hay <strong><?= $nPedidos($pedidosReales) ?></strong>
+                        y el embudo pudo atribuir
+                        <strong><?= number_format($atribuidos, 0, ',', '.') ?></strong>
+                        (<?= $pctAtrib ?>%).
+                        <?= $nPedidos($sinRastreo) ?>
+                        <?= $sinRastreo === 1 ? 'llegó' : 'llegaron' ?>
+                        sin el rastreo del navegador — normalmente porque el JavaScript
+                        no llegó a ejecutarse. <?= $sinRastreo === 1 ? 'Cuenta' : 'Cuentan' ?>
+                        en Pedidos, pero no en la conversión de arriba ni en el embudo.
+                    <?php elseif ($pedidosReales === 0): ?>
+                        <?php /* Puede pasar en el borde del periodo: la visita entra
+                                 justo antes del corte y el pedido se crea después, así
+                                 que la sesión cae dentro del rango y el pedido no. Sin
+                                 esta rama, la anterior redactaba "Los 0 pedidos del
+                                 periodo están atribuidos", que no significa nada. */ ?>
+                        El embudo atribuye <strong><?= $nPedidos($atribuidos) ?></strong>,
+                        pero <?= $atribuidos === 1 ? 'no aparece' : 'ninguno aparece' ?>
+                        en la tabla de pedidos dentro de este periodo. Suele pasar cuando
+                        la visita cae justo antes del corte del rango y el pedido se crea
+                        después.
+                    <?php else: ?>
+                        <?php /* La frase entera cambia de número, no solo el sustantivo:
+                                 con $nPedidos() suelto salía "Los 1 pedido están". */ ?>
+                        <?php if ($pedidosReales === 1): ?>
+                            <strong>El pedido</strong> del periodo está atribuido al embudo:
+                        <?php else: ?>
+                            <strong>Los <?= $nPedidos($pedidosReales) ?></strong>
+                            del periodo están atribuidos al embudo:
+                        <?php endif; ?>
+                        lo que ves aquí y lo que ves en Pedidos es el mismo número.
+                    <?php endif; ?>
+                    </span>
+                </p>
+                <?php endif; ?>
+
                 <!-- ══ Evolución ══
                      Va con los KPIs: es el mismo resumen del periodo, pero
                      repartido por días. -->
@@ -869,6 +936,25 @@
 
     .stats-empty { color: var(--tx-dim); font-size: var(--text-sm); text-align: center; padding: var(--sp-4) 0; }
     .stats-hint  { color: var(--tx-muted); font-size: var(--text-xs); margin-top: var(--sp-3); line-height: 1.5; }
+
+    /* Contraste entre los pedidos reales y los que el embudo pudo atribuir.
+       Va pegado a las tarjetas y con caja propia porque corrige la lectura
+       de una de ellas: si pasa por nota al pie, no se lee. */
+    .stats-atribucion {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--sp-2);
+        margin-top: var(--sp-3);
+        padding: var(--sp-3);
+        border-radius: var(--radius-md, 8px);
+        background: var(--bg-soft, rgba(128, 128, 128, 0.08));
+        border-left: 3px solid var(--tx-muted);
+    }
+    .stats-atribucion i { margin-top: 2px; flex-shrink: 0; }
+    .stats-atribucion .fa-triangle-exclamation { color: var(--amber, #D97706); }
+    .stats-atribucion .fa-circle-check         { color: var(--green, #059669); }
+    .stats-atribucion:has(.fa-triangle-exclamation) { border-left-color: var(--amber, #D97706); }
+    .stats-atribucion:has(.fa-circle-check)         { border-left-color: var(--green, #059669); }
     </style>
 
     <?php if ($instalado): ?>

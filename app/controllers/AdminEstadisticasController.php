@@ -88,6 +88,15 @@ class AdminEstadisticasController extends Controller
             'entorno'      => $entorno,
             'productos'    => $this->productos(),
             'resumen'      => $resumen,
+            /* Los pedidos que el panel muestra son los que pudo atribuir a una
+               sesión. Este es el total de verdad, el mismo que ve /AdminPedidos:
+               la vista contrasta los dos para que la diferencia se explique en
+               vez de parecer que uno de los dos paneles miente.
+               En la vista local no se calcula: `pedidos` no distingue entorno y
+               ahí el contraste mezclaría pruebas con tráfico real. */
+            'pedidos_reales' => $entorno === 'produccion'
+                ? $analytics->pedidosDelPeriodo($filtro)
+                : null,
             'tendencias'   => $this->tendencias($resumen, $anterior),
             'embudo'       => $analytics->embudo($filtro),
             'secciones'    => $analytics->secciones($filtro),

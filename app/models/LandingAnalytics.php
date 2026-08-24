@@ -413,6 +413,36 @@ class LandingAnalytics extends Model
     }
 
     /**
+     * Pedidos REALES del periodo, contados en la tabla `pedidos`.
+     *
+     * Todo lo demás del panel cuenta pedidos *atribuidos*: los que llegaron
+     * con track_sid y se pudieron enlazar con una sesión. Un pedido hecho sin
+     * JavaScript — o con el beacon perdido, o con la sesión aún sin crear —
+     * existe en `pedidos` pero el embudo no lo ve nunca.
+     *
+     * Sin este número al lado, el panel contradice a /AdminPedidos y no hay
+     * forma de saber cuál de los dos mirar. Con él, la diferencia deja de ser
+     * un misterio y pasa a ser un dato: cuánto del negocio se le escapa al
+     * rastreo.
+     *
+     * `pedidos` no tiene columna de entorno, así que esto solo se compara en
+     * la vista de producción; en local mezclaría pedidos de prueba con reales.
+     */
+    public function pedidosDelPeriodo(array $f): int
+    {
+        $sql    = 'SELECT COUNT(*) AS n FROM pedidos p
+                    WHERE p.created_at >= ? AND p.created_at < ?';
+        $params = [$f['desde'], $f['hasta']];
+
+        if (!empty($f['producto_id'])) {
+            $sql     .= ' AND p.producto_id = ?';
+            $params[] = (int)$f['producto_id'];
+        }
+
+        return (int)($this->consulta($sql, $params)[0]['n'] ?? 0);
+    }
+
+    /**
      * El embudo: cuántas sesiones alcanzaron cada paso, con el porcentaje de
      * caída respecto al paso anterior — el número que responde "dónde se
      * pierde la intención".
