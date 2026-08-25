@@ -57,7 +57,12 @@ class Dropi
 
         $producto = $resp['body']['objects'] ?? null;
         if (!is_array($producto)) {
-            return ['ok' => false, 'error' => 'Dropi no devolvió el producto ' . $dropiProductId . '.'];
+            // Dropi respondió, pero sin 'objects': casi siempre trae el motivo
+            // real (token inválido, producto de otro proveedor, etc.) en
+            // 'message' o 'errorMessage' — mostrarlo en vez de un genérico.
+            $motivo = $resp['body']['message'] ?? ($resp['body']['errorMessage'] ?? null);
+            $detalle = $motivo ? " ({$motivo})" : ' — respuesta: ' . substr(json_encode($resp['body']), 0, 300);
+            return ['ok' => false, 'error' => 'Dropi no devolvió el producto ' . $dropiProductId . $detalle];
         }
 
         return ['ok' => true, 'producto' => $producto];
