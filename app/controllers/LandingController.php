@@ -530,8 +530,9 @@ class LandingController extends Controller
     {
         if (es_entorno_local()) return; // igual que el pixel del navegador: no ensuciar datos reales
 
-        $token = getenv('FB_CAPI_TOKEN');
-        if (!$token) return; // no configurado todavía: no-op silencioso
+        $token = trim((string)(new AppSettings())->get('fb_capi_token', ''));
+        if ($token === '') $token = trim((string)getenv('FB_CAPI_TOKEN')); // respaldo: tienda_config.php / .env
+        if ($token === '') return; // no configurado todavía: no-op silencioso
 
         try {
             $cantidad = max(1, (int)($d['cantidad_total'] ?? 1));
@@ -621,8 +622,9 @@ class LandingController extends Controller
     {
         if (es_entorno_local()) return; // igual que el pixel del navegador: no ensuciar datos reales
 
-        $token = getenv('TIKTOK_CAPI_TOKEN');
-        if (!$token) return; // no configurado todavía: no-op silencioso
+        $token = trim((string)(new AppSettings())->get('tiktok_capi_token', ''));
+        if ($token === '') $token = trim((string)getenv('TIKTOK_CAPI_TOKEN')); // respaldo: tienda_config.php / .env
+        if ($token === '') return; // no configurado todavía: no-op silencioso
 
         try {
             $cantidad = max(1, (int)($d['cantidad_total'] ?? 1));
@@ -698,11 +700,12 @@ class LandingController extends Controller
 
     private function notificarTelegram(array $d): void
     {
-        $token  = getenv('TELEGRAM_BOT_TOKEN');
-        $chatId = getenv('TELEGRAM_CHAT_ID');
+        $settings = new AppSettings();
+        $token  = trim((string)$settings->get('telegram_bot_token', '')) ?: trim((string)getenv('TELEGRAM_BOT_TOKEN'));
+        $chatId = trim((string)$settings->get('telegram_chat_id',  '')) ?: trim((string)getenv('TELEGRAM_CHAT_ID'));
 
         if (!$token || !$chatId) {
-            error_log('[Telegram] Token o chat_id no encontrados en .env');
+            error_log('[Telegram] Token o chat_id no configurados (panel ni .env)');
             return;
         }
 

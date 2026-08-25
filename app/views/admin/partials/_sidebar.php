@@ -16,6 +16,8 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
     $activeNav = 'plantillas';
 } elseif (strpos($currentPath, '/AdminPerfil/') !== false) {
     $activeNav = 'perfil';
+} elseif (strpos($currentPath, '/AdminConfiguracion/') !== false) {
+    $activeNav = 'configuracion';
 } else {
     $activeNav = '';
 }
@@ -64,6 +66,11 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
         <a href="<?= BASE_URL ?>/AdminPerfil/index" class="<?= $activeNav === 'perfil' ? 'active' : '' ?>">
             <i class="fas fa-user-circle"></i>
             <span>Mi Perfil</span>
+        </a>
+
+        <a href="<?= BASE_URL ?>/AdminConfiguracion/index" class="<?= $activeNav === 'configuracion' ? 'active' : '' ?>">
+            <i class="fas fa-sliders"></i>
+            <span>Configuración</span>
         </a>
 
         <a href="<?= BASE_URL ?>/Auth/logout" class="sidebar-nav__logout" id="logoutLink">
