@@ -45,6 +45,24 @@ class AdminProductosController extends Controller
         return $colores;
     }
 
+    /**
+     * $coloresDropi: filas [color, dropi_variation_id] tal como están en BD.
+     * $postVariaciones: lo que el admin acaba de escribir en el form
+     * ($_POST['dropi_variation'][color] = id). Se usa para re-renderizar el
+     * form tras un error de validación sin perder lo que ya había tipeado.
+     */
+    private function overlayVariacionesDropi(array $coloresDropi, array $postVariaciones): array
+    {
+        foreach ($coloresDropi as &$c) {
+            if (array_key_exists($c['color'], $postVariaciones)) {
+                $v = trim((string)$postVariaciones[$c['color']]);
+                $c['dropi_variation_id'] = $v !== '' ? (int)$v : null;
+            }
+        }
+        unset($c);
+        return $coloresDropi;
+    }
+
     /** Limpia y acota descuento 0..100 */
     private function clampDescuento($v, int $default): int
     {
@@ -151,6 +169,154 @@ class AdminProductosController extends Controller
         ]);
     }
 
+    /** Formulario para pegar el ID del producto en Dropi */
+    public function importarDropi()
+    {
+        $this->requireLogin();
+        $this->view('admin/productos/importar_dropi', [
+            'errores'        => [],
+            'dropiId'        => '',
+            'tieneDropiToken'=> (new AppSettings())->hasKey('dropi_api_token'),
+        ]);
+    }
+
+    /** Guarda el token de integración de Dropi en app_settings */
+    public function guardarDropiToken()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            return;
+        }
+
+        $token = trim((string)($_POST['dropi_api_token'] ?? ''));
+        if ($token === '') {
+            echo json_encode(['ok' => false, 'error' => 'Ingresa un token válido.']);
+            return;
+        }
+
+        (new AppSettings())->set('dropi_api_token', $token);
+        echo json_encode(['ok' => true]);
+    }
+
+    /**
+     * Trae el producto desde Dropi y abre "Crear producto" ya lleno con su
+     * nombre, foto, costo y colores/variantes. El admin revisa y ajusta el
+     * precio de venta antes de guardar — nada se crea todavía acá.
+     */
+    public function buscarDropi()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: " . BASE_URL . "/AdminProductos/importarDropi");
+            exit;
+        }
+
+        $dropiIdRaw = trim((string)($_POST['dropi_product_id'] ?? ''));
+        $dropiId = (int)$dropiIdRaw;
+        $tieneDropiToken = (new AppSettings())->hasKey('dropi_api_token');
+
+        if ($dropiId <= 0) {
+            $this->view('admin/productos/importar_dropi', [
+                'errores'         => ['Ingresa un ID de producto de Dropi válido.'],
+                'dropiId'         => $dropiIdRaw,
+                'tieneDropiToken' => $tieneDropiToken,
+            ]);
+            return;
+        }
+
+        $dropi = new Dropi();
+        if (!$dropi->configurado()) {
+            $this->view('admin/productos/importar_dropi', [
+                'errores'         => ['Falta configurar el token de Dropi antes de poder importar (más abajo en esta página).'],
+                'dropiId'         => $dropiIdRaw,
+                'tieneDropiToken' => $tieneDropiToken,
+            ]);
+            return;
+        }
+
+        $resp = $dropi->obtenerProducto($dropiId);
+        if (!$resp['ok']) {
+            $this->view('admin/productos/importar_dropi', [
+                'errores'         => [$resp['error']],
+                'dropiId'         => $dropiIdRaw,
+                'tieneDropiToken' => $tieneDropiToken,
+            ]);
+            return;
+        }
+
+        $dp = $resp['producto'];
+
+        // Costo: lo que Dropi te cobra a vos, no el precio sugerido al público.
+        $costoProveedor = (float)($dp['price'] ?? ($dp['suggested_price'] ?? 0));
+
+        // Foto principal: la forma exacta de "photos" no está documentada
+        // públicamente, así que se prueban las variantes más comunes y si
+        // ninguna calza, se deja vacía para que el admin la suba a mano.
+        $fotoUrl = '';
+        $primeraFoto = $dp['photos'][0] ?? null;
+        if (is_string($primeraFoto)) {
+            $fotoUrl = $primeraFoto;
+        } elseif (is_array($primeraFoto)) {
+            $fotoUrl = $primeraFoto['image'] ?? ($primeraFoto['url'] ?? ($primeraFoto['path'] ?? ''));
+        }
+
+        // Colores/variantes: cada variación puede tener varios atributos
+        // (color, talla...) — se juntan en una sola etiqueta legible.
+        $colores = [];
+        $variacionesDropi = [];
+        foreach ((array)($dp['variations'] ?? []) as $variacion) {
+            $partes = [];
+            foreach ((array)($variacion['attribute_values'] ?? []) as $attr) {
+                $valor = trim((string)($attr['value'] ?? ''));
+                if ($valor !== '') $partes[] = $valor;
+            }
+            $etiqueta = trim(implode(' / ', $partes));
+            if ($etiqueta === '' || !isset($variacion['id'])) continue;
+
+            // Dos variaciones con la misma etiqueta (atributos que no
+            // alcanzamos a distinguir) no pueden compartir la misma clave:
+            // se perdería el mapeo de una de las dos en silencio.
+            if (isset($variacionesDropi[$etiqueta])) {
+                $etiqueta .= ' (' . $variacion['id'] . ')';
+            }
+
+            $colores[] = $etiqueta;
+            $variacionesDropi[$etiqueta] = (int)$variacion['id'];
+        }
+        if (empty($colores)) $colores = [''];
+
+        $old = [
+            'nombre'                 => $dp['name'] ?? '',
+            'slug'                   => '',
+            'precio_venta'           => '',
+            'precio_regular'         => '',
+            'precio_proveedor'       => $costoProveedor > 0 ? $costoProveedor : '',
+            'costo_envio'            => 0,
+            'activo'                 => 1,
+            'colores'                => $colores,
+            'dropi_product_id'       => (string)$dropiId,
+            'dropi_variation'        => $variacionesDropi,
+            'imagen_principal_actual'=> $fotoUrl,
+
+            'descuento_2da' => 15,
+            'descuento_3ra' => 20,
+            'descuento_multicantidad_activo' => 1,
+        ];
+
+        $this->view('admin/productos/crear', [
+            'errores'          => [],
+            'old'              => $old,
+            'importadoDeDropi' => true,
+            'dropiSuggested'   => (float)($dp['suggested_price'] ?? 0),
+        ]);
+    }
+
     public function guardarNuevo()
     {
         $this->requireLogin();
@@ -183,6 +349,12 @@ class AdminProductosController extends Controller
         if ($costoEnvio < 0) $costoEnvio = 0;
 
         $colores = $this->normalizarColores($_POST['colores'] ?? []);
+
+        $dropiProductIdRaw = trim((string)($_POST['dropi_product_id'] ?? ''));
+        $dropiProductId = $dropiProductIdRaw !== '' ? (int)$dropiProductIdRaw : null;
+        $imagenUrlDropi = trim((string)($_POST['imagen_principal_actual'] ?? ''));
+        $variacionesDropi = $_POST['dropi_variation'] ?? [];
+        if (!is_array($variacionesDropi)) $variacionesDropi = [];
 
         // ✅ Si el admin escribe slug manual, lo sanitizamos
         $slug = $slugInput !== '' ? $this->generarSlug($slugInput) : $this->generarSlug($nombre);
@@ -224,14 +396,20 @@ class AdminProductosController extends Controller
             'costo_envio'      => $costoEnvio,
             'activo'           => $activo,
             'colores'          => $colores,
+            'dropi_product_id' => $dropiProductIdRaw,
+            'imagen_principal_actual' => $imagenUrlDropi,
+            'dropi_variation'  => $variacionesDropi,
 
             'descuento_2da' => $descuento2,
             'descuento_3ra' => $descuento3,
             'descuento_multicantidad_activo' => $descActivo,
         ];
 
-        // Manejo de imagen principal
-        $imagenPrincipal = null;
+        // Manejo de imagen principal: un archivo nuevo siempre gana; si no
+        // se sube nada pero se venía de "Importar de Dropi" con una URL de
+        // foto, se usa esa (imagen_principal admite URL absoluta, igual
+        // que en el editor).
+        $imagenPrincipal = (preg_match('#^https?://#i', $imagenUrlDropi)) ? $imagenUrlDropi : null;
 
         $persistentBase = dirname(dirname(dirname($_SERVER['DOCUMENT_ROOT']))) . '/uploads';
         $uploadDir = is_dir($persistentBase)
@@ -297,6 +475,11 @@ class AdminProductosController extends Controller
         }
 
         $productoModel->syncColoresProducto((int)$productoId, $colores);
+        $productoModel->guardarDropiProductId((int)$productoId, $dropiProductId);
+
+        if (!empty($variacionesDropi)) {
+            $productoModel->guardarVariacionesDropi((int)$productoId, $variacionesDropi);
+        }
 
         $_SESSION['admin_productos_success'] = "Producto creado correctamente.";
         header("Location: " . BASE_URL . "/AdminProductos/index");
@@ -323,6 +506,7 @@ class AdminProductosController extends Controller
         }
 
         $colores = $productoModel->getColoresByProducto($id);
+        $coloresDropi = $productoModel->obtenerColoresConVariacionDropi($id);
 
         $old = [
             'id'               => $producto['id'],
@@ -335,6 +519,7 @@ class AdminProductosController extends Controller
             'activo'           => $producto['activo'] ?? 1,
             'imagen_principal' => $producto['imagen_principal'] ?? '',
             'colores'          => $colores,
+            'dropi_product_id' => $producto['dropi_product_id'] ?? '',
 
             // ✅ descuentos
             'descuento_2da' => $producto['descuento_2da'] ?? 15,
@@ -343,10 +528,11 @@ class AdminProductosController extends Controller
         ];
 
         $this->view('admin/productos/editar', [
-            'producto' => $producto,
-            'errores'  => [],
-            'old'      => $old,
-            'colores'  => $colores,
+            'producto'     => $producto,
+            'errores'      => [],
+            'old'          => $old,
+            'colores'      => $colores,
+            'coloresDropi' => $coloresDropi,
         ]);
     }
 
@@ -400,6 +586,11 @@ class AdminProductosController extends Controller
 
         $colores = $this->normalizarColores($_POST['colores'] ?? []);
 
+        $dropiProductIdRaw = trim((string)($_POST['dropi_product_id'] ?? ''));
+        $dropiProductId = $dropiProductIdRaw !== '' ? (int)$dropiProductIdRaw : null;
+        $variacionesDropi = $_POST['dropi_variation'] ?? [];
+        if (!is_array($variacionesDropi)) $variacionesDropi = [];
+
         // ✅ Sanitizar slug manual
         $slug = $slugInput !== '' ? $this->generarSlug($slugInput) : ($productoExistente['slug'] ?? $this->generarSlug($nombre));
 
@@ -441,6 +632,7 @@ class AdminProductosController extends Controller
             'activo'           => $activo,
             'imagen_principal' => $imagenPrincipal,
             'colores'          => $colores,
+            'dropi_product_id' => $dropiProductIdRaw,
 
             'descuento_2da' => $descuento2,
             'descuento_3ra' => $descuento3,
@@ -479,10 +671,14 @@ class AdminProductosController extends Controller
 
         if (!empty($errores)) {
             $this->view('admin/productos/editar', [
-                'producto' => $productoExistente,
-                'errores'  => $errores,
-                'old'      => $old,
-                'colores'  => $colores,
+                'producto'     => $productoExistente,
+                'errores'      => $errores,
+                'old'          => $old,
+                'colores'      => $colores,
+                'coloresDropi' => $this->overlayVariacionesDropi(
+                    $productoModel->obtenerColoresConVariacionDropi($id),
+                    $variacionesDropi
+                ),
             ]);
             return;
         }
@@ -504,15 +700,24 @@ class AdminProductosController extends Controller
 
         if (!$ok) {
             $this->view('admin/productos/editar', [
-                'producto' => $productoExistente,
-                'errores'  => ["No se pudo actualizar el producto. Intenta nuevamente."],
-                'old'      => $old,
-                'colores'  => $colores,
+                'producto'     => $productoExistente,
+                'errores'      => ["No se pudo actualizar el producto. Intenta nuevamente."],
+                'old'          => $old,
+                'colores'      => $colores,
+                'coloresDropi' => $this->overlayVariacionesDropi(
+                    $productoModel->obtenerColoresConVariacionDropi($id),
+                    $variacionesDropi
+                ),
             ]);
             return;
         }
 
         $productoModel->syncColoresProducto($id, $colores);
+        $productoModel->guardarDropiProductId($id, $dropiProductId);
+
+        if (!empty($variacionesDropi)) {
+            $productoModel->guardarVariacionesDropi($id, $variacionesDropi);
+        }
 
         $_SESSION['admin_productos_success'] = "Producto actualizado correctamente.";
         header("Location: " . BASE_URL . "/AdminProductos/index");

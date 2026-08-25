@@ -504,6 +504,10 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   border: 2px solid var(--surface);
 }
 
+.notif-badge:empty {
+  display: none;
+}
+
 .notif-dropdown {
   position: absolute;
   top: calc(100% + 8px);
@@ -1198,6 +1202,27 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
 .status-en_oficina { background: #FEF9C3; color: #713F12; }
 .status-entregado  { background: var(--soft-green); color: var(--green); }
 .status-cancelado  { background: var(--soft-red);   color: var(--red);   }
+
+.dropi-badge { margin-top: 4px; }
+.dropi-badge small { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs); font-weight: 600; cursor: default; }
+.dropi-badge--ok    { color: var(--green); }
+.dropi-badge--error { color: var(--red); }
+
+.dropi-variations-wrap { display: flex; flex-direction: column; gap: var(--sp-2); }
+.dropi-variation-color { flex: 1; font-weight: 600; }
+
+.dropi-token-saved {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-sm);
+  color: var(--green);
+  font-weight: 600;
+}
+.dropi-token-saved .btn-ghost { margin-left: auto; padding: 4px var(--sp-3); font-size: var(--text-xs); }
+.dropi-token-msg { font-size: var(--text-sm); margin-top: var(--sp-2); }
+.dropi-token-msg--ok    { color: var(--green); }
+.dropi-token-msg--error { color: var(--red); }
 
 /* ============================================================
    18. Modal

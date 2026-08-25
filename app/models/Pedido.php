@@ -242,6 +242,39 @@ class Pedido extends Model
         return (int)$stmt->fetchColumn() > 0;
     }
 
+    /**
+     * Reclama el derecho a sincronizar este pedido con Dropi. Es un UPDATE
+     * condicional (no un SELECT + IF en PHP) a propósito: dos peticiones
+     * casi simultáneas (doble clic, reintento de red) sí pueden llegar
+     * aquí a la vez, y solo una debe ganar la carrera.
+     */
+    public function reclamarSincronizacionDropi(int $id): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE pedidos SET dropi_syncing = 1
+             WHERE id = :id AND dropi_order_id IS NULL AND dropi_syncing = 0"
+        );
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function liberarSincronizacionDropi(int $id): void
+    {
+        $stmt = $this->db->prepare("UPDATE pedidos SET dropi_syncing = 0 WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+    }
+
+    public function guardarDropiResultado(int $id, ?int $dropiOrderId, ?string $error): bool
+    {
+        $sql = "UPDATE pedidos SET dropi_order_id = :oid, dropi_sync_error = :err WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':oid' => $dropiOrderId,
+            ':err' => $error !== null ? mb_substr($error, 0, 255) : null,
+            ':id'  => $id,
+        ]);
+    }
+
     public function contarPedidosRecientes(int $productoId, int $dias = 30): int
     {
         $sql = "SELECT COUNT(*) FROM pedidos

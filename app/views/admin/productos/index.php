@@ -71,8 +71,13 @@
                     'label' => 'Crear producto',
                     'class' => 'btn-primary',
                     'icon'  => 'fas fa-plus',
-                ]
-                
+                ],
+                [
+                    'href'  => BASE_URL . '/AdminProductos/importarDropi',
+                    'label' => 'Importar de Dropi',
+                    'class' => 'btn-detail',
+                    'icon'  => 'fas fa-cloud-arrow-down',
+                ],
             ];
 
             require __DIR__ . '/../partials/_header.php';

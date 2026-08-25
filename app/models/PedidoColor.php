@@ -30,4 +30,14 @@ class PedidoColor extends Model
             ]);
         }
     }
+
+    /** @return array<int, array{color:string, cantidad:int}> */
+    public function obtenerPorPedido(int $pedidoId): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT color, cantidad FROM pedido_colores WHERE pedido_id = :pid ORDER BY id ASC"
+        );
+        $stmt->execute([':pid' => $pedidoId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

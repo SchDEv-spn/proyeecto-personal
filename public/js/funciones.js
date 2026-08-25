@@ -1301,6 +1301,19 @@
           if (p) p.estado = estadoFinal;
         }
 
+        // Badge de sincronización con Dropi (solo se intenta al confirmar)
+        if (card && json?.dropi) {
+          const badge = card.querySelector('[data-dropi-badge]');
+          if (badge) {
+            if (json.dropi.dropi_order_id) {
+              badge.innerHTML = `<small class="dropi-badge--ok" title="Orden creada en Dropi"><i class="fas fa-check-circle"></i> Dropi #${json.dropi.dropi_order_id}</small>`;
+            } else if (json.dropi.error) {
+              const err = String(json.dropi.error).replace(/"/g, '&quot;');
+              badge.innerHTML = `<small class="dropi-badge--error" title="${err}"><i class="fas fa-triangle-exclamation"></i> Dropi: error</small>`;
+            }
+          }
+        }
+
         const currentRange = window.__RANGE_SELECTED || 'month';
         window.dispatchEvent(new CustomEvent('range:change', { detail: { range: currentRange } }));
 

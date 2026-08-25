@@ -177,4 +177,58 @@ class Producto extends Model
         $stmt->execute([':pid' => $productoId, ':color' => $color]);
         return ((int)$stmt->fetchColumn()) > 0;
     }
+
+    // =========================
+    // INTEGRACIÓN DROPI
+    // =========================
+
+    public function guardarDropiProductId(int $id, ?int $dropiProductId): bool
+    {
+        $stmt = $this->db->prepare("UPDATE productos SET dropi_product_id = :did WHERE id = :id");
+        return $stmt->execute([
+            ':did' => $dropiProductId,
+            ':id'  => $id,
+        ]);
+    }
+
+    /**
+     * Colores del producto con su variation_id de Dropi (NULL si el producto
+     * es SIMPLE en Dropi o ese color todavía no se mapeó).
+     */
+    public function obtenerColoresConVariacionDropi(int $productoId): array
+    {
+        $sql = "SELECT color, dropi_variation_id
+                FROM producto_colores
+                WHERE producto_id = :pid AND activo = 1
+                ORDER BY id ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':pid' => $productoId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * $variaciones: ['Negro' => 123, 'Azul' => null, ...]. Actualiza por
+     * nombre de color en vez de reinsertar, para no chocar con
+     * syncColoresProducto (que borra y recrea las filas de color).
+     */
+    public function guardarVariacionesDropi(int $productoId, array $variaciones): void
+    {
+        $upd = $this->db->prepare(
+            "UPDATE producto_colores SET dropi_variation_id = :vid
+             WHERE producto_id = :pid AND color = :color"
+        );
+
+        foreach ($variaciones as $color => $variationId) {
+            $color = trim((string)$color);
+            if ($color === '') continue;
+
+            $vid = ($variationId !== null && $variationId !== '') ? (int)$variationId : null;
+
+            $upd->execute([
+                ':vid'   => $vid,
+                ':pid'   => $productoId,
+                ':color' => $color,
+            ]);
+        }
+    }
 }

@@ -229,5 +229,32 @@ ALTER TABLE landing_config
     ADD COLUMN IF NOT EXISTS pixel_id   VARCHAR(50) NULL,
     ADD COLUMN IF NOT EXISTS clarity_id VARCHAR(50) NULL;
 
+-- ── Integración con Dropi (creación de órdenes en el proveedor) ──
+-- dropi_product_id: liga el producto local con el producto en Dropi. Sin
+-- esto, un pedido de ese producto nunca intenta sincronizarse (no-op).
+ALTER TABLE productos
+    ADD COLUMN IF NOT EXISTS dropi_product_id INT NULL;
+
+-- dropi_variation_id: solo se llena para productos VARIABLE en Dropi (uno
+-- por color). Si el producto es SIMPLE en Dropi, se deja NULL en todos los
+-- colores y el pedido se manda como un solo ítem sin variación.
+ALTER TABLE producto_colores
+    ADD COLUMN IF NOT EXISTS dropi_variation_id INT NULL;
+
+-- dropi_order_id: id de la orden ya creada en Dropi — funciona como
+-- guarda de idempotencia (si ya tiene valor, no se reintenta el envío).
+-- dropi_sync_error: último mensaje de error de Dropi, visible en el panel
+-- para que el admin sepa por qué no se sincronizó (ciudad no reconocida,
+-- producto sin mapear, etc.) sin tener que mirar los logs del servidor.
+-- dropi_syncing: mutex de una sola fila. Un pedido puede llegar a
+-- cambiarEstado() dos veces casi a la vez (doble clic, o el fallback de
+-- funciones.js reintentando por fetch fallido) — sin esto, ambas peticiones
+-- pasan el chequeo de "¿ya tiene dropi_order_id?" antes de que la primera
+-- termine de llamar a Dropi, y se crean dos órdenes para el mismo pedido.
+ALTER TABLE pedidos
+    ADD COLUMN IF NOT EXISTS dropi_order_id   INT NULL,
+    ADD COLUMN IF NOT EXISTS dropi_sync_error VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS dropi_syncing    TINYINT(1) NOT NULL DEFAULT 0;
+
 -- ── Fin de migración ──
 SELECT 'Migración completada OK' AS resultado;

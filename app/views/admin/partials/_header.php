@@ -79,7 +79,7 @@ window.BASE_URL = '<?= BASE_URL ?>';
                     aria-label="Notificaciones" aria-expanded="false"
                     aria-controls="notifDropdown">
                 <i class="fas fa-bell"></i>
-                <span class="notif-badge" id="notifBadge" aria-live="polite">0</span>
+                <span class="notif-badge" id="notifBadge" aria-live="polite"></span>
             </button>
 
             <div class="notif-dropdown" id="notifDropdown" aria-hidden="true" hidden>

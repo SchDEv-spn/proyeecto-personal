@@ -297,6 +297,21 @@
                                         <span class="status-tag status-<?= htmlspecialchars($estadoActual) ?>">
                                             <?= ucfirst(str_replace('_', ' ', htmlspecialchars($estadoActual))) ?>
                                         </span>
+                                        <?php
+                                            $dropiOrderId  = $p['dropi_order_id'] ?? null;
+                                            $dropiError    = $p['dropi_sync_error'] ?? null;
+                                        ?>
+                                        <div class="dropi-badge" data-dropi-badge>
+                                            <?php if (!empty($dropiOrderId)): ?>
+                                                <small class="dropi-badge--ok" title="Orden creada en Dropi">
+                                                    <i class="fas fa-check-circle"></i> Dropi #<?= htmlspecialchars((string)$dropiOrderId) ?>
+                                                </small>
+                                            <?php elseif (!empty($dropiError)): ?>
+                                                <small class="dropi-badge--error" title="<?= htmlspecialchars($dropiError) ?>">
+                                                    <i class="fas fa-triangle-exclamation"></i> Dropi: error
+                                                </small>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
 
                                     <td>

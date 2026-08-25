@@ -416,12 +416,21 @@ class AdminPedidosController extends Controller
         $pedidoModel = new Pedido();
         $pedidoModel->actualizarEstado($id, $estado);
 
+        // Solo se manda a Dropi cuando el admin confirma el pedido por
+        // WhatsApp — no en cuanto llega, para no pagarle al proveedor por
+        // pedidos falsos o de prueba. Ver decisión del 2026-08-24.
+        $dropiResultado = null;
+        if ($estado === 'confirmado') {
+            $dropiResultado = $this->sincronizarDropi($id);
+        }
+
         if (!empty($_POST['ajax']) && $_POST['ajax'] == '1') {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
                 'ok'     => true,
                 'id'     => $id,
-                'estado' => $estado
+                'estado' => $estado,
+                'dropi'  => $dropiResultado,
             ]);
             return;
         }
@@ -447,6 +456,173 @@ class AdminPedidosController extends Controller
         if (empty($_SESSION['usuario_id'])) {
             header("Location: " . BASE_URL . "/Auth/login");
             exit;
+        }
+    }
+
+    /**
+     * Crea la orden en Dropi para un pedido ya confirmado. Nunca debe
+     * romper el cambio de estado: cualquier fallo queda guardado en
+     * pedidos.dropi_sync_error para que el admin lo vea en el panel, y el
+     * pedido local sigue su curso igual.
+     *
+     * Devuelve null cuando no aplicaba intentarlo (local, ya sincronizado,
+     * o el producto no tiene dropi_product_id — no todo producto viene de
+     * Dropi). Devuelve ['ok' => bool, 'error' => ?string, 'dropi_order_id' => ?int]
+     * cuando sí se intentó, para que la respuesta AJAX lo muestre.
+     */
+    private function sincronizarDropi(int $pedidoId): ?array
+    {
+        // Igual que la Conversions API: un pedido de prueba en local jamás
+        // debe convertirse en un envío real a un proveedor.
+        if (es_entorno_local()) return null;
+
+        try {
+            $pedidoModel = new Pedido();
+            $pedido = $pedidoModel->obtenerPorId($pedidoId);
+            if (!$pedido) return null;
+
+            // Idempotencia: si ya tiene orden creada, no reintentar solo.
+            if (!empty($pedido['dropi_order_id'])) return null;
+
+            $productoModel = new Producto();
+            $producto = $productoModel->obtenerPorId((int)$pedido['producto_id']);
+            $dropiProductId = (int)($producto['dropi_product_id'] ?? 0);
+
+            // Este producto no viene de Dropi: no es un error, es un no-op.
+            if ($dropiProductId <= 0) return null;
+
+            // Reclama el pedido antes de tocar la red: un doble clic en
+            // "Confirmar", o el fallback de funciones.js reintentando por un
+            // fetch fallido, no debe poder crear dos órdenes en Dropi para
+            // el mismo pedido. Si otra petición ya lo está sincronizando,
+            // esta simplemente no hace nada.
+            if (!$pedidoModel->reclamarSincronizacionDropi($pedidoId)) return null;
+
+            try {
+                $dropi = new Dropi();
+                if (!$dropi->configurado()) {
+                    $error = 'Falta configurar el token de Dropi (Productos → Importar de Dropi).';
+                    $pedidoModel->guardarDropiResultado($pedidoId, null, $error);
+                    return ['ok' => false, 'error' => $error, 'dropi_order_id' => null];
+                }
+
+                $infoProducto = $dropi->obtenerProducto($dropiProductId);
+                if (!$infoProducto['ok']) {
+                    $pedidoModel->guardarDropiResultado($pedidoId, null, $infoProducto['error']);
+                    return ['ok' => false, 'error' => $infoProducto['error'], 'dropi_order_id' => null];
+                }
+                $dp = $infoProducto['producto'];
+
+                $supplierId = $dp['user_id'] ?? null;
+                if (empty($supplierId)) {
+                    $error = 'Dropi no devolvió el proveedor (user_id) del producto ' . $dropiProductId . '.';
+                    $pedidoModel->guardarDropiResultado($pedidoId, null, $error);
+                    return ['ok' => false, 'error' => $error, 'dropi_order_id' => null];
+                }
+
+                // Mapa color => variation_id (solo tiene valores si el producto
+                // es VARIABLE en Dropi y el admin ya lo configuró en el editor).
+                $variacionesPorColor = [];
+                foreach ($productoModel->obtenerColoresConVariacionDropi((int)$pedido['producto_id']) as $c) {
+                    $variacionesPorColor[$c['color']] = $c['dropi_variation_id'] !== null ? (int)$c['dropi_variation_id'] : null;
+                }
+                $esVariable = (bool)array_filter($variacionesPorColor, fn($v) => $v !== null);
+
+                $pedidoColorModel = new PedidoColor();
+                $coloresPedido = $pedidoColorModel->obtenerPorPedido($pedidoId);
+
+                $cantidadTotal = max(1, (int)($pedido['cantidad_total'] ?? 1));
+                $precioTotal   = (float)($pedido['precio_total'] ?? 0);
+                $precioPorUnidad = $cantidadTotal > 0 ? round($precioTotal / $cantidadTotal, 2) : $precioTotal;
+
+                $baseItem = [
+                    'id'      => $dp['id'] ?? $dropiProductId,
+                    'name'    => $dp['name'] ?? ($producto['nombre'] ?? ''),
+                    'stock'   => (int)($dp['stock'] ?? 0),
+                    'type'    => $dp['type'] ?? ($esVariable ? 'VARIABLE' : 'SIMPLE'),
+                    'user_id' => $supplierId,
+                    'token'   => $dropi->token(), // el token ya resuelto (panel o .env), no getenv() directo
+                ];
+
+                $products = [];
+
+                if ($esVariable) {
+                    if (empty($coloresPedido)) {
+                        $error = 'El producto es variable en Dropi pero el pedido no tiene colores registrados.';
+                        $pedidoModel->guardarDropiResultado($pedidoId, null, $error);
+                        return ['ok' => false, 'error' => $error, 'dropi_order_id' => null];
+                    }
+
+                    foreach ($coloresPedido as $item) {
+                        $color = $item['color'];
+                        $variationId = $variacionesPorColor[$color] ?? null;
+                        if (empty($variationId)) {
+                            $error = "El color '{$color}' no tiene variation_id de Dropi configurado (edítalo en el producto).";
+                            $pedidoModel->guardarDropiResultado($pedidoId, null, $error);
+                            return ['ok' => false, 'error' => $error, 'dropi_order_id' => null];
+                        }
+
+                        $products[] = array_merge($baseItem, [
+                            'variation_id' => $variationId,
+                            'quantity'     => (int)$item['cantidad'],
+                            'price'        => $precioPorUnidad,
+                        ]);
+                    }
+                } else {
+                    $products[] = array_merge($baseItem, [
+                        'quantity' => $cantidadTotal,
+                        'price'    => $precioPorUnidad,
+                    ]);
+                }
+
+                $tipoEntrega = $pedido['tipo_entrega'] ?? '';
+                $direccion   = trim((string)($pedido['direccion'] ?? ''));
+                $notaEntrega = trim((string)($pedido['nota_entrega'] ?? ''));
+
+                $dir = $tipoEntrega === 'domicilio' && $direccion !== ''
+                    ? $direccion
+                    : 'Recoge en punto/oficina — ' . ($pedido['municipio'] ?? '');
+
+                $payload = [
+                    'total_order'                  => $precioTotal,
+                    'notes'                        => $notaEntrega,
+                    'name'                         => $pedido['nombre'] ?? '',
+                    'surname'                      => $pedido['apellidos'] ?? '',
+                    'dir'                          => $dir,
+                    'country'                      => 'Colombia',
+                    'state'                        => $pedido['departamento'] ?? '',
+                    'city'                         => $pedido['municipio'] ?? '',
+                    'phone'                        => $pedido['telefono'] ?? '',
+                    'client_email'                 => '',
+                    'payment_method_id'            => 1,
+                    'status'                       => 'PENDIENTE CONFIRMACION',
+                    'type'                         => 'FINAL_ORDER',
+                    'rate_type'                    => 'CON RECAUDO',
+                    'products'                     => $products,
+                    'calculate_costs_and_shiping'  => true,
+                    'supplier_id'                  => $supplierId,
+                    'shop_order_id'                => (string)$pedidoId,
+                    'create_product_if_not_exist'  => false,
+                ];
+
+                $resultado = $dropi->crearOrden($payload);
+                $pedidoModel->guardarDropiResultado($pedidoId, $resultado['dropi_order_id'], $resultado['error']);
+
+                return $resultado;
+            } finally {
+                // Se libera siempre: si crearOrden() sí tuvo éxito, el
+                // dropi_order_id ya guardado bloquea cualquier reintento futuro
+                // igual; si falló, esto es lo que permite reintentar después.
+                $pedidoModel->liberarSincronizacionDropi($pedidoId);
+            }
+        } catch (Throwable $e) {
+            error_log('[Dropi] Excepción sincronizando pedido ' . $pedidoId . ': ' . $e->getMessage());
+            try {
+                (new Pedido())->guardarDropiResultado($pedidoId, null, 'Error interno: ' . $e->getMessage());
+            } catch (Throwable $e2) {
+                // no-op: ya se logueó el error original
+            }
+            return ['ok' => false, 'error' => 'Error interno al sincronizar con Dropi.', 'dropi_order_id' => null];
         }
     }
 }

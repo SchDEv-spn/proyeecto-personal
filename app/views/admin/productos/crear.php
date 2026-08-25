@@ -29,6 +29,11 @@
     $coloresForm = array_values(array_filter(array_map(fn($c) => trim((string)$c), $coloresForm), fn($c) => $c !== ''));
     if (empty($coloresForm)) $coloresForm = [''];
 
+    $importadoDeDropi = $importadoDeDropi ?? false;
+    $dropiSuggested    = $dropiSuggested ?? 0;
+    $dropiVariationMap = $old['dropi_variation'] ?? [];
+    $imagenUrlActual   = $old['imagen_principal_actual'] ?? '';
+
     // Si hubo errores, el wizard abre en paso 1 para mostrarlos
     $startStep = !empty($errores) ? 0 : 0;
 ?>
@@ -57,6 +62,17 @@
         <section class="material-content">
 
             <?= alert_error($errores) ?>
+
+            <?php if ($importadoDeDropi): ?>
+                <div class="admin-alert-success" style="margin-bottom:var(--sp-4)">
+                    <div class="admin-alert-title"><i class="fas fa-cloud-arrow-down"></i> Datos traídos de Dropi</div>
+                    <p style="margin:0">
+                        Nombre, costo, foto<?= !empty($coloresForm[0]) ? ' y colores' : '' ?> ya vienen prellenados. Revísalos y define
+                        vos el <strong>precio de venta</strong> —
+                        <?= $dropiSuggested > 0 ? 'Dropi sugiere $' . number_format($dropiSuggested, 0, ',', '.') . ' al público.' : 'Dropi no trajo un precio sugerido.' ?>
+                    </p>
+                </div>
+            <?php endif; ?>
 
             <div class="form-card wizard-card">
 
@@ -253,6 +269,40 @@
                                 <small class="help">Si los dejas vacíos, la landing no mostrará selector de color.</small>
                             </div>
 
+                            <!-- Dropi -->
+                            <div class="form-group form-group--full">
+                                <label for="dropi_product_id">ID de producto en Dropi (opcional)</label>
+                                <input type="number" id="dropi_product_id" name="dropi_product_id"
+                                       value="<?= htmlspecialchars($old['dropi_product_id'] ?? '') ?>" min="1"
+                                       placeholder="Ej: 48213">
+                                <small class="help">
+                                    Vacío = este producto no se envía a Dropi al confirmar un pedido.
+                                </small>
+                            </div>
+                            <input type="hidden" id="imagen_principal_actual" name="imagen_principal_actual"
+                                   value="<?= htmlspecialchars($imagenUrlActual) ?>">
+
+                            <?php if (!empty($dropiVariationMap)): ?>
+                            <div class="form-group form-group--full">
+                                <label>Variación de Dropi por color (solo si el producto es VARIABLE en Dropi)</label>
+                                <div class="dropi-variations-wrap">
+                                    <?php foreach ($dropiVariationMap as $colorNombre => $variationId): ?>
+                                        <div class="color-row">
+                                            <span class="dropi-variation-color"><?= htmlspecialchars($colorNombre) ?></span>
+                                            <input type="number" min="1"
+                                                   name="dropi_variation[<?= htmlspecialchars($colorNombre) ?>]"
+                                                   value="<?= htmlspecialchars((string)$variationId) ?>"
+                                                   placeholder="variation_id">
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <small class="help">
+                                    Si renombras un color de la lista de arriba, se pierde su relación con esta
+                                    variación — vuelve a escribirla aquí en ese caso.
+                                </small>
+                            </div>
+                            <?php endif; ?>
+
                         </div>
                     </div>
 
@@ -403,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const preview    = document.getElementById('imgPreview');
     const previewImg = document.getElementById('imgPreviewImg');
     const btnRemove  = document.getElementById('imgRemove');
+    const imgUrlField= document.getElementById('imagen_principal_actual');
 
     function showPreview(file) {
         if (!file || !file.type.startsWith('image/')) return;
@@ -412,18 +463,33 @@ document.addEventListener('DOMContentLoaded', () => {
         preview.style.display = 'flex';
         zone.classList.add('has-image');
     }
+    function showPreviewUrl(url) {
+        if (!url) return;
+        previewImg.src = url;
+        placeholder.style.display = 'none';
+        preview.style.display = 'flex';
+        zone.classList.add('has-image');
+    }
     function clearPreview() {
         previewImg.src = '';
         fileInput.value = '';
+        if (imgUrlField) imgUrlField.value = '';
         placeholder.style.display = '';
         preview.style.display = 'none';
         zone.classList.remove('has-image');
     }
 
+    if (imgUrlField && imgUrlField.value) showPreviewUrl(imgUrlField.value);
+
     zone.addEventListener('click', e => {
         if (!e.target.closest('.img-drop-remove')) fileInput.click();
     });
-    fileInput.addEventListener('change', () => { if (fileInput.files[0]) showPreview(fileInput.files[0]); });
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) {
+            if (imgUrlField) imgUrlField.value = ''; // el archivo nuevo reemplaza la foto de Dropi
+            showPreview(fileInput.files[0]);
+        }
+    });
     btnRemove.addEventListener('click', e => { e.stopPropagation(); clearPreview(); });
 
     zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('is-dragging'); });

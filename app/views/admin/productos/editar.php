@@ -282,6 +282,37 @@
                                 <small class="help">Si los dejas vacíos, la landing no mostrará selector de color.</small>
                             </div>
 
+                            <!-- Dropi -->
+                            <div class="form-group form-group--full">
+                                <label for="dropi_product_id">ID de producto en Dropi (opcional)</label>
+                                <input type="number" id="dropi_product_id" name="dropi_product_id"
+                                       value="<?= $v('dropi_product_id') ?>" min="1" placeholder="Ej: 48213">
+                                <small class="help">
+                                    Lo ves en app.dropi.co al abrir el producto. Vacío = este producto no se
+                                    envía a Dropi al confirmar un pedido.
+                                </small>
+                            </div>
+
+                            <?php if (!empty($coloresDropi)): ?>
+                            <div class="form-group form-group--full">
+                                <label>Variación de Dropi por color (solo si el producto es VARIABLE en Dropi)</label>
+                                <div class="dropi-variations-wrap">
+                                    <?php foreach ($coloresDropi as $cd): ?>
+                                        <div class="color-row">
+                                            <span class="dropi-variation-color"><?= htmlspecialchars($cd['color']) ?></span>
+                                            <input type="number" min="1"
+                                                   name="dropi_variation[<?= htmlspecialchars($cd['color']) ?>]"
+                                                   value="<?= htmlspecialchars((string)($cd['dropi_variation_id'] ?? '')) ?>"
+                                                   placeholder="variation_id">
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <small class="help">
+                                    Si el producto es SIMPLE en Dropi (sin variantes), deja todos estos campos vacíos.
+                                </small>
+                            </div>
+                            <?php endif; ?>
+
                         </div>
                     </div>
 
