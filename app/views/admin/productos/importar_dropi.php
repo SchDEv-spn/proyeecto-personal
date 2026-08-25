@@ -104,6 +104,9 @@
                                 <small class="help">
                                     Lo ves al abrir el producto en Dropi: aparece en la URL de la página
                                     (ej: app.dropi.co/dashboard/products/detail/<strong>48213</strong>).
+                                    Importante: el producto debe estar ya agregado a <strong>tu cuenta</strong> de
+                                    Dropi ("Mis productos") — verlo en el catálogo/marketplace no alcanza, primero
+                                    hacé clic en "Importar" desde app.dropi.co.
                                 </small>
                             </div>
                         </div>

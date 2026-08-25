@@ -61,6 +61,16 @@ class Dropi
             // real (token inválido, producto de otro proveedor, etc.) en
             // 'message' o 'errorMessage' — mostrarlo en vez de un genérico.
             $motivo = $resp['body']['message'] ?? ($resp['body']['errorMessage'] ?? null);
+
+            // "Access denied" en este endpoint casi siempre significa que el
+            // producto todavía no está en la cuenta de Dropi del admin: el
+            // dropi-integration-key solo ve "Mis productos", no el catálogo
+            // general. Verlo en el marketplace no alcanza, hay que importarlo
+            // primero desde app.dropi.co.
+            if ($motivo !== null && stripos((string)$motivo, 'access denied') !== false) {
+                return ['ok' => false, 'error' => "Dropi rechazó el acceso al producto {$dropiProductId}. Probablemente todavía no lo agregaste a tu cuenta: entrá a app.dropi.co, buscalo en el catálogo y hacé clic en \"Importar\" antes de traerlo aquí."];
+            }
+
             $detalle = $motivo ? " ({$motivo})" : ' — respuesta: ' . substr(json_encode($resp['body']), 0, 300);
             return ['ok' => false, 'error' => 'Dropi no devolvió el producto ' . $dropiProductId . $detalle];
         }
