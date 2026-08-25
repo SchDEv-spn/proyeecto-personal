@@ -2853,7 +2853,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     }],
                     value:    sp.precio_total || 0,
                     currency: 'COP'
-                });
+                }, { event_id: 'pedido_' + sp.pedido_id });
             })();
         }
     </script>

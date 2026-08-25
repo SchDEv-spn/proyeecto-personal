@@ -32,6 +32,7 @@ foreach ([
     'telegram_bot_token' => 'TELEGRAM_BOT_TOKEN',
     'telegram_chat_id'   => 'TELEGRAM_CHAT_ID',
     'fb_capi_token'      => 'FB_CAPI_TOKEN', // Conversions API del Pixel — ver AUDITORIA.md C3
+    'tiktok_capi_token'  => 'TIKTOK_CAPI_TOKEN', // Events API del TikTok Pixel
     'dropi_api_token'    => 'DROPI_API_TOKEN', // Token de integración de Dropi (app.dropi.co → Integraciones)
 ] as $_k => $_v) {
     if (!empty($_baseCfg[$_k]) && !getenv($_v)) putenv($_v . '=' . $_baseCfg[$_k]);

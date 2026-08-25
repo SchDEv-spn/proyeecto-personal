@@ -233,7 +233,7 @@
                         }],
                         value: valorTt,
                         currency: 'COP'
-                    });
+                    }, { event_id: 'pedido_' + (res.pedido_id || '') });
                 }
             })
             .catch(function () {

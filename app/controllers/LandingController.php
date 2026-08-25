@@ -465,6 +465,19 @@ class LandingController extends Controller
             'pixel_id'       => $pixelIdCfg !== '' ? $pixelIdCfg : fb_pixel_id(),
         ]);
 
+        // Mismo criterio para TikTok — event_id compartido con ttq.track()
+        // del navegador (index.php / order-submit.js) para deduplicar.
+        $tiktokPixelIdCfg = trim((string)($config['tiktok_pixel_id'] ?? ''));
+        $this->enviarPurchaseTiktokCapi([
+            'pedido_id'       => $pedidoId,
+            'telefono'        => $telefono,
+            'producto_id'     => $productoId,
+            'producto_nombre' => $producto['nombre'] ?? '',
+            'precio_total'    => $precioTotal,
+            'cantidad_total'  => $cantidadTotal,
+            'pixel_id'        => $tiktokPixelIdCfg !== '' ? $tiktokPixelIdCfg : tiktok_pixel_id(),
+        ]);
+
         if ($esAjax) {
             header('Content-Type: application/json');
             echo json_encode([
@@ -590,6 +603,96 @@ class LandingController extends Controller
             }
         } catch (Throwable $e) {
             error_log('[FB CAPI] Excepción: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Envía el evento CompletePayment server-side a la Events API de TikTok,
+     * con el mismo event_id que usa el pixel del navegador ('pedido_' + id,
+     * ver ttq.track('CompletePayment', ..., {event_id: ...}) en index.php y
+     * order-submit.js) para que TikTok deduplique en vez de contar la venta
+     * dos veces. Mismo criterio que enviarPurchaseCapi(): nunca debe romper
+     * ni retrasar la confirmación del pedido.
+     *
+     * Necesita un access token de la Events API del pixel (TikTok Events
+     * Manager → pixel → Configuración → API de eventos → Generar token).
+     */
+    private function enviarPurchaseTiktokCapi(array $d): void
+    {
+        if (es_entorno_local()) return; // igual que el pixel del navegador: no ensuciar datos reales
+
+        $token = getenv('TIKTOK_CAPI_TOKEN');
+        if (!$token) return; // no configurado todavía: no-op silencioso
+
+        try {
+            $cantidad = max(1, (int)($d['cantidad_total'] ?? 1));
+            $valor    = (float)($d['precio_total'] ?? 0);
+
+            $user = ['external_id' => [hash('sha256', (string)$d['pedido_id'])]];
+            if (!empty($d['telefono'])) {
+                $telE164 = '+57' . preg_replace('/\D/', '', $d['telefono']);
+                $user['phone'] = [hash('sha256', $telE164)];
+            }
+            if (!empty($_SERVER['REMOTE_ADDR']))     $user['ip'] = $_SERVER['REMOTE_ADDR'];
+            if (!empty($_SERVER['HTTP_USER_AGENT'])) $user['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+
+            $pixelId = trim((string)($d['pixel_id'] ?? '')) ?: tiktok_pixel_id();
+
+            $payload = [
+                'event_source'    => 'web',
+                'event_source_id' => $pixelId,
+                'data' => [[
+                    'event'      => 'CompletePayment',
+                    'event_time' => time(),
+                    'event_id'   => 'pedido_' . $d['pedido_id'],
+                    'user'       => $user,
+                    'properties' => [
+                        'contents' => [[
+                            'content_id'   => (string)($d['producto_id'] ?? ''),
+                            'content_type' => 'product',
+                            'content_name' => $d['producto_nombre'] ?? '',
+                            'quantity'     => $cantidad,
+                            'price'        => $cantidad ? ($valor / $cantidad) : $valor,
+                        ]],
+                        'currency' => 'COP',
+                        'value'    => $valor,
+                    ],
+                    'page' => [
+                        'url' => (!empty($_SERVER['HTTP_HOST']) ? 'https://' . $_SERVER['HTTP_HOST'] : '') . BASE_URL . '/producto/' . rawurlencode((string)($d['producto_id'] ?? '')),
+                    ],
+                ]],
+            ];
+
+            if (!function_exists('curl_init')) {
+                error_log('[TikTok CAPI] cURL no disponible en este servidor');
+                return;
+            }
+
+            $ch = curl_init('https://business-api.tiktok.com/open_api/v1.3/event/track/');
+            curl_setopt_array($ch, [
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => json_encode($payload),
+                CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'Access-Token: ' . $token],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 3,
+                CURLOPT_CONNECTTIMEOUT => 2,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+            ]);
+            $resp = curl_exec($ch);
+            $err  = curl_error($ch);
+            curl_close($ch);
+
+            if ($err) {
+                error_log('[TikTok CAPI] cURL error: ' . $err);
+            } else {
+                $decoded = json_decode($resp, true);
+                if (!isset($decoded['code']) || (int)$decoded['code'] !== 0) {
+                    error_log('[TikTok CAPI] API error: ' . $resp);
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('[TikTok CAPI] Excepción: ' . $e->getMessage());
         }
     }
 
