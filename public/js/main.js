@@ -559,11 +559,14 @@ function initWaLinksIAB() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   FACEBOOK PIXEL EVENTS — embudos de conversión
+   FACEBOOK + TIKTOK PIXEL EVENTS — embudos de conversión
    ══════════════════════════════════════════════════════════════ */
 function initPixelEvents() {
-    if (typeof fbq !== 'function') return;
+    var hasFbq = typeof fbq === 'function';
+    var hasTtq = typeof ttq !== 'undefined' && ttq;
+    if (!hasFbq && !hasTtq) return;
 
+    var productId = String(window.landingProductId || '');
     var addToCartFired = false;
     var initiateCheckoutFired = false;
 
@@ -579,12 +582,14 @@ function initPixelEvents() {
         [25, 50, 75].forEach(function (pct) {
             if (!depthsFired[pct] && pctReached >= pct) {
                 depthsFired[pct] = true;
-                fbq('trackCustom', 'ScrollDepth', {
-                    depth:        pct,
-                    content_name: window.landingProductName || '',
-                    value:        window.landingProductPrice || 0,
-                    currency:     'COP'
-                });
+                if (hasFbq) {
+                    fbq('trackCustom', 'ScrollDepth', {
+                        depth:        pct,
+                        content_name: window.landingProductName || '',
+                        value:        window.landingProductPrice || 0,
+                        currency:     'COP'
+                    });
+                }
                 if (pct === 75) {
                     window.removeEventListener('scroll', onScroll);
                 }
@@ -601,11 +606,24 @@ function initPixelEvents() {
         if (addToCartFired || !e.target.closest) return;
         if (!e.target.closest('.color-pill, .qty-btn')) return;
         addToCartFired = true;
-        fbq('track', 'AddToCart', {
-            value: window.landingProductPrice || 0,
-            currency: 'COP',
-            content_name: window.landingProductName || '',
-        });
+        if (hasFbq) {
+            fbq('track', 'AddToCart', {
+                value: window.landingProductPrice || 0,
+                currency: 'COP',
+                content_name: window.landingProductName || '',
+            });
+        }
+        if (hasTtq) {
+            ttq.track('AddToCart', {
+                contents: [{
+                    content_id:   productId,
+                    content_type: 'product',
+                    content_name: window.landingProductName || ''
+                }],
+                value:    window.landingProductPrice || 0,
+                currency: 'COP'
+            });
+        }
     });
 
     // InitiateCheckout: clic real en un CTA hacia el formulario — antes
@@ -618,11 +636,24 @@ function initPixelEvents() {
         var cta = e.target.closest('a[href="#form-pedido"], .btn-primary');
         if (!cta || cta.closest('#formPedido')) return;
         initiateCheckoutFired = true;
-        fbq('track', 'InitiateCheckout', {
-            value: window.landingProductPrice || 0,
-            currency: 'COP',
-            content_name: window.landingProductName || '',
-        });
+        if (hasFbq) {
+            fbq('track', 'InitiateCheckout', {
+                value: window.landingProductPrice || 0,
+                currency: 'COP',
+                content_name: window.landingProductName || '',
+            });
+        }
+        if (hasTtq) {
+            ttq.track('InitiateCheckout', {
+                contents: [{
+                    content_id:   productId,
+                    content_type: 'product',
+                    content_name: window.landingProductName || ''
+                }],
+                value:    window.landingProductPrice || 0,
+                currency: 'COP'
+            });
+        }
     });
 }
 
