@@ -723,4 +723,52 @@ class AdminProductosController extends Controller
         header("Location: " . BASE_URL . "/AdminProductos/index");
         exit;
     }
+
+    public function eliminar()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: " . BASE_URL . "/AdminProductos/index");
+            exit;
+        }
+
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            header("Location: " . BASE_URL . "/AdminProductos/index");
+            exit;
+        }
+
+        $productoModel = new Producto();
+        $producto      = $productoModel->obtenerPorId($id);
+
+        if (!$producto) {
+            $_SESSION['admin_productos_success'] = "El producto no existe.";
+            header("Location: " . BASE_URL . "/AdminProductos/index");
+            exit;
+        }
+
+        // La FK fk_pedidos_producto es RESTRICT: si el producto ya tiene
+        // pedidos, el DELETE fallaría igual. Se avisa antes con un mensaje
+        // claro y se sugiere desactivar en vez de borrar, para no perder
+        // el historial de ventas.
+        $totalPedidos = (new Pedido())->contarPorProducto($id);
+        if ($totalPedidos > 0) {
+            $_SESSION['admin_productos_success'] = "No se puede eliminar \"{$producto['nombre']}\": tiene {$totalPedidos} pedido(s) registrados. Desactívalo en su lugar (edítalo y desmarca \"Activo\").";
+            header("Location: " . BASE_URL . "/AdminProductos/index");
+            exit;
+        }
+
+        try {
+            $productoModel->eliminar($id);
+            $_SESSION['admin_productos_success'] = "Producto \"{$producto['nombre']}\" y su landing eliminados correctamente.";
+        } catch (PDOException $e) {
+            error_log("Error al eliminar producto {$id}: " . $e->getMessage());
+            $_SESSION['admin_productos_success'] = "No se pudo eliminar el producto. Intenta nuevamente.";
+        }
+
+        header("Location: " . BASE_URL . "/AdminProductos/index");
+        exit;
+    }
 }

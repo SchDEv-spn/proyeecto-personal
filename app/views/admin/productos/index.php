@@ -160,6 +160,8 @@
                                         : BASE_URL . '/Landing/index?producto_id=' . urlencode($p['id']);
                                     $landingUrlAbs   = 'https://' . ($_SERVER['HTTP_HOST'] ?? '') . $landingUrl;
 
+                                    $nombreConfirm = htmlspecialchars(addslashes($p['nombre'] ?? ''), ENT_QUOTES, 'UTF-8');
+
                                     $imgRaw = trim((string)($p['imagen_principal'] ?? ''));
                                     $imgSrc = '';
                                     if ($imgRaw !== '') {
@@ -235,6 +237,19 @@
                                                    title="Editar landing">
                                                     <i class="fas fa-layer-group"></i>
                                                 </a>
+                                                <form method="POST"
+                                                      action="<?= BASE_URL ?>/AdminProductos/eliminar"
+                                                      style="display:inline"
+                                                      onsubmit="return confirm('¿Eliminar &quot;<?= $nombreConfirm ?>&quot;? Esto borra también su landing. Esta acción no se puede deshacer.');">
+                                                    <?= csrf_field() ?>
+                                                    <input type="hidden" name="id" value="<?= htmlspecialchars($p['id']) ?>">
+                                                    <button type="submit"
+                                                            class="btn-detail btn-detail--sm"
+                                                            style="background:var(--red)"
+                                                            title="Eliminar producto (borra también su landing)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>

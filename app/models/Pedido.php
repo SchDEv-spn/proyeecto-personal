@@ -275,6 +275,20 @@ class Pedido extends Model
         ]);
     }
 
+    /**
+     * Total histórico de pedidos de un producto (sin límite de fecha).
+     * Se usa antes de eliminar un producto: la FK fk_pedidos_producto es
+     * RESTRICT, así que si hay pedidos el DELETE fallaría igual, pero
+     * conviene avisarlo antes con un mensaje claro en vez de dejar que
+     * reviente la excepción de MySQL.
+     */
+    public function contarPorProducto(int $productoId): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM pedidos WHERE producto_id = :producto_id");
+        $stmt->execute([':producto_id' => $productoId]);
+        return (int)$stmt->fetchColumn();
+    }
+
     public function contarPedidosRecientes(int $productoId, int $dias = 30): int
     {
         $sql = "SELECT COUNT(*) FROM pedidos

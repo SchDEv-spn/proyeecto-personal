@@ -100,6 +100,32 @@ class Producto extends Model
         return (int)$this->db->lastInsertId();
     }
 
+    /**
+     * Elimina el producto junto con su landing. producto_colores se borra
+     * solo (FK fk_pcol_producto es CASCADE); landing_config no tiene FK,
+     * así que se borra a mano. Todo en una transacción para no dejar la
+     * landing borrada si el producto no se pudo eliminar (por ejemplo,
+     * fk_pedidos_producto es RESTRICT y bloquea el DELETE si ya tiene
+     * pedidos).
+     */
+    public function eliminar(int $id): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $this->db->prepare("DELETE FROM landing_config WHERE producto_id = :id")
+                     ->execute([':id' => $id]);
+
+            $stmt = $this->db->prepare("DELETE FROM productos WHERE id = :id");
+            $ok = $stmt->execute([':id' => $id]);
+
+            $this->db->commit();
+            return $ok && $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
     public function actualizar(int $id, array $data): bool
     {
         $sql = "UPDATE productos
