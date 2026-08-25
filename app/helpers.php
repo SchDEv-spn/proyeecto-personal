@@ -68,6 +68,14 @@ function fb_pixel_id(): string
 }
 
 /**
+ * Id del TikTok Pixel de la landing — misma idea que fb_pixel_id().
+ */
+function tiktok_pixel_id(): string
+{
+    return 'DA6HCRBC77U98E0UGEQG';
+}
+
+/**
  * URL de un asset estático (CSS/JS) con ?v=<filemtime> para romper la
  * caché en cada deploy. El .htaccess manda Cache-Control: max-age de un
  * año solo para peticiones CON ?v= — sin la versión, ese año de caché

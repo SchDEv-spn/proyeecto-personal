@@ -2661,6 +2661,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
     $precioProducto = (float)($producto['precio_venta'] ?? 0);
     $nombreProducto = $producto['nombre'] ?? 'Producto';
     $pixelId        = $val('pixel_id', fb_pixel_id());
+    $tiktokPixelId  = $val('tiktok_pixel_id', tiktok_pixel_id());
     ?>
     <script>
         window.landingSuccess = <?= json_encode($success,        JSON_UNESCAPED_UNICODE) ?>;
@@ -2670,6 +2671,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         window.landingProductId = <?= (int)($producto['id'] ?? 0) ?>;
         window.landingTrackUrl = <?= json_encode(BASE_URL . '/Landing/track') ?>;
         window.landingPixelId = <?= json_encode($pixelId) ?>;
+        window.landingTiktokPixelId = <?= json_encode($tiktokPixelId) ?>;
     </script>
 
     <!-- Analítica propia del embudo (ver public/js/landing-track.js).
@@ -2805,6 +2807,57 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <img height="1" width="1" style="display:none"
              src="https://www.facebook.com/tr?id=<?= urlencode($pixelId) ?>&ev=PageView&noscript=1">
     </noscript>
+
+    <!-- TikTok Pixel -->
+    <?php if ($tiktokPixelId !== ''): ?>
+    <script>
+        !function (w, d, t) {
+            w.TiktokAnalyticsObject = t; var ttq = w[t] = w[t] || []; ttq.methods = ["page", "track", "identify", "instances", "debug", "on", "off", "once", "ready", "alias", "group", "enableCookie", "disableCookie", "holdConsent", "revokeConsent", "grantConsent"], ttq.setAndDefer = function (t, e) { t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))) } }; for (var i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i]); ttq.instance = function (t) { for (var e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++) ttq.setAndDefer(e, ttq.methods[n]); return e }, ttq.load = function (e, n) { var r = "https://analytics.tiktok.com/i18n/pixel/events.js", o = n && n.partner; ttq._i = ttq._i || {}, ttq._i[e] = [], ttq._i[e]._u = r, ttq._t = ttq._t || {}, ttq._t[e] = +new Date, ttq._o = ttq._o || {}, ttq._o[e] = n || {}; n = document.createElement("script"); n.type = "text/javascript", n.async = !0, n.src = r + "?sdkid=" + e + "&lib=" + t; e = document.getElementsByTagName("script")[0]; e.parentNode.insertBefore(n, e) };
+
+            ttq.load(<?= json_encode($tiktokPixelId) ?>);
+            ttq.page();
+        }(window, document, 'ttq');
+
+        ttq.track('ViewContent', {
+            contents: [{
+                content_id:   <?= json_encode((string)($producto['id'] ?? '')) ?>,
+                content_type: 'product',
+                content_name: <?= json_encode($producto['nombre'] ?? 'Producto') ?>
+            }],
+            value:    <?= json_encode((float)($producto['precio_venta'] ?? 0)) ?>,
+            currency: 'COP'
+        });
+
+        // Misma red de seguridad que Facebook Pixel arriba: pedido guardado
+        // por el POST nativo (sin fetch), esta página sí carga con JS.
+        if (window.landingSuccess && window.landingSuccessPedido) {
+            (function () {
+                var sp = window.landingSuccessPedido;
+                var cantidad = sp.cantidad_total || 1;
+                var productId = <?= json_encode((string)($producto['id'] ?? '')) ?>;
+                var nombreProd = <?= json_encode($producto['nombre'] ?? 'Producto') ?>;
+                var valorUnit = cantidad ? (sp.precio_total / cantidad) : (sp.precio_total || 0);
+
+                ttq.track('SubmitForm', {
+                    contents: [{ content_id: productId, content_type: 'product', content_name: nombreProd }],
+                    value: sp.precio_total || 0,
+                    currency: 'COP'
+                });
+                ttq.track('CompletePayment', {
+                    contents: [{
+                        content_id:   productId,
+                        content_type: 'product',
+                        content_name: nombreProd,
+                        quantity:     cantidad,
+                        price:        valorUnit
+                    }],
+                    value:    sp.precio_total || 0,
+                    currency: 'COP'
+                });
+            })();
+        }
+    </script>
+    <?php endif; // fin bloque TikTok Pixel ?>
 
     <!-- Microsoft Clarity -->
     <?php $clarityId = $val('clarity_id', 'wm68pleap5'); ?>

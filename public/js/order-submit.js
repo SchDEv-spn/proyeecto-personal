@@ -202,6 +202,39 @@
                         }]
                     }, { eventID: 'pedido_' + (res.pedido_id || '') });
                 }
+
+                if (typeof ttq !== 'undefined' && ttq) {
+                    var valorTt = res.precio_total || window.landingProductPrice || 0;
+                    var cantidadTt = res.cantidad_total || 1;
+                    var productIdTt = String(window.landingProductId || '');
+                    var telLocalTt = valorDe('#telefono').replace(/\D/g, '');
+
+                    ttq.identify({
+                        phone_number: telLocalTt ? '+57' + telLocalTt : undefined,
+                        external_id: String(res.pedido_id || '')
+                    });
+
+                    ttq.track('SubmitForm', {
+                        contents: [{
+                            content_id: productIdTt,
+                            content_type: 'product',
+                            content_name: window.landingProductName || ''
+                        }],
+                        value: valorTt,
+                        currency: 'COP'
+                    });
+                    ttq.track('CompletePayment', {
+                        contents: [{
+                            content_id: productIdTt,
+                            content_type: 'product',
+                            content_name: window.landingProductName || '',
+                            quantity: cantidadTt,
+                            price: cantidadTt ? (valorTt / cantidadTt) : valorTt
+                        }],
+                        value: valorTt,
+                        currency: 'COP'
+                    });
+                }
             })
             .catch(function () {
                 restaurarBoton(btnSubmit, btnText, btnSpinner);
