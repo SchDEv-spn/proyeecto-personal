@@ -4681,11 +4681,21 @@ img[loading="lazy"].loaded {
     border: none;
 }
 
-/* ── GARANTÍA INNER — misma card que price-box ───────────── */
+/* ── GARANTÍA INNER — la misma tarjeta que todas ──────────────
+   Decía "misma card que price-box" pero copiaba los valores a mano en
+   vez de usar los tokens, así que se quedó atrás cuando cada tema pasó
+   a definir su propia --card-shadow. El resultado medido: este panel
+   llevaba una sombra de 0,13 en los cinco temas mientras el resto de
+   tarjetas llevaba 0,30 / 0,38 / 0,32 en los oscuros — menos de la
+   mitad de profundidad — y una sombra negra dura en los dos claros,
+   donde las demás usan una teñida y suave.
+   El relleno sí se queda propio: es un panel contenedor y necesita más
+   aire que una tarjeta normal. */
 .garantia-inner {
-    background: var(--bg-layer2) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.13) !important;
+    background: var(--card-bg) !important;
+    border: var(--card-border) !important;
+    border-radius: var(--card-radius) !important;
+    box-shadow: var(--card-shadow) !important;
     padding: 28px 20px 24px !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -6409,32 +6419,57 @@ img[loading="lazy"].loaded {
    GARANTÍA — grid de cards, sin párrafo
    ============================================================ */
 
+/* Una columna en móvil. Como rejilla de dos, cada frase se quedaba con
+   unos 120px de ancho útil una vez descontado el chip del icono, y
+   "Pagas solo cuando recibes el producto en tus manos" se partía en
+   cuatro o cinco líneas. Desde tablet sí caben dos. */
 .garantia-cards-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 2px;
     margin-top: 4px;
     width: 100%;
     max-width: 560px;
     margin-inline: auto;
 }
 
+@media (min-width: 640px) {
+    .garantia-cards-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 18px;
+    }
+}
+
 @media (max-width: 400px) {
     .garantia-cards-grid { grid-template-columns: 1fr; }
 }
 
+/* Fila de lista, no tarjeta.
+   Estos cuatro ítems vivían dentro de .garantia-inner, que ya es una
+   tarjeta — y como ambos usaban --card-bg, eran cuatro cajas del mismo
+   color dentro de una caja del mismo color, separadas sólo por su
+   sombra. En los temas claros, con sombra al 10%, quedaban planas del
+   todo.
+   Cuatro viñetas de una línea no necesitan ser tarjetas: el panel ya es
+   la tarjeta. Lo que las ancla visualmente es el chip del icono, que se
+   conserva. Sin fondo, sin borde y sin sombra propias. */
 .garantia-card {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid color-mix(in srgb, var(--cream) 12%, transparent);
-    border-radius: var(--radius-md);
-    padding: 11px 14px;
-    font-size: 13px;
-    font-weight: 600;
+    gap: 11px;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 4px 0;
+    font-size: 13.5px;
+    font-weight: 500;
+    /* Color pleno, no atenuado: con --cream-dim el tema "salud" se
+       quedaba en 4,3:1, por debajo del mínimo legible. Y son argumentos
+       de venta — lo que convence de pagar contraentrega —, no texto
+       secundario. El peso 500 ya basta para que se lean como lista. */
     color: var(--cream);
-    line-height: 1.35;
+    line-height: 1.4;
     text-align: left;
 }
 .garantia-card__icon {
@@ -6870,7 +6905,6 @@ img[loading="lazy"].loaded {
 .para-quien-card,
 .regalo-card,
 .authority-stat,
-.garantia-card,
 .porque-benefit-card {
     background: var(--card-bg);
     border: var(--card-border);
@@ -6897,7 +6931,6 @@ img[loading="lazy"].loaded {
    por lo mismo — que es justo el problema del que venimos. */
 
 /* Denso: viñetas de una o dos líneas */
-.garantia-card,
 .porque-benefit-card {
     padding: 13px 15px;
 }
@@ -7197,7 +7230,6 @@ img[loading="lazy"].loaded {
    ahí el contenido es un dato único y no un texto que se lee.
    ══════════════════════════════════════════════════════════════ */
 .step-card,
-.garantia-card,
 .porque-benefit-card,
 .para-quien-card,
 .caract-body,
