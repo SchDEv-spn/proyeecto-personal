@@ -61,15 +61,29 @@ class AdminLandingController extends Controller
             'producto'           => $productoActual,
             'tiene_api_key'      => $settings->hasKey('claude_api_key'),
             'tiene_replicate_key'=> $settings->hasKey('replicate_api_key'),
-            // Último análisis de IA de esta landing (Estadísticas → Analizar),
-            // con el estado de cada acción, para el panel "Recomendaciones".
-            'recomendaciones'    => (new LandingAnalisis())->ultimoDeProducto($productoId),
+            // Backlog de recomendaciones de IA para el panel del editor:
+            // pendientes + resueltas (con conversión antes/después) + el
+            // último análisis para la fecha del pie.
+            'recomendaciones'    => (function () use ($productoId) {
+                $tareas = new LandingRecoTareas();
+                return [
+                    'pendientes' => $tareas->pendientes($productoId),
+                    'resueltas'  => $tareas->conImpacto($tareas->resueltas($productoId)),
+                    'ultimo'     => (new LandingAnalisis())->ultimoDeProducto($productoId),
+                ];
+            })(),
         ]);
     }
 
+    /** Producto del editor actual, para acotar los endpoints del backlog. */
+    private function productoIdActual(): int
+    {
+        $id = (int)($_POST['producto_id'] ?? 0);
+        return $id > 0 ? $id : 0;
+    }
+
     /**
-     * AJAX: marca una recomendación del análisis como hecha / descartada /
-     * pendiente. La usa el panel "Recomendaciones IA" del editor.
+     * AJAX: marca una tarea del backlog como hecha / descartada / pendiente.
      */
     public function marcarRecomendacion(): void
     {
@@ -77,17 +91,53 @@ class AdminLandingController extends Controller
         $this->requireCsrf();
         header('Content-Type: application/json; charset=utf-8');
 
-        $analisisId = (int)($_POST['analisis_id'] ?? 0);
-        $idx        = (int)($_POST['idx'] ?? -1);
+        $tareaId    = (int)($_POST['tarea_id'] ?? 0);
+        $productoId = $this->productoIdActual();
         $estado     = (string)($_POST['estado'] ?? '');
 
-        if ($analisisId <= 0 || $idx < 0) {
+        if ($tareaId <= 0 || $productoId <= 0) {
             echo json_encode(['ok' => false, 'error' => 'Datos inválidos']);
             return;
         }
 
-        $ok = (new LandingAnalisis())->marcarAccion($analisisId, $idx, $estado);
+        $ok = (new LandingRecoTareas())->marcar($tareaId, $productoId, $estado);
         echo json_encode(['ok' => $ok]);
+    }
+
+    /** AJAX: aplica el cambio de config de una recomendación (con Deshacer). */
+    public function aplicarRecomendacion(): void
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $tareaId    = (int)($_POST['tarea_id'] ?? 0);
+        $productoId = $this->productoIdActual();
+
+        if ($tareaId <= 0 || $productoId <= 0) {
+            echo json_encode(['ok' => false, 'error' => 'Datos inválidos']);
+            return;
+        }
+
+        echo json_encode((new LandingRecoTareas())->aplicar($tareaId, $productoId));
+    }
+
+    /** AJAX: revierte un cambio aplicado. */
+    public function deshacerRecomendacion(): void
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $tareaId    = (int)($_POST['tarea_id'] ?? 0);
+        $productoId = $this->productoIdActual();
+
+        if ($tareaId <= 0 || $productoId <= 0) {
+            echo json_encode(['ok' => false, 'error' => 'Datos inválidos']);
+            return;
+        }
+
+        echo json_encode((new LandingRecoTareas())->deshacer($tareaId, $productoId));
     }
 
     // Copia solo el orden de secciones de otro producto hacia el actual

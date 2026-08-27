@@ -51,11 +51,7 @@
   ];
 
   // Recomendaciones de IA pendientes (para el badge del botón).
-  $recoPendientes = 0;
-  foreach (($recomendaciones['resultado']['acciones'] ?? []) as $__a) {
-    if (($__a['estado'] ?? 'pendiente') === 'pendiente') $recoPendientes++;
-  }
-  unset($__a);
+  $recoPendientes = count($recomendaciones['pendientes'] ?? []);
 
   if ($producto) {
     $headerCtas[] = [

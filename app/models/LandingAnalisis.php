@@ -269,6 +269,16 @@ class LandingAnalisis extends Model
                 . ' @ ' . $e->getFile() . ':' . $e->getLine());
         }
 
+        // Vuelca las acciones al backlog del editor (dedup por huella). Solo
+        // con producto concreto: la vista "todos" no mapea a una landing.
+        try {
+            if ($productoId > 0) {
+                (new LandingRecoTareas())->upsertDesdeAnalisis($productoId, $respuesta['resultado']['acciones'] ?? []);
+            }
+        } catch (\Throwable $e) {
+            error_log('LandingAnalisis::analizar — backlog: ' . $e->getMessage());
+        }
+
         return [
             'ok'        => true,
             'resultado' => $respuesta['resultado'],
@@ -309,9 +319,22 @@ class LandingAnalisis extends Model
                         'enum'        => LandingConfig::seccionIdsValidos(),
                         'description' => 'Id de la sección del editor donde se aplica (lista abajo), o "ninguna".',
                     ],
+                    'cambio' => [
+                        'type'       => 'object',
+                        'description' => 'Si la acción es SOLO un toggle o número de config, el cambio exacto. Si no, campo="ninguno".',
+                        'properties' => [
+                            'campo' => [
+                                'type' => 'string',
+                                'enum' => array_merge(array_keys(LandingConfig::CAMPOS_APLICABLES), ['ninguno']),
+                            ],
+                            'valor' => ['type' => 'integer', 'description' => '1/0 para toggles; el número para los de rango.'],
+                        ],
+                        'required'             => ['campo', 'valor'],
+                        'additionalProperties' => false,
+                    ],
                     'impacto'  => ['type' => 'string', 'enum' => ['alto', 'medio', 'bajo']],
                     'esfuerzo' => ['type' => 'string', 'enum' => ['alto', 'medio', 'bajo']],
-                ], ['accion', 'donde', 'seccion_id', 'impacto', 'esfuerzo']),
+                ], ['accion', 'donde', 'seccion_id', 'cambio', 'impacto', 'esfuerzo']),
                 'no_concluyente' => [
                     'type'        => 'array',
                     'items'       => ['type' => 'string'],
@@ -330,6 +353,13 @@ class LandingAnalisis extends Model
             $catalogo .= "  {$id} = {$s['label']}\n";
         }
         $catalogo = rtrim($catalogo);
+
+        $campos = '';
+        foreach (LandingConfig::CAMPOS_APLICABLES as $col => $m) {
+            $rango = ($m['tipo'] ?? '') === 'int' ? " (número {$m['min']}-{$m['max']})" : ' (1 = encender, 0 = apagar)';
+            $campos .= "  {$col} = {$m['label']}{$rango}\n";
+        }
+        $campos = rtrim($campos);
 
         return <<<TXT
 Eres analista de conversión. Analizas la landing de una tienda colombiana que
@@ -364,6 +394,12 @@ Reglas de tu respuesta:
    elegida de esta lista (usa "ninguna" solo si la acción no se toca en el
    editor, p. ej. "revisá la segmentación de la pauta"):
 {$catalogo}
+9. Si la acción es SOLO encender/apagar una sección o poner un número de
+   configuración, pon "cambio.campo" con la columna exacta de esta lista y
+   "cambio.valor". Si implica escribir texto, elegir imágenes, reordenar o
+   cualquier cosa con criterio, deja "cambio.campo" en "ninguno" (el humano lo
+   hace a mano):
+{$campos}
 TXT;
     }
 

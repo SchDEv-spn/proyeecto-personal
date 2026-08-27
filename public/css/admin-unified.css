@@ -4358,11 +4358,38 @@ body.preview-panel-open { overflow: hidden; }
 .reco-btn:hover { background: var(--surface-3); }
 .reco-btn--ir { background: var(--green-dark); color: #fff; border-color: transparent; }
 .reco-btn--ir:hover { filter: brightness(1.12); background: var(--green-dark); }
+.reco-btn--aplicar { background: #166534; color: #fff; border-color: transparent; }
+.reco-btn--aplicar:hover { filter: brightness(1.12); background: #166534; }
+.reco-btn:disabled { opacity: .55; cursor: default; }
 .reco-empty {
   color: var(--tx-dim); font-size: var(--text-sm); text-align: center;
   padding: var(--sp-5) var(--sp-3); line-height: 1.6;
 }
 .reco-empty a { color: var(--green-dark); font-weight: 600; }
+
+/* Subsecciones del drawer (Pendientes / Cambios recientes) */
+.reco-sec {
+  font-size: var(--text-xs); font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--tx-dim);
+  margin: var(--sp-2) 0 var(--sp-3);
+}
+.reco-sec-det { margin-top: var(--sp-4); }
+.reco-sec-det > summary { cursor: pointer; list-style: revert; }
+.reco-sec-det > summary.reco-sec { margin-bottom: var(--sp-3); }
+
+.reco-item--done { opacity: .9; }
+.reco-item--aplicado { border-color: #166534; }
+.reco-tag--done { background: var(--green-soft); color: var(--green-dark); }
+.reco-ok { font-size: 12px; font-weight: 700; color: #166534; flex: 1; align-self: center; }
+
+.reco-impacto {
+  margin-top: 8px; font-size: var(--text-xs); font-weight: 700;
+  padding: 4px 8px; border-radius: 6px; background: var(--surface-3); color: var(--tx-muted);
+}
+.reco-impacto--up   { background: #DCFCE7; color: #166534; }
+.reco-impacto--down { background: var(--soft-red, #FEE2E2); color: var(--red, #b91c1c); }
+.reco-impacto--flat { background: var(--surface-3); color: var(--tx-muted); }
+.reco-impacto--wait { background: var(--surface-3); color: var(--tx-dim); font-weight: 600; }
 
 /* Flash de la sección al llegar desde "Ir" o ?ir= */
 @keyframes reco-flash {

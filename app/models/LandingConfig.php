@@ -105,6 +105,71 @@ class LandingConfig extends Model
         return array_merge(array_keys(self::SECCIONES_EDITOR), ['ninguna']);
     }
 
+    /**
+     * Columnas de `landing_config` que el botón "Aplicar" del panel de
+     * recomendaciones puede tocar de un clic: toggles booleanos y unos pocos
+     * números con rango. Nada de texto, imágenes, colores ni orden — eso
+     * necesita criterio y se hace a mano. La clave es el nombre de columna
+     * (seguro para interpolar en el SQL de aplicarCampo()).
+     */
+    public const CAMPOS_APLICABLES = [
+        'show_announcement_bar' => ['tipo' => 'bool', 'label' => 'Barra de anuncio'],
+        'show_trust_strip'      => ['tipo' => 'bool', 'label' => 'Señales de confianza del hero'],
+        'show_benefits'         => ['tipo' => 'bool', 'label' => 'Beneficios'],
+        'show_gallery'          => ['tipo' => 'bool', 'label' => 'Galería'],
+        'show_caracteristicas'  => ['tipo' => 'bool', 'label' => 'Características'],
+        'show_como_funciona'    => ['tipo' => 'bool', 'label' => 'Cómo funciona'],
+        'show_countdown'        => ['tipo' => 'bool', 'label' => 'Sección contador'],
+        'show_porque'           => ['tipo' => 'bool', 'label' => '¿Por qué te encantará?'],
+        'show_comparison'       => ['tipo' => 'bool', 'label' => 'Tabla comparativa'],
+        'show_para_quien'       => ['tipo' => 'bool', 'label' => '¿Para quién es?'],
+        'show_testimonios'      => ['tipo' => 'bool', 'label' => 'Testimonios'],
+        'show_wa_testimonios'   => ['tipo' => 'bool', 'label' => 'Testimonios de WhatsApp'],
+        'show_faqs'             => ['tipo' => 'bool', 'label' => 'Preguntas frecuentes'],
+        'show_garantia'         => ['tipo' => 'bool', 'label' => 'Banner de garantía'],
+        'show_regalo'           => ['tipo' => 'bool', 'label' => 'Regalo incluido'],
+        'show_price_box'        => ['tipo' => 'bool', 'label' => 'Caja de precio'],
+        'authority_enabled'     => ['tipo' => 'bool', 'label' => 'Bloque de autoridad'],
+        'combo_enabled'         => ['tipo' => 'bool', 'label' => 'Combo x2'],
+        'countdown_minutes'     => ['tipo' => 'int', 'label' => 'Minutos del countdown', 'min' => 1, 'max' => 120],
+        'urgency_stock'         => ['tipo' => 'int', 'label' => 'Stock declarado (urgencia)', 'min' => 1, 'max' => 999],
+        'combo_price_2'         => ['tipo' => 'int', 'label' => 'Precio del combo x2 (COP)', 'min' => 0, 'max' => 9999999],
+    ];
+
+    /**
+     * Aplica un cambio de config de la lista blanca. Devuelve el valor
+     * anterior para que el panel pueda ofrecer "Deshacer".
+     *
+     * @return array{ok:bool, anterior?:int, aplicado?:int, label?:string, error?:string}
+     */
+    public function aplicarCampo(int $productoId, string $campo, int $valor): array
+    {
+        $meta = self::CAMPOS_APLICABLES[$campo] ?? null;
+        if ($productoId <= 0 || $meta === null) {
+            return ['ok' => false, 'error' => 'Campo no aplicable'];
+        }
+
+        $coerced = $meta['tipo'] === 'bool'
+            ? ($valor ? 1 : 0)
+            : max((int)($meta['min'] ?? 0), min((int)($meta['max'] ?? PHP_INT_MAX), $valor));
+
+        try {
+            $this->asegurarFilaProducto($productoId);
+
+            $sel = $this->db->prepare("SELECT `{$campo}` AS v FROM landing_config WHERE producto_id = ? LIMIT 1");
+            $sel->execute([$productoId]);
+            $anterior = (int)($sel->fetchColumn() ?: 0);
+
+            $upd = $this->db->prepare("UPDATE landing_config SET `{$campo}` = ? WHERE producto_id = ?");
+            $upd->execute([$coerced, $productoId]);
+
+            return ['ok' => true, 'anterior' => $anterior, 'aplicado' => $coerced, 'label' => $meta['label']];
+        } catch (\PDOException $e) {
+            error_log('LandingConfig::aplicarCampo — ' . $e->getMessage());
+            return ['ok' => false, 'error' => 'No se pudo aplicar el cambio'];
+        }
+    }
+
     public function obtenerPorProducto(int $productoId)
     {
         $sql = "SELECT * FROM landing_config WHERE producto_id = :producto_id LIMIT 1";
