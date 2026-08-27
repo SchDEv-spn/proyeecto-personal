@@ -317,17 +317,26 @@
     // Mismo dato que la etiqueta js_error de Clarity, pero aquí queda
     // cruzado con el embudo: se puede ver si las sesiones con error
     // convierten peor.
+    // Ruido del navegador anfitrión, no de la landing: el webview de
+    // Facebook/TikTok inyecta sus propios scripts y su bridge nativo lanza
+    // "Java object is gone" cuando el sistema recolecta el objeto. No es un
+    // bug nuestro y no debe marcar la sesión como "con error de JS".
+    // "Script error." es un error cross-origin sin datos: tampoco aporta.
+    var ERROR_AJENO = /Java object is gone|Java bridge method|^Script error\.?$/i;
+
     var errorRegistrado = false;
     window.addEventListener('error', function (e) {
         if (errorRegistrado) return;
-        errorRegistrado = true;
 
         var msg;
         if (e.target && e.target !== window && e.target.src) {
             msg = 'recurso: ' + String(e.target.src).split('/').pop();
         } else {
+            if (ERROR_AJENO.test(e.message || '')) return;   // sin marcar el flag: deja pasar un error real posterior
             msg = (e.message || 'error') + ' @ ' + String(e.filename || '').split('/').pop() + ':' + (e.lineno || '?');
         }
+
+        errorRegistrado = true;
         encolar('error', msg.slice(0, 64));
     }, true);
 

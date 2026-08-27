@@ -583,12 +583,14 @@ function initPixelEvents() {
             if (!depthsFired[pct] && pctReached >= pct) {
                 depthsFired[pct] = true;
                 if (hasFbq) {
+                    try {
                     fbq('trackCustom', 'ScrollDepth', {
                         depth:        pct,
                         content_name: window.landingProductName || '',
                         value:        window.landingProductPrice || 0,
                         currency:     'COP'
                     });
+                    } catch (e) { /* bridge del webview caído: no rompas el scroll */ }
                 }
                 if (pct === 75) {
                     window.removeEventListener('scroll', onScroll);
@@ -606,6 +608,10 @@ function initPixelEvents() {
         if (addToCartFired || !e.target.closest) return;
         if (!e.target.closest('.color-pill, .qty-btn')) return;
         addToCartFired = true;
+        // fbq/ttq pasan por el bridge nativo del webview de FB/TikTok, que
+        // lanza "Java object is gone" si ya se recolectó. Contenido para que
+        // un throw ahí no deje muerto el handler el resto de la sesión.
+        try {
         if (hasFbq) {
             fbq('track', 'AddToCart', {
                 value: window.landingProductPrice || 0,
@@ -624,6 +630,7 @@ function initPixelEvents() {
                 currency: 'COP'
             });
         }
+        } catch (e) { if (window.console && console.warn) console.warn('[pixel] AddToCart falló:', e); }
     });
 
     // InitiateCheckout: clic real en un CTA hacia el formulario — antes
@@ -636,6 +643,9 @@ function initPixelEvents() {
         var cta = e.target.closest('a[href="#form-pedido"], .btn-primary');
         if (!cta || cta.closest('#formPedido')) return;
         initiateCheckoutFired = true;
+        // Igual que AddToCart: el bridge del webview puede lanzar
+        // "Java object is gone" y no debe tumbar el handler.
+        try {
         if (hasFbq) {
             fbq('track', 'InitiateCheckout', {
                 value: window.landingProductPrice || 0,
@@ -654,6 +664,7 @@ function initPixelEvents() {
                 currency: 'COP'
             });
         }
+        } catch (e) { if (window.console && console.warn) console.warn('[pixel] InitiateCheckout falló:', e); }
     });
 }
 

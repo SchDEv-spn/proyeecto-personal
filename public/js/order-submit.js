@@ -159,6 +159,15 @@
                     successBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
 
+                // El pedido ya está confirmado en pantalla. De aquí en
+                // adelante solo es pixel: en el webview de Facebook/TikTok
+                // una llamada a fbq/ttq puede lanzar "Java object is gone"
+                // si el bridge nativo ya se recolectó, y sin este try el
+                // throw saltaba al .catch() de abajo — pintando "error de
+                // conexión" sobre un pedido exitoso y reactivando el botón
+                // (pedido duplicado).
+                try {
+
                 if (typeof fbq === 'function') {
                     var valor = res.precio_total || window.landingProductPrice || 0;
                     var cantidad = res.cantidad_total || 1;
@@ -234,6 +243,12 @@
                         value: valorTt,
                         currency: 'COP'
                     }, { event_id: 'pedido_' + (res.pedido_id || '') });
+                }
+
+                } catch (ePixel) {
+                    if (window.console && console.warn) {
+                        console.warn('[pedido] el pixel post-envío falló; el pedido quedó OK:', ePixel);
+                    }
                 }
             })
             .catch(function () {
