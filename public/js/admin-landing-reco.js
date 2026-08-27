@@ -17,8 +17,14 @@
   const RECO = window.__RECO__ || {};
   const BASE = window.BASE_URL || '';
   const CSRF = window.__CSRF__ || '';
-  const PID  = Number(document.querySelector('input[name="producto_id"]') ?
-    document.querySelector('input[name="producto_id"]').value : 0) || 0;
+  const PID  = (() => {
+    const inp = document.querySelector('#formLanding input[name="producto_id"]')
+      || document.querySelector('input[name="producto_id"]');
+    const fromInput = inp ? Number(inp.value) : 0;
+    if (fromInput > 0) return fromInput;
+    const fromUrl = Number(new URLSearchParams(location.search).get('producto_id'));
+    return fromUrl > 0 ? fromUrl : 0;
+  })();
 
   const IMPACTO_ORDEN = { alto: 0, medio: 1, bajo: 2 };
   const ES_SECCION = /^sec-[a-z-]+$/;
@@ -85,19 +91,43 @@
   }
 
   // ── Llamadas al backend ───────────────────────────────────
-  function post(accion, tareaId) {
+  function llamar(accion, extra) {
+    const cuerpo = Object.assign({ producto_id: PID, csrf_token: CSRF }, extra || {});
     return fetch(BASE + '/AdminLanding/' + accion, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-      body: new URLSearchParams({ tarea_id: tareaId, producto_id: PID, estado: '', csrf_token: CSRF })
-    }).then((r) => r.json()).catch(() => ({ ok: false }));
+      body: new URLSearchParams(cuerpo)
+    })
+      .then((r) => r.text().then((txt) => {
+        try { return JSON.parse(txt); }
+        catch (e) {
+          console.error('[reco] ' + accion + ' respondió no-JSON (HTTP ' + r.status + '):', txt.slice(0, 300));
+          return { ok: false, error: r.status === 403
+            ? 'Sesión caducada, recarga la página'
+            : 'El servidor no respondió bien (¿el deploy todavía no llegó?)' };
+        }
+      }))
+      .catch((e) => { console.error('[reco] ' + accion + ' falló:', e); return { ok: false, error: 'Error de conexión' }; });
   }
-  function postEstado(tareaId, estado) {
-    return fetch(BASE + '/AdminLanding/marcarRecomendacion', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-      body: new URLSearchParams({ tarea_id: tareaId, producto_id: PID, estado: estado, csrf_token: CSRF })
-    }).then((r) => r.json()).catch(() => ({ ok: false }));
+  const post = (accion, tareaId) => llamar(accion, { tarea_id: tareaId });
+  const postEstado = (tareaId, estado) => llamar('marcarRecomendacion', { tarea_id: tareaId, estado: estado });
+
+  // Sincroniza el control del formulario del editor con el cambio aplicado,
+  // para que se vea al instante y no se revierta al Guardar la landing.
+  function syncControl(campo, valor) {
+    const form = document.getElementById('formLanding');
+    if (!form || !campo) return;
+    const cb = form.querySelector('input[type="checkbox"][name="' + campo + '"]');
+    if (cb) {
+      cb.checked = Number(valor) === 1;
+      cb.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+    const inp = form.querySelector('input[name="' + campo + '"]');
+    if (inp) {
+      inp.value = valor;
+      inp.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   }
 
   // ── Render de una tarea pendiente ─────────────────────────
@@ -111,7 +141,8 @@
     const veces = (t.veces_sugerida > 1)
       ? '<span class="reco-tag">sugerida ' + t.veces_sugerida + '&times;</span>'
       : '';
-    return '<div class="reco-item" data-id="' + t.id + '" data-pend="1">'
+    return '<div class="reco-item" data-id="' + t.id + '" data-pend="1"'
+      + ' data-campo="' + esc(t.cambio_campo || '') + '">'
       + '<div class="reco-item__txt">' + esc(t.accion) + '</div>'
       + (t.donde ? '<div class="reco-item__donde">' + esc(t.donde) + '</div>' : '')
       + '<div class="reco-item__meta">'
@@ -198,7 +229,7 @@
       const estado = btn.hasAttribute('data-done') ? 'hecha' : 'descartada';
       btn.disabled = true;
       postEstado(id, estado).then((d) => {
-        if (!d.ok) { btn.disabled = false; return; }
+        if (!d.ok) { btn.disabled = false; alert(d.error || 'No se pudo guardar'); return; }
         item.remove();
         badge(-1);
       });
@@ -210,10 +241,13 @@
       btn.textContent = 'Aplicando…';
       post('aplicarRecomendacion', id).then((d) => {
         if (!d.ok) { btn.disabled = false; btn.textContent = 'Aplicar'; alert(d.error || 'No se pudo aplicar'); return; }
+        // Refleja el cambio en el formulario del editor para que se vea y no
+        // se pierda si luego se guarda la landing.
+        syncControl(item.dataset.campo, d.aplicado);
         item.dataset.pend = '0';
         item.classList.add('reco-item--aplicado');
         item.querySelector('.reco-item__acciones').innerHTML =
-          '<span class="reco-ok">✓ Aplicado — ' + esc(d.label) + ': ' + esc(d.aplicado) + '</span>'
+          '<span class="reco-ok">&#10003; Aplicado y guardado &mdash; ' + esc(d.label) + ': ' + esc(d.aplicado) + '</span>'
           + '<button type="button" class="reco-btn" data-undo data-id="' + id + '">Deshacer</button>';
         badge(-1);
       });
