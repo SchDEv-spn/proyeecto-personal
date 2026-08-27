@@ -666,14 +666,21 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php ob_start(); if ($showPriceBox): ?>
         <section class="container price-box-section animate-fadeup">
             <div class="price-box">
+                <!-- Orden de anclaje: antes → ahora → cuánto ahorras.
+                     El pill "Ahorras $X" iba primero, antes incluso del precio
+                     tachado, así que anunciaba un descuento sobre una cifra que
+                     el comprador todavía no había visto. El ahorro sólo
+                     significa algo después de los dos precios que lo producen.
+                     .price-box es flex en columna, así que este orden del
+                     marcado es literalmente el orden en pantalla. -->
                 <div class="price-label">Oferta exclusiva · Solo hoy</div>
-                <?php if ($ahorro > 0): ?>
-                <div class="save">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></div>
-                <?php endif; ?>
                 <?php if ($precio_regular > $precio_venta): ?>
                 <div class="old">$<?= number_format($precio_regular, 0, ',', '.') ?></div>
                 <?php endif; ?>
                 <div class="new">$<?= number_format($precio_venta, 0, ',', '.') ?></div>
+                <?php if ($ahorro > 0): ?>
+                <div class="save">Ahorras $<?= number_format($ahorro, 0, ',', '.') ?></div>
+                <?php endif; ?>
 
                 <a href="#form-pedido" class="btn-primary" id="heroCta">
                     <?= htmlspecialchars($heroButtonText) ?>
@@ -1230,7 +1237,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <article class="testimonios-ticker__card">
                         <span class="testimonios-ticker__qmark" aria-hidden="true">"</span>
                         <div class="testimonios-ticker__stars">★★★★★</div>
-                        <p class="testimonios-ticker__text">"<?= htmlspecialchars($t['text']) ?>"</p>
+                        <!-- Comillas tipográficas, no las rectas del teclado. Se
+                             escriben como entidad y no como carácter literal: este
+                             archivo ya arrastra historial de codificación y una
+                             entidad no se puede romper en un import. -->
+                        <p class="testimonios-ticker__text">&ldquo;<?= htmlspecialchars($t['text']) ?>&rdquo;</p>
                         <div class="testimonios-ticker__author">
                             <img class="testimonios-ticker__avatar"
                                  src="<?= htmlspecialchars($t['photo']) ?>"
@@ -1296,7 +1307,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         </div>
                         <div class="wa-ticker__content">
                             <div class="wa-ticker__stars" aria-label="5 estrellas">★★★★★</div>
-                            <p class="wa-ticker__text">"<?= htmlspecialchars($waT['text']) ?>"</p>
+                            <p class="wa-ticker__text">&ldquo;<?= htmlspecialchars($waT['text']) ?>&rdquo;</p>
                             <div class="wa-ticker__meta">
                                 <strong class="wa-ticker__name"><?= htmlspecialchars($waT['name']) ?></strong>
                                 <span class="wa-ticker__time"><?= htmlspecialchars($waT['time']) ?></span>

@@ -1947,7 +1947,15 @@ h3 {
 }
 
 .wa-ticker__card {
-  flex: 0 0 80vw;
+  /* 80vw da el ancho justo en móvil — deja asomar la siguiente tarjeta,
+     que es lo que invita a deslizar. Sin tope, en escritorio se convertía
+     en una tarjeta de más de 1000px con una captura de WhatsApp estirada
+     dentro.
+     min() en vez de una media query a propósito: la hoja ya arrastra
+     quince breakpoints distintos y añadir el dieciseisavo por un ancho
+     máximo no compensa. Así el valor se lee de un vistazo y no hay otra
+     regla que mantener sincronizada. */
+  flex: 0 0 min(80vw, 330px);
   scroll-snap-align: start;
   background: var(--bg-layer2);
   border: 1px solid var(--gold-border);
