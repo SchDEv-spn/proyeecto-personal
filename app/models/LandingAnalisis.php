@@ -122,12 +122,18 @@ class LandingAnalisis extends Model
         }
     }
 
-    private function excedeLimite(): bool
+    /**
+     * Tope por filtro, no global: antes 6 clics en periodos o productos
+     * distintos bloqueaban el botón una hora para todo el mundo.
+     */
+    private function excedeLimite(int $productoId, int $dias, string $entorno): bool
     {
         $filas = $this->consultar(
             'SELECT COUNT(*) AS n FROM landing_analisis
-              WHERE creado_en > DATE_SUB(NOW(), INTERVAL 1 HOUR)',
-            []
+              WHERE creado_en > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+                AND periodo_dias = ? AND entorno = ?
+                AND ((? = 0 AND producto_id IS NULL) OR producto_id = ?)',
+            [$dias, $entorno, $productoId, $productoId]
         );
         return (int)($filas[0]['n'] ?? 0) >= self::MAX_POR_HORA;
     }
@@ -154,9 +160,9 @@ class LandingAnalisis extends Model
         }
 
         $this->db->exec(self::DDL);   // barato y deja la tabla lista antes de gastar en la API
-        if ($this->excedeLimite()) {
+        if ($this->excedeLimite($productoId, $dias, $entorno)) {
             return ['ok' => false, 'error' => 'Ya se hicieron ' . self::MAX_POR_HORA
-                . ' análisis en la última hora. Espera un poco antes de repetir.'];
+                . ' análisis de este periodo en la última hora. Espera un poco antes de repetir.'];
         }
 
         $respuesta = $this->llamarClaude($apiKey, $contexto, $modelo);

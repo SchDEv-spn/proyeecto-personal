@@ -347,6 +347,21 @@ class LandingAnalytics extends Model
     // ══════════════════════════════════════════════════════════
 
     /**
+     * Clasifica cada sesión en 'facebook' | 'tiktok' | 'otros'. Facebook y
+     * TikTok se detectan por `fuente` (que landing-track.js fija desde
+     * fbclid / ttclid / utm_source) y, de respaldo, por el navegador in-app.
+     * Vive en un solo sitio porque lo usan tanto las tarjetas de canal como
+     * el filtro global del panel.
+     */
+    private const CANAL_CASE = "CASE"
+        . " WHEN s.fuente = 'facebook-ads' OR s.fuente LIKE 'facebook%' OR s.fuente LIKE 'instagram%'"
+        . "   OR s.fuente = 'ig' OR s.fuente LIKE 'meta%'"
+        . "   OR s.navegador IN ('facebook-app','instagram-app','messenger-app') THEN 'facebook'"
+        . " WHEN s.fuente = 'tiktok-ads' OR s.fuente LIKE 'tiktok%'"
+        . "   OR s.navegador = 'tiktok-app' THEN 'tiktok'"
+        . " ELSE 'otros' END";
+
+    /**
      * Filtro común de todas las consultas del panel.
      *
      * @return array{0:string,1:array} WHERE ya armado y sus parámetros
@@ -365,6 +380,13 @@ class LandingAnalytics extends Model
         if (!empty($f['producto_id'])) {
             $where[]  = 's.producto_id = ?';
             $params[] = (int)$f['producto_id'];
+        }
+
+        // Filtro por canal: el mismo CASE de las tarjetas, aquí como
+        // condición. Solo si viene uno de los tres válidos.
+        if (in_array($f['canal'] ?? '', ['facebook', 'tiktok', 'otros'], true)) {
+            $where[]  = '(' . self::CANAL_CASE . ') = ?';
+            $params[] = $f['canal'];
         }
 
         return [implode(' AND ', $where), $params];
@@ -408,6 +430,20 @@ class LandingAnalytics extends Model
         $sesiones = (int)($row['sesiones'] ?? 0);
         $pedidos  = (int)($row['pedidos'] ?? 0);
 
+        // Medianas: dos pestañas olvidadas en segundo plano inflan el
+        // promedio de tiempo; la mediana no. Se saca con OFFSET sobre el
+        // subconjunto ya filtrado. Sin índice en estas columnas, pero el
+        // volumen de una landing lo aguanta de sobra.
+        $mediana = function (string $col) use ($where, $params, $sesiones): int {
+            if ($sesiones === 0 || !in_array($col, ['duracion_seg', 'scroll_max'], true)) return 0;
+            $r = $this->consulta(
+                "SELECT s.{$col} AS v FROM landing_sesiones s WHERE {$where}
+                 ORDER BY s.{$col} LIMIT 1 OFFSET " . intdiv($sesiones, 2),
+                $params
+            );
+            return (int)round((float)($r[0]['v'] ?? 0));
+        };
+
         return [
             'sesiones'       => $sesiones,
             'pedidos'        => $pedidos,
@@ -416,6 +452,8 @@ class LandingAnalytics extends Model
             'conversion'     => $sesiones ? round($pedidos * 100 / $sesiones, 2) : 0.0,
             'dur_media'      => (int)round((float)($row['dur_media'] ?? 0)),
             'scroll_medio'   => (int)round((float)($row['scroll_medio'] ?? 0)),
+            'dur_mediana'    => $mediana('duracion_seg'),
+            'scroll_mediana' => $mediana('scroll_max'),
             'ingresos'       => (float)($row['ingresos'] ?? 0),
             'utilidad'       => (float)($row['utilidad'] ?? 0),
         ];
@@ -449,6 +487,32 @@ class LandingAnalytics extends Model
         }
 
         return (int)($this->consulta($sql, $params)[0]['n'] ?? 0);
+    }
+
+    /**
+     * Ingresos y utilidad REALES del periodo, de la tabla `pedidos`.
+     * Contraparte de la tarjeta "Ingresos", que muestra solo lo atribuido a
+     * una sesión. `pedidos` no tiene canal ni entorno: ignora esos filtros,
+     * igual que pedidosDelPeriodo().
+     */
+    public function ingresosDelPeriodo(array $f): array
+    {
+        $sql    = 'SELECT COALESCE(SUM(precio_total), 0)  AS ingresos,
+                          COALESCE(SUM(utilidad_total), 0) AS utilidad
+                     FROM pedidos p
+                    WHERE p.created_at >= ? AND p.created_at < ?';
+        $params = [$f['desde'], $f['hasta']];
+
+        if (!empty($f['producto_id'])) {
+            $sql     .= ' AND p.producto_id = ?';
+            $params[] = (int)$f['producto_id'];
+        }
+
+        $row = $this->consulta($sql, $params)[0] ?? [];
+        return [
+            'ingresos' => (float)($row['ingresos'] ?? 0),
+            'utilidad' => (float)($row['utilidad'] ?? 0),
+        ];
     }
 
     /**
@@ -573,20 +637,13 @@ class LandingAnalytics extends Model
      */
     public function porCanalPublicitario(array $f): array
     {
+        // El desglose siempre muestra los tres canales, aunque el panel esté
+        // filtrado a uno: las tarjetas son el mapa completo y el selector.
+        unset($f['canal']);
         [$where, $params] = $this->filtro($f);
 
         $sql = "SELECT
-                    CASE
-                        WHEN s.fuente = 'facebook-ads'
-                          OR s.fuente LIKE 'facebook%' OR s.fuente LIKE 'instagram%'
-                          OR s.fuente = 'ig' OR s.fuente LIKE 'meta%'
-                          OR s.navegador IN ('facebook-app','instagram-app','messenger-app')
-                            THEN 'facebook'
-                        WHEN s.fuente = 'tiktok-ads' OR s.fuente LIKE 'tiktok%'
-                          OR s.navegador = 'tiktok-app'
-                            THEN 'tiktok'
-                        ELSE 'otros'
-                    END                                        AS canal,
+                    (" . self::CANAL_CASE . ")                  AS canal,
                     COUNT(*)                                    AS sesiones,
                     SUM(s.pedido_id IS NOT NULL)                AS pedidos,
                     COALESCE(SUM(p.precio_total), 0)            AS ingresos
@@ -664,6 +721,36 @@ class LandingAnalytics extends Model
         }
 
         return $out;
+    }
+
+    /**
+     * Tráfico por hora y día de la semana, para el heatmap "cuándo entra la
+     * gente" — la señal para programar la pauta. WEEKDAY() da 0=lunes …
+     * 6=domingo; HOUR() ya viene en hora de Colombia porque la conexión fija
+     * time_zone = '-05:00'.
+     *
+     * @return array{grid: array<int, array<int, int>>, max: int} rejilla 7×24
+     */
+    public function heatmapHorario(array $f): array
+    {
+        [$where, $params] = $this->filtro($f);
+
+        $sql = "SELECT WEEKDAY(s.creado_en) AS dia, HOUR(s.creado_en) AS hora, COUNT(*) AS n
+                FROM landing_sesiones s
+                WHERE {$where}
+                GROUP BY dia, hora";
+
+        $grid = array_fill(0, 7, array_fill(0, 24, 0));
+        $max  = 0;
+        foreach ($this->consulta($sql, $params) as $row) {
+            $d = (int)$row['dia'];
+            $h = (int)$row['hora'];
+            if ($d < 0 || $d > 6 || $h < 0 || $h > 23) continue;
+            $grid[$d][$h] = (int)$row['n'];
+            $max = max($max, (int)$row['n']);
+        }
+
+        return ['grid' => $grid, 'max' => $max];
     }
 
     /** Errores de JavaScript capturados en la landing, agrupados. */

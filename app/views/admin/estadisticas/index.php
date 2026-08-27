@@ -19,15 +19,19 @@
     $dias          = $dias          ?? 7;
     $producto_id   = $producto_id   ?? 0;
     $entorno       = $entorno       ?? 'produccion';
+    $canal         = $canal         ?? '';
     $productos     = $productos     ?? [];
     $resumen       = $resumen       ?? [];
     $canales       = $canales       ?? [];
+    $ingresos_reales = $ingresos_reales ?? null;
     $embudo        = $embudo        ?? [];
     $secciones     = $secciones     ?? [];
     $campos        = $campos        ?? [];
     $dispositivos  = $dispositivos  ?? [];
     $navegadores   = $navegadores   ?? [];
     $fuentes       = $fuentes       ?? [];
+    $campanas      = $campanas      ?? [];
+    $heatmap       = $heatmap       ?? [];
     $serie         = $serie         ?? [];
     $errores       = $errores       ?? [];
     $sesiones      = $sesiones      ?? [];
@@ -47,9 +51,9 @@
     $showSearch      = false;
 
     /** Enlace al mismo panel cambiando un solo filtro. */
-    $filtroUrl = function (array $cambios) use ($dias, $producto_id, $entorno) {
+    $filtroUrl = function (array $cambios) use ($dias, $producto_id, $entorno, $canal) {
         $q = array_merge(
-            ['dias' => $dias, 'producto' => $producto_id, 'entorno' => $entorno],
+            ['dias' => $dias, 'producto' => $producto_id, 'entorno' => $entorno, 'canal' => $canal],
             $cambios
         );
         return BASE_URL . '/AdminEstadisticas/index?' . http_build_query(array_filter(
@@ -143,6 +147,21 @@
                             </select>
                         </label>
 
+                        <!-- Canal de tráfico: filtra TODO el panel (KPIs,
+                             embudo, secciones…), no solo las tarjetas. Las
+                             tarjetas de "De dónde vienen" se quedan completas
+                             a propósito, hacen de mapa. -->
+                        <div class="seg seg--sm" role="group" aria-label="Canal de tráfico">
+                            <a href="<?= htmlspecialchars($filtroUrl(['canal' => ''])) ?>"
+                               class="seg__item <?= $canal === '' ? 'is-active' : '' ?>">Todos</a>
+                            <a href="<?= htmlspecialchars($filtroUrl(['canal' => 'facebook'])) ?>"
+                               class="seg__item <?= $canal === 'facebook' ? 'is-active' : '' ?>">Facebook</a>
+                            <a href="<?= htmlspecialchars($filtroUrl(['canal' => 'tiktok'])) ?>"
+                               class="seg__item <?= $canal === 'tiktok' ? 'is-active' : '' ?>">TikTok</a>
+                            <a href="<?= htmlspecialchars($filtroUrl(['canal' => 'otros'])) ?>"
+                               class="seg__item <?= $canal === 'otros' ? 'is-active' : '' ?>">Directo</a>
+                        </div>
+
                         <!-- Las visitas desde XAMPP se guardan aparte para no
                              sesgar los promedios reales; este interruptor es el
                              único sitio donde se pueden mirar. -->
@@ -223,9 +242,14 @@
 
                     <div class="stat-card glow-gold">
                         <div class="stat-info">
-                            <small>Tiempo medio</small>
-                            <h2><?= $minutos((int)$resumen['dur_media']) ?></h2>
-                            <span class="target"><?= $tendencia('dur_media', ' · scroll ' . (int)$resumen['scroll_medio'] . '%') ?></span>
+                            <!-- Titular = mediana: un par de pestañas olvidadas en
+                                 segundo plano inflan el promedio y no la mediana.
+                                 La media queda en la línea de abajo para no perderla. -->
+                            <small>Tiempo típico</small>
+                            <h2><?= $minutos((int)($resumen['dur_mediana'] ?? $resumen['dur_media'] ?? 0)) ?></h2>
+                            <span class="target"><?= $tendencia('dur_mediana',
+                                ' · media ' . $minutos((int)($resumen['dur_media'] ?? 0))
+                                . ' · scroll ' . (int)($resumen['scroll_mediana'] ?? $resumen['scroll_medio'] ?? 0) . '%') ?></span>
                         </div>
                         <i class="fas fa-stopwatch stat-icon"></i>
                     </div>
@@ -295,6 +319,16 @@
                         lo que ves aquí y lo que ves en Pedidos es el mismo número.
                     <?php endif; ?>
                     </span>
+                </p>
+                <?php endif; ?>
+
+                <?php if ($ingresos_reales !== null && $ingresos_reales['ingresos'] > 0): ?>
+                <p class="stats-hint">
+                    Ingresos reales del periodo (tabla de pedidos):
+                    <strong>$<?= number_format((float)$ingresos_reales['ingresos'], 0, ',', '.') ?></strong>
+                    · utilidad <strong>$<?= number_format((float)$ingresos_reales['utilidad'], 0, ',', '.') ?></strong>.
+                    La tarjeta de arriba solo cuenta lo atribuido a una sesión
+                    ($<?= number_format((float)($resumen['ingresos'] ?? 0), 0, ',', '.') ?>).
                 </p>
                 <?php endif; ?>
 
@@ -565,6 +599,71 @@
                     <?php endforeach; ?>
                 </div>
 
+                <!-- ══ Campañas ══
+                     utm_campaign se rastrea desde el primer pageview. Una
+                     campaña con muchas visitas y poca conversión es dinero de
+                     pauta que no rinde. -->
+                <?php if (!empty($campanas)): ?>
+                <div class="panel">
+                    <div class="panel__head">
+                        <h2>Qué campaña convierte</h2>
+                        <span class="chip">Campañas</span>
+                    </div>
+                    <div class="panel__body">
+                        <table class="stats-table stats-table--num">
+                            <thead><tr><th>Campaña (utm_campaign)</th><th>Visitas</th><th>Pedidos</th><th>Conv.</th></tr></thead>
+                            <tbody>
+                            <?php foreach ($campanas as $c): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars((string)$c['etiqueta']) ?></td>
+                                    <td><?= number_format((int)$c['n'], 0, ',', '.') ?></td>
+                                    <td><?= number_format((int)$c['pedidos'], 0, ',', '.') ?></td>
+                                    <td><?= number_format((float)$c['conversion'], 1, ',', '.') ?>%</td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- ══ Heatmap horario ══
+                     Cuándo entra el tráfico, por hora y día. La señal para
+                     decidir a qué hora reforzar la pauta. Hora de Colombia. -->
+                <?php if (!empty($heatmap['grid']) && (int)($heatmap['max'] ?? 0) > 0):
+                    $diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+                    $hMax = max(1, (int)$heatmap['max']);
+                ?>
+                <div class="panel">
+                    <div class="panel__head">
+                        <h2>Cuándo entra la gente</h2>
+                        <span class="chip">Hora × día</span>
+                    </div>
+                    <div class="panel__body">
+                        <div class="heat-scroll">
+                            <div class="heat" role="img" aria-label="Mapa de calor de visitas por hora y día de la semana">
+                                <div class="heat__corner" aria-hidden="true"></div>
+                                <?php for ($h = 0; $h < 24; $h++): ?>
+                                    <div class="heat__hour"><?= $h % 3 === 0 ? $h : '' ?></div>
+                                <?php endfor; ?>
+                                <?php foreach ($diasSemana as $d => $nombre): ?>
+                                    <div class="heat__day"><?= $nombre ?></div>
+                                    <?php for ($h = 0; $h < 24; $h++):
+                                        $v = (int)($heatmap['grid'][$d][$h] ?? 0);
+                                        $alpha = $v ? round(0.12 + 0.88 * $v / $hMax, 2) : 0;
+                                    ?>
+                                        <div class="heat__cell"
+                                             style="<?= $v ? 'background:rgba(26,61,46,' . $alpha . ')' : '' ?>"
+                                             title="<?= $nombre ?> <?= $h ?>:00 — <?= $v ?> visitas"></div>
+                                    <?php endfor; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <p class="stats-hint">Más oscuro = más visitas. Hora de Colombia.</p>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- ══ Errores de JS ══ -->
                 <h2 class="stats-head">Detalle</h2>
                 <?php if (!empty($errores)): ?>
@@ -597,7 +696,7 @@
                             <span class="chip"><?= count($sesiones) ?></span>
                             <a class="chip chip--accion"
                                href="<?= htmlspecialchars(BASE_URL . '/AdminEstadisticas/exportarCsv?' . http_build_query(array_filter([
-                                   'dias' => $dias, 'producto' => $producto_id, 'entorno' => $entorno,
+                                   'dias' => $dias, 'producto' => $producto_id, 'entorno' => $entorno, 'canal' => $canal,
                                ]))) ?>">
                                 <i class="fas fa-file-csv" aria-hidden="true"></i> CSV
                             </a>
@@ -968,6 +1067,28 @@
        quiere. */
     @media (min-width: 1280px) {
         .stats-grid--3col { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* ── Heatmap hora × día ──
+       Primera columna para el nombre del día, luego 24 celdas cuadradas.
+       En móvil no caben 24: scroll horizontal con ancho mínimo. */
+    .heat-scroll { overflow-x: auto; margin: 0 calc(var(--sp-5) * -1); padding: 0 var(--sp-5); }
+    .heat {
+        display: grid;
+        grid-template-columns: 34px repeat(24, 1fr);
+        gap: 2px; min-width: 560px;
+    }
+    .heat__hour {
+        font-size: 9px; color: var(--tx-dim); text-align: center;
+        font-variant-numeric: tabular-nums; padding-bottom: 2px;
+    }
+    .heat__day {
+        font-size: 10.5px; font-weight: 600; color: var(--tx-muted);
+        display: flex; align-items: center; padding-right: 6px;
+    }
+    .heat__cell {
+        aspect-ratio: 1 / 1; border-radius: 2px;
+        background: var(--surface-3);
     }
 
     .stats-empty { color: var(--tx-dim); font-size: var(--text-sm); text-align: center; padding: var(--sp-4) 0; }

@@ -30,6 +30,13 @@ class AdminEstadisticasController extends Controller
         return ($_GET['entorno'] ?? 'produccion') === 'local' ? 'local' : 'produccion';
     }
 
+    /** Canal de tráfico para filtrar todo el panel. Vacío = todos. */
+    private function canal(): string
+    {
+        $c = $_GET['canal'] ?? '';
+        return in_array($c, ['facebook', 'tiktok', 'otros'], true) ? $c : '';
+    }
+
     /**
      * El rango arranca a las 00:00 del primer día y termina mañana a las
      * 00:00: si terminara "ahora", el día en curso saldría recortado y la
@@ -47,6 +54,7 @@ class AdminEstadisticasController extends Controller
             'hasta'       => $hasta->format('Y-m-d H:i:s'),
             'producto_id' => $productoId,
             'entorno'     => $entorno,
+            'canal'       => $this->canal(),
         ];
     }
 
@@ -86,8 +94,15 @@ class AdminEstadisticasController extends Controller
             'dias'         => $dias,
             'producto_id'  => $productoId,
             'entorno'      => $entorno,
+            'canal'        => $this->canal(),
             'productos'    => $this->productos(),
             'resumen'      => $resumen,
+            /* Ingresos REALES del periodo (tabla de pedidos), contraparte de
+               los ingresos atribuidos que muestra la tarjeta. Solo producción:
+               `pedidos` no distingue entorno. */
+            'ingresos_reales' => $entorno === 'produccion'
+                ? $analytics->ingresosDelPeriodo($filtro)
+                : null,
             /* Los pedidos que el panel muestra son los que pudo atribuir a una
                sesión. Este es el total de verdad, el mismo que ve /AdminPedidos:
                la vista contrasta los dos para que la diferencia se explique en
@@ -105,6 +120,8 @@ class AdminEstadisticasController extends Controller
             'dispositivos' => $analytics->porDimension($filtro, 'dispositivo'),
             'navegadores'  => $analytics->porDimension($filtro, 'navegador'),
             'fuentes'      => $analytics->porDimension($filtro, 'fuente'),
+            'campanas'     => $analytics->porDimension($filtro, 'campana'),
+            'heatmap'      => $analytics->heatmapHorario($filtro),
             'serie'        => $analytics->serieDiaria($filtro),
             'errores'      => $analytics->errores($filtro),
             'sesiones'     => $analytics->ultimasSesiones($filtro, 40),
@@ -152,6 +169,7 @@ class AdminEstadisticasController extends Controller
             'conversion'   => $comparar((float)$actual['conversion'],   (float)$anterior['conversion']),
             'intencion'    => $comparar((float)$actual['con_intencion'],(float)$anterior['con_intencion']),
             'dur_media'    => $comparar((float)$actual['dur_media'],    (float)$anterior['dur_media']),
+            'dur_mediana'  => $comparar((float)($actual['dur_mediana'] ?? 0), (float)($anterior['dur_mediana'] ?? 0)),
             'scroll_medio' => $comparar((float)$actual['scroll_medio'], (float)$anterior['scroll_medio']),
             'anterior'     => $anterior,
         ];
@@ -267,6 +285,7 @@ class AdminEstadisticasController extends Controller
                 'por_dispositivo'         => $analytics->porDimension($filtro, 'dispositivo'),
                 'por_navegador'           => $analytics->porDimension($filtro, 'navegador'),
                 'por_fuente'              => $analytics->porDimension($filtro, 'fuente'),
+                'por_campana'             => $analytics->porDimension($filtro, 'campana'),
                 'por_dia'                 => $analytics->serieDiaria($filtro),
                 'errores_js'              => $analytics->errores($filtro),
             ],
