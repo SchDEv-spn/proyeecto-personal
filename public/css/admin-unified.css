@@ -4307,6 +4307,70 @@ div.dataTables_paginate { display: flex; align-items: center; gap: 4px; flex-wra
 }
 body.preview-panel-open { overflow: hidden; }
 
+/* ── Panel de recomendaciones de IA (drawer, gemelo del preview) ── */
+.reco-panel {
+  position: fixed; top: 0; right: -100%;
+  width: 100%; max-width: 440px; height: 100dvh;
+  background: var(--surface); border-left: 1px solid var(--border);
+  z-index: 600; display: flex; flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,.18);
+  visibility: hidden;
+  transition: right .3s cubic-bezier(.4,0,.2,1), visibility .3s;
+}
+.reco-panel.is-open { right: 0; visibility: visible; }
+.reco-panel__head {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border);
+  background: var(--green-dark); color: #fff; flex-shrink: 0;
+}
+.reco-panel__head h2 { font-size: var(--text-sm); font-weight: 700; margin: 0; flex: 1; color: #fff; }
+.reco-panel__close {
+  width: 32px; height: 32px; border: 0; border-radius: 8px; cursor: pointer;
+  background: rgba(255,255,255,.12); color: #fff; font-size: 15px;
+}
+.reco-panel__close:hover { background: rgba(255,255,255,.22); }
+.reco-panel__body { flex: 1; overflow-y: auto; padding: var(--sp-4); }
+.reco-panel__foot {
+  flex-shrink: 0; padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--border); font-size: var(--text-xs); color: var(--tx-dim); line-height: 1.5;
+}
+.reco-panel__foot a { color: var(--green-dark); font-weight: 600; }
+
+.reco-item {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: var(--sp-3); margin-bottom: var(--sp-3); background: var(--surface);
+}
+.reco-item__txt { font-size: var(--text-sm); line-height: 1.5; color: var(--tx); font-weight: 600; }
+.reco-item__donde { margin-top: 4px; font-size: var(--text-xs); color: var(--tx-muted); }
+.reco-item__meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.reco-tag {
+  font-size: 11px; font-weight: 700; text-transform: lowercase;
+  color: var(--tx-muted); background: var(--surface-3); padding: 2px 8px; border-radius: 999px;
+}
+.reco-tag--alto  { background: #DCFCE7; color: #166534; }
+.reco-tag--medio { background: #FEF9C3; color: #713F12; }
+.reco-item__acciones { display: flex; gap: 6px; margin-top: 10px; }
+.reco-btn {
+  flex: 1; padding: 6px 10px; border-radius: 7px; cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 700; border: 1px solid var(--border);
+  background: var(--surface); color: var(--tx);
+}
+.reco-btn:hover { background: var(--surface-3); }
+.reco-btn--ir { background: var(--green-dark); color: #fff; border-color: transparent; }
+.reco-btn--ir:hover { filter: brightness(1.12); background: var(--green-dark); }
+.reco-empty {
+  color: var(--tx-dim); font-size: var(--text-sm); text-align: center;
+  padding: var(--sp-5) var(--sp-3); line-height: 1.6;
+}
+.reco-empty a { color: var(--green-dark); font-weight: 600; }
+
+/* Flash de la sección al llegar desde "Ir" o ?ir= */
+@keyframes reco-flash {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,61,46,0); }
+  15%      { box-shadow: 0 0 0 3px rgba(26,61,46,.55); }
+}
+.section-block--flash { animation: reco-flash 1.4s ease-out 1; }
+
 /* ── IA Spinner ───────────────────────────────────────────── */
 .ia-spinner {
   width: 36px;

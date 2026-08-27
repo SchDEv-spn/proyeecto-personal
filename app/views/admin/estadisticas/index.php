@@ -909,6 +909,12 @@
     }
     .ia-tag--alto  { background: #DCFCE7; color: #166534; }
     .ia-tag--medio { background: #FEF9C3; color: #713F12; }
+    .ia-ir {
+        font-size: 11.5px; font-weight: 700; text-decoration: none;
+        color: var(--green-dark); border-bottom: 1px solid currentColor;
+        white-space: nowrap;
+    }
+    .ia-ir:hover { opacity: .75; }
 
     .ia-hallazgos, .ia-dudas { list-style: none; display: flex; flex-direction: column; gap: var(--sp-3); }
     .ia-hallazgos li  { font-size: var(--text-sm); color: var(--tx); line-height: 1.45; }
@@ -1138,6 +1144,11 @@
         var meta     = document.getElementById('iaMeta');
         if (!boton || !destino) return;
 
+        // Para el enlace "Abrir en el editor" de cada acción. Solo tiene
+        // sentido si el análisis es de un producto concreto.
+        var PID  = <?= (int)$producto_id ?>;
+        var BASE = '<?= BASE_URL ?>';
+
         var guardado = <?= json_encode($analisis['resultado'] ?? null, JSON_UNESCAPED_UNICODE) ?>;
 
         function esc(s) {
@@ -1153,12 +1164,17 @@
             if (r.acciones && r.acciones.length) {
                 html += '<h3 class="ia-sub">Qué hacer</h3><ol class="ia-acciones">';
                 r.acciones.forEach(function (a) {
+                    var irEditor = (a.seccion_id && a.seccion_id !== 'ninguna' && PID > 0)
+                        ? '<a class="ia-ir" href="' + BASE + '/AdminLanding/index?producto_id=' + PID
+                            + '&ir=' + encodeURIComponent(a.seccion_id) + '">Abrir en el editor &rarr;</a>'
+                        : '';
                     html += '<li>'
                         + '<div class="ia-accion__txt">' + esc(a.accion) + '</div>'
                         + '<div class="ia-accion__meta">'
                         + '<span class="ia-donde">' + esc(a.donde) + '</span>'
                         + '<span class="ia-tag ia-tag--' + esc(a.impacto) + '">impacto ' + esc(a.impacto) + '</span>'
                         + '<span class="ia-tag">esfuerzo ' + esc(a.esfuerzo) + '</span>'
+                        + irEditor
                         + '</div></li>';
                 });
                 html += '</ol>';

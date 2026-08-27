@@ -61,7 +61,33 @@ class AdminLandingController extends Controller
             'producto'           => $productoActual,
             'tiene_api_key'      => $settings->hasKey('claude_api_key'),
             'tiene_replicate_key'=> $settings->hasKey('replicate_api_key'),
+            // Último análisis de IA de esta landing (Estadísticas → Analizar),
+            // con el estado de cada acción, para el panel "Recomendaciones".
+            'recomendaciones'    => (new LandingAnalisis())->ultimoDeProducto($productoId),
         ]);
+    }
+
+    /**
+     * AJAX: marca una recomendación del análisis como hecha / descartada /
+     * pendiente. La usa el panel "Recomendaciones IA" del editor.
+     */
+    public function marcarRecomendacion(): void
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $analisisId = (int)($_POST['analisis_id'] ?? 0);
+        $idx        = (int)($_POST['idx'] ?? -1);
+        $estado     = (string)($_POST['estado'] ?? '');
+
+        if ($analisisId <= 0 || $idx < 0) {
+            echo json_encode(['ok' => false, 'error' => 'Datos inválidos']);
+            return;
+        }
+
+        $ok = (new LandingAnalisis())->marcarAccion($analisisId, $idx, $estado);
+        echo json_encode(['ok' => $ok]);
     }
 
     // Copia solo el orden de secciones de otro producto hacia el actual

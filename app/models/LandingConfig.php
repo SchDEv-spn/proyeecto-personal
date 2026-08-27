@@ -61,6 +61,50 @@ class LandingConfig extends Model
         return array_key_first(self::temasValidos());
     }
 
+    /**
+     * Secciones del editor de landing: id del bloque en el DOM (mismo que
+     * usa el TOC en `#landingToc a[data-target]`), etiqueta legible, y la
+     * columna booleana de `landing_config` que la enciende/apaga (o null si
+     * es un grupo de config sin un único toggle, o siempre visible).
+     *
+     * Fuente única para: el enum `seccion_id` del análisis con IA
+     * (`LandingAnalisis::esquema()`), el bloque de secciones del prompt
+     * (`LandingAnalisis::sistema()`), y el salto "Ir a la sección" del panel
+     * de recomendaciones. El orden es el de aparición en la landing.
+     */
+    public const SECCIONES_EDITOR = [
+        'sec-secciones'            => ['label' => 'Secciones visibles y orden',      'show' => null],
+        'sec-announcement'         => ['label' => 'Barra de anuncio',                'show' => 'show_announcement_bar'],
+        'sec-hero'                 => ['label' => 'Hero',                            'show' => null],
+        'sec-hero-trust'           => ['label' => 'Señales de confianza del hero',   'show' => 'show_trust_strip'],
+        'sec-beneficios'           => ['label' => 'Beneficios',                      'show' => 'show_benefits'],
+        'sec-galeria'              => ['label' => 'Galería',                         'show' => 'show_gallery'],
+        'sec-caracteristicas'      => ['label' => 'Características del producto',     'show' => 'show_caracteristicas'],
+        'sec-comofunciona-content' => ['label' => 'Cómo funciona',                   'show' => 'show_como_funciona'],
+        'sec-contador'             => ['label' => 'Contador / Oferta',               'show' => 'show_countdown'],
+        'sec-porque'               => ['label' => '¿Por qué te encantará?',          'show' => 'show_porque'],
+        'sec-comparison'           => ['label' => 'Tabla comparativa (con / sin)',   'show' => 'show_comparison'],
+        'sec-paraquien'            => ['label' => '¿Para quién es?',                 'show' => 'show_para_quien'],
+        'sec-testimonios'          => ['label' => 'Testimonios',                     'show' => 'show_testimonios'],
+        'sec-wa'                   => ['label' => 'Testimonios de WhatsApp',         'show' => 'show_wa_testimonios'],
+        'sec-faq'                  => ['label' => 'Preguntas frecuentes',            'show' => 'show_faqs'],
+        'sec-garantia'             => ['label' => 'Banner de garantía',              'show' => 'show_garantia'],
+        'sec-autoridad'            => ['label' => 'Bloque de autoridad',             'show' => 'authority_enabled'],
+        'sec-transportadoras'      => ['label' => 'Logos de transportadoras',        'show' => null],
+        'sec-regalo'               => ['label' => 'Regalo incluido',                 'show' => 'show_regalo'],
+        'sec-form-header'          => ['label' => 'Formulario de pedido',            'show' => null],
+        'sec-footer'               => ['label' => 'Footer',                          'show' => 'show_footer'],
+        'sec-ctas'                 => ['label' => 'Botones CTA de las secciones',    'show' => null],
+        'sec-combo'                => ['label' => 'Combo / x2 unidades',             'show' => 'combo_enabled'],
+        'sec-colores'              => ['label' => 'Colores del tema',               'show' => null],
+    ];
+
+    /** Ids válidos para el enum del análisis: las secciones + "ninguna". */
+    public static function seccionIdsValidos(): array
+    {
+        return array_merge(array_keys(self::SECCIONES_EDITOR), ['ninguna']);
+    }
+
     public function obtenerPorProducto(int $productoId)
     {
         $sql = "SELECT * FROM landing_config WHERE producto_id = :producto_id LIMIT 1";

@@ -335,19 +335,19 @@ class AdminEstadisticasController extends Controller
             $cfg = (new LandingConfig())->obtenerPorProducto($productoId) ?? [];
             if (!$cfg) return [];
 
-            // Las secciones son ~40 columnas show_*: se resumen en dos listas
-            // en vez de volcar la fila entera, que son 200 campos de texto.
-            $encendidas = [];
-            $apagadas   = [];
-            foreach ($cfg as $clave => $valor) {
-                if (strpos($clave, 'show_') !== 0) continue;
-                $nombre = substr($clave, 5);
-                ((int)$valor === 1) ? $encendidas[] = $nombre : $apagadas[] = $nombre;
+            // Secciones del editor con su id, etiqueta y si están encendidas.
+            // Con el id (mismo que el enum `seccion_id` del análisis) el modelo
+            // ata "la garantía está apagada" con `sec-garantia` sin adivinar.
+            $seccionesEditor = [];
+            foreach (LandingConfig::SECCIONES_EDITOR as $id => $s) {
+                $encendida = $s['show'] === null
+                    ? null
+                    : (int)($cfg[$s['show']] ?? 1) === 1;
+                $seccionesEditor[$id] = ['label' => $s['label'], 'encendida' => $encendida];
             }
 
             return [
-                'secciones_encendidas' => $encendidas,
-                'secciones_apagadas'   => $apagadas,
+                'secciones_editor'     => $seccionesEditor,
                 'countdown_minutos'    => (int)($cfg['countdown_minutes'] ?? 0),
                 'combo_x2_activo'      => (int)($cfg['combo_enabled'] ?? 0) === 1,
                 'combo_precio_2'       => (int)($cfg['combo_price_2'] ?? 0),

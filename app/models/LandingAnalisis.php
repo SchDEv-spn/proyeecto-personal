@@ -47,6 +47,7 @@ class LandingAnalisis extends Model
         entorno      ENUM("produccion","local") NOT NULL DEFAULT "produccion",
         sesiones     INT UNSIGNED NOT NULL DEFAULT 0,
         resultado    LONGTEXT     NOT NULL,
+        acciones_estado LONGTEXT   NULL,
         modelo       VARCHAR(40)  NOT NULL,
         tokens_in    INT UNSIGNED NOT NULL DEFAULT 0,
         tokens_out   INT UNSIGNED NOT NULL DEFAULT 0,
@@ -54,6 +55,22 @@ class LandingAnalisis extends Model
         PRIMARY KEY (id),
         KEY idx_landing_analisis_filtro (producto_id, periodo_dias, entorno, creado_en)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+
+    /**
+     * `acciones_estado` se añadió después del CREATE original. Para tablas ya
+     * creadas en producción el ALTER va aquí, en try/catch que traga el
+     * error 1060 (columna duplicada) — no hay migraciones .sql en este
+     * proyecto, el deploy es un push. Barato de sobra: un ALTER no-op.
+     */
+    private function asegurarColumna(): void
+    {
+        try {
+            $this->db->exec('ALTER TABLE landing_analisis ADD COLUMN acciones_estado LONGTEXT NULL AFTER resultado');
+        } catch (\PDOException $e) {
+            // 42S21 / 1060 = Duplicate column name → ya existe, nada que hacer.
+            // 42S02 = tabla no existe todavía → el DDL la creará ya con la columna.
+        }
+    }
 
     // ══════════════════════════════════════════════════════════
     //  PERSISTENCIA
@@ -75,6 +92,79 @@ class LandingAnalisis extends Model
         $fila = $fila[0];
         $fila['resultado'] = json_decode($fila['resultado'], true) ?: [];
         return $fila;
+    }
+
+    /**
+     * El análisis más reciente de un producto, sea del periodo o entorno que
+     * sea — el editor no tiene contexto de periodo, solo quiere "lo último que
+     * dijo la IA de esta landing". Anota cada acción con su estado
+     * (pendiente / hecha / descartada) desde `acciones_estado`.
+     */
+    public function ultimoDeProducto(int $productoId): ?array
+    {
+        if ($productoId <= 0) return null;
+        $this->asegurarColumna();
+
+        $fila = $this->consultar(
+            'SELECT id, producto_id, periodo_dias, entorno, sesiones, modelo, creado_en,
+                    resultado, acciones_estado
+               FROM landing_analisis
+              WHERE producto_id = ?
+              ORDER BY creado_en DESC LIMIT 1',
+            [$productoId]
+        );
+        if (!$fila) return null;
+
+        $fila = $fila[0];
+        $resultado = json_decode((string)$fila['resultado'], true) ?: [];
+        $estado    = json_decode((string)($fila['acciones_estado'] ?? ''), true) ?: [];
+
+        // Nada de `?? []` en el foreach: el operador devuelve una copia y la
+        // referencia mutaría el temporal, no el array real.
+        if (!empty($resultado['acciones']) && is_array($resultado['acciones'])) {
+            foreach ($resultado['acciones'] as $i => &$accion) {
+                $accion['idx']    = $i;
+                $accion['estado'] = $estado[(string)$i] ?? 'pendiente';
+            }
+            unset($accion);
+        }
+
+        $fila['resultado'] = $resultado;
+        unset($fila['acciones_estado']);
+        return $fila;
+    }
+
+    /**
+     * Marca una acción del análisis. Índice como clave: estable dentro de la
+     * fila. `pendiente` la borra del JSON (así no crece con ruido).
+     */
+    public function marcarAccion(int $analisisId, int $idx, string $estado): bool
+    {
+        if (!in_array($estado, ['pendiente', 'hecha', 'descartada'], true)) return false;
+        $this->asegurarColumna();
+
+        try {
+            $fila = $this->consultar('SELECT acciones_estado FROM landing_analisis WHERE id = ? LIMIT 1', [$analisisId]);
+            if (!$fila) return false;
+
+            $estados = json_decode((string)($fila[0]['acciones_estado'] ?? ''), true);
+            if (!is_array($estados)) $estados = [];
+
+            if ($estado === 'pendiente') {
+                unset($estados[(string)$idx]);
+            } else {
+                $estados[(string)$idx] = $estado;
+            }
+
+            $stmt = $this->db->prepare('UPDATE landing_analisis SET acciones_estado = ? WHERE id = ?');
+            return $stmt->execute([
+                $estados ? json_encode($estados, JSON_FORCE_OBJECT) : null,
+                $analisisId,
+            ]);
+        } catch (\PDOException $e) {
+            error_log('LandingAnalisis::marcarAccion — ' . $e->getMessage());
+            return false;
+        }
     }
 
     public function historial(int $limite = 10): array
@@ -212,11 +302,16 @@ class LandingAnalisis extends Model
                     'confianza'  => ['type' => 'string', 'enum' => ['alta', 'media', 'baja']],
                 ], ['titulo', 'evidencia', 'confianza']),
                 'acciones' => $lista([
-                    'accion'   => ['type' => 'string', 'description' => 'Qué hacer, concreto y ejecutable.'],
-                    'donde'    => ['type' => 'string', 'description' => 'Sección o campo exacto del editor de landing donde se toca.'],
+                    'accion'     => ['type' => 'string', 'description' => 'Qué hacer, concreto y ejecutable.'],
+                    'donde'      => ['type' => 'string', 'description' => 'En lenguaje natural: qué sección o campo del editor se toca.'],
+                    'seccion_id' => [
+                        'type'        => 'string',
+                        'enum'        => LandingConfig::seccionIdsValidos(),
+                        'description' => 'Id de la sección del editor donde se aplica (lista abajo), o "ninguna".',
+                    ],
                     'impacto'  => ['type' => 'string', 'enum' => ['alto', 'medio', 'bajo']],
                     'esfuerzo' => ['type' => 'string', 'enum' => ['alto', 'medio', 'bajo']],
-                ], ['accion', 'donde', 'impacto', 'esfuerzo']),
+                ], ['accion', 'donde', 'seccion_id', 'impacto', 'esfuerzo']),
                 'no_concluyente' => [
                     'type'        => 'array',
                     'items'       => ['type' => 'string'],
@@ -230,6 +325,12 @@ class LandingAnalisis extends Model
 
     private function sistema(): string
     {
+        $catalogo = '';
+        foreach (LandingConfig::SECCIONES_EDITOR as $id => $s) {
+            $catalogo .= "  {$id} = {$s['label']}\n";
+        }
+        $catalogo = rtrim($catalogo);
+
         return <<<TXT
 Eres analista de conversión. Analizas la landing de una tienda colombiana que
 vende contra entrega y cierra los pedidos por WhatsApp. El tráfico llega casi
@@ -259,6 +360,10 @@ Reglas de tu respuesta:
    que diga el bloque "tecnica" del contexto. Si un hallazgo o una acción
    depende de un detalle de implementación que no está en los datos que te
    paso, no lo propongas: va en "no_concluyente".
+8. En cada acción, "seccion_id" es la sección EXACTA del editor donde se aplica,
+   elegida de esta lista (usa "ninguna" solo si la acción no se toca en el
+   editor, p. ej. "revisá la segmentación de la pauta"):
+{$catalogo}
 TXT;
     }
 

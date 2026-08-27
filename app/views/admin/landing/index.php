@@ -23,6 +23,7 @@
   $producto_id = isset($producto_id) ? (int)$producto_id : 1;
   $productos   = $productos ?? [];
   $producto    = $producto ?? null;
+  $recomendaciones = $recomendaciones ?? null;
 
   $usuarioNombre = $_SESSION['usuario_nombre'] ?? 'Admin';
   $usuarioEmail  = $_SESSION['usuario_email'] ?? 'admin@tuempresa.com';
@@ -49,7 +50,21 @@
     ],
   ];
 
+  // Recomendaciones de IA pendientes (para el badge del botón).
+  $recoPendientes = 0;
+  foreach (($recomendaciones['resultado']['acciones'] ?? []) as $__a) {
+    if (($__a['estado'] ?? 'pendiente') === 'pendiente') $recoPendientes++;
+  }
+  unset($__a);
+
   if ($producto) {
+    $headerCtas[] = [
+      'href'    => 'javascript:void(0)',
+      'label'   => $recoPendientes > 0 ? "Sugerencias IA ({$recoPendientes})" : 'Sugerencias IA',
+      'class'   => 'btn-detail btn-reco-trigger',
+      'icon'    => 'fa-lightbulb',
+      'onclick' => 'window.openRecoPanel && window.openRecoPanel()',
+    ];
     $headerCtas[] = [
       'href'    => 'javascript:void(0)',
       'label'   => 'Preview',
@@ -2112,6 +2127,24 @@
   </div>
   <div id="previewPanelBackdrop" class="preview-panel__backdrop" style="display:none;" aria-hidden="true"></div>
 
+  <!-- ===== PANEL DE RECOMENDACIONES IA ================================== -->
+  <div id="recoPanel" class="reco-panel" aria-hidden="true">
+    <div class="reco-panel__head">
+      <i class="fas fa-lightbulb" aria-hidden="true"></i>
+      <h2>Recomendaciones de IA</h2>
+      <button type="button" id="recoPanelClose" class="reco-panel__close" aria-label="Cerrar recomendaciones">
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="reco-panel__body" id="recoPanelBody"></div>
+    <div class="reco-panel__foot" id="recoPanelFoot"></div>
+  </div>
+  <div id="recoPanelBackdrop" class="preview-panel__backdrop" style="display:none;" aria-hidden="true"></div>
+
+  <script>
+  window.__RECO__ = <?= json_encode($recomendaciones ?? null, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+  </script>
+
   <script>
   (function() {
     const LANDING_URL = '<?= BASE_URL ?>/Landing/index?producto_id=<?= (int)$producto_id ?>';
@@ -2488,6 +2521,8 @@
   <!-- JS del índice lateral -->
   <script src="<?= BASE_URL ?>/public/js/admin-landing-toc.js"></script>
   <script src="<?= BASE_URL ?>/public/js/ux-improvements.js"></script>
+  <!-- Panel de recomendaciones de IA (Estadísticas → Analizar) -->
+  <script src="<?= BASE_URL ?>/public/js/admin-landing-reco.js" defer></script>
 
   <!-- ===== MODAL IA ===================================================== -->
   <div class="ia-modal-overlay" id="iaModalOverlay" aria-hidden="true">
