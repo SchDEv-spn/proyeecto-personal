@@ -187,7 +187,6 @@
                 <option value="sec-hero-trust">Confianza hero</option>
                 <option value="sec-comofunciona-content">Cómo funciona</option>
                 <option value="sec-garantia">Garantía</option>
-                <option value="sec-transportadoras">Transportadoras</option>
                 <option value="sec-form-header">Formulario</option>
                 <option value="sec-regalo">Regalo</option>
                 <option value="sec-footer">Footer</option>
@@ -1925,28 +1924,6 @@
 
                   <hr class="section-hr">
 
-                  <!-- TRANSPORTADORAS -->
-                  <div class="section-block" id="sec-transportadoras" data-toc="Transportadoras">
-                    <h2>Transportadoras</h2>
-                    <p class="field-section-desc">Banda con logos de las transportadoras. Aparece justo antes del formulario de pedido.</p>
-
-                    <div class="form-grid">
-                      <div class="admin-form-group admin-form-group--full">
-                        <?php $showTrustStrip = !isset($config['show_trust_strip']) || !empty($config['show_trust_strip']); ?>
-                        <label class="toggle-label--row">
-                          <input type="hidden"   name="show_trust_strip" value="0">
-                          <input type="checkbox" name="show_trust_strip" value="1" class="toggle-cb"
-                            <?= $showTrustStrip ? 'checked' : '' ?>>
-                          <span class="toggle-track<?= $showTrustStrip ? ' is-on' : '' ?>"><span class="toggle-thumb"></span></span>
-                          <span class="toggle-label-text">Mostrar logos de transportadoras</span>
-                        </label>
-                        <small>Interrapidísimo · Envía · Coordinadora</small>
-                      </div>
-                    </div>
-                  </div>
-
-                  <hr class="section-hr">
-
                   <!-- FORMULARIO — CABECERA -->
                   <div class="section-block" id="sec-form-header" data-toc="Form. pedido">
                     <h2>Formulario — Cabecera</h2>
@@ -2065,7 +2042,6 @@
                 <a href="#sec-hero-trust" data-target="sec-hero-trust">Confianza</a>
                 <a href="#sec-comofunciona-content" data-target="sec-comofunciona-content">Cómo funciona</a>
                 <a href="#sec-garantia" data-target="sec-garantia">Garantía</a>
-                <a href="#sec-transportadoras" data-target="sec-transportadoras">Transportadoras</a>
                 <a href="#sec-form-header" data-target="sec-form-header">Formulario</a>
                 <a href="#sec-regalo" data-target="sec-regalo">Regalo</a>
                 <a href="#sec-footer" data-target="sec-footer">Footer</a>
@@ -3602,7 +3578,6 @@
       'sec-colores':            'Colores',
       'sec-announcement':       'Barra anuncios',
       'sec-hero-trust':         'Confianza hero',
-      'sec-transportadoras':    'Transportadoras',
       'sec-form-header':        'Formulario',
       'sec-footer':             'Footer',
     };

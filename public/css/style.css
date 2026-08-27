@@ -1226,46 +1226,9 @@ h3 {
   mask: var(--ico-carrito) center / contain no-repeat;
 }
 
-/* ── TRUST STRIP (transportadoras) ────────────────────────── */
-.trust-strip {
-  background: var(--bg-layer2);
-  border-top: 1px solid var(--gold-border);
-  border-bottom: 1px solid var(--gold-border);
-  padding: var(--space-lg) var(--space-md);
-}
-
-.trust-strip__carriers-label {
-  text-align: center;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--cream-muted);
-  margin-bottom: 16px;
-  font-weight: 500;
-}
-
-.trust-strip__carriers {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.carrier-logo {
-  height: 32px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-  filter: brightness(0) invert(var(--carrier-invert, 1));
-  opacity: 0.7;
-  transition: opacity 0.2s, filter 0.2s;
-}
-
-.carrier-logo:hover {
-  opacity: 1;
-}
-
+/* La .trust-strip y su .carrier-logo se retiraron: las transportadoras
+   viven en el pie del formulario (.form-carriers) y se muestran siempre.
+   El interruptor show_trust_strip que las controlaba tambien se quito. */
 /* ── BENEFICIOS ───────────────────────────────────────────── */
 .benefits-section {
   background: var(--bg-layer1);

@@ -76,7 +76,18 @@ class LandingConfig extends Model
         'sec-secciones'            => ['label' => 'Secciones visibles y orden',      'show' => null],
         'sec-announcement'         => ['label' => 'Barra de anuncio',                'show' => 'show_announcement_bar'],
         'sec-hero'                 => ['label' => 'Hero',                            'show' => null],
-        'sec-hero-trust'           => ['label' => 'Señales de confianza del hero',   'show' => 'show_trust_strip'],
+        /* Sin interruptor, como 'sec-hero': la fila de confianza del hero
+           ("Pago al recibir · Envío gratis · Cambios sin problema") se
+           muestra siempre. Apuntaba a show_trust_strip, una columna que
+           la vista pública nunca leyó: la IA podía recomendar apagarla,
+           aplicarlo y reportar el cambio, pero en la página no pasaba
+           nada — y la medición del backlog atribuía resultados a algo que
+           no había ocurrido.
+           Si un ítem no aplica a un vendedor, se edita su texto; ocultar
+           los tres argumentos que sostienen la venta contraentrega justo
+           debajo del botón casi nunca es la decisión correcta. La IA sigue
+           pudiendo recomendar cambios de texto en los tres campos. */
+        'sec-hero-trust'           => ['label' => 'Señales de confianza del hero',   'show' => null],
         'sec-beneficios'           => ['label' => 'Beneficios',                      'show' => 'show_benefits'],
         'sec-galeria'              => ['label' => 'Galería',                         'show' => 'show_gallery'],
         'sec-caracteristicas'      => ['label' => 'Características del producto',     'show' => 'show_caracteristicas'],
@@ -90,7 +101,11 @@ class LandingConfig extends Model
         'sec-faq'                  => ['label' => 'Preguntas frecuentes',            'show' => 'show_faqs'],
         'sec-garantia'             => ['label' => 'Banner de garantía',              'show' => 'show_garantia'],
         'sec-autoridad'            => ['label' => 'Bloque de autoridad',             'show' => 'authority_enabled'],
-        'sec-transportadoras'      => ['label' => 'Logos de transportadoras',        'show' => null],
+        /* 'sec-transportadoras' se retiró: su bloque ya no existe en el
+           editor. Los logos viven en el pie del formulario y se muestran
+           siempre, así que no hay nada que configurar — dejarlo aquí
+           hacía que el salto "Ir a la sección" del panel de la IA
+           apuntara a un ancla inexistente. */
         'sec-regalo'               => ['label' => 'Regalo incluido',                 'show' => 'show_regalo'],
         'sec-form-header'          => ['label' => 'Formulario de pedido',            'show' => null],
         'sec-footer'               => ['label' => 'Footer',                          'show' => 'show_footer'],
@@ -114,7 +129,10 @@ class LandingConfig extends Model
      */
     public const CAMPOS_APLICABLES = [
         'show_announcement_bar' => ['tipo' => 'bool', 'label' => 'Barra de anuncio'],
-        'show_trust_strip'      => ['tipo' => 'bool', 'label' => 'Señales de confianza del hero'],
+        /* show_trust_strip se retiró de aquí: la vista pública no lee esa
+           columna, así que la IA ofrecía un interruptor que no apagaba
+           nada. Un campo aplicable que no se aplica es peor que no
+           tenerlo — el panel confirma el cambio y la medición lo cuenta. */
         'show_benefits'         => ['tipo' => 'bool', 'label' => 'Beneficios'],
         'show_gallery'          => ['tipo' => 'bool', 'label' => 'Galería'],
         'show_caracteristicas'  => ['tipo' => 'bool', 'label' => 'Características'],
@@ -474,7 +492,6 @@ class LandingConfig extends Model
                 garantia_item3 = :garantia_item3,
                 garantia_item4 = :garantia_item4,
 
-                show_trust_strip = :show_trust_strip,
 
                 show_announcement_bar = :show_announcement_bar,
                 show_sticky_bar       = :show_sticky_bar,
@@ -765,7 +782,6 @@ class LandingConfig extends Model
             ':garantia_item3' => $data['garantia_item3'] ?? null,
             ':garantia_item4' => $data['garantia_item4'] ?? null,
 
-            ':show_trust_strip' => isset($data['show_trust_strip']) ? (int)$data['show_trust_strip'] : 1,
 
             ':show_announcement_bar' => isset($data['show_announcement_bar']) ? (int)$data['show_announcement_bar'] : 1,
             ':show_sticky_bar'       => isset($data['show_sticky_bar'])       ? (int)$data['show_sticky_bar']       : 1,

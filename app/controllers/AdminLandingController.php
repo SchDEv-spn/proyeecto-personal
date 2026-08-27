@@ -2,6 +2,28 @@
 
 class AdminLandingController extends Controller
 {
+    /**
+     * Devuelve $valor si está en $permitidos; si no, el respaldo.
+     *
+     * Sustituye a un patrón que estaba copiado tres veces y que fallaba en
+     * el caso que más importa — que el campo no venga en el POST:
+     *
+     *   in_array(trim($_POST[x] ?? 'imagen'), [...]) ? trim($_POST[x]) : 'imagen'
+     *
+     * La condición aplicaba el respaldo, pero la rama verdadera volvía a
+     * leer $_POST[x] sin él. Sin la clave, la condición daba true con
+     * 'imagen' y el resultado era trim(null) = ''. En una columna ENUM
+     * NOT NULL con MySQL en modo estricto, eso tira el guardado entero.
+     *
+     * Aquí el valor se decide UNA vez, así que la rama verdadera no puede
+     * discrepar de la condición.
+     */
+    private function enumValido(?string $valor, array $permitidos, string $respaldo): string
+    {
+        $v = trim((string)$valor);
+        return in_array($v, $permitidos, true) ? $v : $respaldo;
+    }
+
     private function requireLogin()
     {
         if (empty($_SESSION['usuario_id'])) {
@@ -203,11 +225,17 @@ class AdminLandingController extends Controller
             'hero_media_type'  => trim($_POST['hero_media_type'] ?? 'imagen'),
 
             'benefits_title' => trim($_POST['benefits_title'] ?? ''),
-            'benefits_media_type' => in_array(
-                trim($_POST['benefits_media_type'] ?? 'imagen'),
-                ['imagen', 'video', 'gif'],
-                true
-            ) ? trim($_POST['benefits_media_type']) : 'imagen',
+            /* El ?? tiene que estar en las DOS ramas, no sólo en la condición.
+               Estaba así: in_array(trim($_POST[x] ?? 'imagen'), ...) ? trim($_POST[x]) : 'imagen'
+               Cuando el campo no viene en el POST, la condición evalúa
+               'imagen' y da true — pero la rama verdadera vuelve a leer
+               $_POST[x], que no existe, y trim(null) devuelve ''. La columna
+               es ENUM NOT NULL, así que con MySQL en modo estricto el
+               guardado entero revienta con 1265 Data truncated.
+               Y este campo concreto ya NO está en el formulario del editor,
+               así que le pasaba en cada guardado: el editor no podía
+               guardar nada. */
+            'benefits_media_type' => $this->enumValido($_POST['benefits_media_type'] ?? null, ['imagen', 'video', 'gif'], 'imagen'),
             'benefit_1'      => trim($_POST['benefit_1'] ?? ''),
             'benefit_2'      => trim($_POST['benefit_2'] ?? ''),
             'benefit_3'      => trim($_POST['benefit_3'] ?? ''),
@@ -217,11 +245,10 @@ class AdminLandingController extends Controller
             'countdown_text'  => trim($_POST['countdown_text'] ?? ''),
 
             'porque_title'   => trim($_POST['porque_title'] ?? ''),
-            'porque_media_type' => in_array(
-                trim($_POST['porque_media_type'] ?? 'imagen'),
-                ['imagen', 'video', 'gif'],
-                true
-            ) ? trim($_POST['porque_media_type']) : 'imagen',
+            // Mismo patrón roto que benefits_media_type. Aquí no llegaba a
+            // fallar porque el campo sí está en el formulario, pero era una
+            // bomba de relojería: el día que se quite del editor, revienta.
+            'porque_media_type' => $this->enumValido($_POST['porque_media_type'] ?? null, ['imagen', 'video', 'gif'], 'imagen'),
             'porque_text'    => trim($_POST['porque_text'] ?? ''),
             'porque_bullet1' => trim($_POST['porque_bullet1'] ?? ''),
             'porque_bullet2' => trim($_POST['porque_bullet2'] ?? ''),
@@ -376,7 +403,6 @@ class AdminLandingController extends Controller
             'garantia_item4' => trim($_POST['garantia_item4']  ?? ''),
 
             // ===== Transportadoras =====
-            'show_trust_strip'     => (int)($_POST['show_trust_strip']     ?? 1),
             'show_wa_testimonios'  => (int)($_POST['show_wa_testimonios']  ?? 1),
 
             // ===== Elementos fijos =====
@@ -409,9 +435,11 @@ class AdminLandingController extends Controller
         // Características items (1..4)
         for ($i = 1; $i <= 4; $i++) {
             $data["caract{$i}_active"]     = isset($_POST["caract{$i}_active"]) ? 1 : 0;
-            $data["caract{$i}_media_type"] = in_array(
-                trim($_POST["caract{$i}_media_type"] ?? 'image'), ['image', 'video', 'gif'], true
-            ) ? trim($_POST["caract{$i}_media_type"]) : 'image';
+            // Tercer sitio con el mismo patrón. Esta columna es text y no
+            // enum, así que un '' no reventaba — pero dejaba el tipo de
+            // medio en blanco y la característica se pintaba como imagen
+            // aunque fuera un vídeo.
+            $data["caract{$i}_media_type"] = $this->enumValido($_POST["caract{$i}_media_type"] ?? null, ['image', 'video', 'gif'], 'image');
             $data["caract{$i}_title"] = trim($_POST["caract{$i}_title"] ?? '');
             $data["caract{$i}_text"]  = trim($_POST["caract{$i}_text"]  ?? '');
         }

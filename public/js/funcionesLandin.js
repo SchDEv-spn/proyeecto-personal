@@ -532,7 +532,6 @@ try {
     addReveal([
         'section.container',
         '.garantia-banner',
-        '.trust-strip',
         '.comparison-section',
         '.authority-section',
         '.como-funciona-section',

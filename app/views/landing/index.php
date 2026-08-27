@@ -355,10 +355,10 @@ $garantiaItem3 = $val('garantia_item3', 'Si llega dañado o incorrecto, lo repon
 $garantiaItem4 = $val('garantia_item4', 'Asesor en WhatsApp disponible para ti');
 
 // ===== SECCIONES FIJAS (no reordenables) =====
-/* show_trust_strip quedó huérfano: la tira de transportadoras se movió al
-   pie del formulario (.form-carriers) y allí se muestra siempre. El
-   interruptor sigue en el admin sin efecto — conviene retirarlo también
-   de la vista del editor. */
+/* Las transportadoras viven en el pie del formulario (.form-carriers) y
+   se muestran siempre: no hay interruptor. El antiguo show_trust_strip
+   controlaba una .trust-strip que ya no existe, así que se retiró del
+   editor y del controlador. La columna sigue en la tabla, sin uso. */
 $showAnnouncementBar = (int)($cfg['show_announcement_bar'] ?? 1);
 $showStickyBar       = (int)($cfg['show_sticky_bar']       ?? 1);
 $showComparison      = (int)($cfg['show_comparison']       ?? 1) && $_comparisonHasData;

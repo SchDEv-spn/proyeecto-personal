@@ -434,7 +434,7 @@ function initScrollAnimations() {
     if (!('IntersectionObserver' in window)) return;
 
     const targets = document.querySelectorAll(
-        '.benefit-item, .testimonial, .trust-strip__item, .section-title, .why-list li'
+        '.benefit-item, .testimonial, .section-title, .why-list li'
     );
 
     if (!targets.length) return;
