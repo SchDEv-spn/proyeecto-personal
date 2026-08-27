@@ -248,10 +248,14 @@ TXT;
 
         $payload = json_encode([
             'model'      => $modelo,
-            'max_tokens' => 8000,
-            'system'     => $this->sistema(),
             // Opus 5 y Sonnet 5 razonan de forma adaptativa cuando no se envía
-            // "thinking", que es justo lo que se quiere aquí.
+            // "thinking", y ese razonamiento gasta del mismo cupo de max_tokens.
+            // Con 8000 el modelo se quedaba pensando y no emitía el JSON:
+            // llegaba stop_reason "max_tokens" y el cuerpo vacío se veía como
+            // "formato inesperado". 20000 deja aire de sobra para pensar + la
+            // respuesta estructurada (que rara vez pasa de ~2500 tokens).
+            'max_tokens' => 20000,
+            'system'     => $this->sistema(),
             'output_config' => ['format' => ['type' => 'json_schema', 'schema' => $this->esquema()]],
             'messages'   => [[
                 'role'    => 'user',
@@ -275,6 +279,7 @@ TXT;
                 'x-api-key: ' . $apiKey,
                 'anthropic-version: 2023-06-01',
             ],
+            CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_TIMEOUT => 180,
         ]);
 
@@ -305,7 +310,29 @@ TXT;
         }
 
         $resultado = json_decode($texto, true);
+
+        // Red de seguridad por si el structured output no viniera limpio
+        // (fence ```json, texto delante): rescatar el primer objeto.
+        if ((!is_array($resultado) || !isset($resultado['diagnostico']))
+            && $texto !== '' && preg_match('/\{[\s\S]*\}/u', $texto, $m)) {
+            $resultado = json_decode($m[0], true);
+        }
+
         if (!is_array($resultado) || !isset($resultado['diagnostico'])) {
+            // Sin esto la ruta de fallo no dejaba rastro y no se sabía por qué.
+            $stop = $data['stop_reason'] ?? '';
+            error_log('LandingAnalisis — respuesta no parseable. stop_reason=' . $stop
+                . ' | usage=' . json_encode($data['usage'] ?? [])
+                . ' | texto=' . substr($texto, 0, 800));
+
+            if ($stop === 'max_tokens') {
+                return ['ok' => false, 'error' => 'El análisis se quedó sin espacio antes de terminar. '
+                    . 'Prueba con un periodo más corto o cambia el modelo a Sonnet 5.'];
+            }
+            if ($stop === 'refusal') {
+                return ['ok' => false, 'error' => 'Claude no pudo completar este análisis ('
+                    . ($data['stop_details']['explanation'] ?? 'sin detalle') . ').'];
+            }
             return ['ok' => false, 'error' => 'Claude respondió en un formato inesperado.'];
         }
 
