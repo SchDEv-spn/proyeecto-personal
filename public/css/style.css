@@ -4359,12 +4359,27 @@ img[loading="lazy"].loaded {
 /* ================================================
    MEJORA #5 — Sección de autoridad / credibilidad
 ================================================ */
+/* Mismo criterio que la banda de garantía: sin fondo y sin líneas.
+   Tenía tres problemas a la vez.
+
+   1. El fondo era --bg-card, o sea EXACTAMENTE el mismo color que sus
+      propias tarjetas .authority-stat en los cinco temas. Las fichas
+      quedaban invisibles sobre su propia banda, sostenidas sólo por la
+      sombra. Ahora se apoyan en el fondo de la página y se despegan.
+
+   2. Arrastraba un respaldo #1a1a1a escrito a mano: si --bg-card
+      faltara, los dos temas claros se comerían una banda casi negra.
+
+   3. El ritmo vertical. Sumaba 52px de padding MÁS 40px de margen, así
+      que antes de esta sección había ~132px de aire cuando entre dos
+      secciones normales hay 80. Se nota al bajar. Con --space-xl queda
+      igual que el resto.
+
+   Las dos hairlines que la delimitaban se van con el fondo: sin banda no
+   hay nada que delimitar, y una línea clara cruzando la página es justo
+   lo que se retiró del resto del diseño. */
 .authority-section {
-    padding: 52px 0;
-    background: var(--bg-card, #1a1a1a);
-    border-top: 1px solid var(--gold-border);
-    border-bottom: 1px solid var(--gold-border);
-    margin: 40px 0;
+    padding: var(--space-xl) 0;
 }
 
 .authority-grid {
