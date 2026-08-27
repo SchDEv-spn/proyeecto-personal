@@ -98,6 +98,7 @@ class AdminEstadisticasController extends Controller
                 ? $analytics->pedidosDelPeriodo($filtro)
                 : null,
             'tendencias'   => $this->tendencias($resumen, $anterior),
+            'canales'      => $analytics->porCanalPublicitario($filtro),
             'embudo'       => $analytics->embudo($filtro),
             'secciones'    => $analytics->secciones($filtro),
             'campos'       => $analytics->camposFormulario($filtro),
@@ -147,6 +148,7 @@ class AdminEstadisticasController extends Controller
         return [
             'sesiones'     => $comparar((float)$actual['sesiones'],     (float)$anterior['sesiones']),
             'pedidos'      => $comparar((float)$actual['pedidos'],      (float)$anterior['pedidos']),
+            'ingresos'     => $comparar((float)($actual['ingresos'] ?? 0), (float)($anterior['ingresos'] ?? 0)),
             'conversion'   => $comparar((float)$actual['conversion'],   (float)$anterior['conversion']),
             'intencion'    => $comparar((float)$actual['con_intencion'],(float)$anterior['con_intencion']),
             'dur_media'    => $comparar((float)$actual['dur_media'],    (float)$anterior['dur_media']),
@@ -238,18 +240,35 @@ class AdminEstadisticasController extends Controller
             ],
             'producto' => $this->contextoProducto($productoId),
             'landing'  => $this->contextoLanding($productoId),
+            // Realidad técnica de la landing. Sin esto, el modelo deduce
+            // arquitectura que no existe (recomendó una vez "quitar la
+            // dependencia de postMessage/iframe" del formulario, que no usa
+            // ninguno de los dos).
+            'tecnica'  => [
+                'formulario' => 'Envio por AJAX (fetch) con respaldo POST nativo si el JS no corre. Sin iframe, sin postMessage. La pantalla de exito se muestra en la misma pagina.',
+                'pixel'      => 'Facebook Pixel + Conversions API server-side; TikTok Pixel + Events API server-side.',
+                'contexto'   => 'Pagina PHP servida directamente. La mayoria del trafico entra por el navegador in-app de Facebook, que es lento y pierde eventos de JS.',
+            ],
             'metricas' => [
-                'resumen'            => $resumen,
-                'periodo_anterior'   => $anterior,
-                'variacion'          => $this->tendencias($resumen, $anterior),
-                'embudo'             => $analytics->embudo($filtro),
-                'hasta_que_seccion'  => $analytics->secciones($filtro),
-                'ultimo_campo_form'  => $analytics->camposFormulario($filtro),
-                'por_dispositivo'    => $analytics->porDimension($filtro, 'dispositivo'),
-                'por_navegador'      => $analytics->porDimension($filtro, 'navegador'),
-                'por_fuente'         => $analytics->porDimension($filtro, 'fuente'),
-                'por_dia'            => $analytics->serieDiaria($filtro),
-                'errores_js'         => $analytics->errores($filtro),
+                'resumen'                 => $resumen,
+                'periodo_anterior'        => $anterior,
+                'variacion'               => $this->tendencias($resumen, $anterior),
+                // Pedidos reales de la tabla `pedidos` (no solo los que el
+                // embudo pudo atar a una sesión): sin esto el modelo razona
+                // sobre una conversión artificialmente baja. Solo en producción:
+                // `pedidos` no distingue entorno y en local mezclaría pruebas.
+                'pedidos_reales'          => $entorno === 'produccion'
+                    ? $analytics->pedidosDelPeriodo($filtro)
+                    : null,
+                'por_canal_publicitario'  => $analytics->porCanalPublicitario($filtro),
+                'embudo'                  => $analytics->embudo($filtro),
+                'hasta_que_seccion'       => $analytics->secciones($filtro),
+                'ultimo_campo_form'       => $analytics->camposFormulario($filtro),
+                'por_dispositivo'         => $analytics->porDimension($filtro, 'dispositivo'),
+                'por_navegador'           => $analytics->porDimension($filtro, 'navegador'),
+                'por_fuente'              => $analytics->porDimension($filtro, 'fuente'),
+                'por_dia'                 => $analytics->serieDiaria($filtro),
+                'errores_js'              => $analytics->errores($filtro),
             ],
         ];
     }

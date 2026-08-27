@@ -21,6 +21,7 @@
     $entorno       = $entorno       ?? 'produccion';
     $productos     = $productos     ?? [];
     $resumen       = $resumen       ?? [];
+    $canales       = $canales       ?? [];
     $embudo        = $embudo        ?? [];
     $secciones     = $secciones     ?? [];
     $campos        = $campos        ?? [];
@@ -176,10 +177,9 @@
 
                 <!-- ══ KPIs ══ -->
                 <h2 class="stats-head">Resumen del periodo</h2>
-                <!-- --4col: son cuatro tarjetas, y el grid base reparte en 3 o 5
-                     columnas. Sin esta variante la cuarta queda sola en una
-                     fila en pantallas medianas. -->
-                <div class="stats-grid stats-grid--4col">
+                <!-- Cinco tarjetas: el grid base reparte en 5 columnas a
+                     ≥1280px y en 3 más abajo, sin huérfanas. -->
+                <div class="stats-grid">
                     <div class="stat-card glow-purple">
                         <div class="stat-info">
                             <small>Visitas</small>
@@ -196,6 +196,17 @@
                             <span class="target"><?= $tendencia('pedidos', ' · ' . number_format((float)$resumen['conversion'], 2, ',', '.') . '% conv.') ?></span>
                         </div>
                         <i class="fas fa-cart-shopping stat-icon"></i>
+                    </div>
+
+                    <div class="stat-card glow-gold">
+                        <div class="stat-info">
+                            <!-- Ingresos ATRIBUIDOS: mismos pedidos que la tarjeta de
+                                 al lado. La nota de abajo explica el hueco de rastreo. -->
+                            <small>Ingresos</small>
+                            <h2>$<?= number_format((float)($resumen['ingresos'] ?? 0), 0, ',', '.') ?></h2>
+                            <span class="target"><?= $tendencia('ingresos', ' · $' . number_format((float)($resumen['utilidad'] ?? 0), 0, ',', '.') . ' utilidad') ?></span>
+                        </div>
+                        <i class="fas fa-sack-dollar stat-icon"></i>
                     </div>
 
                     <div class="stat-card glow-blue">
@@ -285,6 +296,30 @@
                     <?php endif; ?>
                     </span>
                 </p>
+                <?php endif; ?>
+
+                <!-- ══ De dónde vienen las compras ══
+                     Facebook y TikTok se detectan por el clic (fbclid/ttclid),
+                     y de respaldo por el navegador in-app. "Directo / Otros"
+                     es el tráfico que no se pudo atribuir a un canal pagado. -->
+                <?php if (!empty($canales)): ?>
+                <h2 class="stats-head">De dónde vienen las compras</h2>
+                <div class="stats-grid stats-grid--3col">
+                    <?php foreach ($canales as $c): ?>
+                        <div class="stat-card <?= htmlspecialchars($c['glow']) ?>">
+                            <div class="stat-info">
+                                <small><?= htmlspecialchars($c['titulo']) ?></small>
+                                <h2><?= number_format((int)$c['pedidos'], 0, ',', '.') ?></h2>
+                                <span class="target">
+                                    <?= number_format((int)$c['sesiones'], 0, ',', '.') ?> visitas
+                                    · <?= number_format((float)$c['conversion'], 1, ',', '.') ?>% conv
+                                    · $<?= number_format((float)$c['ingresos'], 0, ',', '.') ?>
+                                </span>
+                            </div>
+                            <i class="<?= htmlspecialchars($c['icono']) ?> stat-icon"></i>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
                 <?php endif; ?>
 
                 <!-- ══ Evolución ══
@@ -927,11 +962,12 @@
 
     .kpi-vs { font-size: 10.5px; color: var(--tx-dim); margin-left: 5px; white-space: nowrap; }
 
-    /* Cuatro tarjetas en el rango donde el grid base reparte de tres en tres:
-       un 2×2 se lee mejor que tres arriba y una ancha abajo. */
-    @media (min-width: 760px) and (max-width: 1279px) {
-        .stats-grid--4col { grid-template-columns: repeat(2, 1fr); }
-        .stats-grid--4col > .stat-card:nth-child(4) { grid-column: auto; }
+    /* Las tres tarjetas de canal: a ≥1280px el grid base pasa a 5 columnas y
+       tres quedarían apretadas a la izquierda. Debajo de eso el grid ya
+       reparte de tres en tres (o una por fila en móvil), que es lo que se
+       quiere. */
+    @media (min-width: 1280px) {
+        .stats-grid--3col { grid-template-columns: repeat(3, 1fr); }
     }
 
     .stats-empty { color: var(--tx-dim); font-size: var(--text-sm); text-align: center; padding: var(--sp-4) 0; }

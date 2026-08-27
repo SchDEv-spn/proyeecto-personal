@@ -248,6 +248,11 @@ Reglas de tu respuesta:
    dónde se tocan usando la configuración de la landing que te paso.
 5. Máximo 5 hallazgos y 5 acciones. Prefiere pocas y buenas.
 6. Escribe en español de Colombia, directo, sin relleno ni felicitaciones.
+7. No deduzcas ni describas cómo está construida la landing —formularios,
+   iframes, postMessage, framework, integraciones, JavaScript— más allá de lo
+   que diga el bloque "tecnica" del contexto. Si un hallazgo o una acción
+   depende de un detalle de implementación que no está en los datos que te
+   paso, no lo propongas: va en "no_concluyente".
 TXT;
     }
 

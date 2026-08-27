@@ -68,7 +68,11 @@
     function fuente() {
         try {
             var params = new URLSearchParams(location.search);
-            var utm = params.get('utm_source') || params.get('fbclid') && 'facebook-ads';
+            // ttclid = clic de anuncio de TikTok; fbclid = clic de anuncio de
+            // Facebook. Espejo el uno del otro, igual que el resto del pixel.
+            var utm = params.get('utm_source')
+                || (params.get('ttclid') && 'tiktok-ads')
+                || (params.get('fbclid') && 'facebook-ads');
             if (utm) return String(utm).slice(0, 60);
 
             if (!document.referrer) return 'directo';

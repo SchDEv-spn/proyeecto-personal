@@ -386,14 +386,21 @@ class LandingAnalytics extends Model
     {
         [$where, $params] = $this->filtro($f);
 
+        // El JOIN con pedidos no multiplica filas (cada sesión enlaza 0 o 1
+        // pedido por s.pedido_id), así que COUNT(*) sigue contando sesiones.
+        // Los ingresos son los ATRIBUIDOS: mismos pedidos que la tarjeta
+        // "Pedidos". La nota de atribución de la vista ya explica el hueco.
         $sql = "SELECT
                     COUNT(*)                                   AS sesiones,
                     SUM(s.pedido_id IS NOT NULL)               AS pedidos,
                     SUM(s.paso_max >= 3)                       AS con_intencion,
                     SUM(s.paso_max >= 5)                       AS empezaron_form,
                     AVG(s.duracion_seg)                        AS dur_media,
-                    AVG(s.scroll_max)                          AS scroll_medio
+                    AVG(s.scroll_max)                          AS scroll_medio,
+                    COALESCE(SUM(p.precio_total), 0)           AS ingresos,
+                    COALESCE(SUM(p.utilidad_total), 0)         AS utilidad
                 FROM landing_sesiones s
+                LEFT JOIN pedidos p ON p.id = s.pedido_id
                 WHERE {$where}";
 
         $row = $this->consulta($sql, $params)[0] ?? [];
@@ -409,6 +416,8 @@ class LandingAnalytics extends Model
             'conversion'     => $sesiones ? round($pedidos * 100 / $sesiones, 2) : 0.0,
             'dur_media'      => (int)round((float)($row['dur_media'] ?? 0)),
             'scroll_medio'   => (int)round((float)($row['scroll_medio'] ?? 0)),
+            'ingresos'       => (float)($row['ingresos'] ?? 0),
+            'utilidad'       => (float)($row['utilidad'] ?? 0),
         ];
     }
 
@@ -548,6 +557,73 @@ class LandingAnalytics extends Model
             $fila['conversion'] = $fila['n'] ? round($fila['pedidos'] * 100 / $fila['n'], 1) : 0.0;
         }
         return $filas;
+    }
+
+    /**
+     * Compras por canal pagado, para las tarjetas del panel.
+     *
+     * Facebook y TikTok se detectan primero por `fuente` (que landing-track.js
+     * fija desde fbclid / ttclid / utm_source) y, como respaldo, por el
+     * navegador in-app: un clic de Facebook sin fbclid igual llega dentro del
+     * webview 'facebook-app'. Todo lo demás —directo, orgánico, navegación
+     * interna— cae en "otros".
+     *
+     * Devuelve SIEMPRE las tres filas, en orden, aunque alguna tenga cero: la
+     * vista las pinta como tarjetas fijas.
+     */
+    public function porCanalPublicitario(array $f): array
+    {
+        [$where, $params] = $this->filtro($f);
+
+        $sql = "SELECT
+                    CASE
+                        WHEN s.fuente = 'facebook-ads'
+                          OR s.fuente LIKE 'facebook%' OR s.fuente LIKE 'instagram%'
+                          OR s.fuente = 'ig' OR s.fuente LIKE 'meta%'
+                          OR s.navegador IN ('facebook-app','instagram-app','messenger-app')
+                            THEN 'facebook'
+                        WHEN s.fuente = 'tiktok-ads' OR s.fuente LIKE 'tiktok%'
+                          OR s.navegador = 'tiktok-app'
+                            THEN 'tiktok'
+                        ELSE 'otros'
+                    END                                        AS canal,
+                    COUNT(*)                                    AS sesiones,
+                    SUM(s.pedido_id IS NOT NULL)                AS pedidos,
+                    COALESCE(SUM(p.precio_total), 0)            AS ingresos
+                FROM landing_sesiones s
+                LEFT JOIN pedidos p ON p.id = s.pedido_id
+                WHERE {$where}
+                GROUP BY canal";
+
+        $crudo = [];
+        foreach ($this->consulta($sql, $params) as $row) {
+            $crudo[$row['canal']] = $row;
+        }
+
+        $meta = [
+            'facebook' => ['titulo' => 'Facebook / Instagram', 'icono' => 'fab fa-facebook', 'glow' => 'glow-blue'],
+            'tiktok'   => ['titulo' => 'TikTok',                'icono' => 'fab fa-tiktok',   'glow' => 'glow-purple'],
+            'otros'    => ['titulo' => 'Directo / Otros',       'icono' => 'fas fa-globe',    'glow' => 'glow-green'],
+        ];
+
+        $out = [];
+        foreach ($meta as $clave => $m) {
+            $fila     = $crudo[$clave] ?? [];
+            $sesiones = (int)($fila['sesiones'] ?? 0);
+            $pedidos  = (int)($fila['pedidos'] ?? 0);
+            $out[] = [
+                'clave'      => $clave,
+                'titulo'     => $m['titulo'],
+                'icono'      => $m['icono'],
+                'glow'       => $m['glow'],
+                'sesiones'   => $sesiones,
+                'pedidos'    => $pedidos,
+                'ingresos'   => (float)($fila['ingresos'] ?? 0),
+                'conversion' => $sesiones ? round($pedidos * 100 / $sesiones, 1) : 0.0,
+            ];
+        }
+
+        return $out;
     }
 
     /** Serie diaria de visitas y pedidos, para la gráfica de evolución. */
