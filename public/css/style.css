@@ -3540,14 +3540,18 @@ img[loading="lazy"].loaded {
 }
 
 /* ── GARANTÍA BANNER ──────────────────────────────────────── */
+/* Banda neutra, como el resto de secciones que llevan fondo.
+   Antes era un velo dorado translúcido — un degradado entre --positivo
+   al 6% y --gold al 5% que, siendo --positivo el propio --gold, en la
+   práctica era un color plano. Era la ÚNICA sección de la landing con
+   fondo de color: benefits y para-quien usan --bg-layer1, un escalón
+   neutro de la escala del tema, y las demás no llevan fondo. Ese velo
+   cálido cruzando el ancho de la página se leía como una mancha, no
+   como una sección.
+   Con --bg-layer1 queda la escalera completa: página, banda y encima la
+   tarjeta en --bg-layer2. */
 .garantia-banner {
-    background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--positivo) 6%, transparent) 0%,
-        color-mix(in srgb, var(--gold) 5%, transparent) 100%
-    );
-    border-top: none;
-    border-bottom: none;
+    background: var(--bg-layer1);
     padding: var(--space-xl) 0;
 }
 
