@@ -632,7 +632,10 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
 .panel--kpi.kpi-cyan   .chip { background: rgba(255,255,255,.15); color: rgba(255,255,255,.85); border-color: rgba(255,255,255,.2); }
 
 .panel__body         { padding: var(--sp-4) var(--sp-5); }
-.panel__body--center { display: flex; align-items: center; justify-content: center; }
+/* min-height: Chart.js con maintainAspectRatio:false ajusta el canvas a la
+   altura del contenedor. Sin un mínimo, en móvil el gráfico de dona deja la
+   leyenda (3 filas) recortada contra el borde inferior del panel. */
+.panel__body--center { display: flex; align-items: center; justify-content: center; min-height: 248px; }
 
 /* ============================================================
    8. KPI Cards — estilo PinenMFB
@@ -643,12 +646,12 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   gap: var(--sp-3);
 }
 @media (min-width: 768px)  { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (min-width: 1280px) { .stats-grid { grid-template-columns: repeat(5, 1fr); } }
 
-/* 5ª tarjeta sola en la fila de 3 columnas → ocupa 2 cols para no quedar huérfana */
-@media (min-width: 768px) and (max-width: 1279px) {
-  .stats-grid > .stat-card:nth-child(5) { grid-column: span 2; }
-  .stats-grid > .stat-card:nth-child(4) { grid-column: span 1; }
+/* Tope en 3 columnas: con 5 tarjetas, 5 en fila las dejaba tan estrechas
+   que "$1.234.567" se cortaba con puntos suspensivos. 3 + 2 (la 5ª ocupa
+   2 columnas) mantiene el número siempre legible. */
+@media (min-width: 768px) {
+  .stats-grid:not(.stats-grid--4col) > .stat-card:nth-child(5) { grid-column: span 2; }
 }
 
 /* ── Variante 4 tarjetas (ej. página de Productos) ─── */
@@ -692,15 +695,15 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   margin-bottom: var(--sp-1);
 }
 .stat-info h2, .stat-info h3 {
-  font-size: clamp(1.25rem, 4vw, var(--text-3xl));
+  font-size: clamp(1.0625rem, 1vw + 0.85rem, 1.625rem);
   font-weight: 800;
   color: var(--tx);
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: -.03em;
-  /* Evita que números largos desborden en 2-col mobile */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Nunca ocultar la cifra: si un número no cabe (p. ej. "$1.234.567" en
+     3 columnas estrechas) que baje a dos líneas, no que se recorte. */
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .stat-info .target { display: block; font-size: var(--text-xs); color: var(--tx-muted); margin-top: var(--sp-2); }
 .target.pending    { color: #92400E; /* 6.4:1 sobre blanco — el #D97706 daba 3.18 */ font-weight: 600; }
@@ -811,8 +814,32 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   table.pedidos-dt tbody td:nth-child(5) {
     display: none;
   }
-  /* Producto (#tablaPedidos col 3): truncar para ahorrar espacio */
-  table.pedidos-dt tbody td:nth-child(3) {
+
+  /* #tablaPedidos: layout fijo para que las columnas restantes quepan sin
+     scroll horizontal. Cliente (col 2) lleva width:100% y absorbe todo el
+     espacio que no ocupan las columnas de ancho fijo; su texto envuelve. */
+  #tablaPedidos {
+    table-layout: fixed;
+  }
+  /* Fecha (col 1): oculta en móvil — la tabla ya viene ordenada por fecha
+     descendente y el dato exacto está en el detalle. */
+  #tablaPedidos thead th:nth-child(1),
+  #tablaPedidos tbody td:nth-child(1) { display: none; }
+
+  #tablaPedidos thead th:nth-child(2) { width: 100%; }     /* Cliente  */
+  #tablaPedidos thead th:nth-child(3) { width: 4.75rem; }  /* Producto */
+  #tablaPedidos thead th:nth-child(6) { width: 5rem; }     /* Acciones */
+  #tablaPedidos thead th,
+  #tablaPedidos tbody td { padding-left: var(--sp-2); padding-right: var(--sp-2); }
+  #tablaPedidos tbody td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
+  #tablaPedidos tbody td:nth-child(3) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Otras tablas .pedidos-dt (p. ej. #tablaProductos): truncar Producto */
+  table.pedidos-dt:not(#tablaPedidos) tbody td:nth-child(3) {
     max-width: 110px;
     white-space: nowrap;
     overflow: hidden;
@@ -825,11 +852,24 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
     display: none;
   }
 }
-@media (max-width: 420px) {
-  /* En #tablaPedidos: también ocultar Fecha (col 1) en pantallas muy pequeñas */
-  #tablaPedidos thead th:nth-child(1),
-  #tablaPedidos tbody td:nth-child(1) {
-    display: none;
+
+/* ── Tablet / portátil estrecho: ocultar solo "Cambiar estado" (col 5),
+   la columna más ancha. El estado sigue visible como badge (col 4) y se
+   edita desde el detalle. Vuelve a partir de 1200px. ─── */
+@media (min-width: 600px) and (max-width: 1199px) {
+  #tablaPedidos { table-layout: fixed; }
+  #tablaPedidos thead th:nth-child(5),
+  #tablaPedidos tbody td:nth-child(5) { display: none; }
+  #tablaPedidos thead th:nth-child(2) { width: 100%; }    /* Cliente  */
+  #tablaPedidos thead th:nth-child(1) { width: 4.5rem; }  /* Fecha    */
+  #tablaPedidos thead th:nth-child(3) { width: 7rem; }    /* Producto */
+  #tablaPedidos thead th:nth-child(4) { width: 6.5rem; }  /* Estado   */
+  #tablaPedidos thead th:nth-child(6) { width: 5.5rem; }  /* Acciones */
+  #tablaPedidos tbody td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
+  #tablaPedidos tbody td:nth-child(3) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 .table-header {
@@ -1343,7 +1383,9 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
 
 .mh-top      { display: flex; flex-direction: column; gap: 4px; }
 .mh-id       { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
-.mh-id h3    { font-size: var(--text-2xl); font-weight: 800; color: rgba(255,255,255,.55); letter-spacing: -.03em; margin: 0; }
+.mh-id h2,
+.mh-id h3    { font-size: var(--text-2xl); font-weight: 800; color: rgba(255,255,255,.55); letter-spacing: -.03em; margin: 0; line-height: 1.15; }
+.mh-id h2 span,
 .mh-id h3 span { color: #fff; }
 .mh-date     { font-size: var(--text-xs); color: rgba(255,255,255,.45); }
 
@@ -1562,6 +1604,12 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   padding: var(--sp-2) 0 var(--sp-1);
 }
 .mii--full { grid-column: 1 / -1; }
+/* En teléfonos estrechos las 2 columnas dejan ~90px por celda y etiquetas
+   como "DEPARTAMENTO" se salen del modal (que recorta con overflow:hidden).
+   Una sola columna. */
+@media (max-width: 400px) {
+  .mii-grid { grid-template-columns: 1fr; }
+}
 
 /* ── mii: modal info item con ícono ───────────────── */
 .mii {
@@ -1791,10 +1839,11 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   color: rgba(255,255,255,.45);
 }
 .modal-finance-kpi__value {
-  font-size: var(--text-2xl);
+  font-size: clamp(1.25rem, 4vw, var(--text-2xl));
   font-weight: 800;
   color: #fff;
   letter-spacing: -.03em;
+  overflow-wrap: anywhere;
 }
 .modal-finance-kpi__value--profit { color: #6EE7A0; }
 .modal-finance-kpi__value--muted  { font-size: var(--text-lg); color: rgba(255,255,255,.6); }
@@ -1805,6 +1854,15 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   background: rgba(255,255,255,.12);
   margin: 0 var(--sp-5);
   flex-shrink: 0;
+}
+
+/* En teléfonos estrechos, 3 KPIs + divisores (con margen de 20px a cada
+   lado) no caben: los divisores quedaban huérfanos al principio de línea.
+   Se ocultan y los KPIs van de dos en dos. */
+@media (max-width: 430px) {
+  .modal-finance-strip { padding: var(--sp-4); gap: var(--sp-3) var(--sp-4); }
+  .modal-finance-divider { display: none; }
+  .modal-finance-kpi { min-width: calc(50% - var(--sp-4)); }
 }
 
 /* Phone edit */
@@ -2367,9 +2425,17 @@ details[open].dtf-wrap .dtf-btn__chev { transform: rotate(180deg); }
   border-radius: var(--r-xl);
   box-shadow: 0 8px 28px rgba(0,0,0,.12);
   min-width: 200px;
+  max-width: calc(100vw - var(--sp-6));
   padding: var(--sp-2);
 }
 details[open].dtf-wrap .dtf-panel { display: block; }
+
+/* En móvil la barra de filtros es un grid de 2 columnas: el panel del 2º
+   filtro (Estado) se abría hacia la derecha y se salía de la pantalla.
+   Anclarlo al borde derecho de su disparador. */
+@media (max-width: 599px) {
+  #estadoWrap .dtf-panel { left: auto; right: 0; }
+}
 
 /* Estado panel: chips en columna */
 #estadoWrap #stateFilterContent,
@@ -5078,10 +5144,13 @@ body.preview-panel-open { overflow: hidden; }
    interfaz se desplazaba de lado en iPhone SE y Android de gama
    media. Se corrige dejando que los contenedores se contraigan.
    ============================================================ */
-@media (max-width: 400px) {
+/* KPIs a una columna por debajo de 480: en 2 columnas una cifra en
+   pesos ("$326.250") no cabe en el ancho de media tarjeta de teléfono. */
+@media (max-width: 479px) {
   .stats-grid,
   .stats-grid--4col { grid-template-columns: 1fr; }
-
+}
+@media (max-width: 400px) {
   .material-header { padding: 0 var(--sp-4); }
   .stat-card { padding: var(--sp-4); }
 }

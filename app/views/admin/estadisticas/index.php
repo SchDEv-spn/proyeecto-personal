@@ -196,8 +196,10 @@
 
                 <!-- ══ KPIs ══ -->
                 <h2 class="stats-head">Resumen del periodo</h2>
-                <!-- Cinco tarjetas: el grid base reparte en 5 columnas a
-                     ≥1280px y en 3 más abajo, sin huérfanas. -->
+                <!-- Cinco tarjetas: el grid base reparte en 3 columnas
+                     (3 + 2, la 5ª ocupa dos) y en 2 / 1 en móvil. No van a
+                     5 en fila: dejaba las cifras en pesos tan estrechas que
+                     se cortaban. -->
                 <div class="stats-grid">
                     <div class="stat-card glow-purple">
                         <div class="stat-info">
@@ -821,6 +823,9 @@
         display: inline-flex; align-items: center; gap: 6px;
         padding: 5px 11px; border-radius: 999px;
         font-size: var(--text-xs); font-weight: 700;
+        /* .material-content es flex column con align-items:stretch: sin esto
+           la píldora se estira a todo el ancho. */
+        align-self: flex-start; max-width: 100%;
     }
     .pixel-status i { font-size: 7px; }
     .pixel-status--on {
@@ -853,6 +858,11 @@
     .ia-controles { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); }
     .stats-select--sm { height: 34px; }
     .stats-select--sm select { font-size: var(--text-xs); max-width: 260px; }
+    @media (max-width: 480px) {
+        .ia-barra { flex-direction: column; align-items: stretch; }
+        .ia-controles { width: 100%; }
+        .ia-controles .btn-ia { flex: 1; justify-content: center; }
+    }
     .btn-ia {
         display: inline-flex; align-items: center; gap: 8px;
         padding: 9px 16px; border-radius: 9px; border: 0; cursor: pointer;
@@ -1049,6 +1059,18 @@
     .stats-table td:first-child  { font-weight: 600; }
     .stats-table tr:last-child td { border-bottom: none; }
     .stats-table code { font-size: 12px; color: var(--tx-muted); word-break: break-word; font-weight: 400; }
+
+    /* Una tabla de 4 columnas (campañas, secciones) no siempre cabe —en
+       móvil, o en escritorio cuando .stats-cols se parte en 2 columnas— y
+       el panel la recortaba (overflow:hidden) dejando "Pedidos"/"Conv."/"%"
+       sin ver. Que el cuerpo del panel scrollee en horizontal cuando haga
+       falta. Las que ya van dentro de .stats-scroll quedan excluidas por el
+       selector de hijo directo. */
+    .panel__body:has(> table.stats-table) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
 
     /* La tabla de visitas es de lectura, no de comparación: ahí el texto
        vuelve a la izquierda. */

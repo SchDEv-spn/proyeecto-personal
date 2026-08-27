@@ -497,6 +497,9 @@
                 lengthMenu: [[10, 25, 50, 100], ['10', '25', '50', '100']],
                 searching: true,
                 order: [[0, 'desc']],
+                // autoWidth escribe anchos px inline en cada <th> y pisa el
+                // table-layout:fixed del CSS responsive. El layout lo maneja el CSS.
+                autoWidth: false,
                 columnDefs: [
                     { orderable: false, targets: [3, 4, 5] }
                 ],
