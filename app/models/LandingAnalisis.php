@@ -162,7 +162,16 @@ class LandingAnalisis extends Model
         $respuesta = $this->llamarClaude($apiKey, $contexto, $modelo);
         if (!$respuesta['ok']) return $respuesta;
 
-        $this->guardar($productoId, $dias, $entorno, $sesiones, $respuesta['resultado'], $respuesta['uso'], $modelo);
+        // Guardar es solo caché e historial. El análisis ya está hecho y
+        // pagado: si el INSERT falla (p. ej. una tabla vieja con otro
+        // esquema en producción), se devuelve igual en vez de perderlo
+        // con un "Error interno".
+        try {
+            $this->guardar($productoId, $dias, $entorno, $sesiones, $respuesta['resultado'], $respuesta['uso'], $modelo);
+        } catch (\Throwable $e) {
+            error_log('LandingAnalisis::guardar — no se pudo persistir: ' . $e->getMessage()
+                . ' @ ' . $e->getFile() . ':' . $e->getLine());
+        }
 
         return [
             'ok'        => true,

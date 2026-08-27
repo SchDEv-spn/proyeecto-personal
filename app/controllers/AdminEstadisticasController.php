@@ -210,7 +210,8 @@ class AdminEstadisticasController extends Controller
                 'modelo'    => $salida['modelo'] ?? '',
             ], JSON_UNESCAPED_UNICODE);
         } catch (\Throwable $e) {
-            error_log('AdminEstadisticas::analizar — ' . $e->getMessage());
+            error_log('AdminEstadisticas::analizar — ' . $e->getMessage()
+                . ' @ ' . $e->getFile() . ':' . $e->getLine());
             echo json_encode(['ok' => false, 'error' => 'Error interno al generar el análisis.']);
         }
     }
