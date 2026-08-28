@@ -576,6 +576,36 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <p class="hero-subtitle"><?= htmlspecialchars($sub) ?></p>
             <?php endforeach; ?>
 
+            <!-- Señales de confianza. Vivían al pie del price-box, en una
+                 pastilla fina de una sola línea donde los tres argumentos
+                 competían por el mismo renglón. Suben al hero — que es donde
+                 hacen falta, antes de que el comprador decida si sigue
+                 bajando — y pasan a tarjetas con el mismo formato que los
+                 beneficios de "por qué te encantará".
+                 El icono va dentro de un círculo, en el sitio donde aquella
+                 sección pone su número: aquí no son pasos ordenados, así que
+                 numerarlos sería mentir sobre lo que son. -->
+            <div class="hero-trust-row">
+                <span class="hero-trust-item">
+                    <span class="hero-trust-item__ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    </span>
+                    <span class="hero-trust-item__text"><?= htmlspecialchars($heroTrust1) ?></span>
+                </span>
+                <span class="hero-trust-item">
+                    <span class="hero-trust-item__ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                    </span>
+                    <span class="hero-trust-item__text"><?= htmlspecialchars($heroTrust2) ?></span>
+                </span>
+                <span class="hero-trust-item">
+                    <span class="hero-trust-item__ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                    </span>
+                    <span class="hero-trust-item__text"><?= htmlspecialchars($heroTrust3) ?></span>
+                </span>
+            </div>
+
         </div>
 
         <div class="hero-media">
@@ -696,21 +726,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
             </div>
 
-            <div class="hero-trust-row">
-                <span class="hero-trust-item">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                    <?= htmlspecialchars($heroTrust1) ?>
-                </span>
-                <span class="hero-trust-item">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                    <?= htmlspecialchars($heroTrust2) ?>
-                </span>
-                <span class="hero-trust-item">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-                    <?= htmlspecialchars($heroTrust3) ?>
-                </span>
-            </div>
-        </section>
         <?php endif; $sections['price_box'] = ob_get_clean(); ?>
 
         <?php ob_start(); if ($showBenefits): ?>

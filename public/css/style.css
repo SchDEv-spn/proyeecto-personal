@@ -3087,15 +3087,6 @@ img[loading="lazy"].loaded {
 }
 
 /* Trust row debajo del CTA */
-.hero-trust-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 18px;
-    margin: 10px 0 6px;
-    font-size: 12px;
-    color: var(--text-color, #555);
-    opacity: 0.85;
-}
 
 /* Badge flotante sobre la imagen del hero */
 .hero-media { position: relative; }
@@ -3119,7 +3110,7 @@ img[loading="lazy"].loaded {
 @media (max-width: 600px) {
     .hero-urgency-bar { font-size: 12px; padding: 7px 12px; }
     .countdown-digits  { font-size: 16px; }
-    .hero-trust-row    { font-size: 11px; gap: 5px 12px; }
+    
 }
 
 /* ============================================================
@@ -4603,28 +4594,6 @@ img[loading="lazy"].loaded {
 }
 
 /* ── HERO TRUST ROW — más visible ────────────────────────── */
-.hero-trust-row {
-    opacity: 1 !important;
-    font-size: 13px !important;
-    gap: 8px 16px !important;
-    padding: 10px 14px;
-    background: rgba(255,255,255,0.04);
-    border-radius: var(--radius-md);
-    border: 1px solid color-mix(in srgb, var(--cream) 6%, transparent);
-    justify-content: center !important;
-}
-
-.hero-trust-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--cream-dim);
-}
-
-.hero-trust-item svg {
-    flex-shrink: 0;
-    opacity: 0.75;
-}
 
 /* ── SECTION TITLES — línea dorada más larga ─────────────── */
 /* (Aquí había un ::after que alargaba la línea dorada del título. La
@@ -5425,11 +5394,6 @@ img[loading="lazy"].loaded {
   }
 
   /* Trust row debajo del CTA — menos padding */
-  .hero-trust-row {
-    padding: 7px 10px !important;
-    font-size: 11px !important;
-    gap: 5px 12px !important;
-  }
 
   /* Imagen hero en mobile: teaser recortado.
      Mismo problema que tenía el vídeo (ver nota abajo): con max-height y
@@ -7331,4 +7295,95 @@ img[loading="lazy"].loaded {
     box-shadow:
         inset 0 0 0 1px color-mix(in srgb, var(--cream) 22%, transparent),
         0 0 0 2px color-mix(in srgb, var(--gold) 55%, transparent);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CAPA VISUAL — SEÑALES DE CONFIANZA DEL HERO
+   ══════════════════════════════════════════════════════════════
+   "Pago al recibir · Envío gratis · Cambios sin problema" vivían al pie
+   del price-box, apretadas en una pastilla fina de una sola línea con
+   fondo translúcido y borde: los tres argumentos que sostienen una venta
+   contraentrega compitiendo por el mismo renglón, en letra de 11px.
+
+   Suben al hero, debajo del titular, y adoptan el MISMO formato que las
+   tarjetas de "por qué te encantará" — de ahí que estos valores sean los
+   de .porque-benefit-card y no unos nuevos. Si algún día cambia aquella,
+   esta tiene que cambiar con ella.
+
+   La diferencia deliberada: allí el círculo lleva un número de orden;
+   aquí lleva el icono. Estas tres no son pasos de una secuencia, así que
+   numerarlas mentiría sobre lo que son.
+   ══════════════════════════════════════════════════════════════ */
+.hero-trust-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 4px 0 0;
+    width: 100%;
+}
+
+.hero-trust-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    background: var(--card-bg);
+    border: var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    padding: 13px 15px;
+}
+
+/* El círculo del icono ocupa el lugar del número en la otra sección, con
+   su mismo tamaño y su mismo relleno de acento. */
+.hero-trust-item__ico {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--btn-text, #0a0a0a);
+    flex-shrink: 0;
+}
+
+.hero-trust-item__ico svg {
+    width: 16px;
+    height: 16px;
+}
+
+.hero-trust-item__text {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1.35;
+}
+
+/* Bajo 480px la tarjeta se tumba: icono a la izquierda, texto a la
+   derecha. Es el mismo corte y el mismo comportamiento que usa
+   .porque-benefit-card, para que las dos secciones respiren igual. */
+@media (max-width: 479px) {
+    .hero-trust-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .hero-trust-item {
+        flex-direction: row;
+        text-align: left;
+        padding: 12px 14px;
+    }
+
+    .hero-trust-item__ico {
+        width: 28px;
+        height: 28px;
+    }
+
+    .hero-trust-item__ico svg {
+        width: 14px;
+        height: 14px;
+    }
 }
