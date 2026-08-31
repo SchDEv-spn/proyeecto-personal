@@ -3055,14 +3055,15 @@
     <div class="ia-img-panel__body">
 
       <div class="ia-img-panel__field">
-        <label for="iaTxtExtra">Instrucciones adicionales <span style="font-weight:400;text-transform:none;opacity:.7">(opcional)</span></label>
-        <textarea id="iaTxtExtra" rows="2"
-          placeholder="Ej: tono más formal, enfócate en durabilidad, menciona el color dorado..."></textarea>
+        <label for="iaTxtExtra">¿Qué querés? <span style="font-weight:400;text-transform:none;opacity:.7">(opcional)</span></label>
+        <textarea id="iaTxtExtra" rows="3"
+          placeholder="Ej: más corto y más directo · que abra con una pregunta desde el dolor · menos cursi · más colombiano · enfocá en el miedo a que la calidad sea mala"></textarea>
+        <small style="opacity:.75">Usa el ángulo y la voz que ya guardaste. Deja vacío para que reescriba la sección desde cero.</small>
       </div>
 
       <div id="iaTxtError" class="ia-img-error" style="display:none;"></div>
 
-      <button type="button" id="iaTxtGenerar" class="ia-img-btn-generar">✨ Generar esta sección</button>
+      <button type="button" id="iaTxtGenerar" class="ia-img-btn-generar">✨ Reescribir esta sección</button>
 
       <div id="iaTxtLoading" style="display:none; text-align:center; padding:16px 0;">
         <div class="ia-spinner"></div>
@@ -3246,7 +3247,7 @@
         btn.style.background = '#22c55e';
         btn.style.display = 'block';
         setTimeout(() => {
-          btn.textContent = '✨ Generar esta sección';
+          btn.textContent = '✨ Reescribir esta sección';
           btn.style.background = '';
           closeTxtPanel();
         }, 1800);
@@ -3256,43 +3257,15 @@
   })();
   </script>
 
-  <!-- ===== REESCRIBIR UN CAMPO CON INSTRUCCIÓN ============================ -->
-  <div id="iaCampoPanel" class="ia-campo-panel" hidden>
-    <div class="ia-campo-panel__label" id="iaCampoNombre">campo</div>
-    <textarea id="iaCampoInstr" rows="2"
-      placeholder="¿Qué le cambio? Ej: más corto · más directo · que haga una pregunta desde el dolor · menos cursi"></textarea>
-    <label class="ia-campo-panel__opt">
-      <input type="checkbox" id="iaCampoTres"> Mostrarme 3 opciones para elegir
-    </label>
-    <div class="ia-campo-panel__row">
-      <button type="button" id="iaCampoGen" class="ia-campo-panel__go">✨ Reescribir</button>
-      <button type="button" id="iaCampoCancel" class="ia-campo-panel__x">Cancelar</button>
-    </div>
-    <div class="ia-campo-variantes" id="iaCampoVariantes" hidden></div>
-    <div class="ia-campo-panel__err" id="iaCampoErr" hidden></div>
-  </div>
-
   <script>
+  // Memoria de marca: cuando el dueño edita a mano un texto que rellenó la IA,
+  // se registra el par IA→humano para reinyectarlo en los prompts siguientes.
   (() => {
-    const BASE  = '<?= BASE_URL ?>';
-    const PID   = <?= json_encode((string)$producto_id) ?>;
-    const form  = document.getElementById('formLanding');
+    const BASE = '<?= BASE_URL ?>';
+    const form = document.getElementById('formLanding');
     if (!form) return;
 
-    const panel  = document.getElementById('iaCampoPanel');
-    const taI    = document.getElementById('iaCampoInstr');
-    const errEl  = document.getElementById('iaCampoErr');
-    const nameEl = document.getElementById('iaCampoNombre');
-    const btnGo  = document.getElementById('iaCampoGen');
-    const btnX   = document.getElementById('iaCampoCancel');
-    const chkTres  = document.getElementById('iaCampoTres');
-    const varsEl   = document.getElementById('iaCampoVariantes');
-    let target   = null;
-
-    // Feature 7: al rellenar un campo con IA se guarda el valor original;
-    // si luego el dueño lo edita a mano, se registra la corrección.
-    const marcarIA = (el, v) => { if (el) el.dataset.iaOriginal = v; };
-    window.__iaMarcarOriginal = marcarIA;
+    window.__iaMarcarOriginal = (el, v) => { if (el) el.dataset.iaOriginal = v; };
 
     form.addEventListener('change', (e) => {
       const el = e.target;
@@ -3312,155 +3285,6 @@
         });
       } catch (_) {}
     }, true);
-
-    const SKIP = /(_path|_actual|_id$|hex|color|_img|pixel|clarity|phone|section_order|_minutes|_stock|combo_price|_icon$|_rating$|_years$|_deliveries$|badge|^cv\d|_type$|theme)/;
-
-    const elegible = (el) => {
-      if (!el.name || SKIP.test(el.name)) return false;
-      if (el.tagName === 'TEXTAREA') return true;
-      return el.tagName === 'INPUT' && (el.type === 'text' || el.type === '');
-    };
-
-    const etiqueta = (el) => {
-      const l = el.labels && el.labels[0];
-      return (l ? l.textContent.replace(/\s+/g, ' ').trim().slice(0, 40) : '')
-        || el.getAttribute('aria-label') || el.name;
-    };
-
-    const inject = () => {
-      form.querySelectorAll('input, textarea').forEach((el) => {
-        if (!elegible(el)) return;
-        const grp = el.closest('.admin-form-group') || el.parentElement;
-        if (!grp || grp.querySelector('.ia-campo-trigger')) return;
-        grp.classList.add('has-ia-campo');
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'ia-campo-trigger';
-        b.textContent = '✨';
-        b.title = 'Reescribir este texto con IA';
-        b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); abrir(el, b); });
-        grp.appendChild(b);
-      });
-    };
-
-    const cerrar = () => { panel.hidden = true; target = null; _anchorEl = null; };
-
-    let _anchorEl = null;
-    // Recoloca el panel pegado a su campo. Solo se esconde si el campo
-    // se sale de la pantalla (nunca por el simple hecho de hacer scroll).
-    const reclamar = () => {
-      if (!_anchorEl || panel.hidden) return;
-      const r = _anchorEl.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > window.innerHeight) { panel.style.visibility = 'hidden'; return; }
-      panel.style.visibility = 'visible';
-      panel.style.top  = Math.max(8, Math.min(window.innerHeight - panel.offsetHeight - 8, r.bottom + 6)) + 'px';
-      panel.style.left = Math.max(8, Math.min(window.innerWidth - panel.offsetWidth - 8, r.right - panel.offsetWidth)) + 'px';
-    };
-
-    let _raf = 0;
-    const reclamarThrottled = () => {
-      if (_raf) return;
-      _raf = requestAnimationFrame(() => { _raf = 0; reclamar(); });
-    };
-
-    const aplicar = (v) => {
-      target.value = v;
-      target.dispatchEvent(new Event('input', { bubbles: true }));
-      marcarIA(target, v);
-      target.classList.add('ia-campo-flash');
-      const el = target;
-      setTimeout(() => el.classList.remove('ia-campo-flash'), 1200);
-      cerrar();
-    };
-
-    const abrir = (el, anchor) => {
-      target = el;
-      _anchorEl = anchor;
-      nameEl.textContent = etiqueta(el);
-      taI.value = '';
-      errEl.hidden = true;
-      varsEl.hidden = true;
-      varsEl.innerHTML = '';
-      chkTres.checked = false;
-      panel.style.visibility = 'visible';
-      panel.hidden = false;
-      reclamar();
-      taI.focus({ preventScroll: true });
-    };
-
-    btnX.addEventListener('click', cerrar);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) cerrar(); });
-
-    // Cierra solo si el gesto EMPIEZA fuera del panel y de un disparador ✨.
-    // (Antes se cerraba con cualquier scroll — molestaba al escribir.)
-    let _downOutside = false;
-    document.addEventListener('pointerdown', (e) => {
-      _downOutside = !panel.hidden && !panel.contains(e.target) && !e.target.closest('.ia-campo-trigger');
-    }, true);
-    document.addEventListener('pointerup', (e) => {
-      if (_downOutside && !panel.contains(e.target)) cerrar();
-      _downOutside = false;
-    }, true);
-
-    window.addEventListener('scroll', reclamarThrottled, true);
-    window.addEventListener('resize', reclamarThrottled);
-
-    btnGo.addEventListener('click', async () => {
-      if (!target) return;
-      errEl.hidden = true;
-      varsEl.hidden = true;
-      varsEl.innerHTML = '';
-      const tres = chkTres.checked;
-      const orig = btnGo.textContent;
-      btnGo.disabled = true;
-      btnGo.textContent = tres ? '✨ Buscando opciones…' : '✨ Escribiendo…';
-      try {
-        const body = new URLSearchParams({
-          csrf_token:   window.__CSRF__ || '',
-          producto_id:  PID,
-          campo:        target.name,
-          valor_actual: target.value || '',
-          instruccion:  taI.value.trim(),
-          n:            tres ? '3' : '1',
-          nombre:       (document.querySelector('[name="hero_title"]') || {}).value || '',
-          descripcion:  (document.querySelector('[name="hero_subtitle"]') || {}).value || '',
-        });
-        const res = await fetch(BASE + '/AdminLanding/regenerarCampoIA', {
-          method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
-        });
-        const d = await res.json();
-        if (!d.ok) {
-          errEl.textContent = d.error === 'no_key'
-            ? 'Configura primero la API key de Claude en "✨ Generar con IA".'
-            : (d.error || 'No se pudo. Intenta de nuevo.');
-          errEl.hidden = false;
-          return;
-        }
-        if (tres) {
-          (d.variantes || []).forEach((v) => {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'ia-campo-variante';
-            b.textContent = v;
-            b.addEventListener('click', () => aplicar(v));
-            varsEl.appendChild(b);
-          });
-          varsEl.hidden = false;
-          reclamar();
-          return;
-        }
-        aplicar(d.valor);
-      } catch (e) {
-        errEl.textContent = 'Error de red: ' + e.message;
-        errEl.hidden = false;
-      } finally {
-        btnGo.disabled = false;
-        btnGo.textContent = orig;
-      }
-    });
-
-    document.addEventListener('ux:sections-ready', inject, { once: true });
-    setTimeout(inject, 1600); // respaldo si el evento ya ocurrió
   })();
   </script>
 
