@@ -637,18 +637,24 @@ body.modal-open { overflow: hidden; }
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    margin: 0 0 14px;
-    font-size: 12px;
+    gap: 0.4em;
+    margin: 0 0 16px;
+    /* Mismo tamano y tipografia que los .section-title del resto de la
+       landing (style.css): la cabecera del formulario es un titulo de
+       seccion mas, no un eyebrow. */
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 5.5vw, 2.5rem);
     font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
+    letter-spacing: 0.005em;
+    line-height: 1.15;
+    text-transform: none;
+    text-wrap: balance;
     color: var(--gold);
 }
 
 .pedido-kicker__punto {
-    width: 7px;
-    height: 7px;
+    width: 0.45em;
+    height: 0.45em;
     border-radius: 50%;
     background: var(--positivo);
     flex-shrink: 0;
