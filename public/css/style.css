@@ -4357,6 +4357,15 @@ img[loading="lazy"].loaded {
 }
 
 .authority-stat {
+    /* Chip arriba · cifra · etiqueta, con el mismo hueco entre piezas.
+       Los chips arrancan a la misma altura en las cuatro (flex-start);
+       la 4ª —solo icono + etiqueta— reparte su hueco arriba y abajo de
+       la etiqueta para no quedar descolgada. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 7px;
     padding: 24px 12px;
     border-radius: var(--radius-md);
     border: none;
@@ -4377,13 +4386,19 @@ img[loading="lazy"].loaded {
     font-weight: 800;
     color: var(--gold-light);
     line-height: 1.1;
-    margin-bottom: 8px;
 }
 
 .authority-stat__label {
     font-size: .82rem;
-    opacity: .7;
+    color: var(--cream-dim);
     line-height: 1.35;
+}
+
+/* La ficha sin cifra (garantía): su etiqueta se centra en el hueco que
+   dejan las otras tres con su número, así el bloque no queda pegado al
+   chip con un vacío debajo. */
+.authority-stat:not(:has(.authority-stat__num)) .authority-stat__label {
+    margin-block: auto;
 }
 
 @media (max-width: 768px) {
@@ -4561,7 +4576,6 @@ img[loading="lazy"].loaded {
    la garantía. Estas reglas sólo los alinean con el texto: sin esto un
    SVG en línea se apoya en la base de la línea y queda descolgado. */
 .hero-image-badge__ico,
-.authority-stat__ico,
 .exit-popup__badge-ico {
     display: inline-flex;
     align-items: center;
@@ -4580,22 +4594,6 @@ img[loading="lazy"].loaded {
 .offer-anchor__scarcity svg {
     flex-shrink: 0;
     opacity: 0.9;
-}
-
-/* La cuarta estadística es sólo un icono (el escudo de la garantía): sin
-   número que lo sostenga, hay que centrarlo a la altura de los otros y
-   agrandarlo hasta la masa visual de una cifra — si no, esa tarjeta se
-   ve más vacía que las otras tres. */
-.authority-stat__num--ico {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 1em;
-}
-
-.authority-stat__num--ico svg {
-    width: 1.5em;
-    height: 1.5em;
 }
 
 .exit-popup__cta svg,
@@ -4719,15 +4717,16 @@ img[loading="lazy"].loaded {
     font-weight: 800 !important;
     color: var(--gold-light) !important;
     letter-spacing: -0.01em;
-    margin-bottom: 6px;
 }
 .authority-stat {
     padding: 28px 16px !important;
 }
+/* Misma pinta que el pie de las step-card (.step-card p): Montserrat,
+   14px, --cream-dim. Antes iba con opacity 0.85 encima del color, que
+   sobra. */
 .authority-stat__label {
-    font-size: 0.88rem !important;
-    opacity: 0.85 !important;
-    font-weight: 500;
+    font-size: 0.875rem !important;
+    font-weight: 400;
 }
 
 /* ── COMPARISON TABLE — headers sin fondo ─────────────────── */
@@ -7146,7 +7145,8 @@ img[loading="lazy"].loaded {
    ══════════════════════════════════════════════════════════════ */
 .step-icon-wrap,
 .garantia-card__icon,
-.para-quien-card__icon {
+.para-quien-card__icon,
+.authority-stat__ico {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -7160,7 +7160,8 @@ img[loading="lazy"].loaded {
 
 .step-icon-wrap svg,
 .garantia-card__icon svg,
-.para-quien-card__icon svg {
+.para-quien-card__icon svg,
+.authority-stat__ico svg {
     width: 20px;
     height: 20px;
 }

@@ -1573,21 +1573,35 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <section class="authority-section">
             <div class="container">
                 <h2 class="section-title"><?= htmlspecialchars($authorityTitle) ?></h2>
+                <?php
+                /* Un icono de trazo por estadística, en chip — el mismo gesto
+                   que "cómo funciona" y la garantía. Antes solo dos de las
+                   cuatro fichas llevaban icono y suelto, pegado al número. */
+                $authIcons = [
+                    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+                    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+                    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/></svg>',
+                    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+                ];
+                ?>
                 <div class="authority-grid">
                     <div class="authority-stat">
+                        <span class="authority-stat__ico" aria-hidden="true"><?= $authIcons[0] ?></span>
                         <div class="authority-stat__num"><?= htmlspecialchars($authorityYears) ?>+</div>
                         <div class="authority-stat__label">años en el mercado</div>
                     </div>
                     <div class="authority-stat">
+                        <span class="authority-stat__ico" aria-hidden="true"><?= $authIcons[1] ?></span>
                         <div class="authority-stat__num"><?= htmlspecialchars($authorityDeliveries) ?></div>
                         <div class="authority-stat__label">pedidos entregados</div>
                     </div>
                     <div class="authority-stat">
-                        <div class="authority-stat__num"><span class="authority-stat__ico" aria-hidden="true"><?= $micoStar ?></span><?= htmlspecialchars($authorityRating) ?></div>
+                        <span class="authority-stat__ico" aria-hidden="true"><?= $authIcons[2] ?></span>
+                        <div class="authority-stat__num"><?= htmlspecialchars($authorityRating) ?></div>
                         <div class="authority-stat__label">calificación promedio</div>
                     </div>
                     <div class="authority-stat">
-                        <div class="authority-stat__num authority-stat__num--ico" aria-hidden="true"><?= $micoShield ?></div>
+                        <span class="authority-stat__ico" aria-hidden="true"><?= $authIcons[3] ?></span>
                         <div class="authority-stat__label"><?= htmlspecialchars($authorityGuarantee) ?></div>
                     </div>
                 </div>
