@@ -202,6 +202,24 @@ $authorityDeliveries = $val('authority_deliveries', '5.000+');
 $authorityRating     = $val('authority_rating', '4.9');
 $authorityGuarantee  = $val('authority_guarantee', 'Garantía de satisfacción');
 
+/* Las cuatro fichas son tarjetas de dato: una cifra corta y una etiqueta.
+   Si el editor (o la IA) mete ahí una frase, se recorta a algo que quepa
+   —mejor un dato truncado que una tarjeta reventada— y el "+" de los años
+   solo se añade cuando el valor es de verdad un número suelto. */
+$_short = static function (string $s, int $max): string {
+    $s = trim(preg_replace('/\s+/', ' ', $s));
+    return function_exists('mb_strimwidth')
+        ? mb_strimwidth($s, 0, $max, '', 'UTF-8')
+        : (strlen($s) > $max ? substr($s, 0, $max) : $s);
+};
+$authorityYears      = $_short($authorityYears, 10);
+$authorityDeliveries = $_short($authorityDeliveries, 12);
+$authorityRating     = $_short($authorityRating, 8);
+$authorityGuarantee  = $_short($authorityGuarantee, 44);
+$authorityYearsShown = preg_match('/^[\d.\s]+$/', $authorityYears)
+    ? rtrim($authorityYears) . '+'
+    : $authorityYears;
+
 // ===== FOOTER =====
 $footerText   = $cfg['footer_text']   ?? ('© ' . date('Y') . ' Tu Marca. Todos los derechos reservados.');
 $showFooter   = (int)($cfg['show_footer'] ?? 1);
@@ -1587,7 +1605,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <div class="authority-grid">
                     <div class="authority-stat">
                         <span class="authority-stat__ico" aria-hidden="true"><?= $authIcons[0] ?></span>
-                        <div class="authority-stat__num"><?= htmlspecialchars($authorityYears) ?>+</div>
+                        <div class="authority-stat__num"><?= htmlspecialchars($authorityYearsShown) ?></div>
                         <div class="authority-stat__label">años en el mercado</div>
                     </div>
                     <div class="authority-stat">

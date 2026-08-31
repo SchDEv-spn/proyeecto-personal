@@ -1299,7 +1299,7 @@
                   <!-- AUTORIDAD / CREDIBILIDAD -->
                   <div class="section-block" id="sec-autoridad" data-toc="Autoridad">
                     <h2>Sección de Autoridad / Credibilidad</h2>
-                    <p class="field-section-desc">4 estadísticas que generan confianza justo antes del formulario. Actívala cuando tengas números reales.</p>
+                    <p class="field-section-desc">4 estadísticas que generan confianza justo antes del formulario. Actívala cuando tengas números reales. Cada campo es una <strong>cifra corta</strong>, no una frase — una oración revienta la tarjeta.</p>
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
@@ -1323,6 +1323,7 @@
                         <input type="text" id="authority_years" name="authority_years"
                           value="<?= htmlspecialchars($config['authority_years'] ?? '3') ?>"
                           placeholder="ej. 3">
+                        <small>Solo el número. La landing añade “años en el mercado” y un “+”.</small>
                       </div>
 
                       <div class="admin-form-group">
@@ -1330,6 +1331,7 @@
                         <input type="text" id="authority_deliveries" name="authority_deliveries"
                           value="<?= htmlspecialchars($config['authority_deliveries'] ?? '5.000+') ?>"
                           placeholder="ej. 5.000+">
+                        <small>Solo la cifra: 800+, 5.000+…</small>
                       </div>
 
                       <div class="admin-form-group">
@@ -1337,6 +1339,7 @@
                         <input type="text" id="authority_rating" name="authority_rating"
                           value="<?= htmlspecialchars($config['authority_rating'] ?? '4.9') ?>"
                           placeholder="ej. 4.9">
+                        <small>La nota sobre 5: 4.9.</small>
                       </div>
 
                       <div class="admin-form-group">
@@ -1344,6 +1347,7 @@
                         <input type="text" id="authority_guarantee" name="authority_guarantee"
                           value="<?= htmlspecialchars($config['authority_guarantee'] ?? 'Garantía de satisfacción') ?>"
                           placeholder="ej. Garantía de satisfacción">
+                        <small>Máximo 3 palabras. Es la única ficha de texto.</small>
                       </div>
                     </div>
                   </div>
