@@ -1097,6 +1097,7 @@ class AdminLandingController extends Controller
         $publico     = trim($_POST['publico']      ?? 'adultos colombianos');
         $precio      = trim($_POST['precio']      ?? '');
         $extra       = trim($_POST['extra']        ?? '');
+        $n           = max(1, min(3, (int)($_POST['n'] ?? 1)));
 
         if (!$seccion || !$nombre) {
             echo json_encode(['ok' => false, 'error' => 'Faltan datos del producto']);
@@ -1107,17 +1108,31 @@ class AdminLandingController extends Controller
         // la landing completa y cada regeneración de sección.
         $bloque = $productoId > 0 ? $this->bloqueBrief($this->leerBrief($productoId)) : '';
 
-        $prompt = $this->buildSeccionPrompt($seccion, $nombre, $descripcion, $publico, $precio, $extra, $bloque);
+        $prompt = $this->buildSeccionPrompt($seccion, $nombre, $descripcion, $publico, $precio, $extra, $bloque, $n);
         if (!$prompt) {
             echo json_encode(['ok' => false, 'error' => 'Sección no reconocida']);
             return;
         }
 
-        echo json_encode($this->callClaudeApi($apiKey, $prompt));
+        $res = $this->callClaudeApi($apiKey, $prompt, $n > 1 ? 6000 : 4096);
+
+        if ($n > 1) {
+            if (empty($res['ok'])) { echo json_encode($res); return; }
+            $vs = $res['fields']['variantes'] ?? [];
+            $vs = is_array($vs) ? array_values(array_filter($vs, 'is_array')) : [];
+            if (!$vs) {
+                echo json_encode(['ok' => false, 'error' => 'La IA no devolvió versiones. Intenta de nuevo.']);
+                return;
+            }
+            echo json_encode(['ok' => true, 'variantes' => $vs]);
+            return;
+        }
+
+        echo json_encode($res);
     }
 
     // ── Prompt focalizado por sección ─────────────────────────────────────────
-    private function buildSeccionPrompt(string $sec, string $nombre, string $desc, string $publico, string $precio, string $extra, string $briefBlock = ''): ?string
+    private function buildSeccionPrompt(string $sec, string $nombre, string $desc, string $publico, string $precio, string $extra, string $briefBlock = '', int $n = 1): ?string
     {
         $anguloYaFijo = str_contains($briefBlock, 'ÁNGULO DE VENTA YA DECIDIDO');
         $paso0 = $anguloYaFijo
@@ -1177,6 +1192,13 @@ class AdminLandingController extends Controller
             'autoridad'       => 'Autoridad: reduce el riesgo percibido de confiarle ese dolor a una marca nueva. Números creíbles; authority_years puede ser pequeño si la marca es nueva.',
             'ctas'            => 'CTAs: directo al grano, cero rodeos. Botón ≤5 palabras, verbo de acción + urgencia (emoji opcional si suma, ej 🔥⏰). cta_*_text: una sola frase corta que empuje al clic, no una explicación.',
         ];
+
+        if ($n > 1) {
+            return $base . ($hints[$sec] ?? '')
+                . "\n\nDame {$n} versiones DISTINTAS de esta sección: cada una entra por un ángulo emocional diferente (no la misma frase reordenada), todas listas para publicar y coherentes con el ángulo, la voz y el nivel de agresividad de arriba.\n"
+                . "Devuelve SOLO este JSON válido (sin markdown): {\"variantes\": [OBJ, OBJ, OBJ]} — donde cada OBJ tiene EXACTAMENTE esta forma y todos sus campos llenos:\n"
+                . $schemas[$sec];
+        }
 
         return $base . ($hints[$sec] ?? '') . "\n\nJSON a completar:\n" . $schemas[$sec];
     }

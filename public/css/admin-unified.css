@@ -5080,6 +5080,52 @@ body.preview-panel-open { overflow: hidden; }
 .ia-img-trigger:hover,
 .ia-txt-trigger:hover { background: var(--green-dark); border-color: var(--green-dark); color: #fff; }
 
+/* ── Panel de sección: 3 versiones para elegir ────────────── */
+.ia-txt-opt {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-xs, 12px);
+  color: var(--tx-muted, #888);
+  cursor: pointer;
+}
+.ia-txt-opt input { accent-color: var(--green-mid); }
+.ia-txt-variantes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ia-txt-variante {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  background: var(--surface-2, #1a1a2e);
+  border: 1px solid var(--border, #2a2a3a);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color .15s, background .15s;
+}
+.ia-txt-variante:hover {
+  border-color: var(--green-mid);
+  background: var(--green-soft);
+}
+.ia-txt-variante__n {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--green-mid);
+}
+.ia-txt-variante__prev {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--tx, #e0e0f0);
+}
+
 /* ── UX improvements — collapsible sections ───────────────── */
 .sec-toggle-header {
   display: flex;

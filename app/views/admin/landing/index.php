@@ -3061,9 +3061,15 @@
         <small style="opacity:.75">Usa el ángulo y la voz que ya guardaste. Deja vacío para que reescriba la sección desde cero.</small>
       </div>
 
+      <label class="ia-txt-opt">
+        <input type="checkbox" id="iaTxtTres"> Dame 3 versiones para elegir
+      </label>
+
       <div id="iaTxtError" class="ia-img-error" style="display:none;"></div>
 
       <button type="button" id="iaTxtGenerar" class="ia-img-btn-generar">✨ Reescribir esta sección</button>
+
+      <div id="iaTxtVariantes" class="ia-txt-variantes" hidden></div>
 
       <div id="iaTxtLoading" style="display:none; text-align:center; padding:16px 0;">
         <div class="ia-spinner"></div>
@@ -3142,10 +3148,13 @@
     function openTxtPanel(triggerBtn, section) {
       _txtPanelOpener = triggerBtn;
       currentSection = section;
-      titulo.textContent = '✨ Generar — ' + (sectionLabels[section] || section);
+      titulo.textContent = '✨ Reescribir — ' + (sectionLabels[section] || section);
       setTxtError('');
       setTxtLoading(false);
       document.getElementById('iaTxtExtra').value = '';
+      document.getElementById('iaTxtTres').checked = false;
+      const vbox = document.getElementById('iaTxtVariantes');
+      vbox.hidden = true; vbox.innerHTML = '';
 
       overlay.style.display = 'flex';
       overlay.setAttribute('aria-hidden', 'false');
@@ -3208,20 +3217,64 @@
       return filled;
     }
 
+    // ── Aplica un set de campos y cierra con flash de éxito ───────────────────
+    function aplicarSet(fields) {
+      const filled = fillFields(fields || {});
+      const btn = document.getElementById('iaTxtGenerar');
+      btn.textContent = `✅ ${filled} campos aplicados`;
+      btn.style.background = '#22c55e';
+      btn.style.display = 'block';
+      setTimeout(() => {
+        btn.textContent = '✨ Reescribir esta sección';
+        btn.style.background = '';
+        closeTxtPanel();
+      }, 1600);
+    }
+
+    // ── Muestra las 3 versiones como tarjetas para elegir ─────────────────────
+    function renderTxtVariantes(variantes) {
+      const box = document.getElementById('iaTxtVariantes');
+      box.innerHTML = '';
+      variantes.forEach((v, i) => {
+        const preview = Object.keys(v)
+          .filter((k) => k.charAt(0) !== '_' && v[k])
+          .slice(0, 2)
+          .map((k) => v[k])
+          .join(' · ');
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'ia-txt-variante';
+        card.innerHTML =
+          '<span class="ia-txt-variante__n">Opción ' + (i + 1) + '</span>' +
+          '<span class="ia-txt-variante__prev"></span>';
+        card.querySelector('.ia-txt-variante__prev').textContent =
+          preview.length > 140 ? preview.slice(0, 140) + '…' : preview;
+        card.addEventListener('click', () => aplicarSet(v));
+        box.appendChild(card);
+      });
+      box.hidden = false;
+      document.getElementById('iaTxtGenerar').style.display = 'block';
+    }
+
     // ── Generate ─────────────────────────────────────────────────────────────
     document.getElementById('iaTxtGenerar').addEventListener('click', async () => {
       setTxtError('');
       const ctx   = getCtx();
       const extra = document.getElementById('iaTxtExtra').value.trim();
+      const tres  = document.getElementById('iaTxtTres').checked;
+      const vbox  = document.getElementById('iaTxtVariantes');
+      vbox.hidden = true; vbox.innerHTML = '';
 
       if (!ctx.nombre) { setTxtError('Agrega el nombre del producto en el campo "Título principal" del Hero primero.'); return; }
 
       setTxtLoading(true);
+      document.querySelector('#iaTxtLoading p').textContent = tres ? 'Buscando 3 versiones...' : 'Escribiendo...';
       try {
         const body = new URLSearchParams({
           producto_id: <?= json_encode((string)$producto_id) ?>,
           seccion: currentSection, nombre: ctx.nombre,
           descripcion: ctx.descripcion, extra,
+          n: tres ? '3' : '1',
           csrf_token: window.__CSRF__ || '',
         });
         const res  = await fetch(BASE + '/AdminLanding/generarSeccionIA', {
@@ -3239,18 +3292,11 @@
           return;
         }
 
-        const filled = fillFields(data.fields || {});
-
-        // Brief success flash then close
-        const btn = document.getElementById('iaTxtGenerar');
-        btn.textContent = `✅ ${filled} campos aplicados`;
-        btn.style.background = '#22c55e';
-        btn.style.display = 'block';
-        setTimeout(() => {
-          btn.textContent = '✨ Reescribir esta sección';
-          btn.style.background = '';
-          closeTxtPanel();
-        }, 1800);
+        if (tres && data.variantes) {
+          renderTxtVariantes(data.variantes);
+          return;
+        }
+        aplicarSet(data.fields || {});
 
       } catch(e) { setTxtLoading(false); setTxtError('Error de red: ' + e.message); }
     });
