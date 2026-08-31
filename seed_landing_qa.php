@@ -358,6 +358,7 @@ $landing = [
     'cta_sticky_mobile_text'   => '🔥 Aprovechar oferta hoy',
 
     // — Formulario y pie —
+    'form_kicker'   => 'Último paso · te toma menos de 1 minuto',
     'form_title'    => 'Haz tu pedido — Pago al recibir',
     'form_subtitle' => 'Sin adelantos · El mensajero llega a tu puerta',
     'footer_text'   => '© ' . date('Y') . ' Bolsos Orígami. Todos los derechos reservados.',

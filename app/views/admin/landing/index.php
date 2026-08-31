@@ -1927,9 +1927,16 @@
                   <!-- FORMULARIO — CABECERA -->
                   <div class="section-block" id="sec-form-header" data-toc="Form. pedido">
                     <h2>Formulario — Cabecera</h2>
-                    <p class="field-section-desc">Título y subtítulo que aparecen sobre el formulario de pedido.</p>
+                    <p class="field-section-desc">Aviso, título y subtítulo que aparecen sobre el formulario de pedido.</p>
 
                     <div class="form-grid">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="form_kicker">Aviso de impulso (con puntico animado)</label>
+                        <input type="text" id="form_kicker" name="form_kicker"
+                          placeholder="Ej: Último paso · te toma menos de 1 minuto"
+                          value="<?= htmlspecialchars($config['form_kicker'] ?? 'Último paso · te toma menos de 1 minuto') ?>">
+                        <small>Va justo encima del título, con el punto verde que late. Déjalo vacío para ocultarlo.</small>
+                      </div>
                       <div class="admin-form-group admin-form-group--full">
                         <label for="form_title">Título del formulario</label>
                         <input type="text" id="form_title" name="form_title"
@@ -3102,12 +3109,14 @@
       'sec-faq':             'faq',
       'sec-autoridad':       'autoridad',
       'sec-ctas':            'ctas',
+      'sec-form-header':     'form',
     };
     const sectionLabels = {
       'hero':'Hero', 'beneficios':'Beneficios', 'caracteristicas':'Características',
       'countdown':'Contador/Oferta', 'porque':'¿Por qué?', 'comparativa':'Tabla comparativa',
       'testimonios':'Testimonios', 'paraquien':'¿Para quién es?', 'wa':'Testimonios WhatsApp',
       'faq':'Preguntas frecuentes', 'autoridad':'Autoridad', 'ctas':'CTAs',
+      'form':'Formulario de pedido',
     };
 
     let currentSection = null;

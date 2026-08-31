@@ -614,6 +614,7 @@ class AdminLandingController extends Controller
             'show_exit_popup'       => (int)($_POST['show_exit_popup']       ?? 1),
 
             // ===== Form header =====
+            'form_kicker'   => trim($_POST['form_kicker']   ?? ''),
             'form_title'    => trim($_POST['form_title']    ?? ''),
             'form_subtitle' => trim($_POST['form_subtitle'] ?? ''),
 
@@ -1174,6 +1175,8 @@ class AdminLandingController extends Controller
             'autoridad' => '{"authority_title":"","authority_years":"","authority_deliveries":"","authority_rating":"4.9","authority_guarantee":""}',
 
             'ctas' => '{"cta_benefits_text":"","cta_benefits_button":"","cta_gallery_text":"","cta_gallery_button":"","cta_porque_text":"","cta_porque_button":"","cta_testimonials_text":"","cta_testimonials_button":"","cta_faq_text":"","cta_faq_button":"","cta_como_funciona_text":"","cta_como_funciona_button":"","cta_comparison_button":"","cta_para_quien_button":"","cta_wa_testimonios_button":"","cta_sticky_mobile_text":""}',
+
+            'form' => '{"form_kicker":"","form_title":"","form_subtitle":""}',
         ];
 
         if (!isset($schemas[$sec])) return null;
@@ -1191,6 +1194,7 @@ class AdminLandingController extends Controller
             'faq'             => 'FAQ: cada pregunta es una objeción real que frena la compra (miedo a perder la plata); la respuesta baja ese riesgo. faq1 SIEMPRE sobre pago (contraentrega), faq2 sobre tiempo de envío (3-7 días hábiles Colombia).',
             'autoridad'       => 'Autoridad: reduce el riesgo percibido de confiarle ese dolor a una marca nueva. Números creíbles; authority_years puede ser pequeño si la marca es nueva.',
             'ctas'            => 'CTAs: directo al grano, cero rodeos. Botón ≤5 palabras, verbo de acción + urgencia (emoji opcional si suma, ej 🔥⏰). cta_*_text: una sola frase corta que empuje al clic, no una explicación.',
+            'form'            => 'Cabecera del formulario de pedido — es lo último que lee antes de dejar sus datos. form_kicker: micro-aviso de impulso ≤7 palabras que baja la fricción ("Último paso · te toma menos de 1 minuto"), sin emoji. form_title: acción + tranquilidad de pagar al recibir, ≤7 palabras. form_subtitle: una frase que quita el miedo (sin adelantos, el mensajero llega a la puerta). Nada de urgencia agresiva aquí: ya decidió, solo hay que quitarle el último freno.',
         ];
 
         if ($n > 1) {

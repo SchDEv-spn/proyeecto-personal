@@ -373,6 +373,7 @@ $showFomo            = (int)($cfg['show_fomo']             ?? 1);
 $showExitPopup       = (int)($cfg['show_exit_popup']       ?? 1);
 
 // ===== FORM HEADER =====
+$formKicker   = $val('form_kicker', 'Último paso · te toma menos de 1 minuto');
 $formTitle    = $val('form_title', 'Haz tu pedido — Pago al recibir');
 $formSubtitle = $val('form_subtitle', 'Sin adelantos · El mensajero llega a tu puerta');
 
@@ -1660,10 +1661,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <div class="pedido-panel">
 
                 <!-- Impulso, no adorno: dice en que punto esta y cuanto falta -->
+                <?php if (!empty($formKicker)): ?>
                 <p class="pedido-kicker">
                     <span class="pedido-kicker__punto" aria-hidden="true"></span>
-                    <?= htmlspecialchars($cfg['form_kicker'] ?? 'Último paso · te toma menos de 1 minuto') ?>
+                    <?= htmlspecialchars($formKicker) ?>
                 </p>
+                <?php endif; ?>
 
                 <!-- Barra del producto -->
                 <div class="order-modal-product-bar">

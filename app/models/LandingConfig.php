@@ -264,9 +264,26 @@ class LandingConfig extends Model
         return $stmt->execute($params);
     }
 
+    /**
+     * Columnas añadidas después del CREATE original de landing_config. El
+     * deploy es un push a main y `migration_hostinger.sql` se corre a mano;
+     * este ALTER en try/catch hace que un guardado no reviente si la
+     * migración todavía no se aplicó en producción. Traga 1060 (columna
+     * duplicada) — es un no-op barato una vez la columna existe.
+     */
+    private function asegurarColumnasNuevas(): void
+    {
+        try {
+            $this->db->exec('ALTER TABLE landing_config ADD COLUMN form_kicker TEXT NULL');
+        } catch (\PDOException $e) {
+            // 42S21 / 1060 = Duplicate column name → ya existe, nada que hacer.
+        }
+    }
+
     public function guardarPorProducto(int $productoId, array $data)
     {
         $this->asegurarFilaProducto($productoId);
+        $this->asegurarColumnasNuevas();
 
         $sql = "UPDATE landing_config
             SET theme              = :theme,
@@ -540,6 +557,7 @@ class LandingConfig extends Model
                 caract4_title         = :caract4_title,
                 caract4_text          = :caract4_text,
 
+                form_kicker   = :form_kicker,
                 form_title    = :form_title,
                 form_subtitle = :form_subtitle,
 
@@ -830,6 +848,7 @@ class LandingConfig extends Model
             ':caract4_title'         => $data['caract4_title']         ?? null,
             ':caract4_text'          => $data['caract4_text']          ?? null,
 
+            ':form_kicker'   => $data['form_kicker']   ?? null,
             ':form_title'    => $data['form_title']    ?? null,
             ':form_subtitle' => $data['form_subtitle'] ?? null,
 

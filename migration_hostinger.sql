@@ -142,6 +142,10 @@ ALTER TABLE landing_config
     ADD COLUMN IF NOT EXISTS form_title    TEXT NULL,
     ADD COLUMN IF NOT EXISTS form_subtitle TEXT NULL;
 
+-- ── landing_config: aviso de impulso sobre el formulario (con puntico animado) ──
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS form_kicker TEXT NULL;
+
 -- ── landing_config: hero subtítulos adicionales y pie de página ──
 ALTER TABLE landing_config
     ADD COLUMN IF NOT EXISTS hero_subtitle_2 TEXT NULL,
