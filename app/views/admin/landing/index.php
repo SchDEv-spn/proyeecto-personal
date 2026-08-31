@@ -421,7 +421,7 @@
                           </div>
                           <div class="admin-form-group admin-form-group--full">
                             <label for="hero_button_text">Texto del botón</label>
-                            <input type="text" id="hero_button_text" name="hero_button_text"
+                            <input type="text" id="hero_button_text" name="hero_button_text" maxlength="40" data-counter
                               value="<?= htmlspecialchars($config['hero_button_text'] ?? '¡Necesito el mío!') ?>">
                           </div>
                           <div class="admin-form-group admin-form-group--full">
@@ -508,7 +508,7 @@
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
                         <label for="benefits_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                        <input type="text" id="benefits_eyebrow" name="benefits_eyebrow" maxlength="120"
+                        <input type="text" id="benefits_eyebrow" name="benefits_eyebrow" maxlength="48" data-counter
                           value="<?= htmlspecialchars($eyebrows['benefits'] ?? 'Por qué lo vas a querer') ?>"
                           placeholder="Ej: Por qué lo vas a querer">
                       </div>
@@ -583,7 +583,7 @@
                     <div class="form-grid" style="margin-bottom:16px;">
                       <div class="admin-form-group admin-form-group--full">
                         <label for="gallery_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                        <input type="text" id="gallery_eyebrow" name="gallery_eyebrow" maxlength="120"
+                        <input type="text" id="gallery_eyebrow" name="gallery_eyebrow" maxlength="48" data-counter
                           value="<?= htmlspecialchars($eyebrows['gallery'] ?? '') ?>"
                           placeholder="Ej: Sin trucos de foto">
                       </div>
@@ -757,7 +757,7 @@
 
                     <div class="admin-form-group" style="margin-bottom:12px;">
                       <label for="caract_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                      <input type="text" id="caract_eyebrow" name="caract_eyebrow" maxlength="120"
+                      <input type="text" id="caract_eyebrow" name="caract_eyebrow" maxlength="48" data-counter
                         value="<?= htmlspecialchars($eyebrows['caract'] ?? '') ?>"
                         placeholder="Ej: Cómo está hecho">
                     </div>
@@ -884,7 +884,7 @@
                         <div class="form-grid">
                           <div class="admin-form-group admin-form-group--full">
                             <label for="porque_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                            <input type="text" id="porque_eyebrow" name="porque_eyebrow" maxlength="120"
+                            <input type="text" id="porque_eyebrow" name="porque_eyebrow" maxlength="48" data-counter
                               value="<?= htmlspecialchars($eyebrows['porque'] ?? '') ?>"
                               placeholder="Ej: La razón real">
                           </div>
@@ -972,7 +972,7 @@
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
                         <label for="comparison_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                        <input type="text" id="comparison_eyebrow" name="comparison_eyebrow" maxlength="120"
+                        <input type="text" id="comparison_eyebrow" name="comparison_eyebrow" maxlength="48" data-counter
                           value="<?= htmlspecialchars($eyebrows['comparison'] ?? '') ?>"
                           placeholder="Ej: Antes y después">
                       </div>
@@ -1064,7 +1064,7 @@
                     <div class="form-grid" style="margin-bottom:16px;">
                       <div class="admin-form-group admin-form-group--full">
                         <label for="testimonios_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                        <input type="text" id="testimonios_eyebrow" name="testimonios_eyebrow" maxlength="120"
+                        <input type="text" id="testimonios_eyebrow" name="testimonios_eyebrow" maxlength="48" data-counter
                           value="<?= htmlspecialchars($eyebrows['testimonios'] ?? 'Casos reales') ?>"
                           placeholder="Ej: Casos reales">
                       </div>
@@ -1160,7 +1160,7 @@
                     <div class="form-grid" style="margin-bottom:16px;">
                       <div class="admin-form-group admin-form-group--full">
                         <label for="para_quien_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                        <input type="text" id="para_quien_eyebrow" name="para_quien_eyebrow" maxlength="120"
+                        <input type="text" id="para_quien_eyebrow" name="para_quien_eyebrow" maxlength="48" data-counter
                           value="<?= htmlspecialchars($eyebrows['para_quien'] ?? '') ?>"
                           placeholder="Ej: ¿Eres tú?">
                       </div>
@@ -1236,7 +1236,7 @@
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
                         <label for="wa_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                        <input type="text" id="wa_eyebrow" name="wa_eyebrow" maxlength="120"
+                        <input type="text" id="wa_eyebrow" name="wa_eyebrow" maxlength="48" data-counter
                           value="<?= htmlspecialchars($eyebrows['wa'] ?? 'Prueba real') ?>"
                           placeholder="Ej: Prueba real">
                       </div>
@@ -1325,7 +1325,7 @@
                     <div class="form-grid" style="margin-bottom:16px;">
                       <div class="admin-form-group admin-form-group--full">
                         <label for="faq_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                        <input type="text" id="faq_eyebrow" name="faq_eyebrow" maxlength="120"
+                        <input type="text" id="faq_eyebrow" name="faq_eyebrow" maxlength="48" data-counter
                           value="<?= htmlspecialchars($eyebrows['faq'] ?? '') ?>"
                           placeholder="Ej: Lo que todos preguntan">
                       </div>
@@ -1381,7 +1381,7 @@
 
                       <div class="admin-form-group admin-form-group--full">
                         <label for="authority_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                        <input type="text" id="authority_eyebrow" name="authority_eyebrow" maxlength="120"
+                        <input type="text" id="authority_eyebrow" name="authority_eyebrow" maxlength="48" data-counter
                           value="<?= htmlspecialchars($eyebrows['authority'] ?? '') ?>"
                           placeholder="Ej: Por qué confiar">
                       </div>
@@ -1435,14 +1435,14 @@
                       <?php
                       $sectionCtas = [
                         'benefits'        => ['icon' => 'fa-bullhorn',        'label' => 'CTA Beneficios',       'has_text' => true,  'text_default' => 'Ya sabes lo que hace. El siguiente paso es recibirlo en casa.', 'btn_default' => 'Quiero aprovechar la oferta'],
-                        'gallery'         => ['icon' => 'fa-images',          'label' => 'CTA Galería',          'has_text' => true,  'text_default' => 'Lo que ves es lo que llega. Sin sorpresas, sin excusas.',       'btn_default' => 'Lo quiero igual que en las fotos'],
+                        'gallery'         => ['icon' => 'fa-images',          'label' => 'CTA Galería',          'has_text' => true,  'text_default' => 'Lo que ves es lo que llega. Sin sorpresas, sin excusas.',       'btn_default' => 'Lo quiero igual'],
                         'porque'          => ['icon' => 'fa-heart',           'label' => 'CTA ¿Por qué?',        'has_text' => true,  'text_default' => 'Miles lo recibieron. Tú eres el siguiente.',                    'btn_default' => 'Quiero sentir ese cambio'],
-                        'testimonials'    => ['icon' => 'fa-star',            'label' => 'CTA Testimonios',      'has_text' => true,  'text_default' => 'Ellos ya lo tienen. Tu pedido tarda menos de 2 minutos.',      'btn_default' => 'Quiero ser el próximo en recibirlo'],
+                        'testimonials'    => ['icon' => 'fa-star',            'label' => 'CTA Testimonios',      'has_text' => true,  'text_default' => 'Ellos ya lo tienen. Tu pedido tarda menos de 2 minutos.',      'btn_default' => 'Quiero ser el próximo'],
                         'faq'             => ['icon' => 'fa-shield-halved',   'label' => 'CTA FAQ',              'has_text' => true,  'text_default' => 'Dudas resueltas. Esto solo falta: hacer tu pedido.',            'btn_default' => 'Sí, quiero pedirlo ahora'],
-                        'como_funciona'   => ['icon' => 'fa-list-check',      'label' => 'CTA Cómo funciona',    'has_text' => true,  'text_default' => 'Así de simple. ¿Listo para empezar?',                          'btn_default' => 'Hacer mi pedido ahora →'],
-                        'comparison'      => ['icon' => 'fa-scale-balanced',  'label' => 'CTA Comparativa',      'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Quiero experimentar la diferencia →'],
-                        'para_quien'      => ['icon' => 'fa-user-check',      'label' => 'CTA Para quién es',    'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Sí, es para mí →'],
-                        'wa_testimonios'  => ['icon' => 'fa-whatsapp',        'label' => 'CTA WA Testimonios',   'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Yo también lo quiero →'],
+                        'como_funciona'   => ['icon' => 'fa-list-check',      'label' => 'CTA Cómo funciona',    'has_text' => true,  'text_default' => 'Así de simple. ¿Listo para empezar?',                          'btn_default' => 'Quiero hacer mi pedido'],
+                        'comparison'      => ['icon' => 'fa-scale-balanced',  'label' => 'CTA Comparativa',      'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Quiero ver la diferencia'],
+                        'para_quien'      => ['icon' => 'fa-user-check',      'label' => 'CTA Para quién es',    'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Sí, es para mí'],
+                        'wa_testimonios'  => ['icon' => 'fa-whatsapp',        'label' => 'CTA WA Testimonios',   'has_text' => false, 'text_default' => '',                                                              'btn_default' => 'Yo también lo quiero'],
                       ];
                       // Cada CTA vive dentro de una sección. Si la sección está
                       // oculta, el CTA no se renderiza aunque esté activado.
@@ -1489,8 +1489,8 @@
                           </div>
                           <?php endif; ?>
                           <div class="admin-form-group <?= empty($ctaData['has_text']) ? 'admin-form-group--full' : '' ?>">
-                            <label for="cta_<?= $ctaKey ?>_button">Botón</label>
-                            <input type="text" id="cta_<?= $ctaKey ?>_button" name="cta_<?= $ctaKey ?>_button"
+                            <label for="cta_<?= $ctaKey ?>_button">Botón <span style="font-weight:400;text-transform:none;opacity:.6">(≤5 palabras)</span></label>
+                            <input type="text" id="cta_<?= $ctaKey ?>_button" name="cta_<?= $ctaKey ?>_button" maxlength="40" data-counter
                               value="<?= htmlspecialchars($config['cta_' . $ctaKey . '_button'] ?? $ctaData['btn_default']) ?>">
                           </div>
                         </div>
@@ -1501,8 +1501,8 @@
                         <div class="mini-card-title"><i class="fas fa-mobile-screen" aria-hidden="true"></i> CTA fija móvil</div>
                         <div class="form-grid">
                           <div class="admin-form-group admin-form-group--full">
-                            <label for="cta_sticky_mobile_text">Texto del botón fijo inferior</label>
-                            <input type="text" id="cta_sticky_mobile_text" name="cta_sticky_mobile_text"
+                            <label for="cta_sticky_mobile_text">Texto del botón fijo inferior <span style="font-weight:400;text-transform:none;opacity:.6">(≤3 palabras · va muy estrecho)</span></label>
+                            <input type="text" id="cta_sticky_mobile_text" name="cta_sticky_mobile_text" maxlength="24" data-counter
                               value="<?= htmlspecialchars($config['cta_sticky_mobile_text'] ?? 'Lo quiero ahora') ?>">
                           </div>
                         </div>
@@ -1917,7 +1917,7 @@
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
                         <label for="cf_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
-                        <input type="text" id="cf_eyebrow" name="cf_eyebrow" maxlength="120"
+                        <input type="text" id="cf_eyebrow" name="cf_eyebrow" maxlength="48" data-counter
                           value="<?= htmlspecialchars($eyebrows['cf'] ?? '') ?>"
                           placeholder="Ej: Así de fácil">
                       </div>
@@ -2772,6 +2772,38 @@
   </div>
 
   <script>
+  /* Recorte compartido para textos que caen en piezas de layout rígido
+     (botones-píldora, antetítulos, cifras de autoridad). Espejo de $clamp()
+     en la landing: la IA se salta el "≤5 palabras" del prompt cada tanto.
+     Lo usan tanto el generador completo (rellenar) como el de sección
+     (fillFields). */
+  window.__iaClampCopy = function (s, maxWords, maxChars) {
+    s = String(s == null ? '' : s).trim().replace(/\s+/g, ' ');
+    if (!s) return '';
+    const w = s.split(' ');
+    if (w.length > maxWords) s = w.slice(0, maxWords).join(' ');
+    if (s.length > maxChars) {
+      const cut = s.slice(0, maxChars);
+      const sp = cut.lastIndexOf(' ');
+      s = sp > 0 ? cut.slice(0, sp) : cut;
+    }
+    return s.replace(/[\s·\-—,;:]+$/, '');
+  };
+  window.__iaClampForKey = function (key, val) {
+    if (Array.isArray(val)) return val;
+    const C = window.__iaClampCopy;
+    if (/_button$/.test(key) || key === 'hero_button_text') return C(val, 6, 34);
+    if (key === 'cta_sticky_mobile_text')                   return C(val, 4, 22);
+    if (/_eyebrow$/.test(key))                              return C(val, 6, 34);
+    if (key === 'authority_years')      return C(val, 2, 10);
+    if (key === 'authority_deliveries') return C(val, 2, 12);
+    if (key === 'authority_rating')     return C(val, 1, 8);
+    if (key === 'authority_guarantee')  return C(val, 3, 40);
+    return val;
+  };
+  </script>
+
+  <script>
   (() => {
     const BASE      = '<?= BASE_URL ?>';
     const PRODUCTO_ID = <?= json_encode((string)$producto_id) ?>;
@@ -2894,7 +2926,7 @@
     const rellenar = (fields) => {
       let filled = 0;
       Object.keys(fields || {}).forEach((key) => {
-        const v = fields[key];
+        const v = window.__iaClampForKey(key, fields[key]);
         if (!v || key.charAt(0) === '_') return;
         const input = document.querySelector('input[name="' + key + '"]');
         if (input && ['hidden', 'file', 'checkbox', 'radio'].indexOf(input.type) === -1) {
@@ -3292,7 +3324,8 @@
     function fillFields(fields) {
       let filled = 0;
       const marcar = (el, v) => { if (window.__iaMarcarOriginal) window.__iaMarcarOriginal(el, v); };
-      Object.entries(fields).forEach(([key, val]) => {
+      Object.entries(fields).forEach(([key, raw]) => {
+        const val = window.__iaClampForKey(key, raw);
         if (!val || key.charAt(0) === '_') return;
         const input = document.querySelector(`input[name="${key}"]`);
         if (input && !['hidden','file','checkbox','radio'].includes(input.type)) {
@@ -4605,6 +4638,28 @@
     });
   })();
   </script>
+
+<script>
+// Contador de caracteres para inputs de layout ajustado (botones, antetítulos).
+// Marca en ámbar cuando se pasa del límite recomendado (no del maxlength).
+(function () {
+  var RECO = { 40: 34, 24: 22, 48: 40 };
+  document.querySelectorAll('input[data-counter][maxlength]').forEach(function (inp) {
+    var max  = parseInt(inp.getAttribute('maxlength'), 10);
+    var reco = RECO[max] || max;
+    var out  = document.createElement('small');
+    out.className = 'char-count';
+    inp.insertAdjacentElement('afterend', out);
+    var upd = function () {
+      var n = inp.value.length;
+      out.textContent = n + '/' + max;
+      out.classList.toggle('char-count--over', n > reco);
+    };
+    inp.addEventListener('input', upd);
+    upd();
+  });
+})();
+</script>
 
 <script>
 // Rutas guardadas en BD cuyo archivo ya no existe en disco: mostrar un aviso

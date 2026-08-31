@@ -3226,6 +3226,22 @@ div.dataTables_paginate { display: flex; align-items: center; gap: 4px; flex-wra
 }
 .admin-form-group--full { grid-column: 1 / -1; }
 
+/* Contador de caracteres (botones, antetítulos): discreto, alineado a la
+   derecha del campo; ámbar al pasar del largo recomendado. Se sube la
+   especificidad para ganarle a `.admin-form-group small`. */
+.admin-form-group .char-count,
+small.char-count {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx-dim);
+  text-align: right;
+  line-height: 1.4;
+}
+.admin-form-group .char-count--over,
+small.char-count--over { color: #b26a00; font-weight: 700; }
+
 /* ── Layout: main + TOC ───────────────────────────────────── */
 :root { --landing-toc-w: 250px; }
 
@@ -5132,6 +5148,9 @@ body.preview-panel-open { overflow: hidden; }
   margin-top: var(--sp-1);
   transition: background var(--t), border-color var(--t), color var(--t);
 }
+/* En la cabecera de sección el botón va en una fila flex centrada: el
+   margin-top lo descolgaba ~2px respecto al título y al badge. */
+.sec-toggle-header > .ia-txt-trigger { margin-top: 0; align-self: center; }
 .ia-img-trigger:hover,
 .ia-txt-trigger:hover { background: var(--green-dark); border-color: var(--green-dark); color: #fff; }
 

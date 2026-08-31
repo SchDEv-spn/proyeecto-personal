@@ -792,7 +792,9 @@ h3 {
    lugar el ritmo lo marca el eyebrow de arriba, que es lo que hace la
    referencia visual. */
 .section-eyebrow {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   text-align: center;
   font-family: var(--font-body);
   font-size: 11px;
@@ -801,6 +803,10 @@ h3 {
   text-transform: uppercase;
   color: var(--gold);
   margin-bottom: 10px;
+  /* Red de seguridad: si un antetítulo se pasa de largo pese al recorte
+     del render, se queda en 2 líneas y no le roba el protagonismo al h2. */
+  max-width: 100%;
+  overflow: hidden;
 }
 /* En la tarjeta "Por qué" el contenido va alineado a la izquierda. */
 .section-eyebrow--left {
@@ -860,7 +866,11 @@ h3 {
   font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.06em;
+  line-height: 1.25;
   text-transform: uppercase;
+  /* Un texto largo que se cuele pese al recorte del render se parte por
+     palabra dentro de la píldora en vez de desbordarla. */
+  overflow-wrap: break-word;
   /* El acento de acción, no el decorativo — ver --cta arriba. */
   color: var(--cta-text, #0a0a0a);
   background: linear-gradient(160deg, var(--cta-soft) 0%, var(--cta) 60%, color-mix(in srgb, var(--cta) 70%, #000) 100%);

@@ -127,7 +127,9 @@ class AdminLandingController extends Controller
     {
         $out = [];
         foreach (array_keys(self::EYEBROWS) as $k) {
-            $v = mb_substr(trim((string)($_POST[$k . '_eyebrow'] ?? '')), 0, 120);
+            // Etiqueta de revista: si llega más largo (pegado a mano, IA que
+            // se pasó), se corta. La landing lo vuelve a recortar por palabra.
+            $v = mb_substr(trim((string)($_POST[$k . '_eyebrow'] ?? '')), 0, 48);
             if ($v !== '') $out[$k] = $v;
         }
         return $out ? json_encode($out, JSON_UNESCAPED_UNICODE) : null;
@@ -1181,7 +1183,7 @@ class AdminLandingController extends Controller
               . "REGLAS: español colombiano informal, emocional, orientado al beneficio (nunca a características técnicas sueltas), "
               . "pago contraentrega, urgencia real, nombres/ciudades colombianas. Frases cortas, directo al punto, sin párrafos largos ni relleno. "
               . "Emojis solo cuando sumen (✅🔥📦⏰😍🚚), máximo 1-2 por texto, nunca en nombres/ciudades ni en preguntas de FAQ.\n\n"
-              . "Si el JSON incluye un campo *_eyebrow, es el antetítulo de la sección (la línea corta encima del título): 2-4 palabras, sin punto ni emoji, tipo etiqueta de revista, que ate la sección al mismo dolor desde su función. No repite el título.\n"
+              . "Si el JSON incluye un campo *_eyebrow, es el antetítulo de la sección (la línea corta encima del título): 2-4 palabras, MÁXIMO 34 caracteres, sin punto ni emoji, tipo etiqueta de revista, que ate la sección al mismo dolor desde su función. No repite el título. Si no cabe en 34 caracteres, no es un antetítulo — recórtalo.\n"
               . "Devuelve SOLO JSON válido (sin markdown). Rellena cada campo con copy real, no con descripciones.\n\n";
 
         $schemas = [
@@ -1230,8 +1232,8 @@ class AdminLandingController extends Controller
             'wa'              => 'WhatsApp: prueba social informal del mismo dolor resuelto. Mensajes ultra-informales, emojis naturales, como copiados del celular de un cliente feliz.',
             'faq'             => 'FAQ: cada pregunta es una objeción real que frena la compra (miedo a perder la plata); la respuesta baja ese riesgo. faq1 SIEMPRE sobre pago (contraentrega), faq2 sobre tiempo de envío (3-7 días hábiles Colombia).',
             'autoridad'       => 'Autoridad: 4 fichas de estadística (cifra grande + etiqueta fija). Los valores van CORTOS, jamás una frase — una oración dentro de la cifra rompe la tarjeta. authority_years: SOLO el número de años, sin palabras (ej "2"; la plantilla ya escribe "años en el mercado" y le añade un "+"). authority_deliveries: SOLO una cifra de pedidos en formato colombiano (ej "800+", "5.000+"), sin texto. authority_rating: la nota sobre 5 (ej "4.9"). authority_guarantee: la ÚNICA de texto y aun así máximo 3 palabras (ej "Satisfacción garantizada", "Devolución sin líos"). authority_title sí puede ser una pregunta o frase corta ("¿Por qué confiar en nosotros?"). Números creíbles para una marca joven; nunca inventes miles si el negocio es nuevo.',
-            'ctas'            => 'CTAs: directo al grano, cero rodeos. Botón ≤5 palabras, verbo de acción + urgencia (emoji opcional si suma, ej 🔥⏰). cta_*_text: una sola frase corta que empuje al clic, no una explicación.',
-            'form'            => 'Cabecera del formulario de pedido — es lo último que lee antes de dejar sus datos. form_kicker: micro-aviso de impulso ≤7 palabras que baja la fricción ("Último paso · te toma menos de 1 minuto"), sin emoji. form_title: acción + tranquilidad de pagar al recibir, ≤7 palabras. form_subtitle: una frase que quita el miedo (sin adelantos, el mensajero llega a la puerta). Nada de urgencia agresiva aquí: ya decidió, solo hay que quitarle el último freno.',
+            'ctas'            => 'CTAs: directo al grano, cero rodeos. cta_*_button: verbo de acción + deseo, MÁXIMO 5 palabras y 30 caracteres — es una píldora, un texto largo se parte en 3 líneas y se ve roto (emoji opcional al final si suma, ej 🔥⏰). cta_sticky_mobile_text: aún más corto, ≤3 palabras / ≤20 caracteres (va en una barra estrecha). cta_*_text: una sola frase corta que empuje al clic, no una explicación.',
+            'form'            => 'Cabecera del formulario de pedido — es lo último que lee antes de dejar sus datos. form_kicker: micro-aviso de impulso ≤7 palabras / ≤45 caracteres que baja la fricción ("Último paso · te toma menos de 1 minuto"), sin emoji. form_title: acción + tranquilidad de pagar al recibir, ≤7 palabras. form_subtitle: una frase que quita el miedo (sin adelantos, el mensajero llega a la puerta). Nada de urgencia agresiva aquí: ya decidió, solo hay que quitarle el último freno.',
             'announcement'    => 'Barra de anuncios: el ticker que corre arriba de todo. Cada ítem es una frase de 2-5 palabras que abre con UN emoji relevante + espacio (🔥 escasez, 🚚 envío, 💳 pago contraentrega, ⭐ o 😍 prueba social, 📦 empaque, ⏰ urgencia) — es la única zona de la landing donde el emoji suma. Un emoji por ítem, al inicio, nunca en medio de la frase. Mezcla urgencia real, envío/pago y prueba social. Llena los 6; deben leerse bien girando en bucle.',
             'galeria'         => 'Galería de fotos reales del producto — es la prueba de que "lo que se ve es lo que llega". gallery_title: una frase corta que invite a mirar de cerca y refuerce que no hay letra chica; NUNCA la palabra "Galería" sola (ej: "Míralo de cerca, sin filtros" / "Así llega, tal cual la foto"). shots: 4 ideas de foto CONCRETAS y distintas, atadas al dolor/ángulo, ≤14 palabras cada una, en imperativo — normalmente: (1) el producto solo con buena luz, (2) el producto en uso dentro de la escena de dolor del cliente, (3) un primer plano del detalle que más importa para ese dolor, (4) algo que muestre tamaño, capacidad o resultado. No son copys para publicar: son instrucciones de qué fotografiar.',
         ];
@@ -1468,6 +1470,7 @@ PROMPT;
         $grupos = [
             'gancho' => [
                 'guia' => "- hero_title / hero_subtitle: nombra el dolor o la promesa de alivio inmediato — no describas el producto.\n"
+                    . "- hero_button_text: verbo + deseo en primera persona, MÁXIMO 5 palabras / 30 caracteres (es una píldora; largo = se parte y se ve roto).\n"
                     . "- benefit_1 a benefit_4: cada uno es una CONSECUENCIA concreta de seguir sin el producto, resuelta — no una característica técnica.\n"
                     . "- caract1 a caract4: conecta cada característica física con el alivio emocional que produce.\n"
                     . "- countdown: escasez + pérdida inminente (el cliente pierde la oportunidad de resolver su dolor, no solo 'una oferta').\n"
@@ -1506,8 +1509,8 @@ PROMPT;
             ],
             'cierre' => [
                 'guia' => "- faq1-6: cada pregunta es una objeción real que le impide comprar (duda = miedo a perder la plata); la respuesta baja ese riesgo. faq1 SIEMPRE sobre pago contraentrega, faq2 sobre tiempo de envío (3-7 días hábiles).\n"
-                    . "- authority_*: reduce el riesgo percibido de confiarle ese dolor a una marca nueva. Números creíbles.\n"
-                    . "- cta_*: urgencia para actuar YA y dejar de vivir con el dolor. Botón ≤5 palabras, verbo + urgencia.",
+                    . "- authority_*: reduce el riesgo percibido de confiarle ese dolor a una marca nueva. authority_years/deliveries/rating son SOLO cifras cortas (ej '2', '800+', '4.9'), nunca frases — una oración ahí revienta la tarjeta. authority_guarantee: ≤3 palabras. Números creíbles.\n"
+                    . "- cta_*_button: verbo + urgencia, MÁXIMO 5 palabras y 30 caracteres (es una píldora; largo = 3 líneas rotas). cta_sticky_mobile_text ≤3 palabras / ≤20 car.",
                 'keys' => [
                     'faq1_q', 'faq1_a', 'faq2_q', 'faq2_a', 'faq3_q', 'faq3_a',
                     'faq4_q', 'faq4_a', 'faq5_q', 'faq5_a', 'faq6_q', 'faq6_a',
@@ -1592,10 +1595,10 @@ REGLAS OBLIGATORIAS DE ESTILO (romperlas es inaceptable):
 7. FAQ siempre incluye: pago contraentrega, tiempo de envío (3-7 días hábiles), garantía, devoluciones.
 8. Hero title: máximo 8 palabras. Promesa de transformación o resultado, no descripción del producto.
 9. Comparativa: TRANSFORMACIÓN EMOCIONAL antes/después (no listas de specs).
-10. CTAs (cta_*_button y cta_*_text): directo al grano, cero rodeos, cero explicación. Botón ≤5 palabras con verbo de acción + urgencia. Ej: "¡Lo quiero ahora! 🔥" / "Pedir el mío →" / "Aprovechar oferta ⏰".
+10. CTAs (cta_*_button y cta_*_text): directo al grano, cero rodeos, cero explicación. Botón con verbo de acción + urgencia, MÁXIMO 5 palabras y 30 caracteres — es una píldora, un texto largo se parte en 3 líneas y se ve roto. cta_sticky_mobile_text va en una barra estrecha: ≤3 palabras / ≤20 caracteres. Ej: "¡Lo quiero ahora! 🔥" / "Pedir el mío →" / "Aprovechar oferta ⏰".
 11. BREVEDAD en todos los campos: frases cortas, sin relleno ni párrafos largos. Si se dice en menos palabras, así se dice.
 12. Emojis solo cuando sumen al mensaje (✅🔥📦⏰😍🚚), sin saturar — 1 o 2 por texto como máximo. Nunca en nombres/ciudades de testimonios ni en preguntas de FAQ.
-13. Campos *_eyebrow: son el antetítulo de cada sección (la línea corta encima del título). 2 a 4 palabras, sin punto final, sin emoji, tipo etiqueta de revista. Anclan esa sección al MISMO dolor/ángulo desde su función (beneficios = la promesa, comparativa = el contraste, testimonios/wa = la prueba, faq = las dudas, para_quien = a quién, galería = ver de cerca, autoridad = la confianza, características = el cómo, porque = la razón, cómo funciona = lo fácil). No repiten el título ni son un mini-titular.
+13. Campos *_eyebrow: son el antetítulo de cada sección (la línea corta encima del título). 2 a 4 palabras, MÁXIMO 34 caracteres, sin punto final, sin emoji, tipo etiqueta de revista. Si no cabe en 34 caracteres no es un antetítulo. Anclan esa sección al MISMO dolor/ángulo desde su función (beneficios = la promesa, comparativa = el contraste, testimonios/wa = la prueba, faq = las dudas, para_quien = a quién, galería = ver de cerca, autoridad = la confianza, características = el cómo, porque = la razón, cómo funciona = lo fácil). No repiten el título ni son un mini-titular.
 
 Devuelve ÚNICAMENTE el siguiente JSON válido. Sin markdown, sin bloques de código, sin texto antes o después. Solo el JSON.
 Los dos primeros campos ("_dolor" y "_angulo") son notas para el dueño (no se publican): en una frase cada uno, di qué dolor estás atacando y cuál es la gran idea con la que lo resuelves. El resto del copy debe ser coherente con esas dos frases.

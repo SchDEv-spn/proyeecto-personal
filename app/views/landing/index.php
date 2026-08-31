@@ -41,14 +41,36 @@ if ($comboPrice2 <= 0) $comboPrice2 = 115000; // fallback
 // se publica con <title> y <h1> vacíos.
 $val = fn($k, $default) => (isset($cfg[$k]) && trim((string)$cfg[$k]) !== '') ? $cfg[$k] : $default;
 
+/* Recorta textos que caen en piezas de layout rígido — botones-píldora y
+   antetítulos. La IA se salta el "≤5 palabras" del prompt cada tanto y un
+   botón de 3 líneas dentro de una píldora radio-100 se ve roto. Corta por
+   palabra (nunca a la mitad) al primer límite que se pase, sin puntos
+   suspensivos: en un botón un "…" es peor que una frase corta. */
+$clamp = function (string $t, int $maxPalabras, int $maxChars): string {
+    $t = trim(preg_replace('/\s+/u', ' ', $t));
+    if ($t === '') return '';
+    $palabras = explode(' ', $t);
+    if (count($palabras) > $maxPalabras) {
+        $t = implode(' ', array_slice($palabras, 0, $maxPalabras));
+    }
+    if (mb_strlen($t, 'UTF-8') > $maxChars) {
+        $corte = mb_substr($t, 0, $maxChars, 'UTF-8');
+        $sp = mb_strrpos($corte, ' ', 0, 'UTF-8');
+        $t = ($sp !== false && $sp > 0) ? mb_substr($corte, 0, $sp, 'UTF-8') : $corte;
+    }
+    return preg_replace('/[\s·\-—,;:]+$/u', '', $t);
+};
+
 // Antetítulo (eyebrow) de una sección. Todos viven en un JSON
 // (section_eyebrows), como color_variants. La IA los rellena junto con el
 // copy; vacío = no se pinta el <span>. Los 3 de fábrica pasan su texto como
-// $default para que las landings viejas no cambien.
+// $default para que las landings viejas no cambien. Se recorta a etiqueta
+// de revista (≤6 palabras / ≤34 car.): si se pasa, envuelve y le come el
+// golpe de ritmo al <h2>.
 $__eyebrows = json_decode((string)($cfg['section_eyebrows'] ?? ''), true);
 if (!is_array($__eyebrows)) $__eyebrows = [];
-$sectionEyebrow = function (string $key, string $default = '', string $cls = '') use ($__eyebrows): string {
-    $t = trim((string) ($__eyebrows[$key] ?? $default));
+$sectionEyebrow = function (string $key, string $default = '', string $cls = '') use ($__eyebrows, $clamp): string {
+    $t = $clamp(trim((string) ($__eyebrows[$key] ?? $default)), 6, 34);
     if ($t === '') return '';
     return '<span class="section-eyebrow' . ($cls !== '' ? ' ' . $cls : '') . '">'
         . htmlspecialchars($t) . '</span>';
@@ -72,7 +94,7 @@ $heroSubtitle2   = trim($cfg['hero_subtitle_2'] ?? '');
 $heroSubtitle3   = trim($cfg['hero_subtitle_3'] ?? '');
 $heroSubtitles   = array_filter([$heroSubtitle, $heroSubtitle2, $heroSubtitle3], fn($s) => $s !== '');
 $heroNote        = $val('hero_note', 'Promoción válida solo por tiempo limitado.');
-$heroButtonText  = $val('hero_button_text', '¡Necesito el mío!');
+$heroButtonText  = $clamp($val('hero_button_text', '¡Necesito el mío!'), 6, 34);
 $heroMediaType   = $val('hero_media_type', 'imagen');
 $heroMediaPath   = $val('hero_media_path', (!empty($producto['imagen_principal']) ? $producto['imagen_principal'] : BASE_URL . '/public/img/producto/uso-1.png'));
 
@@ -245,21 +267,21 @@ $showFooter   = (int)($cfg['show_footer'] ?? 1);
    Ojo: esto son los valores por defecto. Sólo se ven cuando el campo
    correspondiente está vacío en el admin. */
 $ctaBenefitsText       = $val('cta_benefits_text', 'Ya sabes lo que hace. El siguiente paso es recibirlo en casa.');
-$ctaBenefitsButton     = $val('cta_benefits_button', 'Quiero aprovechar la oferta');
+$ctaBenefitsButton     = $clamp($val('cta_benefits_button', 'Quiero aprovechar la oferta'), 6, 34);
 
 $ctaGalleryText        = $val('cta_gallery_text', 'Lo que ves es lo que llega. Sin sorpresas, sin excusas.');
-$ctaGalleryButton      = $val('cta_gallery_button', 'Lo quiero igual que en las fotos');
+$ctaGalleryButton      = $clamp($val('cta_gallery_button', 'Lo quiero igual'), 6, 34);
 
 $ctaPorqueText         = $val('cta_porque_text', 'Miles lo recibieron. Tú eres el siguiente.');
-$ctaPorqueButton       = $val('cta_porque_button', 'Quiero sentir ese cambio');
+$ctaPorqueButton       = $clamp($val('cta_porque_button', 'Quiero sentir ese cambio'), 6, 34);
 
 $ctaTestimonialsText   = $val('cta_testimonials_text', 'Ellos ya lo tienen. Tu pedido tarda menos de 2 minutos.');
-$ctaTestimonialsButton = $val('cta_testimonials_button', 'Quiero ser el próximo en recibirlo');
+$ctaTestimonialsButton = $clamp($val('cta_testimonials_button', 'Quiero ser el próximo'), 6, 34);
 
 $ctaFaqText            = $val('cta_faq_text', 'Dudas resueltas. Esto solo falta: hacer tu pedido.');
-$ctaFaqButton          = $val('cta_faq_button', 'Sí, quiero pedirlo ahora');
+$ctaFaqButton          = $clamp($val('cta_faq_button', 'Sí, quiero pedirlo ahora'), 6, 34);
 
-$ctaStickyMobileText   = $stripLeadingEmoji($val('cta_sticky_mobile_text', 'Lo quiero ahora'));
+$ctaStickyMobileText   = $clamp($stripLeadingEmoji($val('cta_sticky_mobile_text', 'Lo quiero ahora')), 4, 22);
 
 // ===== CTAs DE SECCIÓN — visibilidad =====
 $showCtaBenefits        = (int)($cfg['show_cta_benefits']        ?? 1);
@@ -269,13 +291,13 @@ $showCtaTestimonials    = (int)($cfg['show_cta_testimonials']    ?? 1);
 $showCtaFaq             = (int)($cfg['show_cta_faq']             ?? 1);
 $showCtaComoFunciona    = (int)($cfg['show_cta_como_funciona']   ?? 1);
 $ctaComoFuncionaText    = $val('cta_como_funciona_text', 'Así de simple. ¿Listo para empezar?');
-$ctaComoFuncionaButton  = $val('cta_como_funciona_button', 'Quiero hacer mi pedido ahora');
+$ctaComoFuncionaButton  = $clamp($val('cta_como_funciona_button', 'Quiero hacer mi pedido'), 6, 34);
 $showCtaComparison      = (int)($cfg['show_cta_comparison']      ?? 1);
-$ctaComparisonButton    = $val('cta_comparison_button', 'Quiero experimentar la diferencia');
+$ctaComparisonButton    = $clamp($val('cta_comparison_button', 'Quiero ver la diferencia'), 6, 34);
 $showCtaParaQuien       = (int)($cfg['show_cta_para_quien']      ?? 1);
-$ctaParaQuienButton     = $val('cta_para_quien_button', 'Sí, es para mí');
+$ctaParaQuienButton     = $clamp($val('cta_para_quien_button', 'Sí, es para mí'), 6, 34);
 $showCtaWaTestimonios   = (int)($cfg['show_cta_wa_testimonios']  ?? 1);
-$ctaWaTestimoniasButton = $val('cta_wa_testimonios_button', 'Yo también lo quiero');
+$ctaWaTestimoniasButton = $clamp($val('cta_wa_testimonios_button', 'Yo también lo quiero'), 6, 34);
 
 // ===== PARA QUIÉN ES =====
 $paraQuienSiItems = [];
