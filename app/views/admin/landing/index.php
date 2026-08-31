@@ -25,6 +25,10 @@
   $producto    = $producto ?? null;
   $recomendaciones = $recomendaciones ?? null;
 
+  // Antetítulos (eyebrow) por sección: viven en un JSON (section_eyebrows).
+  $eyebrows = json_decode((string)($config['section_eyebrows'] ?? ''), true);
+  if (!is_array($eyebrows)) $eyebrows = [];
+
   $usuarioNombre = $_SESSION['usuario_nombre'] ?? 'Admin';
   $usuarioEmail  = $_SESSION['usuario_email'] ?? 'admin@tuempresa.com';
 
@@ -503,6 +507,12 @@
 
                     <div class="form-grid">
                       <div class="admin-form-group admin-form-group--full">
+                        <label for="benefits_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                        <input type="text" id="benefits_eyebrow" name="benefits_eyebrow" maxlength="120"
+                          value="<?= htmlspecialchars($eyebrows['benefits'] ?? 'Por qué lo vas a querer') ?>"
+                          placeholder="Ej: Por qué lo vas a querer">
+                      </div>
+                      <div class="admin-form-group admin-form-group--full">
                         <label for="benefits_title">Título de la sección</label>
                         <input type="text" id="benefits_title" name="benefits_title"
                           value="<?= htmlspecialchars($config['benefits_title'] ?? 'Beneficios clave para ti') ?>">
@@ -571,6 +581,12 @@
                     <div class="galeria-shots" id="galeriaShots" hidden></div>
 
                     <div class="form-grid" style="margin-bottom:16px;">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="gallery_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                        <input type="text" id="gallery_eyebrow" name="gallery_eyebrow" maxlength="120"
+                          value="<?= htmlspecialchars($eyebrows['gallery'] ?? '') ?>"
+                          placeholder="Ej: Sin trucos de foto">
+                      </div>
                       <div class="admin-form-group admin-form-group--full">
                         <label for="gallery_title">Título de la sección</label>
                         <input type="text" id="gallery_title" name="gallery_title"
@@ -739,6 +755,12 @@
                     <h2>Características del producto</h2>
                     <p class="field-section-desc">Carousel de hasta 4 tarjetas. Cada una puede tener imagen, video o gif, título y descripción.</p>
 
+                    <div class="admin-form-group" style="margin-bottom:12px;">
+                      <label for="caract_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                      <input type="text" id="caract_eyebrow" name="caract_eyebrow" maxlength="120"
+                        value="<?= htmlspecialchars($eyebrows['caract'] ?? '') ?>"
+                        placeholder="Ej: Cómo está hecho">
+                    </div>
                     <div class="admin-form-group" style="margin-bottom:20px;">
                       <label for="caract_section_title">Título de la sección</label>
                       <input type="text" id="caract_section_title" name="caract_section_title"
@@ -861,6 +883,12 @@
                         </div>
                         <div class="form-grid">
                           <div class="admin-form-group admin-form-group--full">
+                            <label for="porque_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                            <input type="text" id="porque_eyebrow" name="porque_eyebrow" maxlength="120"
+                              value="<?= htmlspecialchars($eyebrows['porque'] ?? '') ?>"
+                              placeholder="Ej: La razón real">
+                          </div>
+                          <div class="admin-form-group admin-form-group--full">
                             <label for="porque_title">Título</label>
                             <input type="text" id="porque_title" name="porque_title"
                               value="<?= htmlspecialchars($config['porque_title'] ?? '¿Por qué te encantará este producto?') ?>">
@@ -942,6 +970,12 @@
                     </p>
 
                     <div class="form-grid">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="comparison_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                        <input type="text" id="comparison_eyebrow" name="comparison_eyebrow" maxlength="120"
+                          value="<?= htmlspecialchars($eyebrows['comparison'] ?? '') ?>"
+                          placeholder="Ej: Antes y después">
+                      </div>
                       <div class="admin-form-group admin-form-group--full">
                         <label for="comparison_title">Título de la sección</label>
                         <input type="text" id="comparison_title" name="comparison_title"
@@ -1028,6 +1062,12 @@
                     <h2>Testimonios</h2>
 
                     <div class="form-grid" style="margin-bottom:16px;">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="testimonios_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                        <input type="text" id="testimonios_eyebrow" name="testimonios_eyebrow" maxlength="120"
+                          value="<?= htmlspecialchars($eyebrows['testimonios'] ?? 'Casos reales') ?>"
+                          placeholder="Ej: Casos reales">
+                      </div>
                       <div class="admin-form-group admin-form-group--full">
                         <label for="testimonios_title">Título de la sección</label>
                         <input type="text" id="testimonios_title" name="testimonios_title"
@@ -1119,6 +1159,12 @@
 
                     <div class="form-grid" style="margin-bottom:16px;">
                       <div class="admin-form-group admin-form-group--full">
+                        <label for="para_quien_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                        <input type="text" id="para_quien_eyebrow" name="para_quien_eyebrow" maxlength="120"
+                          value="<?= htmlspecialchars($eyebrows['para_quien'] ?? '') ?>"
+                          placeholder="Ej: ¿Eres tú?">
+                      </div>
+                      <div class="admin-form-group admin-form-group--full">
                         <label for="para_quien_title">Título de la sección</label>
                         <input type="text" id="para_quien_title" name="para_quien_title"
                           value="<?= htmlspecialchars($config['para_quien_title'] ?? '¿Este producto es para ti?') ?>">
@@ -1188,6 +1234,12 @@
                     <h2>Testimonios Reales de WhatsApp</h2>
 
                     <div class="form-grid">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="wa_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                        <input type="text" id="wa_eyebrow" name="wa_eyebrow" maxlength="120"
+                          value="<?= htmlspecialchars($eyebrows['wa'] ?? 'Prueba real') ?>"
+                          placeholder="Ej: Prueba real">
+                      </div>
                       <div class="admin-form-group admin-form-group--full">
                         <label for="wa_title">Título</label>
                         <input type="text" id="wa_title" name="wa_title"
@@ -1272,6 +1324,12 @@
 
                     <div class="form-grid" style="margin-bottom:16px;">
                       <div class="admin-form-group admin-form-group--full">
+                        <label for="faq_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                        <input type="text" id="faq_eyebrow" name="faq_eyebrow" maxlength="120"
+                          value="<?= htmlspecialchars($eyebrows['faq'] ?? '') ?>"
+                          placeholder="Ej: Lo que todos preguntan">
+                      </div>
+                      <div class="admin-form-group admin-form-group--full">
                         <label for="faq_title">Título de la sección</label>
                         <input type="text" id="faq_title" name="faq_title"
                           value="<?= htmlspecialchars($config['faq_title'] ?? 'Preguntas frecuentes') ?>">
@@ -1321,6 +1379,12 @@
                         </label>
                       </div>
 
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="authority_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                        <input type="text" id="authority_eyebrow" name="authority_eyebrow" maxlength="120"
+                          value="<?= htmlspecialchars($eyebrows['authority'] ?? '') ?>"
+                          placeholder="Ej: Por qué confiar">
+                      </div>
                       <div class="admin-form-group admin-form-group--full">
                         <label for="authority_title">Título</label>
                         <input type="text" id="authority_title" name="authority_title"
@@ -1851,6 +1915,12 @@
                     <p class="field-section-desc">Título y contenido de los 3 pasos del proceso de compra. La visibilidad se controla desde "Secciones visibles".</p>
 
                     <div class="form-grid">
+                      <div class="admin-form-group admin-form-group--full">
+                        <label for="cf_eyebrow">Antetítulo <span style="font-weight:400;text-transform:none;opacity:.65">(línea corta sobre el título · opcional)</span></label>
+                        <input type="text" id="cf_eyebrow" name="cf_eyebrow" maxlength="120"
+                          value="<?= htmlspecialchars($eyebrows['cf'] ?? '') ?>"
+                          placeholder="Ej: Así de fácil">
+                      </div>
                       <div class="admin-form-group admin-form-group--full">
                         <label for="cf_title">Título de la sección</label>
                         <input type="text" id="cf_title" name="cf_title"

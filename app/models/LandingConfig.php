@@ -273,10 +273,20 @@ class LandingConfig extends Model
      */
     private function asegurarColumnasNuevas(): void
     {
-        try {
-            $this->db->exec('ALTER TABLE landing_config ADD COLUMN form_kicker TEXT NULL');
-        } catch (\PDOException $e) {
-            // 42S21 / 1060 = Duplicate column name → ya existe, nada que hacer.
+        // Cada columna en su propio ALTER: un multi-columna revienta entero
+        // en cuanto UNA ya existe (1060), y las demás no se añadirían.
+        // section_eyebrows es UN JSON (no 11 columnas): landing_config ya está
+        // al tope del row size de InnoDB y no admite más columnas sueltas.
+        $cols = [
+            'form_kicker'      => 'TEXT NULL',
+            'section_eyebrows' => 'TEXT NULL',
+        ];
+        foreach ($cols as $col => $def) {
+            try {
+                $this->db->exec("ALTER TABLE landing_config ADD COLUMN {$col} {$def}");
+            } catch (\PDOException $e) {
+                // 42S21 / 1060 = Duplicate column name → ya existe, nada que hacer.
+            }
         }
     }
 
@@ -569,7 +579,9 @@ class LandingConfig extends Model
                 color_variants    = :color_variants,
 
                 pixel_id   = :pixel_id,
-                clarity_id = :clarity_id
+                clarity_id = :clarity_id,
+
+                section_eyebrows = :section_eyebrows
 
             WHERE producto_id = :producto_id";
 
@@ -860,6 +872,8 @@ class LandingConfig extends Model
 
             ':pixel_id'   => $data['pixel_id']   ?? null,
             ':clarity_id' => $data['clarity_id'] ?? null,
+
+            ':section_eyebrows' => $data['section_eyebrows'] ?? null,
 
             ':producto_id' => $productoId,
         ]);

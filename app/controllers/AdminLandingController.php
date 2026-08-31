@@ -104,6 +104,35 @@ class AdminLandingController extends Controller
         }
     }
 
+    /**
+     * Secciones con antetítulo (eyebrow). Clave interna → texto de fábrica
+     * (los 3 que ya venían hardcodeados en la landing pública).
+     */
+    public const EYEBROWS = [
+        'benefits'    => 'Por qué lo vas a querer',
+        'gallery'     => '',
+        'caract'      => '',
+        'cf'          => '',
+        'porque'      => '',
+        'comparison'  => '',
+        'para_quien'  => '',
+        'testimonios' => 'Casos reales',
+        'wa'          => 'Prueba real',
+        'faq'         => '',
+        'authority'   => '',
+    ];
+
+    /** Junta los inputs *_eyebrow del POST en un JSON (una sola columna). */
+    private function recogerEyebrows(): ?string
+    {
+        $out = [];
+        foreach (array_keys(self::EYEBROWS) as $k) {
+            $v = mb_substr(trim((string)($_POST[$k . '_eyebrow'] ?? '')), 0, 120);
+            if ($v !== '') $out[$k] = $v;
+        }
+        return $out ? json_encode($out, JSON_UNESCAPED_UNICODE) : null;
+    }
+
     /** Últimas correcciones a mano (IA escribió X → el dueño lo dejó Y), global. */
     private function edicionesMarca(): array
     {
@@ -573,6 +602,9 @@ class AdminLandingController extends Controller
             'testimonios_title' => trim($_POST['testimonios_title'] ?? ''),
             'para_quien_title'  => trim($_POST['para_quien_title']  ?? ''),
             'faq_title'         => trim($_POST['faq_title']         ?? ''),
+
+            // ===== Antetítulos (eyebrow) por sección — un JSON =====
+            'section_eyebrows' => $this->recogerEyebrows(),
 
             // ===== Hero trust row =====
             'hero_trust_1' => trim($_POST['hero_trust_1'] ?? ''),
@@ -1149,30 +1181,31 @@ class AdminLandingController extends Controller
               . "REGLAS: español colombiano informal, emocional, orientado al beneficio (nunca a características técnicas sueltas), "
               . "pago contraentrega, urgencia real, nombres/ciudades colombianas. Frases cortas, directo al punto, sin párrafos largos ni relleno. "
               . "Emojis solo cuando sumen (✅🔥📦⏰😍🚚), máximo 1-2 por texto, nunca en nombres/ciudades ni en preguntas de FAQ.\n\n"
+              . "Si el JSON incluye un campo *_eyebrow, es el antetítulo de la sección (la línea corta encima del título): 2-4 palabras, sin punto ni emoji, tipo etiqueta de revista, que ate la sección al mismo dolor desde su función. No repite el título.\n"
               . "Devuelve SOLO JSON válido (sin markdown). Rellena cada campo con copy real, no con descripciones.\n\n";
 
         $schemas = [
             'hero' => '{"hero_title":"","hero_subtitle":"","hero_button_text":"","hero_note":"Ej: Pago al recibir • Envío gratis","hero_badge_customers":""}',
 
-            'beneficios' => '{"benefits_title":"","benefit_1":"","benefit_2":"","benefit_3":"","benefit_4":""}',
+            'beneficios' => '{"benefits_eyebrow":"","benefits_title":"","benefit_1":"","benefit_2":"","benefit_3":"","benefit_4":""}',
 
-            'caracteristicas' => '{"caract_section_title":"","caract1_title":"","caract1_text":"","caract2_title":"","caract2_text":"","caract3_title":"","caract3_text":"","caract4_title":"","caract4_text":""}',
+            'caracteristicas' => '{"caract_eyebrow":"","caract_section_title":"","caract1_title":"","caract1_text":"","caract2_title":"","caract2_text":"","caract3_title":"","caract3_text":"","caract4_title":"","caract4_text":""}',
 
             'countdown' => '{"countdown_title":"","countdown_text":""}',
 
-            'porque' => '{"porque_title":"","porque_text":"","porque_bullet1":"","porque_bullet2":"","porque_bullet3":""}',
+            'porque' => '{"porque_eyebrow":"","porque_title":"","porque_text":"","porque_bullet1":"","porque_bullet2":"","porque_bullet3":""}',
 
-            'comparativa' => '{"comparison_title":"","comparison_label_without":"Sin el producto","comparison_label_with":"Con el producto","comparison_1_without":"","comparison_1_with":"","comparison_2_without":"","comparison_2_with":"","comparison_3_without":"","comparison_3_with":"","comparison_4_without":"","comparison_4_with":"","comparison_5_without":"","comparison_5_with":""}',
+            'comparativa' => '{"comparison_eyebrow":"","comparison_title":"","comparison_label_without":"Sin el producto","comparison_label_with":"Con el producto","comparison_1_without":"","comparison_1_with":"","comparison_2_without":"","comparison_2_with":"","comparison_3_without":"","comparison_3_with":"","comparison_4_without":"","comparison_4_with":"","comparison_5_without":"","comparison_5_with":""}',
 
-            'testimonios' => '{"test1_name":"","test1_city":"","test1_text":"","test2_name":"","test2_city":"","test2_text":"","test3_name":"","test3_city":"","test3_text":""}',
+            'testimonios' => '{"testimonios_eyebrow":"","test1_name":"","test1_city":"","test1_text":"","test2_name":"","test2_city":"","test2_text":"","test3_name":"","test3_city":"","test3_text":""}',
 
-            'paraquien' => '{"para_quien_si_1":"","para_quien_si_2":"","para_quien_si_3":"","para_quien_si_4":"","para_quien_no_1":"","para_quien_no_2":"","para_quien_no_3":""}',
+            'paraquien' => '{"para_quien_eyebrow":"","para_quien_si_1":"","para_quien_si_2":"","para_quien_si_3":"","para_quien_si_4":"","para_quien_no_1":"","para_quien_no_2":"","para_quien_no_3":""}',
 
-            'wa' => '{"wa_title":"","wa_subtitle":"","wa_footer_note":"","wa1_name":"","wa1_time":"","wa1_text":"","wa2_name":"","wa2_time":"","wa2_text":"","wa3_name":"","wa3_time":"","wa3_text":"","wa4_name":"","wa4_time":"","wa4_text":"","wa5_name":"","wa5_time":"","wa5_text":""}',
+            'wa' => '{"wa_eyebrow":"","wa_title":"","wa_subtitle":"","wa_footer_note":"","wa1_name":"","wa1_time":"","wa1_text":"","wa2_name":"","wa2_time":"","wa2_text":"","wa3_name":"","wa3_time":"","wa3_text":"","wa4_name":"","wa4_time":"","wa4_text":"","wa5_name":"","wa5_time":"","wa5_text":""}',
 
-            'faq' => '{"faq1_q":"","faq1_a":"","faq2_q":"","faq2_a":"","faq3_q":"","faq3_a":"","faq4_q":"","faq4_a":"","faq5_q":"","faq5_a":"","faq6_q":"","faq6_a":""}',
+            'faq' => '{"faq_eyebrow":"","faq1_q":"","faq1_a":"","faq2_q":"","faq2_a":"","faq3_q":"","faq3_a":"","faq4_q":"","faq4_a":"","faq5_q":"","faq5_a":"","faq6_q":"","faq6_a":""}',
 
-            'autoridad' => '{"authority_title":"","authority_years":"2","authority_deliveries":"800+","authority_rating":"4.9","authority_guarantee":"Satisfacción garantizada"}',
+            'autoridad' => '{"authority_eyebrow":"","authority_title":"","authority_years":"2","authority_deliveries":"800+","authority_rating":"4.9","authority_guarantee":"Satisfacción garantizada"}',
 
             'ctas' => '{"cta_benefits_text":"","cta_benefits_button":"","cta_gallery_text":"","cta_gallery_button":"","cta_porque_text":"","cta_porque_button":"","cta_testimonials_text":"","cta_testimonials_button":"","cta_faq_text":"","cta_faq_button":"","cta_como_funciona_text":"","cta_como_funciona_button":"","cta_comparison_button":"","cta_para_quien_button":"","cta_wa_testimonios_button":"","cta_sticky_mobile_text":""}',
 
@@ -1180,7 +1213,7 @@ class AdminLandingController extends Controller
 
             'announcement' => '{"announcement_item_1":"","announcement_item_2":"","announcement_item_3":"","announcement_item_4":"","announcement_item_5":"","announcement_item_6":""}',
 
-            'galeria' => '{"gallery_title":"","shots":["","","",""]}',
+            'galeria' => '{"gallery_eyebrow":"","gallery_title":"","shots":["","","",""]}',
         ];
 
         if (!isset($schemas[$sec])) return null;
@@ -1447,6 +1480,7 @@ PROMPT;
                     'caract3_title', 'caract3_text', 'caract4_title', 'caract4_text',
                     'countdown_title', 'countdown_text',
                     'porque_title', 'porque_text', 'porque_bullet1', 'porque_bullet2', 'porque_bullet3',
+                    'benefits_eyebrow', 'caract_eyebrow', 'porque_eyebrow', 'gallery_eyebrow', 'cf_eyebrow',
                 ],
             ],
             'prueba' => [
@@ -1467,6 +1501,7 @@ PROMPT;
                     'wa1_name', 'wa1_time', 'wa1_text', 'wa2_name', 'wa2_time', 'wa2_text',
                     'wa3_name', 'wa3_time', 'wa3_text', 'wa4_name', 'wa4_time', 'wa4_text',
                     'wa5_name', 'wa5_time', 'wa5_text',
+                    'comparison_eyebrow', 'para_quien_eyebrow', 'testimonios_eyebrow', 'wa_eyebrow',
                 ],
             ],
             'cierre' => [
@@ -1481,6 +1516,7 @@ PROMPT;
                     'cta_porque_text', 'cta_porque_button', 'cta_testimonials_text', 'cta_testimonials_button',
                     'cta_faq_text', 'cta_faq_button', 'cta_como_funciona_text', 'cta_como_funciona_button',
                     'cta_comparison_button', 'cta_para_quien_button', 'cta_wa_testimonios_button', 'cta_sticky_mobile_text',
+                    'faq_eyebrow', 'authority_eyebrow',
                 ],
             ],
         ];
@@ -1559,6 +1595,7 @@ REGLAS OBLIGATORIAS DE ESTILO (romperlas es inaceptable):
 10. CTAs (cta_*_button y cta_*_text): directo al grano, cero rodeos, cero explicación. Botón ≤5 palabras con verbo de acción + urgencia. Ej: "¡Lo quiero ahora! 🔥" / "Pedir el mío →" / "Aprovechar oferta ⏰".
 11. BREVEDAD en todos los campos: frases cortas, sin relleno ni párrafos largos. Si se dice en menos palabras, así se dice.
 12. Emojis solo cuando sumen al mensaje (✅🔥📦⏰😍🚚), sin saturar — 1 o 2 por texto como máximo. Nunca en nombres/ciudades de testimonios ni en preguntas de FAQ.
+13. Campos *_eyebrow: son el antetítulo de cada sección (la línea corta encima del título). 2 a 4 palabras, sin punto final, sin emoji, tipo etiqueta de revista. Anclan esa sección al MISMO dolor/ángulo desde su función (beneficios = la promesa, comparativa = el contraste, testimonios/wa = la prueba, faq = las dudas, para_quien = a quién, galería = ver de cerca, autoridad = la confianza, características = el cómo, porque = la razón, cómo funciona = lo fácil). No repiten el título ni son un mini-titular.
 
 Devuelve ÚNICAMENTE el siguiente JSON válido. Sin markdown, sin bloques de código, sin texto antes o después. Solo el JSON.
 Los dos primeros campos ("_dolor" y "_angulo") son notas para el dueño (no se publican): en una frase cada uno, di qué dolor estás atacando y cuál es la gran idea con la que lo resuelves. El resto del copy debe ser coherente con esas dos frases.

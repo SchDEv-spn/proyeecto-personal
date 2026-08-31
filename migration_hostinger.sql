@@ -260,5 +260,12 @@ ALTER TABLE pedidos
     ADD COLUMN IF NOT EXISTS dropi_sync_error VARCHAR(255) NULL,
     ADD COLUMN IF NOT EXISTS dropi_syncing    TINYINT(1) NOT NULL DEFAULT 0;
 
+-- Antetítulos (eyebrow) por sección: la línea corta sobre el título.
+-- La IA los rellena junto con el resto del copy; vacío = no se muestra.
+-- Una sola columna JSON (como color_variants): landing_config ya está al
+-- tope del row size de InnoDB (65535 B) y no admite 11 columnas más.
+ALTER TABLE landing_config
+    ADD COLUMN IF NOT EXISTS section_eyebrows TEXT NULL;
+
 -- ── Fin de migración ──
 SELECT 'Migración completada OK' AS resultado;

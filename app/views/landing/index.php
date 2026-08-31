@@ -41,6 +41,19 @@ if ($comboPrice2 <= 0) $comboPrice2 = 115000; // fallback
 // se publica con <title> y <h1> vacíos.
 $val = fn($k, $default) => (isset($cfg[$k]) && trim((string)$cfg[$k]) !== '') ? $cfg[$k] : $default;
 
+// Antetítulo (eyebrow) de una sección. Todos viven en un JSON
+// (section_eyebrows), como color_variants. La IA los rellena junto con el
+// copy; vacío = no se pinta el <span>. Los 3 de fábrica pasan su texto como
+// $default para que las landings viejas no cambien.
+$__eyebrows = json_decode((string)($cfg['section_eyebrows'] ?? ''), true);
+if (!is_array($__eyebrows)) $__eyebrows = [];
+$sectionEyebrow = function (string $key, string $default = '', string $cls = '') use ($__eyebrows): string {
+    $t = trim((string) ($__eyebrows[$key] ?? $default));
+    if ($t === '') return '';
+    return '<span class="section-eyebrow' . ($cls !== '' ? ' ' . $cls : '') . '">'
+        . htmlspecialchars($t) . '</span>';
+};
+
 /* Quita el icono con el que venga escrito un texto del admin, sea emoji o
    viñeta. La página tiene un solo lenguaje de icono — SVG de trazo, que
    hereda el color del tema — y un emoji suelto delante de una frase lo
@@ -755,7 +768,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <!-- El eyebrow sustituye a la línea dorada que había bajo el
                      título: da el mismo golpe de ritmo sin el aire de
                      cabecera de revista. -->
-                <span class="section-eyebrow">Por qué lo vas a querer</span>
+                <?= $sectionEyebrow('benefits', 'Por qué lo vas a querer') ?>
                 <h2 class="section-title"><?= htmlspecialchars($benefitsTitle) ?></h2>
 
                 <div class="benefit-cards-list">
@@ -800,6 +813,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php ob_start(); if ($showGallery): ?>
         <!-- GALERÍA (principal + miniaturas) -->
         <section class="container">
+            <?= $sectionEyebrow('gallery') ?>
             <h2 class="section-title"><?= htmlspecialchars($galleryTitle) ?></h2>
 
             <?php
@@ -985,6 +999,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php ob_start(); if ($showCaracteristicas): ?>
         <!-- CARACTERÍSTICAS — carousel de tarjetas -->
         <section class="container caract-section animate-fadeup">
+            <?= $sectionEyebrow('caract') ?>
             <h2 class="section-title"><?= htmlspecialchars($caractSectionTitle) ?></h2>
 
             <div class="caract-slider" id="caractSlider">
@@ -1080,6 +1095,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         ?>
         <!-- CÓMO FUNCIONA -->
         <section class="container como-funciona-section">
+            <?= $sectionEyebrow('cf') ?>
             <h2 class="section-title"><?= htmlspecialchars($cfTitle) ?></h2>
             <div class="steps-grid">
                 <div class="step-card animate-fadeup">
@@ -1169,6 +1185,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                 <!-- Contenido abajo -->
                 <div class="porque-card__body">
+                    <?= $sectionEyebrow('porque', '', 'section-eyebrow--left') ?>
                     <h2 class="porque-card__title"><?= htmlspecialchars($porqueTitle) ?></h2>
 
                     <?php if (!empty(trim($porqueText))): ?>
@@ -1204,6 +1221,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php ob_start(); if ($showParaQuien): ?>
         <!-- PARA QUIÉN ES -->
         <section class="container para-quien-section">
+            <?= $sectionEyebrow('para_quien') ?>
             <h2 class="section-title"><?= htmlspecialchars($paraQuienTitle) ?></h2>
             <div class="para-quien-grid">
                 <div class="para-quien-card para-quien-card--yes">
@@ -1255,7 +1273,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
             : ($producto['imagen_principal'] ?? null);
         ?>
         <section class="testimonios-ticker-section">
-            <span class="section-eyebrow">Casos reales</span>
+            <?= $sectionEyebrow('testimonios', 'Casos reales') ?>
             <h2 class="section-title"><?= htmlspecialchars($testimoniosTitle) ?></h2>
             <div class="testimonios-ticker" aria-label="Testimonios de clientes">
                 <div class="testimonios-ticker__track">
@@ -1305,7 +1323,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <section class="wa-testimonios-section">
             <div class="container">
                 <div class="section-header">
-                    <span class="section-eyebrow">Prueba real</span>
+                    <?= $sectionEyebrow('wa', 'Prueba real') ?>
                     <h2 class="section-title"><?= htmlspecialchars($waTitle) ?></h2>
                     <p class="subtitle"><?= htmlspecialchars($waSubtitle) ?></p>
                 </div>
@@ -1389,6 +1407,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php ob_start(); if ($showFaqs): ?>
         <!-- PREGUNTAS FRECUENTES -->
         <section class="container faqs-section">
+            <?= $sectionEyebrow('faq') ?>
             <h2 class="section-title"><?= htmlspecialchars($faqTitle) ?></h2>
             <div class="accordion">
                 <div class="accordion-item">
@@ -1472,6 +1491,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         ?>
         <?php ob_start(); if ($showComparison): ?>
         <section class="container comparison-section">
+            <?= $sectionEyebrow('comparison') ?>
             <h2 class="section-title"><?= htmlspecialchars($comparisonTitle) ?></h2>
             <div class="comparison-table">
                 <div class="comparison-col comparison-col--without">
@@ -1590,6 +1610,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
         <?php if ($authorityEnabled): ?>
         <section class="authority-section">
             <div class="container">
+                <?= $sectionEyebrow('authority') ?>
                 <h2 class="section-title"><?= htmlspecialchars($authorityTitle) ?></h2>
                 <?php
                 /* Un icono de trazo por estadística, en chip — el mismo gesto

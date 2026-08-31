@@ -802,6 +802,11 @@ h3 {
   color: var(--gold);
   margin-bottom: 10px;
 }
+/* En la tarjeta "Por qué" el contenido va alineado a la izquierda. */
+.section-eyebrow--left {
+  text-align: left;
+  margin-bottom: 2px;
+}
 
 /* ── ANIMACIONES DE ENTRADA ───────────────────────────────── */
 @keyframes fadeUp {
