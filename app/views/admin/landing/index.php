@@ -562,6 +562,13 @@
                   <!-- GALERÍA -->
                   <div class="section-block" id="sec-galeria" data-toc="Galería">
                     <h2>Galería</h2>
+                    <p class="field-section-desc">
+                      4 fotos reales del producto: es la prueba de que <strong>lo que se ve es lo que llega</strong>.
+                      Ideal &rarr; foto limpia + foto en uso + un detalle + algo que muestre el tamaño.
+                      Usa el botón <strong>✨ IA</strong> de la sección para que Claude te proponga el título y qué fotografiar.
+                    </p>
+
+                    <div class="galeria-shots" id="galeriaShots" hidden></div>
 
                     <div class="form-grid" style="margin-bottom:16px;">
                       <div class="admin-form-group admin-form-group--full">
@@ -571,6 +578,7 @@
                       </div>
                     </div>
 
+                    <?php $galeriaRoles = ['Producto solo', 'En uso / contexto', 'Detalle / material', 'Tamaño / escala']; ?>
                     <div class="gallery-grid">
                       <?php
                       for ($i = 1; $i <= 4; $i++):
@@ -580,8 +588,9 @@
                       ?>
                         <div class="gallery-card">
                           <div class="gallery-card__head">
-                            <i class="fas fa-image card-head-icon" aria-hidden="true"></i>
+                            <span class="gallery-card__badge"><?= $i ?></span>
                             <span class="gallery-title">Imagen <?= $i ?></span>
+                            <span class="gallery-card__role"><?= $galeriaRoles[$i - 1] ?></span>
                           </div>
                           <div class="gallery-card__body">
                             <div class="media-preview">
@@ -3104,6 +3113,7 @@
       'sec-hero':            'hero',
       'sec-beneficios':      'beneficios',
       'sec-caracteristicas': 'caracteristicas',
+      'sec-galeria':         'galeria',
       'sec-contador':        'countdown',
       'sec-porque':          'porque',
       'sec-comparison':      'comparativa',
@@ -3122,6 +3132,7 @@
       'testimonios':'Testimonios', 'paraquien':'¿Para quién es?', 'wa':'Testimonios WhatsApp',
       'faq':'Preguntas frecuentes', 'autoridad':'Autoridad', 'ctas':'CTAs',
       'form':'Formulario de pedido', 'announcement':'Barra de anuncios',
+      'galeria':'Galería',
     };
 
     let currentSection = null;
@@ -3231,9 +3242,27 @@
       return filled;
     }
 
+    // ── Galería: pinta las 4 ideas de foto que sugiere Claude (efímero) ──────
+    function renderGaleriaShots(shots) {
+      const box = document.getElementById('galeriaShots');
+      if (!box) return;
+      const list = (shots || []).map(s => String(s).trim()).filter(Boolean);
+      if (!list.length) { box.hidden = true; box.innerHTML = ''; return; }
+      box.innerHTML =
+        '<button type="button" class="galeria-shots__x" aria-label="Cerrar">✕</button>' +
+        '<strong>Claude sugiere estas tomas:</strong><ol>' +
+        list.map(s => '<li></li>').join('') + '</ol>';
+      box.querySelectorAll('li').forEach((li, i) => { li.textContent = list[i]; });
+      box.querySelector('.galeria-shots__x').addEventListener('click', () => {
+        box.hidden = true; box.innerHTML = '';
+      });
+      box.hidden = false;
+    }
+
     // ── Aplica un set de campos y cierra con flash de éxito ───────────────────
     function aplicarSet(fields) {
       const filled = fillFields(fields || {});
+      if (currentSection === 'galeria' && fields && fields.shots) renderGaleriaShots(fields.shots);
       const btn = document.getElementById('iaTxtGenerar');
       btn.textContent = `✅ ${filled} campos aplicados`;
       btn.style.background = '#22c55e';
@@ -3251,7 +3280,7 @@
       box.innerHTML = '';
       variantes.forEach((v, i) => {
         const preview = Object.keys(v)
-          .filter((k) => k.charAt(0) !== '_' && v[k])
+          .filter((k) => k.charAt(0) !== '_' && typeof v[k] === 'string' && v[k])
           .slice(0, 2)
           .map((k) => v[k])
           .join(' · ');

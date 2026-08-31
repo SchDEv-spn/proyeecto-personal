@@ -1179,6 +1179,8 @@ class AdminLandingController extends Controller
             'form' => '{"form_kicker":"","form_title":"","form_subtitle":""}',
 
             'announcement' => '{"announcement_item_1":"","announcement_item_2":"","announcement_item_3":"","announcement_item_4":"","announcement_item_5":"","announcement_item_6":""}',
+
+            'galeria' => '{"gallery_title":"","shots":["","","",""]}',
         ];
 
         if (!isset($schemas[$sec])) return null;
@@ -1198,6 +1200,7 @@ class AdminLandingController extends Controller
             'ctas'            => 'CTAs: directo al grano, cero rodeos. Botón ≤5 palabras, verbo de acción + urgencia (emoji opcional si suma, ej 🔥⏰). cta_*_text: una sola frase corta que empuje al clic, no una explicación.',
             'form'            => 'Cabecera del formulario de pedido — es lo último que lee antes de dejar sus datos. form_kicker: micro-aviso de impulso ≤7 palabras que baja la fricción ("Último paso · te toma menos de 1 minuto"), sin emoji. form_title: acción + tranquilidad de pagar al recibir, ≤7 palabras. form_subtitle: una frase que quita el miedo (sin adelantos, el mensajero llega a la puerta). Nada de urgencia agresiva aquí: ya decidió, solo hay que quitarle el último freno.',
             'announcement'    => 'Barra de anuncios: el ticker que corre arriba de todo. Cada ítem es una frase de 2-5 palabras que abre con UN emoji relevante + espacio (🔥 escasez, 🚚 envío, 💳 pago contraentrega, ⭐ o 😍 prueba social, 📦 empaque, ⏰ urgencia) — es la única zona de la landing donde el emoji suma. Un emoji por ítem, al inicio, nunca en medio de la frase. Mezcla urgencia real, envío/pago y prueba social. Llena los 6; deben leerse bien girando en bucle.',
+            'galeria'         => 'Galería de fotos reales del producto — es la prueba de que "lo que se ve es lo que llega". gallery_title: una frase corta que invite a mirar de cerca y refuerce que no hay letra chica; NUNCA la palabra "Galería" sola (ej: "Míralo de cerca, sin filtros" / "Así llega, tal cual la foto"). shots: 4 ideas de foto CONCRETAS y distintas, atadas al dolor/ángulo, ≤14 palabras cada una, en imperativo — normalmente: (1) el producto solo con buena luz, (2) el producto en uso dentro de la escena de dolor del cliente, (3) un primer plano del detalle que más importa para ese dolor, (4) algo que muestre tamaño, capacidad o resultado. No son copys para publicar: son instrucciones de qué fotografiar.',
         ];
 
         if ($n > 1) {
