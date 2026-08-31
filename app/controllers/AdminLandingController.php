@@ -2,6 +2,202 @@
 
 class AdminLandingController extends Controller
 {
+    /** Modelo de Claude para toda la generación de copy de la landing. */
+    private const COPY_MODEL = 'claude-sonnet-4-6';
+
+    /** Voz de marca → instrucción de tono para el prompt. */
+    private const VOCES = [
+        'cercana' => 'Cercano y cálido, como una amiga que te recomienda algo que a ella le funcionó. Tuteo, nada de corporativo.',
+        'experta' => 'Experta y segura sin ser fría: sabe del tema y lo demuestra con precisión, pero habla claro y directo.',
+        'picara'  => 'Pícara y con humor colombiano, juega con el lenguaje y se permite una broma — sin payasear ni perder la venta.',
+        'premium' => 'Sobria y aspiracional: menos signos de admiración, frases con ritmo; la calidad se siente en el tono, no se grita.',
+    ];
+
+    /** Escala de agresividad del copy (1 = informativo, 5 = confrontacional). */
+    private const AGRESIVIDAD = [
+        1 => 'Muy suave: informativo y amable, cero presión, sin urgencia agresiva.',
+        2 => 'Suave: beneficio por delante, la urgencia se menciona una vez y sin dramatismo.',
+        3 => 'Equilibrado: agita el dolor lo justo, urgencia real pero creíble.',
+        4 => 'Directo (response marketing clásico): nombra el dolor sin anestesia, urgencia en varios puntos, preguntas desde el dolor.',
+        5 => 'Muy agresivo: confronta, hace preguntas incómodas desde el dolor, escasez y pérdida en cada sección. Nunca insulta al lector.',
+    ];
+
+    /** Frases muertas de plantilla que la IA NO puede usar (ni variantes). */
+    private const FRASES_PROHIBIDAS = [
+        'descubre el secreto', 'no esperes más', 'lleva tu rutina al siguiente nivel',
+        'eleva tu experiencia', 'la solución definitiva', 'dale un giro a tu vida',
+        'revoluciona tu día', 'no te quedes sin el tuyo', 'calidad premium',
+        'diseñado pensando en ti', 'lo que estabas buscando', 'hecho con amor',
+        'transforma tu día a día', 'vive la diferencia', 'la mejor decisión que tomarás',
+    ];
+
+    private function briefKey(int $pid): string
+    {
+        return 'landing_brief_' . $pid;
+    }
+
+    /** Lee el brief estratégico guardado de un producto (siempre con todas las claves). */
+    private function leerBrief(int $pid): array
+    {
+        $raw = $pid > 0 ? (new AppSettings())->get($this->briefKey($pid), '') : '';
+        $b   = $raw ? json_decode($raw, true) : [];
+        if (!is_array($b)) $b = [];
+
+        return array_replace([
+            'avatar' => '', 'escena' => '', 'objecion' => '', 'alternativa' => '',
+            'voz' => 'cercana', 'agresividad' => 3,
+        ], $b, ['angulo' => array_replace(
+            ['dolor' => '', 'gran_idea' => '', 'headline' => '', 'a_quien' => ''],
+            is_array($b['angulo'] ?? null) ? $b['angulo'] : []
+        )]);
+    }
+
+    /** Normaliza el brief que llega por POST (campos sueltos + angulo_* opcionales). */
+    private function briefDesdePost(): array
+    {
+        $voz = trim($_POST['brief_voz'] ?? 'cercana');
+        if (!isset(self::VOCES[$voz])) $voz = 'cercana';
+
+        $ag = (int)($_POST['brief_agresividad'] ?? 3);
+        $ag = max(1, min(5, $ag));
+
+        return [
+            'avatar'      => trim($_POST['brief_avatar']      ?? ''),
+            'escena'      => trim($_POST['brief_escena']      ?? ''),
+            'objecion'    => trim($_POST['brief_objecion']    ?? ''),
+            'alternativa' => trim($_POST['brief_alternativa'] ?? ''),
+            'voz'         => $voz,
+            'agresividad' => $ag,
+            'angulo'      => [
+                'dolor'     => trim($_POST['angulo_dolor']     ?? ''),
+                'gran_idea' => trim($_POST['angulo_gran_idea'] ?? ''),
+                'headline'  => trim($_POST['angulo_headline']  ?? ''),
+                'a_quien'   => trim($_POST['angulo_a_quien']   ?? ''),
+            ],
+        ];
+    }
+
+    private function guardarBrief(int $pid, array $brief): void
+    {
+        if ($pid > 0) {
+            (new AppSettings())->set($this->briefKey($pid), json_encode($brief, JSON_UNESCAPED_UNICODE));
+        }
+    }
+
+    /** ¿El brief trae un ángulo elegido? */
+    private function tieneAngulo(array $brief): bool
+    {
+        $a = $brief['angulo'] ?? [];
+        return trim(($a['dolor'] ?? '') . ($a['gran_idea'] ?? '') . ($a['headline'] ?? '')) !== '';
+    }
+
+    /** Notas de marca / swipe file — global, no por producto. */
+    private function notasMarca(): string
+    {
+        return (string)(new AppSettings())->get('landing_copy_brand', '');
+    }
+
+    private function guardarNotasMarcaDesdePost(): void
+    {
+        if (isset($_POST['notas_marca'])) {
+            (new AppSettings())->set('landing_copy_brand', trim((string)$_POST['notas_marca']));
+        }
+    }
+
+    /** Últimas correcciones a mano (IA escribió X → el dueño lo dejó Y), global. */
+    private function edicionesMarca(): array
+    {
+        $raw = (new AppSettings())->get('landing_copy_ediciones', '');
+        $ed  = $raw ? json_decode($raw, true) : [];
+        return is_array($ed) ? $ed : [];
+    }
+
+    // ── Registra una corrección a mano de un copy generado por IA ────────────
+    public function registrarEdicionIA()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $ia     = trim((string)($_POST['ia']     ?? ''));
+        $humano = trim((string)($_POST['humano'] ?? ''));
+        $campo  = trim((string)($_POST['campo']  ?? ''));
+
+        // Ignora ruido: sin cambio real, textos vacíos o ediciones triviales.
+        if ($ia === '' || $humano === '' || $ia === $humano
+            || mb_strlen($humano) < 3
+            || similar_text($ia, $humano) / max(mb_strlen($ia), 1) > 0.97) {
+            echo json_encode(['ok' => true, 'skip' => true]);
+            return;
+        }
+
+        $s = new AppSettings();
+        $ed = $this->edicionesMarca();
+        // Una entrada por campo (la última gana); tope 15, se descarta lo viejo.
+        $ed = array_values(array_filter($ed, fn($e) => ($e['campo'] ?? '') !== $campo));
+        $ed[] = ['campo' => $campo, 'ia' => mb_substr($ia, 0, 300), 'humano' => mb_substr($humano, 0, 300)];
+        if (count($ed) > 15) $ed = array_slice($ed, -15);
+
+        $s->set('landing_copy_ediciones', json_encode($ed, JSON_UNESCAPED_UNICODE));
+        echo json_encode(['ok' => true]);
+    }
+
+    /**
+     * Bloque de contexto estratégico que se antepone a TODOS los prompts de
+     * copy (landing completa y por sección). Traduce el brief del vendedor,
+     * las notas de marca y la lista de frases prohibidas a instrucciones.
+     */
+    private function bloqueBrief(array $brief): string
+    {
+        $L = [];
+
+        $avatar = trim($brief['avatar']      ?? '');
+        $escena = trim($brief['escena']      ?? '');
+        $obj    = trim($brief['objecion']    ?? '');
+        $alt    = trim($brief['alternativa'] ?? '');
+        $voz    = $brief['voz'] ?? 'cercana';
+        $ag     = (int)($brief['agresividad'] ?? 3);
+        $ag     = max(1, min(5, $ag));
+        $ang    = $brief['angulo'] ?? [];
+
+        if ($avatar !== '' || $escena !== '' || $obj !== '' || $alt !== '') {
+            $L[] = 'CLIENTE REAL (usa esto, no un promedio):';
+            if ($avatar !== '') $L[] = "- Quién es: {$avatar}";
+            if ($escena !== '') $L[] = "- El momento exacto en que siente el dolor: {$escena}";
+            if ($obj    !== '') $L[] = "- Lo que lo frena para comprar: {$obj} — bájale ese miedo en la FAQ y en el copy, no lo esquives.";
+            if ($alt    !== '') $L[] = "- Qué hace hoy en vez de comprar esto: {$alt} — el copy debe dejar claro por qué eso no le alcanza.";
+        }
+
+        $L[] = "\nVOZ DE MARCA: " . (self::VOCES[$voz] ?? self::VOCES['cercana']);
+        $L[] = "NIVEL DE AGRESIVIDAD DEL COPY ({$ag}/5): " . (self::AGRESIVIDAD[$ag] ?? self::AGRESIVIDAD[3]);
+
+        if ($this->tieneAngulo($brief)) {
+            $L[] = "\nÁNGULO DE VENTA YA DECIDIDO — NO LO CAMBIES NI LO GENERALICES. Todo el copy es este mismo ángulo contado desde cada sección:";
+            if (!empty($ang['dolor']))     $L[] = "- Dolor central: {$ang['dolor']}";
+            if (!empty($ang['gran_idea'])) $L[] = "- Gran idea / promesa: {$ang['gran_idea']}";
+            if (!empty($ang['headline']))  $L[] = "- Dirección del titular: {$ang['headline']}";
+            if (!empty($ang['a_quien']))   $L[] = "- Le habla a: {$ang['a_quien']}";
+        }
+
+        $notas = trim($this->notasMarca());
+        if ($notas !== '') {
+            $L[] = "\nNOTAS DE LA MARCA + EJEMPLOS DE COPY QUE SÍ FUNCIONA (imita el tono y el nivel de concreción, NO copies literal):\n{$notas}";
+        }
+
+        $ediciones = $this->edicionesMarca();
+        if ($ediciones) {
+            $L[] = "\nCÓMO CORRIGE EL DUEÑO SUS COPYS (aprende el CRITERIO — qué hace más corto, más directo, menos cursi, más colombiano — no copies el contenido):";
+            foreach (array_slice($ediciones, -8) as $e) {
+                $L[] = "- En vez de «{$e['ia']}» dejó «{$e['humano']}»";
+            }
+        }
+
+        $L[] = "\nNUNCA escribas frases de plantilla como estas (ni sus variantes):";
+        $L[] = '- ' . implode("\n- ", self::FRASES_PROHIBIDAS);
+        $L[] = 'Si una frase podría estar en la landing de cualquier otro producto, bórrala y escribe una que solo sirva para ESTE.';
+
+        return implode("\n", $L) . "\n";
+    }
+
     /**
      * Devuelve $valor si está en $permitidos; si no, el respaldo.
      *
@@ -83,6 +279,8 @@ class AdminLandingController extends Controller
             'producto'           => $productoActual,
             'tiene_api_key'      => $settings->hasKey('claude_api_key'),
             'tiene_replicate_key'=> $settings->hasKey('replicate_api_key'),
+            'brief'              => $this->leerBrief($productoId),
+            'notas_marca'        => $this->notasMarca(),
             // Backlog de recomendaciones de IA para el panel del editor:
             // pendientes + resueltas (con conversión antes/después) + el
             // último análisis para la fecha del pie.
@@ -892,6 +1090,7 @@ class AdminLandingController extends Controller
         $apiKey = (new AppSettings())->get('claude_api_key');
         if (!$apiKey) { echo json_encode(['ok' => false, 'error' => 'no_key']); return; }
 
+        $productoId  = (int)($_POST['producto_id'] ?? 0);
         $seccion     = trim($_POST['seccion']     ?? '');
         $nombre      = trim($_POST['nombre']      ?? '');
         $descripcion = trim($_POST['descripcion'] ?? '');
@@ -904,7 +1103,11 @@ class AdminLandingController extends Controller
             return;
         }
 
-        $prompt = $this->buildSeccionPrompt($seccion, $nombre, $descripcion, $publico, $precio, $extra);
+        // El brief guardado del producto mantiene coherente el ángulo entre
+        // la landing completa y cada regeneración de sección.
+        $bloque = $productoId > 0 ? $this->bloqueBrief($this->leerBrief($productoId)) : '';
+
+        $prompt = $this->buildSeccionPrompt($seccion, $nombre, $descripcion, $publico, $precio, $extra, $bloque);
         if (!$prompt) {
             echo json_encode(['ok' => false, 'error' => 'Sección no reconocida']);
             return;
@@ -914,13 +1117,19 @@ class AdminLandingController extends Controller
     }
 
     // ── Prompt focalizado por sección ─────────────────────────────────────────
-    private function buildSeccionPrompt(string $sec, string $nombre, string $desc, string $publico, string $precio, string $extra): ?string
+    private function buildSeccionPrompt(string $sec, string $nombre, string $desc, string $publico, string $precio, string $extra, string $briefBlock = ''): ?string
     {
+        $anguloYaFijo = str_contains($briefBlock, 'ÁNGULO DE VENTA YA DECIDIDO');
+        $paso0 = $anguloYaFijo
+            ? "El dolor y el ángulo YA están decididos arriba. No elijas otro ni lo generalices: escribe esta sección desde ese ángulo.\n\n"
+            : "\nANTES DE ESCRIBIR (no lo muestres en la respuesta): identifica UN solo dolor o frustración concreta que este producto resuelve para este público. Todo el copy de esta sección debe ser ese mismo dolor contado desde el ángulo de esta sección — no lo cambies ni lo generalices.\n\n";
+
         $base = "Eres experto en copywriting de alta conversión para e-commerce colombiano (dropshipping). No vendes el producto: vendes el alivio de un dolor concreto.\n"
               . "Producto: {$nombre}" . ($desc ? " — {$desc}" : '') . "\n"
               . "Público: {$publico}" . ($precio ? " · Precio: {$precio} COP" : '') . "\n"
-              . ($extra ? "Instrucciones adicionales: {$extra}\n" : '')
-              . "\nANTES DE ESCRIBIR (no lo muestres en la respuesta): identifica UN solo dolor o frustración concreta que este producto resuelve para este público. Todo el copy de esta sección debe ser ese mismo dolor contado desde el ángulo de esta sección — no lo cambies ni lo generalices.\n\n"
+              . ($extra ? "Instrucciones adicionales (tienen prioridad): {$extra}\n" : '')
+              . ($briefBlock !== '' ? "\n{$briefBlock}\n" : '')
+              . $paso0
               . "REGLAS: español colombiano informal, emocional, orientado al beneficio (nunca a características técnicas sueltas), "
               . "pago contraentrega, urgencia real, nombres/ciudades colombianas. Frases cortas, directo al punto, sin párrafos largos ni relleno. "
               . "Emojis solo cuando sumen (✅🔥📦⏰😍🚚), máximo 1-2 por texto, nunca en nombres/ciudades ni en preguntas de FAQ.\n\n"
@@ -972,6 +1181,264 @@ class AdminLandingController extends Controller
         return $base . ($hints[$sec] ?? '') . "\n\nJSON a completar:\n" . $schemas[$sec];
     }
 
+    // ── Propone el brief (público + dolor real) desde la descripción ─────────
+    public function sugerirBriefIA()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            return;
+        }
+
+        $apiKey = (new AppSettings())->get('claude_api_key');
+        if (!$apiKey) { echo json_encode(['ok' => false, 'error' => 'no_key']); return; }
+
+        $nombre      = trim($_POST['nombre']      ?? '');
+        $descripcion = trim($_POST['descripcion'] ?? '');
+        $precio      = trim($_POST['precio']      ?? '');
+
+        if (!$nombre && !$descripcion) {
+            echo json_encode(['ok' => false, 'error' => 'Describe el producto primero (aunque sea en una frase).']);
+            return;
+        }
+
+        $precioLine = $precio ? "- Precio: {$precio} COP\n" : '';
+        $vocesLista = implode(', ', array_keys(self::VOCES));
+
+        $prompt = <<<PROMPT
+Eres estratega de marketing de respuesta directa para e-commerce colombiano (dropshipping, pago contraentrega, tráfico frío de Facebook/TikTok). Te dan un producto y tu trabajo es armar el BRIEF: a quién le duele algo que este producto resuelve, y cuál es ese dolor — pero un dolor que de verdad mueve la intención de compra, no una generalidad.
+
+PRODUCTO:
+- Nombre: {$nombre}
+- Descripción: {$descripcion}
+{$precioLine}
+QUÉ HACE A UN DOLOR "QUE VENDE" (aplícalo):
+- Es una escena concreta y repetida de la vida real, no un concepto ("se me revienta la bolsa del mercado en plena calle", no "quiero practicidad").
+- Tiene consecuencia: vergüenza frente a otros, plata perdida, tiempo perdido, incomodidad física, un plan arruinado.
+- La persona ya intentó resolverlo y lo que usa hoy no le alcanza.
+- Es urgente o recurrente: le pasa seguido y le molesta cada vez.
+Evita dolores genéricos tipo "quiere verse bien", "busca calidad", "quiere ahorrar".
+
+Elige el público donde ese dolor sea más agudo y más frecuente (no "todos"). Sé específico: momento de vida, ocupación, contexto colombiano.
+
+Devuelve SOLO este JSON válido, sin markdown:
+{
+  "publico": "público objetivo concreto en una frase (quién, edad aproximada, situación de vida)",
+  "avatar": "retrato en 1-2 frases: cómo es su día, qué le importa, cómo habla",
+  "escena": "la escena exacta y cotidiana en la que siente el dolor",
+  "dolor_principal": "el dolor que más aumenta la intención de compra, en una frase y en la voz del cliente",
+  "objecion": "la objeción #1 que lo frena para comprar por internet a una marca nueva",
+  "alternativa": "qué usa o hace hoy en vez de comprar este producto, y por qué no le alcanza",
+  "voz": "una de: {$vocesLista}",
+  "agresividad": 3
+}
+PROMPT;
+
+        $res = $this->callClaudeApi($apiKey, $prompt, 1500);
+        if (empty($res['ok'])) { echo json_encode($res); return; }
+
+        $b = $res['fields'] ?? [];
+        if (!is_array($b) || empty($b['publico'])) {
+            echo json_encode(['ok' => false, 'error' => 'La IA no devolvió un brief válido. Intenta de nuevo.']);
+            return;
+        }
+
+        $voz = trim((string)($b['voz'] ?? 'cercana'));
+        if (!isset(self::VOCES[$voz])) $voz = 'cercana';
+        $ag = (int)($b['agresividad'] ?? 3);
+        $ag = max(1, min(5, $ag));
+
+        echo json_encode(['ok' => true, 'brief' => [
+            'publico'         => trim((string)($b['publico'] ?? '')),
+            'avatar'          => trim((string)($b['avatar'] ?? '')),
+            'escena'          => trim((string)($b['escena'] ?? '')),
+            'dolor_principal' => trim((string)($b['dolor_principal'] ?? '')),
+            'objecion'        => trim((string)($b['objecion'] ?? '')),
+            'alternativa'     => trim((string)($b['alternativa'] ?? '')),
+            'voz'             => $voz,
+            'agresividad'     => $ag,
+        ]]);
+    }
+
+    /** Rol/restricciones de un campo suelto de la landing, para regenerarlo. */
+    private function rolCampo(string $c): string
+    {
+        return match (true) {
+            $c === 'hero_title'                                    => 'Titular principal del hero. Máximo 8 palabras. Nombra el dolor o su alivio inmediato, no describe el producto.',
+            $c === 'hero_subtitle'                                 => 'Subtítulo del hero: 1-2 frases que agitan el dolor.',
+            $c === 'hero_note'                                     => 'Micro-copy bajo el botón; menciona pago contraentrega / envío.',
+            $c === 'porque_text'                                   => 'Párrafo Problema → Agitación → Solución. Es el texto más persuasivo de la página.',
+            str_contains($c, '_button')                            => 'Texto de botón: máximo 5 palabras, verbo de acción + urgencia.',
+            (bool) preg_match('/^faq\d_q$/', $c)                   => 'Pregunta de FAQ: una objeción real de compra, como la diría el cliente. Sin emojis.',
+            (bool) preg_match('/^faq\d_a$/', $c)                   => 'Respuesta de FAQ: corta, baja el riesgo percibido de comprar.',
+            (bool) preg_match('/^test\d_text$/', $c)               => 'Testimonio en primera persona. Máximo 100 caracteres, natural, colombiano.',
+            (bool) preg_match('/^test\d_name$/', $c)               => 'Solo un nombre propio colombiano realista.',
+            (bool) preg_match('/^test\d_city$/', $c)               => 'Solo una ciudad colombiana real.',
+            (bool) preg_match('/^wa\d_text$/', $c)                 => 'Mensaje de WhatsApp ultra informal, como copiado del celular de un cliente.',
+            str_starts_with($c, 'benefit_')                        => 'Beneficio: una consecuencia concreta de seguir sin el producto, ya resuelta. Nunca una característica técnica.',
+            str_starts_with($c, 'porque_bullet')                   => 'Bullet de ventaja clave, muy corto.',
+            str_contains($c, 'comparison_') && str_contains($c, '_without') => 'Columna "sin el producto": el dolor en una escena de vida real.',
+            str_contains($c, 'comparison_') && str_contains($c, '_with')    => 'Columna "con el producto": esa misma escena ya resuelta.',
+            str_starts_with($c, 'para_quien_si')                   => 'Ítem "sí es para ti": describe a alguien que vive el dolor (identificación).',
+            str_starts_with($c, 'para_quien_no')                   => 'Ítem "no es para ti": descalifica y genera FOMO inverso.',
+            str_starts_with($c, 'caract') && str_ends_with($c, '_text') => 'Descripción de característica: conecta lo físico con el alivio emocional.',
+            str_ends_with($c, '_title')                            => 'Título de sección: corto y con gancho.',
+            default                                                => 'Texto corto de la landing; mantené el rol y el largo aproximado del valor actual.',
+        };
+    }
+
+    // ── Reescribe UN campo suelto con una instrucción del vendedor ───────────
+    public function regenerarCampoIA()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            return;
+        }
+
+        $apiKey = (new AppSettings())->get('claude_api_key');
+        if (!$apiKey) { echo json_encode(['ok' => false, 'error' => 'no_key']); return; }
+
+        $productoId  = (int)($_POST['producto_id']  ?? 0);
+        $campo       = trim($_POST['campo']         ?? '');
+        $actual      = trim($_POST['valor_actual']  ?? '');
+        $instr       = trim($_POST['instruccion']   ?? '');
+        $nombre      = trim($_POST['nombre']        ?? '');
+        $descripcion = trim($_POST['descripcion']   ?? '');
+
+        if ($campo === '' || !preg_match('/^[a-z0-9_]{2,60}$/', $campo)) {
+            echo json_encode(['ok' => false, 'error' => 'Campo inválido']);
+            return;
+        }
+        if ($instr === '') {
+            $instr = 'Hazlo más específico y que conecte desde el dolor: menos genérico, sin frases de plantilla.';
+        }
+
+        $n = (int)($_POST['n'] ?? 1);
+        $n = max(1, min(4, $n));
+
+        $brief  = $productoId > 0 ? $this->leerBrief($productoId) : $this->briefDesdePost();
+        $bloque = $this->bloqueBrief($brief);
+        $rol    = $this->rolCampo($campo);
+        $prod   = trim($nombre . ($descripcion ? " — {$descripcion}" : ''));
+
+        $cierre = $n > 1
+            ? "Dame {$n} versiones DISTINTAS de ese texto: cada una entra por un ángulo emocional diferente (no la misma frase reordenada), y cada una está lista para publicar tal cual. Todas coherentes con el ángulo, la voz y el nivel de agresividad de arriba.\nDevuelve SOLO este JSON válido: {\"variantes\": []}"
+            : "Reescribe solo ese texto, coherente con el ángulo, la voz y el nivel de agresividad de arriba. No expliques nada, no des opciones.\nDevuelve SOLO este JSON válido: {\"valor\": \"\"}";
+
+        $prompt = <<<PROMPT
+Eres copywriter de e-commerce colombiano (dropshipping, pago contraentrega). Trabajas UN SOLO texto de una landing — nada más.
+
+PRODUCTO: {$prod}
+
+{$bloque}
+CAMPO A REESCRIBIR: {$campo}
+ROL DE ESTE CAMPO EN LA LANDING: {$rol}
+VALOR ACTUAL: "{$actual}"
+QUÉ QUIERE EL VENDEDOR: {$instr}
+
+{$cierre}
+PROMPT;
+
+        $res = $this->callClaudeApi($apiKey, $prompt, $n > 1 ? 1200 : 800);
+        if (empty($res['ok'])) { echo json_encode($res); return; }
+
+        if ($n > 1) {
+            $vs = $res['fields']['variantes'] ?? [];
+            $vs = is_array($vs) ? array_values(array_filter(array_map(
+                fn($v) => trim((string)$v), $vs
+            ))) : [];
+            if (!$vs) {
+                echo json_encode(['ok' => false, 'error' => 'La IA no devolvió opciones. Intenta de nuevo.']);
+                return;
+            }
+            echo json_encode(['ok' => true, 'variantes' => $vs]);
+            return;
+        }
+
+        $valor = trim((string)($res['fields']['valor'] ?? ''));
+        if ($valor === '') {
+            echo json_encode(['ok' => false, 'error' => 'La IA no devolvió texto. Intenta de nuevo.']);
+            return;
+        }
+
+        echo json_encode(['ok' => true, 'valor' => $valor]);
+    }
+
+    // ── Propone 3 ángulos de venta ANTES de escribir la landing ──────────────
+    public function generarAngulosIA()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            return;
+        }
+
+        $apiKey = (new AppSettings())->get('claude_api_key');
+        if (!$apiKey) { echo json_encode(['ok' => false, 'error' => 'no_key']); return; }
+
+        $productoId  = (int)($_POST['producto_id'] ?? 0);
+        $nombre      = trim($_POST['nombre']      ?? '');
+        $descripcion = trim($_POST['descripcion'] ?? '');
+        $publico     = trim($_POST['publico']     ?? 'adultos colombianos');
+        $precio      = trim($_POST['precio']      ?? '');
+
+        if (!$nombre || !$descripcion) {
+            echo json_encode(['ok' => false, 'error' => 'El nombre y la descripción son requeridos']);
+            return;
+        }
+
+        // Guardamos el brief (sin ángulo aún) y las notas de marca ya mismo.
+        $brief = $this->briefDesdePost();
+        $brief['angulo'] = ['dolor' => '', 'gran_idea' => '', 'headline' => '', 'a_quien' => ''];
+        $this->guardarBrief($productoId, $brief);
+        $this->guardarNotasMarcaDesdePost();
+
+        $precioLine = $precio ? "- Precio: {$precio} COP" : '';
+        $bloque     = $this->bloqueBrief($brief);
+
+        $prompt = <<<PROMPT
+Eres estratega de dirección creativa para e-commerce colombiano (dropshipping, pago contraentrega). Tu trabajo AHORA no es escribir la landing, sino proponer 3 ÁNGULOS DE VENTA distintos entre los que el dueño va a elegir uno.
+
+PRODUCTO:
+- Nombre: {$nombre}
+- Descripción: {$descripcion}
+- Público: {$publico}
+{$precioLine}
+
+{$bloque}
+
+Un ángulo = un dolor concreto + una gran idea que lo resuelve + a quién le pega más fuerte. Los 3 ángulos deben atacar dolores DISTINTOS (no el mismo con otras palabras) y ser tan específicos que el cliente piense "esto es exactamente lo que me pasa". Nada de generalidades tipo "quieres verte bien".
+
+Para cada ángulo:
+- "dolor": la frustración concreta que vive hoy, en una frase y en la voz del cliente.
+- "gran_idea": el giro que vuelve a este producto LA solución a ese dolor (no una lista de features).
+- "headline": un titular de ejemplo (≤10 palabras) que abre con ese dolor o su alivio.
+- "a_quien": en una línea, a qué tipo de persona le pega más fuerte este ángulo.
+- "por_que": una frase de por qué podría convertir en tráfico frío de Facebook/TikTok.
+
+Devuelve SOLO este JSON válido, sin markdown ni texto alrededor:
+{"angulos":[{"dolor":"","gran_idea":"","headline":"","a_quien":"","por_que":""},{"dolor":"","gran_idea":"","headline":"","a_quien":"","por_que":""},{"dolor":"","gran_idea":"","headline":"","a_quien":"","por_que":""}]}
+PROMPT;
+
+        $res = $this->callClaudeApi($apiKey, $prompt, 2000);
+        if (empty($res['ok'])) { echo json_encode($res); return; }
+
+        $angulos = $res['fields']['angulos'] ?? null;
+        if (!is_array($angulos) || !$angulos) {
+            echo json_encode(['ok' => false, 'error' => 'La IA no devolvió ángulos válidos. Intenta de nuevo.']);
+            return;
+        }
+
+        echo json_encode(['ok' => true, 'angulos' => array_values($angulos)]);
+    }
+
     // ── Genera el contenido de la landing con Claude ──────────────────────────
     public function generarConIA()
     {
@@ -991,6 +1458,7 @@ class AdminLandingController extends Controller
             return;
         }
 
+        $productoId  = (int)($_POST['producto_id'] ?? 0);
         $nombre      = trim($_POST['nombre']      ?? '');
         $descripcion = trim($_POST['descripcion'] ?? '');
         $publico     = trim($_POST['publico']     ?? 'adultos colombianos');
@@ -1001,16 +1469,143 @@ class AdminLandingController extends Controller
             return;
         }
 
-        $prompt = $this->buildColombianPrompt($nombre, $descripcion, $publico, $precio);
-        $result = $this->callClaudeApi($apiKey, $prompt);
+        $brief = $this->briefDesdePost();
+        $this->guardarBrief($productoId, $brief);
+        $this->guardarNotasMarcaDesdePost();
 
-        echo json_encode($result);
+        $bloque     = $this->bloqueBrief($brief);
+        $anguloFijo = $this->tieneAngulo($brief);
+
+        // El front pide un lote por vez ('gancho' | 'prueba' | 'cierre') para
+        // que cada llamada sea corta y con más filo. Sin lote → los 3 seguidos.
+        $loteReq = trim($_POST['lote'] ?? '');
+        $lotes   = in_array($loteReq, self::LOTES_COPY, true) ? [$loteReq] : self::LOTES_COPY;
+        if (count($lotes) > 1) @set_time_limit(220);
+
+        $fields = [];
+        foreach ($lotes as $l) {
+            $prompt = $this->buildColombianPrompt($nombre, $descripcion, $publico, $precio, $bloque, $anguloFijo, $l);
+            $r = $this->callClaudeApi($apiKey, $prompt, 4000);
+            if (empty($r['ok'])) {
+                echo json_encode($r + ['lote' => $l, 'fields' => $fields]);
+                return;
+            }
+            foreach (($r['fields'] ?? []) as $k => $v) {
+                if ($v !== '' && $v !== null) $fields[$k] = $v;
+            }
+        }
+
+        echo json_encode(['ok' => true, 'fields' => $fields, 'lote' => $loteReq]);
+    }
+
+    /** Lotes en que se parte la generación de la landing completa. */
+    private const LOTES_COPY = ['gancho', 'prueba', 'cierre'];
+
+    /**
+     * Campos de cada lote + la guía de "cómo se usa el dolor" para esos campos.
+     * Cada lote reescribe _dolor/_angulo para mantener el ancla estratégica.
+     */
+    private function loteCopy(string $lote): array
+    {
+        $grupos = [
+            'gancho' => [
+                'guia' => "- hero_title / hero_subtitle: nombra el dolor o la promesa de alivio inmediato — no describas el producto.\n"
+                    . "- benefit_1 a benefit_4: cada uno es una CONSECUENCIA concreta de seguir sin el producto, resuelta — no una característica técnica.\n"
+                    . "- caract1 a caract4: conecta cada característica física con el alivio emocional que produce.\n"
+                    . "- countdown: escasez + pérdida inminente (el cliente pierde la oportunidad de resolver su dolor, no solo 'una oferta').\n"
+                    . "- porque_text: estructura Problema → Agitación → Solución. Nombra el dolor, muestra el costo de ignorarlo, y resuelve. Es el párrafo más persuasivo de la landing.",
+                'keys' => [
+                    'hero_title', 'hero_subtitle', 'hero_button_text', 'hero_note', 'hero_badge_customers',
+                    'benefits_title', 'benefit_1', 'benefit_2', 'benefit_3', 'benefit_4',
+                    'caract_section_title',
+                    'caract1_title', 'caract1_text', 'caract2_title', 'caract2_text',
+                    'caract3_title', 'caract3_text', 'caract4_title', 'caract4_text',
+                    'countdown_title', 'countdown_text',
+                    'porque_title', 'porque_text', 'porque_bullet1', 'porque_bullet2', 'porque_bullet3',
+                ],
+            ],
+            'prueba' => [
+                'guia' => "- comparison_*: SIN el producto = el dolor en una escena de vida real; CON el producto = esa misma escena resuelta. Nunca specs.\n"
+                    . "- test1-3: prueba social — cada testimonio es alguien que vivía ESE dolor y lo resolvió, en su propia voz. Nombres y ciudades colombianas reales.\n"
+                    . "- para_quien_si_*: describen a quien tiene el dolor (identificación); para_quien_no_*: a quien no lo tiene (califica y genera FOMO inverso).\n"
+                    . "- wa1-5: prueba social informal, mismo dolor resuelto, tono 100% casero, como copiado del celular.",
+                'keys' => [
+                    'comparison_title', 'comparison_label_without', 'comparison_label_with',
+                    'comparison_1_without', 'comparison_1_with', 'comparison_2_without', 'comparison_2_with',
+                    'comparison_3_without', 'comparison_3_with', 'comparison_4_without', 'comparison_4_with',
+                    'comparison_5_without', 'comparison_5_with',
+                    'test1_name', 'test1_city', 'test1_text', 'test2_name', 'test2_city', 'test2_text',
+                    'test3_name', 'test3_city', 'test3_text',
+                    'para_quien_si_1', 'para_quien_si_2', 'para_quien_si_3', 'para_quien_si_4',
+                    'para_quien_no_1', 'para_quien_no_2', 'para_quien_no_3',
+                    'wa_title', 'wa_subtitle', 'wa_footer_note',
+                    'wa1_name', 'wa1_time', 'wa1_text', 'wa2_name', 'wa2_time', 'wa2_text',
+                    'wa3_name', 'wa3_time', 'wa3_text', 'wa4_name', 'wa4_time', 'wa4_text',
+                    'wa5_name', 'wa5_time', 'wa5_text',
+                ],
+            ],
+            'cierre' => [
+                'guia' => "- faq1-6: cada pregunta es una objeción real que le impide comprar (duda = miedo a perder la plata); la respuesta baja ese riesgo. faq1 SIEMPRE sobre pago contraentrega, faq2 sobre tiempo de envío (3-7 días hábiles).\n"
+                    . "- authority_*: reduce el riesgo percibido de confiarle ese dolor a una marca nueva. Números creíbles.\n"
+                    . "- cta_*: urgencia para actuar YA y dejar de vivir con el dolor. Botón ≤5 palabras, verbo + urgencia.",
+                'keys' => [
+                    'faq1_q', 'faq1_a', 'faq2_q', 'faq2_a', 'faq3_q', 'faq3_a',
+                    'faq4_q', 'faq4_a', 'faq5_q', 'faq5_a', 'faq6_q', 'faq6_a',
+                    'authority_title', 'authority_years', 'authority_deliveries', 'authority_rating', 'authority_guarantee',
+                    'cta_benefits_text', 'cta_benefits_button', 'cta_gallery_text', 'cta_gallery_button',
+                    'cta_porque_text', 'cta_porque_button', 'cta_testimonials_text', 'cta_testimonials_button',
+                    'cta_faq_text', 'cta_faq_button', 'cta_como_funciona_text', 'cta_como_funciona_button',
+                    'cta_comparison_button', 'cta_para_quien_button', 'cta_wa_testimonios_button', 'cta_sticky_mobile_text',
+                ],
+            ],
+        ];
+
+        if (!isset($grupos[$lote])) {
+            // Landing completa: todos los campos, toda la guía.
+            $keys = [];
+            $guia = [];
+            foreach ($grupos as $g) {
+                $keys = array_merge($keys, $g['keys']);
+                $guia[] = $g['guia'];
+            }
+            $guia = implode("\n", $guia);
+        } else {
+            $keys = $grupos[$lote]['keys'];
+            $guia = $grupos[$lote]['guia'];
+        }
+
+        $obj = ['_dolor' => '', '_angulo' => ''];
+        foreach ($keys as $k) $obj[$k] = '';
+        if (isset($obj['comparison_label_without'])) $obj['comparison_label_without'] = 'Sin el producto';
+        if (isset($obj['comparison_label_with']))    $obj['comparison_label_with']    = 'Con el producto';
+        if (isset($obj['authority_rating']))         $obj['authority_rating']         = '4.9';
+
+        return [
+            'guia' => $guia,
+            'json' => json_encode($obj, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ];
     }
 
     // ── Prompt optimizado para conversión colombiana ──────────────────────────
-    private function buildColombianPrompt(string $nombre, string $descripcion, string $publico, string $precio): string
-    {
+    private function buildColombianPrompt(
+        string $nombre, string $descripcion, string $publico, string $precio,
+        string $briefBlock = '', bool $anguloFijo = false, string $lote = ''
+    ): string {
         $precioLine = $precio ? "- Precio: $precio COP" : '';
+
+        $briefSection = $briefBlock !== '' ? "\n{$briefBlock}\n" : '';
+
+        $partes     = $this->loteCopy($lote);
+        $guiaLote   = $partes['guia'];
+        $jsonSchema = $partes['json'];
+
+        $enfoque = in_array($lote, self::LOTES_COPY, true)
+            ? "Ahora escribes SOLO el lote \"{$lote}\" de la landing (los campos del JSON de abajo). El resto de la landing se escribe aparte, así que concéntrate en estos campos y dales el máximo filo.\n\n"
+            : '';
+
+        $paso0 = $anguloFijo
+            ? "PASO 0 — El ángulo y el dolor central YA están decididos (arriba). No elijas otro, no lo generalices, no lo cambies por sección. Salta directo a escribir cada campo desde ese ángulo."
+            : "PASO 0 — ANTES DE ESCRIBIR (no lo muestres en la respuesta):\nIdentifica UN solo dolor o frustración central que este producto resuelve para este público — algo concreto que la persona vive hoy sin el producto (una molestia física, una vergüenza social, una pérdida de tiempo o dinero, un miedo). Todo el copy de las ~60 variables debe ser ese mismo dolor contado desde ángulos distintos: nunca inventes un dolor nuevo por sección.";
 
         return <<<PROMPT
 Eres el mejor copywriter de e-commerce colombiano. Tu especialidad es escribir textos que VENDEN para dropshipping en Colombia. No vendes un producto: vendes el alivio de un dolor específico. Tu copy convierte porque habla exactamente como el colombiano real: cálido, directo, con urgencia genuina.
@@ -1020,23 +1615,11 @@ PRODUCTO A TRABAJAR:
 - Descripción: {$descripcion}
 - Público objetivo: {$publico}
 {$precioLine}
+{$briefSection}
+{$paso0}
 
-PASO 0 — ANTES DE ESCRIBIR (no lo muestres en la respuesta):
-Identifica UN solo dolor o frustración central que este producto resuelve para este público — algo concreto que la persona vive hoy sin el producto (una molestia física, una vergüenza social, una pérdida de tiempo o dinero, un miedo). Todo el copy de las ~60 variables debe ser ese mismo dolor contado desde ángulos distintos: nunca inventes un dolor nuevo por sección.
-
-CÓMO SE USA EL DOLOR EN CADA SECCIÓN (psicología de venta aplicada):
-- hero_title / hero_subtitle: nombra el dolor o la promesa de alivio inmediato — no describas el producto.
-- benefit_1 a benefit_4: cada uno es una CONSECUENCIA concreta de seguir sin el producto, resuelta — no una característica técnica.
-- caract1 a caract4: conecta cada característica física con el alivio emocional que produce (característica → por qué le importa a alguien con ese dolor).
-- countdown: escasez + pérdida inminente (el cliente pierde la oportunidad de resolver su dolor, no solo "una oferta").
-- porque_text: estructura Problema → Agitación → Solución. Nombra el dolor, muestra el costo de ignorarlo un poco más, y resuelve con el producto. Es el párrafo más persuasivo de la landing.
-- comparison_*: SIN el producto = el dolor en una escena de vida real; CON el producto = esa misma escena resuelta. Nunca specs.
-- test1-3: prueba social — cada testimonio es alguien que vivía ESE dolor y lo resolvió, en su propia voz.
-- para_quien_si_*: describen a quien tiene el dolor (identificación); para_quien_no_*: describen a quien no lo tiene (califica y genera FOMO inverso).
-- wa1-5: prueba social informal, mismo dolor resuelto, tono 100% casero.
-- faq1-6: cada pregunta es una objeción real que le impide comprar (duda = miedo a perder la plata); la respuesta baja ese riesgo.
-- authority_*: reduce el riesgo percibido de confiarle ese dolor a una marca nueva.
-- cta_*: urgencia para actuar YA y dejar de vivir con el dolor.
+{$enfoque}CÓMO SE USA EL DOLOR EN ESTOS CAMPOS (psicología de venta aplicada):
+{$guiaLote}
 
 REGLAS OBLIGATORIAS DE ESTILO (romperlas es inaceptable):
 1. Español colombiano 100% natural. Tuteo informal. NADA de "usted" en CTAs o textos de urgencia.
@@ -1052,125 +1635,19 @@ REGLAS OBLIGATORIAS DE ESTILO (romperlas es inaceptable):
 11. BREVEDAD en todos los campos: frases cortas, sin relleno ni párrafos largos. Si se dice en menos palabras, así se dice.
 12. Emojis solo cuando sumen al mensaje (✅🔥📦⏰😍🚚), sin saturar — 1 o 2 por texto como máximo. Nunca en nombres/ciudades de testimonios ni en preguntas de FAQ.
 
-Devuelve ÚNICAMENTE el siguiente JSON válido. Sin markdown, sin bloques de código, sin texto antes o después. Solo el JSON:
+Devuelve ÚNICAMENTE el siguiente JSON válido. Sin markdown, sin bloques de código, sin texto antes o después. Solo el JSON.
+Los dos primeros campos ("_dolor" y "_angulo") son notas para el dueño (no se publican): en una frase cada uno, di qué dolor estás atacando y cuál es la gran idea con la que lo resuelves. El resto del copy debe ser coherente con esas dos frases.
 
-{
-  "hero_title": "",
-  "hero_subtitle": "",
-  "hero_button_text": "",
-  "hero_note": "",
-  "hero_badge_customers": "",
-  "benefits_title": "",
-  "benefit_1": "",
-  "benefit_2": "",
-  "benefit_3": "",
-  "benefit_4": "",
-  "caract_section_title": "",
-  "caract1_title": "",
-  "caract1_text": "",
-  "caract2_title": "",
-  "caract2_text": "",
-  "caract3_title": "",
-  "caract3_text": "",
-  "caract4_title": "",
-  "caract4_text": "",
-  "countdown_title": "",
-  "countdown_text": "",
-  "porque_title": "",
-  "porque_text": "",
-  "porque_bullet1": "",
-  "porque_bullet2": "",
-  "porque_bullet3": "",
-  "comparison_title": "",
-  "comparison_label_without": "Sin el producto",
-  "comparison_label_with": "Con el producto",
-  "comparison_1_without": "",
-  "comparison_1_with": "",
-  "comparison_2_without": "",
-  "comparison_2_with": "",
-  "comparison_3_without": "",
-  "comparison_3_with": "",
-  "comparison_4_without": "",
-  "comparison_4_with": "",
-  "comparison_5_without": "",
-  "comparison_5_with": "",
-  "test1_name": "",
-  "test1_city": "",
-  "test1_text": "",
-  "test2_name": "",
-  "test2_city": "",
-  "test2_text": "",
-  "test3_name": "",
-  "test3_city": "",
-  "test3_text": "",
-  "para_quien_si_1": "",
-  "para_quien_si_2": "",
-  "para_quien_si_3": "",
-  "para_quien_si_4": "",
-  "para_quien_no_1": "",
-  "para_quien_no_2": "",
-  "para_quien_no_3": "",
-  "wa_title": "",
-  "wa_subtitle": "",
-  "wa_footer_note": "",
-  "wa1_name": "",
-  "wa1_time": "",
-  "wa1_text": "",
-  "wa2_name": "",
-  "wa2_time": "",
-  "wa2_text": "",
-  "wa3_name": "",
-  "wa3_time": "",
-  "wa3_text": "",
-  "wa4_name": "",
-  "wa4_time": "",
-  "wa4_text": "",
-  "wa5_name": "",
-  "wa5_time": "",
-  "wa5_text": "",
-  "faq1_q": "",
-  "faq1_a": "",
-  "faq2_q": "",
-  "faq2_a": "",
-  "faq3_q": "",
-  "faq3_a": "",
-  "faq4_q": "",
-  "faq4_a": "",
-  "faq5_q": "",
-  "faq5_a": "",
-  "faq6_q": "",
-  "faq6_a": "",
-  "authority_title": "",
-  "authority_years": "",
-  "authority_deliveries": "",
-  "authority_rating": "4.9",
-  "authority_guarantee": "",
-  "cta_benefits_text": "",
-  "cta_benefits_button": "",
-  "cta_gallery_text": "",
-  "cta_gallery_button": "",
-  "cta_porque_text": "",
-  "cta_porque_button": "",
-  "cta_testimonials_text": "",
-  "cta_testimonials_button": "",
-  "cta_faq_text": "",
-  "cta_faq_button": "",
-  "cta_como_funciona_text": "",
-  "cta_como_funciona_button": "",
-  "cta_comparison_button": "",
-  "cta_para_quien_button": "",
-  "cta_wa_testimonios_button": "",
-  "cta_sticky_mobile_text": ""
-}
+{$jsonSchema}
 PROMPT;
     }
 
     // ── Llama a la API de Claude y devuelve array resultado ───────────────────
-    private function callClaudeApi(string $apiKey, string $prompt): array
+    private function callClaudeApi(string $apiKey, string $prompt, int $maxTokens = 4096): array
     {
         $payload = json_encode([
-            'model'      => 'claude-sonnet-4-6',
-            'max_tokens' => 4096,
+            'model'      => self::COPY_MODEL,
+            'max_tokens' => $maxTokens,
             'messages'   => [
                 ['role' => 'user', 'content' => $prompt],
             ],
@@ -1186,7 +1663,7 @@ PROMPT;
                 'x-api-key: ' . $apiKey,
                 'anthropic-version: 2023-06-01',
             ],
-            CURLOPT_TIMEOUT        => 90,
+            CURLOPT_TIMEOUT        => 120,
         ]);
 
         $response = curl_exec($ch);

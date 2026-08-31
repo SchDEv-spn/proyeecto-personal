@@ -2535,6 +2535,70 @@
           </div>
         </div>
 
+        <?php $brief = $brief ?? []; $notasMarca = $notas_marca ?? ''; ?>
+        <div class="ia-brief">
+          <div class="ia-brief__head">
+            <p class="ia-brief__lead">Entre más concreto seas aquí, menos genérico sale el copy.</p>
+            <button type="button" class="ia-brief__suggest" id="iaBtnSugerirBrief">✨ Ayúdame con el brief</button>
+          </div>
+          <p class="ia-brief__dolor" id="iaBriefDolor" hidden></p>
+
+          <div class="ia-modal__field">
+            <label for="ia_avatar">¿Quién es exactamente tu cliente?</label>
+            <textarea id="ia_avatar" rows="2"
+              placeholder="Ej: Mamá de 30-40 en Bogotá, trabaja, carga bolso lleno; le da rabia no encontrar nada rápido"><?= htmlspecialchars($brief['avatar'] ?? '') ?></textarea>
+          </div>
+
+          <div class="ia-modal__field">
+            <label for="ia_escena">¿En qué momento vive el dolor?</label>
+            <input type="text" id="ia_escena"
+              placeholder="Ej: en la fila del banco buscando las llaves con el niño llorando"
+              value="<?= htmlspecialchars($brief['escena'] ?? '') ?>">
+          </div>
+
+          <div class="ia-modal__row">
+            <div class="ia-modal__field">
+              <label for="ia_objecion">¿Qué lo frena para comprar?</label>
+              <input type="text" id="ia_objecion" placeholder="Ej: miedo a que la calidad sea mala"
+                value="<?= htmlspecialchars($brief['objecion'] ?? '') ?>">
+            </div>
+            <div class="ia-modal__field">
+              <label for="ia_alternativa">¿Qué usa hoy en su lugar?</label>
+              <input type="text" id="ia_alternativa" placeholder="Ej: un bolso viejo que ya no cierra"
+                value="<?= htmlspecialchars($brief['alternativa'] ?? '') ?>">
+            </div>
+          </div>
+
+          <div class="ia-modal__row">
+            <div class="ia-modal__field">
+              <label for="ia_voz">Voz de marca</label>
+              <?php $vozSel = $brief['voz'] ?? 'cercana'; ?>
+              <select id="ia_voz" class="ia-brief__select">
+                <option value="cercana" <?= $vozSel === 'cercana' ? 'selected' : '' ?>>Cercana y cálida</option>
+                <option value="experta" <?= $vozSel === 'experta' ? 'selected' : '' ?>>Experta y segura</option>
+                <option value="picara"  <?= $vozSel === 'picara'  ? 'selected' : '' ?>>Pícara / con humor</option>
+                <option value="premium" <?= $vozSel === 'premium' ? 'selected' : '' ?>>Premium y sobria</option>
+              </select>
+            </div>
+            <div class="ia-modal__field">
+              <?php $agr = (int)($brief['agresividad'] ?? 3); ?>
+              <label for="ia_agresividad">Agresividad del copy: <b id="ia_agresividad_val"><?= $agr ?></b>/5</label>
+              <input type="range" id="ia_agresividad" class="ia-brief__range"
+                min="1" max="5" step="1" value="<?= $agr ?>">
+              <small class="ia-brief__range-hint">1 = informativo · 5 = confronta desde el dolor</small>
+            </div>
+          </div>
+
+          <details class="ia-brief__notas"<?= trim($notasMarca) !== '' ? ' open' : '' ?>>
+            <summary>Notas de marca · copys que sí venden (opcional)</summary>
+            <div class="ia-modal__field">
+              <textarea id="ia_notas_marca" rows="4"
+                placeholder="Pega 2-3 frases o textos tuyos que SÍ conectan y venden — Claude imita ese tono. También puedes anotar palabras que nunca quieres ver."><?= htmlspecialchars($notasMarca) ?></textarea>
+              <small>Se guarda para todas tus landings, no solo esta.</small>
+            </div>
+          </details>
+        </div>
+
         <?php if (!$tieneApiKey): ?>
         <div class="ia-modal__key-section" id="iaKeySection">
           <div class="ia-modal__key-label">
@@ -2558,16 +2622,51 @@
 
         <div class="ia-modal__error" id="iaError" style="display:none;"></div>
 
-        <button type="button" class="ia-modal__submit" id="iaBtnGenerar">
-          ✨ Generar landing completa
+        <button type="button" class="ia-modal__submit" id="iaBtnAngulos">
+          ✨ Proponer 3 ángulos de venta →
         </button>
+        <button type="button" class="ia-modal__linkbtn" id="iaBtnDirecto">
+          o generar la landing directo, sin elegir ángulo
+        </button>
+      </div>
+
+      <!-- Paso 1b: Elegir ángulo -->
+      <div class="ia-modal__body" id="iaStepAngulos" style="display:none;">
+        <p class="ia-modal__hint">Elige el ángulo con el que Claude va a escribir <strong>toda</strong> la landing. Puedes ajustar el que elijas antes de generar.</p>
+        <div class="ia-angulos" id="iaAngulosList"></div>
+
+        <details class="ia-brief__notas" id="iaAnguloAjuste">
+          <summary>Ajustar el ángulo elegido</summary>
+          <div class="ia-modal__field">
+            <label for="iaAngDolor">Dolor central</label>
+            <textarea id="iaAngDolor" rows="2"></textarea>
+          </div>
+          <div class="ia-modal__field">
+            <label for="iaAngIdea">Gran idea / promesa</label>
+            <textarea id="iaAngIdea" rows="2"></textarea>
+          </div>
+          <div class="ia-modal__field">
+            <label for="iaAngHeadline">Dirección del titular</label>
+            <input type="text" id="iaAngHeadline">
+          </div>
+          <div class="ia-modal__field">
+            <label for="iaAngQuien">Le habla a</label>
+            <input type="text" id="iaAngQuien">
+          </div>
+        </details>
+
+        <div class="ia-modal__error" id="iaAngulosError" style="display:none;"></div>
+        <button type="button" class="ia-modal__submit" id="iaBtnGenerarConAngulo">
+          ✨ Generar landing con este ángulo
+        </button>
+        <button type="button" class="ia-modal__linkbtn" id="iaBtnVolverBrief">← volver al brief</button>
       </div>
 
       <!-- Paso 2: Cargando -->
       <div class="ia-modal__body ia-modal__loading" id="iaStep2" style="display:none;">
         <div class="ia-spinner"></div>
-        <p>Claude está escribiendo tu landing...</p>
-        <small>Generando ~60 textos optimizados para el mercado colombiano. Espera ~20-30 segundos.</small>
+        <p id="iaStep2Msg">Claude está escribiendo tu landing...</p>
+        <small id="iaStep2Sub">Generando ~60 textos optimizados para el mercado colombiano. Espera ~20-30 segundos.</small>
       </div>
 
       <!-- Paso 3: Éxito -->
@@ -2575,6 +2674,7 @@
         <div class="ia-success-icon">✅</div>
         <h2>¡Landing generada!</h2>
         <p id="iaSuccessMsg">Todos los textos fueron rellenados. Revisa, ajusta lo que quieras y guarda.</p>
+        <div class="ia-ang-resumen" id="iaAngResumen" hidden></div>
         <button type="button" class="ia-modal__submit" id="iaBtnCerrarOk">Revisar y guardar →</button>
       </div>
 
@@ -2583,17 +2683,27 @@
 
   <script>
   (() => {
+    const BASE      = '<?= BASE_URL ?>';
+    const PRODUCTO_ID = <?= json_encode((string)$producto_id) ?>;
     const overlay   = document.getElementById('iaModalOverlay');
     const btnAbrir  = document.getElementById('btnAbrirIA');
     const btnCerrar = document.getElementById('iaModalClose');
-    const btnGen    = document.getElementById('iaBtnGenerar');
     const btnCerrarOk = document.getElementById('iaBtnCerrarOk');
+    const btnAngulos  = document.getElementById('iaBtnAngulos');
+    const btnDirecto  = document.getElementById('iaBtnDirecto');
+    const btnGenAng   = document.getElementById('iaBtnGenerarConAngulo');
+    const btnVolver   = document.getElementById('iaBtnVolverBrief');
     const step1     = document.getElementById('iaStep1');
+    const stepA     = document.getElementById('iaStepAngulos');
     const step2     = document.getElementById('iaStep2');
     const step3     = document.getElementById('iaStep3');
     const errEl     = document.getElementById('iaError');
+    const errAng    = document.getElementById('iaAngulosError');
     const btnCambiarKey = document.getElementById('btnCambiarKey');
     const keySection    = document.getElementById('iaKeySection');
+    const btnSugerir    = document.getElementById('iaBtnSugerirBrief');
+
+    let _angulos = [];   // ángulos propuestos por la IA en este ciclo
 
     let _modalOpener = null;
     const openModal  = (triggerEl) => {
@@ -2611,9 +2721,10 @@
     };
 
     const showStep = (n) => {
-      step1.style.display = n === 1 ? '' : 'none';
-      step2.style.display = n === 2 ? '' : 'none';
-      step3.style.display = n === 3 ? '' : 'none';
+      step1.style.display = n === 1  ? '' : 'none';
+      stepA.style.display = n === 'A' ? '' : 'none';
+      step2.style.display = n === 2  ? '' : 'none';
+      step3.style.display = n === 3  ? '' : 'none';
     };
 
     if (btnAbrir)    btnAbrir.addEventListener('click', (e) => openModal(e.currentTarget));
@@ -2628,94 +2739,307 @@
       });
     }
 
-    const setError = (msg) => {
-      errEl.textContent = msg;
-      errEl.style.display = msg ? 'block' : 'none';
+    const agrRange = document.getElementById('ia_agresividad');
+    const agrVal   = document.getElementById('ia_agresividad_val');
+    if (agrRange && agrVal) {
+      agrRange.addEventListener('input', () => { agrVal.textContent = agrRange.value; });
+    }
+
+    const setError    = (msg) => { errEl.textContent = msg;  errEl.style.display  = msg ? 'block' : 'none'; };
+    const setAngError = (msg) => { errAng.textContent = msg; errAng.style.display = msg ? 'block' : 'none'; };
+
+    const val = (id) => (document.getElementById(id)?.value || '').trim();
+
+    const baseFields = () => ({
+      producto_id: PRODUCTO_ID,
+      nombre:      val('ia_nombre'),
+      descripcion: val('ia_descripcion'),
+      publico:     val('ia_publico'),
+      precio:      val('ia_precio'),
+    });
+
+    const briefFields = () => ({
+      brief_avatar:      val('ia_avatar'),
+      brief_escena:      val('ia_escena'),
+      brief_objecion:    val('ia_objecion'),
+      brief_alternativa: val('ia_alternativa'),
+      brief_voz:         document.getElementById('ia_voz')?.value || 'cercana',
+      brief_agresividad: document.getElementById('ia_agresividad')?.value || '3',
+      notas_marca:       val('ia_notas_marca'),
+    });
+
+    // Guarda la API key si el usuario escribió una nueva. Devuelve true si todo ok.
+    const guardarKeyEscrita = async () => {
+      const el = document.getElementById('ia_api_key');
+      const key = el ? el.value.trim() : '';
+      if (!key) return true;
+      try {
+        const r = await fetch(BASE + '/AdminLanding/guardarApiKey', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ api_key: key, csrf_token: window.__CSRF__ || '' }),
+        });
+        const d = await r.json();
+        if (!d.ok) { setError(d.error || 'Error al guardar la API key.'); return false; }
+      } catch (e) {
+        setError('Error de red al guardar la API key.');
+        return false;
+      }
+      return true;
     };
 
-    if (btnGen) {
-      btnGen.addEventListener('click', async () => {
-        setError('');
-        const nombre      = document.getElementById('ia_nombre').value.trim();
-        const descripcion = document.getElementById('ia_descripcion').value.trim();
-        const publico     = document.getElementById('ia_publico').value.trim();
-        const precio      = document.getElementById('ia_precio').value.trim();
-        const apiKeyInput = document.getElementById('ia_api_key');
-        const apiKey      = apiKeyInput ? apiKeyInput.value.trim() : '';
+    const post = async (accion, obj) => {
+      const body = new URLSearchParams(Object.assign({ csrf_token: window.__CSRF__ || '' }, obj));
+      const res  = await fetch(BASE + '/AdminLanding/' + accion, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+      });
+      return res.json();
+    };
 
-        if (!nombre || !descripcion) {
-          setError('El nombre y la descripción del producto son obligatorios.');
+    const marcarOrig = (el, v) => { if (window.__iaMarcarOriginal) window.__iaMarcarOriginal(el, v); };
+
+    // Rellena el formulario con la respuesta de Claude. Ignora las claves _*.
+    const rellenar = (fields) => {
+      let filled = 0;
+      Object.keys(fields || {}).forEach((key) => {
+        const v = fields[key];
+        if (!v || key.charAt(0) === '_') return;
+        const input = document.querySelector('input[name="' + key + '"]');
+        if (input && ['hidden', 'file', 'checkbox', 'radio'].indexOf(input.type) === -1) {
+          input.value = v;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          marcarOrig(input, v);
+          filled++;
           return;
         }
+        const ta = document.querySelector('textarea[name="' + key + '"]');
+        if (ta) {
+          ta.value = v;
+          ta.dispatchEvent(new Event('input', { bubbles: true }));
+          marcarOrig(ta, v);
+          filled++;
+        }
+      });
+      return filled;
+    };
 
-        // Guardar key si se ingresó una nueva
-        if (apiKey) {
-          try {
-            const r = await fetch('<?= BASE_URL ?>/AdminLanding/guardarApiKey', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: new URLSearchParams({ api_key: apiKey, csrf_token: window.__CSRF__ || '' }),
-            });
-            const d = await r.json();
-            if (!d.ok) { setError(d.error || 'Error al guardar la API key.'); return; }
-          } catch {
-            setError('Error de red al guardar la API key.');
+    const irAExito = (fields, filled) => {
+      document.getElementById('iaSuccessMsg').textContent =
+        filled + ' campos rellenados. Revisa, ajusta lo que quieras y guarda.';
+      const box = document.getElementById('iaAngResumen');
+      if (fields._dolor || fields._angulo) {
+        box.innerHTML =
+          (fields._dolor  ? '<b>Dolor:</b> ' + escapeHtml(fields._dolor) + '<br>' : '') +
+          (fields._angulo ? '<b>Ángulo:</b> ' + escapeHtml(fields._angulo) : '');
+        box.hidden = false;
+      } else {
+        box.hidden = true;
+      }
+      showStep(3);
+    };
+
+    const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    // ── Validación común ────────────────────────────────────────────────────
+    const validarBase = () => {
+      if (!val('ia_nombre') || !val('ia_descripcion')) {
+        setError('El nombre y la descripción del producto son obligatorios.');
+        return false;
+      }
+      return true;
+    };
+
+    // ── "Ayúdame con el brief": Claude propone público + dolor real ────────
+    const setBriefVal = (id, v) => {
+      const el = document.getElementById(id);
+      if (el && v) { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }
+    };
+    if (btnSugerir) {
+      btnSugerir.addEventListener('click', async () => {
+        setError('');
+        if (!val('ia_nombre') && !val('ia_descripcion')) {
+          setError('Escribe al menos el nombre o una frase de qué es el producto.');
+          return;
+        }
+        if (!(await guardarKeyEscrita())) return;
+
+        const txtOrig = btnSugerir.textContent;
+        btnSugerir.disabled = true;
+        btnSugerir.textContent = '✨ Pensando el brief…';
+        try {
+          const data = await post('sugerirBriefIA', {
+            nombre: val('ia_nombre'), descripcion: val('ia_descripcion'), precio: val('ia_precio'),
+          });
+          if (!data.ok) {
+            setError(data.error === 'no_key' ? 'Primero ingresa tu API key de Claude.' : (data.error || 'No se pudo. Intenta de nuevo.'));
             return;
           }
+          const b = data.brief || {};
+          setBriefVal('ia_publico',     b.publico);
+          setBriefVal('ia_avatar',      b.avatar);
+          setBriefVal('ia_escena',      b.escena);
+          setBriefVal('ia_objecion',    b.objecion);
+          setBriefVal('ia_alternativa', b.alternativa);
+          if (b.voz) { const s = document.getElementById('ia_voz'); if (s) s.value = b.voz; }
+          if (b.agresividad) {
+            const r = document.getElementById('ia_agresividad');
+            if (r) { r.value = b.agresividad; if (agrVal) agrVal.textContent = b.agresividad; }
+          }
+          const dolorEl = document.getElementById('iaBriefDolor');
+          if (dolorEl && b.dolor_principal) {
+            dolorEl.textContent = '🎯 Dolor detectado: ' + b.dolor_principal;
+            dolorEl.hidden = false;
+          }
+        } catch (err) {
+          setError('Error de red: ' + err.message);
+        } finally {
+          btnSugerir.disabled = false;
+          btnSugerir.textContent = txtOrig;
         }
+      });
+    }
 
+    // ── Paso 1 → proponer ángulos ──────────────────────────────────────────
+    if (btnAngulos) {
+      btnAngulos.addEventListener('click', async () => {
+        setError('');
+        if (!validarBase()) return;
+        if (!(await guardarKeyEscrita())) return;
+
+        document.getElementById('iaStep2Msg').textContent = 'Claude está pensando los ángulos...';
+        document.getElementById('iaStep2Sub').textContent = 'Unos 10 segundos.';
         showStep(2);
 
         try {
-          const body = new URLSearchParams({ nombre, descripcion, publico, precio, csrf_token: window.__CSRF__ || '' });
-          const res  = await fetch('<?= BASE_URL ?>/AdminLanding/generarConIA', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body,
-          });
-          const data = await res.json();
-
+          const data = await post('generarAngulosIA', Object.assign(baseFields(), briefFields()));
           if (!data.ok) {
             showStep(1);
-            if (data.error === 'no_key') {
-              setError('Primero ingresa tu API key de Claude.');
-            } else {
-              setError(data.error || 'Error desconocido. Intenta de nuevo.');
-            }
+            setError(data.error === 'no_key' ? 'Primero ingresa tu API key de Claude.' : (data.error || 'Error. Intenta de nuevo.'));
             return;
           }
-
-          // Rellenar todos los campos del formulario
-          const fields = data.fields || {};
-          let filled = 0;
-          Object.entries(fields).forEach(([key, val]) => {
-            if (!val) return;
-            // Inputs
-            const input = document.querySelector(`input[name="${key}"]`);
-            if (input && input.type !== 'hidden' && input.type !== 'file' && input.type !== 'checkbox' && input.type !== 'radio') {
-              input.value = val;
-              input.dispatchEvent(new Event('input', { bubbles: true }));
-              filled++;
-              return;
-            }
-            // Textareas
-            const ta = document.querySelector(`textarea[name="${key}"]`);
-            if (ta) {
-              ta.value = val;
-              ta.dispatchEvent(new Event('input', { bubbles: true }));
-              filled++;
-            }
-          });
-
-          document.getElementById('iaSuccessMsg').textContent =
-            `${filled} campos rellenados con copy optimizado para Colombia. Revisa, ajusta lo que quieras y guarda.`;
-
-          showStep(3);
-
+          _angulos = data.angulos || [];
+          renderAngulos();
+          showStep('A');
         } catch (err) {
           showStep(1);
           setError('Error de red: ' + err.message);
         }
+      });
+    }
+
+    // ── Render de las tarjetas de ángulo ───────────────────────────────────
+    const renderAngulos = () => {
+      const list = document.getElementById('iaAngulosList');
+      list.innerHTML = '';
+      _angulos.forEach((a, i) => {
+        const lbl = document.createElement('label');
+        lbl.className = 'ia-angulo';
+        lbl.innerHTML =
+          '<input type="radio" name="ia_angulo_pick" value="' + i + '"' + (i === 0 ? ' checked' : '') + '>' +
+          '<span class="ia-angulo__body">' +
+            '<span class="ia-angulo__headline">' + escapeHtml(a.headline || '') + '</span>' +
+            '<span class="ia-angulo__line"><b>Dolor:</b> ' + escapeHtml(a.dolor || '') + '</span>' +
+            '<span class="ia-angulo__line"><b>Idea:</b> ' + escapeHtml(a.gran_idea || '') + '</span>' +
+            (a.a_quien || a.por_que
+              ? '<span class="ia-angulo__meta">' + escapeHtml([a.a_quien, a.por_que].filter(Boolean).join(' · ')) + '</span>'
+              : '') +
+          '</span>';
+        list.appendChild(lbl);
+      });
+      list.querySelectorAll('input[name="ia_angulo_pick"]').forEach((r) => {
+        r.addEventListener('change', () => cargarAjuste(parseInt(r.value, 10)));
+      });
+      cargarAjuste(0);
+    };
+
+    const cargarAjuste = (idx) => {
+      const a = _angulos[idx] || {};
+      document.getElementById('iaAngDolor').value    = a.dolor || '';
+      document.getElementById('iaAngIdea').value     = a.gran_idea || '';
+      document.getElementById('iaAngHeadline').value = a.headline || '';
+      document.getElementById('iaAngQuien').value    = a.a_quien || '';
+    };
+
+    if (btnVolver) btnVolver.addEventListener('click', () => { setAngError(''); showStep(1); });
+
+    // ── Genera la landing en 3 lotes cortos, rellenando a medida ───────────
+    const LOTES = [
+      { id: 'gancho', label: 'gancho (hero, beneficios, por qué)' },
+      { id: 'prueba', label: 'prueba social (comparativa, testimonios, WhatsApp)' },
+      { id: 'cierre', label: 'cierre (FAQ, autoridad, botones)' },
+    ];
+
+    const generarPorLotes = async (extra, backStep, showErr) => {
+      document.getElementById('iaStep2Msg').textContent = 'Claude está escribiendo tu landing...';
+      showStep(2);
+
+      const merged = {};
+      let filledTotal = 0;
+      let ancla = Object.assign({}, extra); // tras el 1er lote, fija el dolor/ángulo
+
+      for (let i = 0; i < LOTES.length; i++) {
+        document.getElementById('iaStep2Sub').textContent =
+          'Lote ' + (i + 1) + ' de ' + LOTES.length + ': ' + LOTES[i].label + '…';
+        let data;
+        try {
+          data = await post('generarConIA', Object.assign({}, baseFields(), briefFields(), ancla, { lote: LOTES[i].id }));
+        } catch (err) {
+          showStep(backStep);
+          showErr('Error de red en el lote "' + LOTES[i].id + '": ' + err.message +
+                  (filledTotal ? ' (se alcanzaron a llenar ' + filledTotal + ' campos)' : ''));
+          return;
+        }
+        if (!data.ok) {
+          showStep(backStep);
+          showErr(data.error === 'no_key'
+            ? 'Primero ingresa tu API key de Claude.'
+            : ('Falló el lote "' + LOTES[i].id + '": ' + (data.error || 'error') +
+               (filledTotal ? '. Los lotes anteriores sí se llenaron.' : '')));
+          return;
+        }
+        Object.assign(merged, data.fields || {});
+        filledTotal += rellenar(data.fields || {});
+
+        // Coherencia entre lotes: si no había ángulo fijado, el 1er lote lo fija.
+        const f = data.fields || {};
+        if (!ancla.angulo_dolor && (f._dolor || f._angulo)) {
+          ancla = Object.assign({}, ancla, {
+            angulo_dolor:     f._dolor  || '',
+            angulo_gran_idea: f._angulo || '',
+          });
+        }
+      }
+
+      irAExito(merged, filledTotal);
+    };
+
+    // ── Generar landing con el ángulo elegido ──────────────────────────────
+    if (btnGenAng) {
+      btnGenAng.addEventListener('click', () => {
+        setAngError('');
+        if (!val('iaAngDolor') && !val('iaAngHeadline')) {
+          setAngError('Elige o escribe un ángulo antes de generar.');
+          return;
+        }
+        generarPorLotes({
+          angulo_dolor:     val('iaAngDolor'),
+          angulo_gran_idea: val('iaAngIdea'),
+          angulo_headline:  val('iaAngHeadline'),
+          angulo_a_quien:   val('iaAngQuien'),
+        }, 'A', setAngError);
+      });
+    }
+
+    // ── Generar directo, sin elegir ángulo ─────────────────────────────────
+    if (btnDirecto) {
+      btnDirecto.addEventListener('click', async () => {
+        setError('');
+        if (!validarBase()) return;
+        if (!(await guardarKeyEscrita())) return;
+        generarPorLotes({}, 1, setError);
       });
     }
   })();
@@ -2862,16 +3186,19 @@
     // ── Fill form fields from Claude response ─────────────────────────────────
     function fillFields(fields) {
       let filled = 0;
+      const marcar = (el, v) => { if (window.__iaMarcarOriginal) window.__iaMarcarOriginal(el, v); };
       Object.entries(fields).forEach(([key, val]) => {
-        if (!val) return;
+        if (!val || key.charAt(0) === '_') return;
         const input = document.querySelector(`input[name="${key}"]`);
         if (input && !['hidden','file','checkbox','radio'].includes(input.type)) {
           input.value = val;
           input.dispatchEvent(new Event('input', { bubbles: true }));
+          marcar(input, val);
           filled++; return;
         }
         const ta = document.querySelector(`textarea[name="${key}"]`);
         if (ta) {
+          marcar(ta, val);
           ta.value = val;
           ta.dispatchEvent(new Event('input', { bubbles: true }));
           filled++;
@@ -2891,6 +3218,7 @@
       setTxtLoading(true);
       try {
         const body = new URLSearchParams({
+          producto_id: <?= json_encode((string)$producto_id) ?>,
           seccion: currentSection, nombre: ctx.nombre,
           descripcion: ctx.descripcion, extra,
           csrf_token: window.__CSRF__ || '',
@@ -2925,6 +3253,193 @@
 
       } catch(e) { setTxtLoading(false); setTxtError('Error de red: ' + e.message); }
     });
+  })();
+  </script>
+
+  <!-- ===== REESCRIBIR UN CAMPO CON INSTRUCCIÓN ============================ -->
+  <div id="iaCampoPanel" class="ia-campo-panel" hidden>
+    <div class="ia-campo-panel__label" id="iaCampoNombre">campo</div>
+    <textarea id="iaCampoInstr" rows="2"
+      placeholder="¿Qué le cambio? Ej: más corto · más directo · que haga una pregunta desde el dolor · menos cursi"></textarea>
+    <label class="ia-campo-panel__opt">
+      <input type="checkbox" id="iaCampoTres"> Mostrarme 3 opciones para elegir
+    </label>
+    <div class="ia-campo-panel__row">
+      <button type="button" id="iaCampoGen" class="ia-campo-panel__go">✨ Reescribir</button>
+      <button type="button" id="iaCampoCancel" class="ia-campo-panel__x">Cancelar</button>
+    </div>
+    <div class="ia-campo-variantes" id="iaCampoVariantes" hidden></div>
+    <div class="ia-campo-panel__err" id="iaCampoErr" hidden></div>
+  </div>
+
+  <script>
+  (() => {
+    const BASE  = '<?= BASE_URL ?>';
+    const PID   = <?= json_encode((string)$producto_id) ?>;
+    const form  = document.getElementById('formLanding');
+    if (!form) return;
+
+    const panel  = document.getElementById('iaCampoPanel');
+    const taI    = document.getElementById('iaCampoInstr');
+    const errEl  = document.getElementById('iaCampoErr');
+    const nameEl = document.getElementById('iaCampoNombre');
+    const btnGo  = document.getElementById('iaCampoGen');
+    const btnX   = document.getElementById('iaCampoCancel');
+    const chkTres  = document.getElementById('iaCampoTres');
+    const varsEl   = document.getElementById('iaCampoVariantes');
+    let target   = null;
+
+    // Feature 7: al rellenar un campo con IA se guarda el valor original;
+    // si luego el dueño lo edita a mano, se registra la corrección.
+    const marcarIA = (el, v) => { if (el) el.dataset.iaOriginal = v; };
+    window.__iaMarcarOriginal = marcarIA;
+
+    form.addEventListener('change', (e) => {
+      const el = e.target;
+      if (!el || !el.name || !('iaOriginal' in el.dataset)) return;
+      const nuevo = (el.value || '').trim();
+      const prev  = (el.dataset.iaOriginal || '').trim();
+      if (!nuevo || nuevo === prev) return;
+      el.dataset.iaOriginal = nuevo; // evita reenviar el mismo cambio
+      try {
+        fetch(BASE + '/AdminLanding/registrarEdicionIA', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            csrf_token: window.__CSRF__ || '', campo: el.name, ia: prev, humano: nuevo,
+          }),
+          keepalive: true,
+        });
+      } catch (_) {}
+    }, true);
+
+    const SKIP = /(_path|_actual|_id$|hex|color|_img|pixel|clarity|phone|section_order|_minutes|_stock|combo_price|_icon$|_rating$|_years$|_deliveries$|badge|^cv\d|_type$|theme)/;
+
+    const elegible = (el) => {
+      if (!el.name || SKIP.test(el.name)) return false;
+      if (el.tagName === 'TEXTAREA') return true;
+      return el.tagName === 'INPUT' && (el.type === 'text' || el.type === '');
+    };
+
+    const etiqueta = (el) => {
+      const l = el.labels && el.labels[0];
+      return (l ? l.textContent.replace(/\s+/g, ' ').trim().slice(0, 40) : '')
+        || el.getAttribute('aria-label') || el.name;
+    };
+
+    const inject = () => {
+      form.querySelectorAll('input, textarea').forEach((el) => {
+        if (!elegible(el)) return;
+        const grp = el.closest('.admin-form-group') || el.parentElement;
+        if (!grp || grp.querySelector('.ia-campo-trigger')) return;
+        grp.classList.add('has-ia-campo');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ia-campo-trigger';
+        b.textContent = '✨';
+        b.title = 'Reescribir este texto con IA';
+        b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); abrir(el, b); });
+        grp.appendChild(b);
+      });
+    };
+
+    const cerrar = () => { panel.hidden = true; target = null; };
+
+    let _anchorRect = null;
+    const reclamar = () => {
+      const r = _anchorRect;
+      if (!r) return;
+      panel.style.top  = Math.max(8, Math.min(window.innerHeight - panel.offsetHeight - 8, r.bottom + 6)) + 'px';
+      panel.style.left = Math.max(8, Math.min(window.innerWidth - panel.offsetWidth - 8, r.right - panel.offsetWidth)) + 'px';
+    };
+
+    const aplicar = (v) => {
+      target.value = v;
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+      marcarIA(target, v);
+      target.classList.add('ia-campo-flash');
+      const el = target;
+      setTimeout(() => el.classList.remove('ia-campo-flash'), 1200);
+      cerrar();
+    };
+
+    const abrir = (el, anchor) => {
+      target = el;
+      nameEl.textContent = etiqueta(el);
+      taI.value = '';
+      errEl.hidden = true;
+      varsEl.hidden = true;
+      varsEl.innerHTML = '';
+      chkTres.checked = false;
+      panel.hidden = false;
+      _anchorRect = anchor.getBoundingClientRect();
+      reclamar();
+      taI.focus();
+    };
+
+    btnX.addEventListener('click', cerrar);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) cerrar(); });
+    document.addEventListener('click', (e) => {
+      if (!panel.hidden && !panel.contains(e.target) && !e.target.classList.contains('ia-campo-trigger')) cerrar();
+    });
+    window.addEventListener('scroll', () => { if (!panel.hidden) cerrar(); }, true);
+
+    btnGo.addEventListener('click', async () => {
+      if (!target) return;
+      errEl.hidden = true;
+      varsEl.hidden = true;
+      varsEl.innerHTML = '';
+      const tres = chkTres.checked;
+      const orig = btnGo.textContent;
+      btnGo.disabled = true;
+      btnGo.textContent = tres ? '✨ Buscando opciones…' : '✨ Escribiendo…';
+      try {
+        const body = new URLSearchParams({
+          csrf_token:   window.__CSRF__ || '',
+          producto_id:  PID,
+          campo:        target.name,
+          valor_actual: target.value || '',
+          instruccion:  taI.value.trim(),
+          n:            tres ? '3' : '1',
+          nombre:       (document.querySelector('[name="hero_title"]') || {}).value || '',
+          descripcion:  (document.querySelector('[name="hero_subtitle"]') || {}).value || '',
+        });
+        const res = await fetch(BASE + '/AdminLanding/regenerarCampoIA', {
+          method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
+        });
+        const d = await res.json();
+        if (!d.ok) {
+          errEl.textContent = d.error === 'no_key'
+            ? 'Configura primero la API key de Claude en "✨ Generar con IA".'
+            : (d.error || 'No se pudo. Intenta de nuevo.');
+          errEl.hidden = false;
+          return;
+        }
+        if (tres) {
+          (d.variantes || []).forEach((v) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'ia-campo-variante';
+            b.textContent = v;
+            b.addEventListener('click', () => aplicar(v));
+            varsEl.appendChild(b);
+          });
+          varsEl.hidden = false;
+          reclamar();
+          return;
+        }
+        aplicar(d.valor);
+      } catch (e) {
+        errEl.textContent = 'Error de red: ' + e.message;
+        errEl.hidden = false;
+      } finally {
+        btnGo.disabled = false;
+        btnGo.textContent = orig;
+      }
+    });
+
+    document.addEventListener('ux:sections-ready', inject, { once: true });
+    setTimeout(inject, 1600); // respaldo si el evento ya ocurrió
   })();
   </script>
 
