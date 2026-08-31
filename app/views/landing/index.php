@@ -1704,25 +1704,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <?= htmlspecialchars($formSubtitle) ?>
                 </p>
 
-                <!-- Promesa de cero riesgo — el cierre real de una venta
-                     contraentrega. Son las tres cosas que el comprador se
-                     pregunta justo antes de dar sus datos. Editables desde
-                     landing_config el día que se agreguen los campos. -->
-                <?php
-                $promesas = [
-                    $cfg['promesa_1'] ?? 'No pagas <strong>nada</strong> ahora',
-                    $cfg['promesa_2'] ?? 'Pagas cuando <strong>lo tengas en la mano</strong>',
-                    $cfg['promesa_3'] ?? 'Si no llega, <strong>no pagas</strong>',
-                ];
-                ?>
-                <ul class="promesa-riesgo">
-                    <?php foreach ($promesas as $_p): ?>
-                    <li class="promesa-riesgo__item">
-                        <span class="promesa-riesgo__check" aria-hidden="true"><?= $micoCheck ?></span>
-                        <span><?= $_p ?></span>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
+                <?php /* Aquí vivían tres promesas fijas — "No pagas nada ahora ·
+                         Pagas cuando lo tengas en la mano · Si no llega, no pagas".
+                         Repetían lo que ya dicen el subtítulo del formulario
+                         ($formSubtitle, editable) y la fila de confianza del pie.
+                         Se retiraron para no llenar de obviedades la zona donde
+                         el comprador ya bajó a dar sus datos. */ ?>
                 <div class="order-modal-body">
 
                     <!-- Barra de progreso -->

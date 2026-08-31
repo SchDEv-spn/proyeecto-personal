@@ -503,58 +503,9 @@ body.modal-open { overflow: hidden; }
     border-top: 1px solid rgba(128, 128, 128, 0.18);
 }
 
-/* ── PROMESA DE CERO RIESGO ────────────────────────────────────
-   Va justo antes del primer campo. En una venta contraentrega el
-   comprador no duda del producto a estas alturas: duda de si le van a
-   sacar la plata. Tres frases cortas contestan eso mejor que un párrafo.
-   Ojo con la redacción: solo promete lo que el pago contraentrega
-   garantiza de verdad. "Lo revisas antes de pagar" NO se puede prometer
-   — varias transportadoras no dejan abrir el paquete antes del pago. */
-.promesa-riesgo {
-    list-style: none;
-    margin: 4px auto 18px;
-    padding: 12px 14px;
-    max-width: 340px;
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--positivo) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--positivo) 24%, transparent);
-}
-
-.promesa-riesgo__item {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-size: 14px;
-    line-height: 1.3;
-    color: var(--cream);
-    text-align: left;
-}
-
-.promesa-riesgo__item strong {
-    font-weight: 800;
-    color: var(--positivo);
-}
-
-.promesa-riesgo__check {
-    display: inline-flex;
-    flex-shrink: 0;
-    color: var(--positivo);
-}
-
-.promesa-riesgo__check svg {
-    width: 15px;
-    height: 15px;
-}
-
-@supports not (background: color-mix(in srgb, red 10%, blue)) {
-    .promesa-riesgo {
-        background: var(--bg-layer2);
-        border-color: var(--gold-border);
-    }
-}
+/* La "promesa de cero riesgo" (tres frases fijas antes del primer campo)
+   se retiró: repetía el subtítulo del formulario y la fila de confianza
+   del pie. Los estilos .promesa-riesgo* vivían aquí. */
 
 /* ── Menos preámbulo antes del primer campo ────────────────────
    El comprador que llega aquí ya decidió: cada línea de texto entre el
