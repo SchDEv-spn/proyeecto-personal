@@ -3343,14 +3343,24 @@
       });
     };
 
-    const cerrar = () => { panel.hidden = true; target = null; };
+    const cerrar = () => { panel.hidden = true; target = null; _anchorEl = null; };
 
-    let _anchorRect = null;
+    let _anchorEl = null;
+    // Recoloca el panel pegado a su campo. Solo se esconde si el campo
+    // se sale de la pantalla (nunca por el simple hecho de hacer scroll).
     const reclamar = () => {
-      const r = _anchorRect;
-      if (!r) return;
+      if (!_anchorEl || panel.hidden) return;
+      const r = _anchorEl.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) { panel.style.visibility = 'hidden'; return; }
+      panel.style.visibility = 'visible';
       panel.style.top  = Math.max(8, Math.min(window.innerHeight - panel.offsetHeight - 8, r.bottom + 6)) + 'px';
       panel.style.left = Math.max(8, Math.min(window.innerWidth - panel.offsetWidth - 8, r.right - panel.offsetWidth)) + 'px';
+    };
+
+    let _raf = 0;
+    const reclamarThrottled = () => {
+      if (_raf) return;
+      _raf = requestAnimationFrame(() => { _raf = 0; reclamar(); });
     };
 
     const aplicar = (v) => {
@@ -3365,24 +3375,35 @@
 
     const abrir = (el, anchor) => {
       target = el;
+      _anchorEl = anchor;
       nameEl.textContent = etiqueta(el);
       taI.value = '';
       errEl.hidden = true;
       varsEl.hidden = true;
       varsEl.innerHTML = '';
       chkTres.checked = false;
+      panel.style.visibility = 'visible';
       panel.hidden = false;
-      _anchorRect = anchor.getBoundingClientRect();
       reclamar();
-      taI.focus();
+      taI.focus({ preventScroll: true });
     };
 
     btnX.addEventListener('click', cerrar);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) cerrar(); });
-    document.addEventListener('click', (e) => {
-      if (!panel.hidden && !panel.contains(e.target) && !e.target.classList.contains('ia-campo-trigger')) cerrar();
-    });
-    window.addEventListener('scroll', () => { if (!panel.hidden) cerrar(); }, true);
+
+    // Cierra solo si el gesto EMPIEZA fuera del panel y de un disparador ✨.
+    // (Antes se cerraba con cualquier scroll — molestaba al escribir.)
+    let _downOutside = false;
+    document.addEventListener('pointerdown', (e) => {
+      _downOutside = !panel.hidden && !panel.contains(e.target) && !e.target.closest('.ia-campo-trigger');
+    }, true);
+    document.addEventListener('pointerup', (e) => {
+      if (_downOutside && !panel.contains(e.target)) cerrar();
+      _downOutside = false;
+    }, true);
+
+    window.addEventListener('scroll', reclamarThrottled, true);
+    window.addEventListener('resize', reclamarThrottled);
 
     btnGo.addEventListener('click', async () => {
       if (!target) return;
