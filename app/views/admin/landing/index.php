@@ -1790,7 +1790,7 @@
                   <!-- ANNOUNCEMENT BAR -->
                   <div class="section-block" id="sec-announcement" data-toc="Barra">
                     <h2>Barra de anuncios</h2>
-                    <p class="field-section-desc">Ítems del ticker superior. Deja en blanco los que no uses — se usan los defaults si todos están vacíos.</p>
+                    <p class="field-section-desc">Ítems del ticker superior. Puedes abrir cada uno con un emoji (🔥 🚚 💳 ⭐ 📦). Deja en blanco los que no uses — se usan los defaults si todos están vacíos.</p>
 
                     <div class="form-grid">
                       <?php for ($i = 1; $i <= 6; $i++): $k = "announcement_item_{$i}"; ?>

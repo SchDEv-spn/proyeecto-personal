@@ -308,21 +308,22 @@ $heroBadgeStars    = htmlspecialchars($val('hero_badge_stars', '4.9'));
 $heroBadgeCustomers= htmlspecialchars($val('hero_badge_customers', '+3.200 clientes felices'));
 
 // ===== ANNOUNCEMENT BAR =====
+/* Única zona de la landing donde SÍ se permiten emojis: el resto usa
+   iconos SVG de trazo y un emoji suelto rompe ese lenguaje, pero el
+   ticker corre solo y ahí el emoji da color y ritmo sin competir con
+   ningún icono cercano. Por eso no pasa por $stripLeadingEmoji(). */
 $announcementItems = [];
 for ($i = 1; $i <= 6; $i++) {
     $k = "announcement_item_{$i}";
-    if (!empty($cfg[$k])) $announcementItems[] = $stripLeadingEmoji($cfg[$k]);
+    if (!empty($cfg[$k])) $announcementItems[] = $cfg[$k];
 }
 if (empty($announcementItems)) {
-    /* Sin emoji: la barra los pinta en color sobre un fondo de tema y cada
-       teléfono los dibuja distinto. Aquí el ritmo lo dan las mayúsculas y
-       el espaciado de letra, que ya trae el CSS. */
     $announcementItems = [
-        'Quedan pocas unidades',
-        'Envío gratis a todo el país',
-        'Pago contraentrega',
-        $heroBadgeCustomers,
-        'Empaque discreto y seguro',
+        '🔥 Quedan pocas unidades',
+        '🚚 Envío gratis a todo el país',
+        '💳 Pago contraentrega',
+        '⭐ ' . $val('hero_badge_customers', '+3.200 clientes felices'),
+        '📦 Empaque discreto y seguro',
     ];
 }
 
