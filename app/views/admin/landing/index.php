@@ -3110,13 +3110,14 @@
       'sec-autoridad':       'autoridad',
       'sec-ctas':            'ctas',
       'sec-form-header':     'form',
+      'sec-announcement':    'announcement',
     };
     const sectionLabels = {
       'hero':'Hero', 'beneficios':'Beneficios', 'caracteristicas':'Características',
       'countdown':'Contador/Oferta', 'porque':'¿Por qué?', 'comparativa':'Tabla comparativa',
       'testimonios':'Testimonios', 'paraquien':'¿Para quién es?', 'wa':'Testimonios WhatsApp',
       'faq':'Preguntas frecuentes', 'autoridad':'Autoridad', 'ctas':'CTAs',
-      'form':'Formulario de pedido',
+      'form':'Formulario de pedido', 'announcement':'Barra de anuncios',
     };
 
     let currentSection = null;

@@ -1177,6 +1177,8 @@ class AdminLandingController extends Controller
             'ctas' => '{"cta_benefits_text":"","cta_benefits_button":"","cta_gallery_text":"","cta_gallery_button":"","cta_porque_text":"","cta_porque_button":"","cta_testimonials_text":"","cta_testimonials_button":"","cta_faq_text":"","cta_faq_button":"","cta_como_funciona_text":"","cta_como_funciona_button":"","cta_comparison_button":"","cta_para_quien_button":"","cta_wa_testimonios_button":"","cta_sticky_mobile_text":""}',
 
             'form' => '{"form_kicker":"","form_title":"","form_subtitle":""}',
+
+            'announcement' => '{"announcement_item_1":"","announcement_item_2":"","announcement_item_3":"","announcement_item_4":"","announcement_item_5":"","announcement_item_6":""}',
         ];
 
         if (!isset($schemas[$sec])) return null;
@@ -1195,6 +1197,7 @@ class AdminLandingController extends Controller
             'autoridad'       => 'Autoridad: reduce el riesgo percibido de confiarle ese dolor a una marca nueva. Números creíbles; authority_years puede ser pequeño si la marca es nueva.',
             'ctas'            => 'CTAs: directo al grano, cero rodeos. Botón ≤5 palabras, verbo de acción + urgencia (emoji opcional si suma, ej 🔥⏰). cta_*_text: una sola frase corta que empuje al clic, no una explicación.',
             'form'            => 'Cabecera del formulario de pedido — es lo último que lee antes de dejar sus datos. form_kicker: micro-aviso de impulso ≤7 palabras que baja la fricción ("Último paso · te toma menos de 1 minuto"), sin emoji. form_title: acción + tranquilidad de pagar al recibir, ≤7 palabras. form_subtitle: una frase que quita el miedo (sin adelantos, el mensajero llega a la puerta). Nada de urgencia agresiva aquí: ya decidió, solo hay que quitarle el último freno.',
+            'announcement'    => 'Barra de anuncios: el ticker que corre arriba de todo. Cada ítem es una frase de 2-5 palabras, SIN emoji ni signos al inicio (la barra los pinta en mayúsculas y con espaciado; el emoji se descarta). Mezcla urgencia real, envío/pago y prueba social: escasez, "envío gratis a todo el país", "pago contraentrega", "+X clientes felices", "empaque discreto". Llena los 6; deben leerse bien girando en bucle.',
         ];
 
         if ($n > 1) {
