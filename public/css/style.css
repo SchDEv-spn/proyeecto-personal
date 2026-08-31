@@ -4347,8 +4347,12 @@ img[loading="lazy"].loaded {
 .authority-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-top: 28px;
+    /* Misma separación y aire que el resto de rejillas de tarjetas
+       (beneficios, ¿por qué?, para quién): antes iba con gap 20px y un
+       margen superior de 28px que ninguna otra sección tiene, y eso la
+       hacía leerse aparte del sistema. */
+    gap: var(--card-gap);
+    margin-top: var(--space-sm);
     text-align: center;
 }
 
@@ -4579,12 +4583,19 @@ img[loading="lazy"].loaded {
 }
 
 /* La cuarta estadística es sólo un icono (el escudo de la garantía): sin
-   número que lo sostenga, hay que centrarlo a la altura de los otros. */
+   número que lo sostenga, hay que centrarlo a la altura de los otros y
+   agrandarlo hasta la masa visual de una cifra — si no, esa tarjeta se
+   ve más vacía que las otras tres. */
 .authority-stat__num--ico {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 1em;
+}
+
+.authority-stat__num--ico svg {
+    width: 1.5em;
+    height: 1.5em;
 }
 
 .exit-popup__cta svg,
@@ -4697,14 +4708,18 @@ img[loading="lazy"].loaded {
     font-size: 15px;
 }
 
-/* ── AUTHORITY — números más grandes ─────────────────────── */
+/* ── AUTHORITY — números grandes, pero dentro del sistema ──
+   Se quitó el drop-shadow dorado: era el único texto de toda la página
+   con halo, y la profundidad en este diseño la lleva la sombra de la
+   CAJA, no un glow. El peso baja de 900 a 800 —el mismo de las demás
+   cifras (price save, viñeta de ¿por qué?)— y el interletrado se
+   suaviza. */
 .authority-stat__num {
     font-size: clamp(1.8rem, 5vw, 2.6rem) !important;
-    font-weight: 900 !important;
+    font-weight: 800 !important;
     color: var(--gold-light) !important;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     margin-bottom: 6px;
-    filter: drop-shadow(0 0 8px rgba(201,168,76,0.3));
 }
 .authority-stat {
     padding: 28px 16px !important;
