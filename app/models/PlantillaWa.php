@@ -4,6 +4,14 @@ class PlantillaWa extends Model
 {
     private static bool $tableReady = false;
 
+    /**
+     * Se sube cada vez que cambia el texto base de self::textos(). En
+     * instalaciones donde la tabla ya está sembrada, refrescarSiDesactualizado()
+     * reescribe las 7 plantillas una sola vez por versión.
+     *   2026-09-01: emojis reducidos a los que WhatsApp sí renderiza (📦 ✅ 🙏 😊).
+     */
+    private const TEMPLATES_VERSION = '2026-09-01';
+
     public function __construct()
     {
         parent::__construct();
@@ -29,9 +37,42 @@ class PlantillaWa extends Model
         $count = (int) $this->db->query("SELECT COUNT(*) FROM plantillas_wa")->fetchColumn();
         if ($count === 0) {
             $this->insertDefaults();
-        } else {
-            $this->migrateTemplates();
+            $this->marcarVersion();
+            return;
         }
+
+        $this->migrateTemplates();          // agrega estados nuevos que falten
+        $this->refrescarSiDesactualizado(); // propaga cambios de copy una vez por versión
+    }
+
+    /**
+     * Reescribe las 7 plantillas con el texto de self::textos(), una única vez
+     * por TEMPLATES_VERSION. Sirve para propagar cambios de copy (p. ej. quitar
+     * emojis que WhatsApp no renderiza) a instalaciones ya sembradas.
+     *
+     * Sí sobrescribe plantillas editadas a mano: es intencional. Sólo corre si
+     * la versión se puede persistir en app_settings; si esa tabla no existe, no
+     * toca nada (evita reescribir en cada request).
+     */
+    private function refrescarSiDesactualizado(): void
+    {
+        $settings = new AppSettings();
+        if ($settings->get('plantillas_wa_version') === self::TEMPLATES_VERSION) return;
+
+        $settings->set('plantillas_wa_version', self::TEMPLATES_VERSION);
+        if ($settings->get('plantillas_wa_version') !== self::TEMPLATES_VERSION) return;
+
+        $stmt = $this->db->prepare(
+            "UPDATE plantillas_wa SET titulo = :titulo, mensaje = :mensaje WHERE estado = :estado"
+        );
+        foreach (self::textos() as $estado => $data) {
+            $stmt->execute([':estado' => $estado, ':titulo' => $data[0], ':mensaje' => $data[1]]);
+        }
+    }
+
+    private function marcarVersion(): void
+    {
+        (new AppSettings())->set('plantillas_wa_version', self::TEMPLATES_VERSION);
     }
 
     private function insertDefaults(): void
@@ -47,30 +88,32 @@ class PlantillaWa extends Model
 
     private static function textos(): array
     {
+        // Sólo se usan 4 emojis, todos de Emoji 1.0 (2015) y con render garantizado
+        // en cualquier versión de WhatsApp: 📦 ✅ 🙏 😊
         return [
             'nuevo' => [
                 'Recibimos tu pedido',
-                "Hola {nombre} 👋\nRecibimos tu pedido de *{producto}* y ya lo estamos procesando.\n\nPronto te enviamos el número de guía para que puedas hacer seguimiento. 📦\n\n¡Gracias por tu compra! 🙏",
+                "Hola {nombre} 😊\nRecibimos tu pedido de *{producto}* y ya lo estamos procesando.\n\nPronto te enviamos el número de guía para que puedas hacer seguimiento. 📦\n\n¡Gracias por tu compra! 🙏",
             ],
             'contactado' => [
                 'En espera de confirmación',
-                "Hola {nombre} 😊\nQuedamos atentos a tu confirmación para continuar con el pedido de *{producto}*.\n\nCualquier duda, aquí estamos. ¡Con gusto te ayudamos! 🙌",
+                "Hola {nombre} 😊\nQuedamos atentos a tu confirmación para continuar con el pedido de *{producto}*.\n\nCualquier duda, aquí estamos. ¡Con gusto te ayudamos!",
             ],
             'confirmado' => [
                 'Pedido confirmado',
-                "¡Hola {nombre}! 🎉\nTu pedido de *{producto}* ha sido confirmado y ya estamos trabajando en él.\n\nPronto te estaremos enviando el número de guía. 📦\n\nBendiciones 🙏",
+                "¡Hola {nombre}! ✅\nTu pedido de *{producto}* ha sido confirmado y ya estamos trabajando en él.\n\nPronto te estaremos enviando el número de guía. 📦\n\nBendiciones 🙏",
             ],
             'enviado' => [
                 'Pedido despachado',
-                "¡Buenas noticias {nombre}! 🚀\nTu pedido de *{producto}* ya fue despachado hacia {municipio}.\n\n📦 *Transportadora:* {transportadora}\n📋 *Número de guía:* #{guia}\n🔍 *Seguimiento:* {rastreo}\n\nNuestro compromiso es tu satisfacción total. Bendiciones 🙏\n\n✅ Cuando llegue, ¡nos encantaría ver una foto con tu pedido!",
+                "¡Buenas noticias {nombre}! 📦\nTu pedido de *{producto}* ya fue despachado hacia {municipio}.\n\n*Transportadora:* {transportadora}\n*Número de guía:* #{guia}\n*Seguimiento:* {rastreo}\n\nNuestro compromiso es tu satisfacción total. Bendiciones 🙏\n\n✅ Cuando llegue, ¡nos encantaría ver una foto con tu pedido!",
             ],
             'en_oficina' => [
                 'Listo para recoger',
-                "¡Hola {nombre}! 📦\nTu pedido de *{producto}* ya llegó a la oficina de *Interrapidísimo* en {municipio}.\n\nPuedes pasar a recogerlo presentando:\n📋 *Número de guía:* #{guia}\n🪪 O tu número de cédula\n\n¡Te esperamos! Bendiciones 🙏",
+                "¡Hola {nombre}! 📦\nTu pedido de *{producto}* ya llegó a la oficina de *Interrapidísimo* en {municipio}.\n\nPuedes pasar a recogerlo presentando:\n*Número de guía:* #{guia}\nO tu número de cédula\n\n¡Te esperamos! Bendiciones 🙏",
             ],
             'entregado' => [
                 '¿Cómo llegó todo?',
-                "Hola {nombre} 😊\nEsperamos que tu *{producto}* haya llegado en perfectas condiciones.\n\n¿Todo llegó bien? Tu opinión es muy importante para nosotros. 🌟\n\n📸 Si tienes un momento, envíanos una foto con tu pedido. ¡La compartimos con mucho gusto!\n\n¡Gracias por confiar en nosotros! 🙏",
+                "Hola {nombre} 😊\nEsperamos que tu *{producto}* haya llegado en perfectas condiciones.\n\n¿Todo llegó bien? Tu opinión es muy importante para nosotros.\n\nSi tienes un momento, envíanos una foto con tu pedido. ¡La compartimos con mucho gusto!\n\n¡Gracias por confiar en nosotros! 🙏",
             ],
             'cancelado' => [
                 'Pedido cancelado',
