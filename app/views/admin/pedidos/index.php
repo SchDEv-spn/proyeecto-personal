@@ -170,7 +170,7 @@
                         </div>
 
                         <?php
-                        $rangoLabels = ['hoy'=>'Hoy','ayer'=>'Ayer','semana'=>'Esta semana','mes'=>'Este mes','personalizado'=>'Rango personalizado'];
+                        $rangoLabels = ['hoy'=>'Hoy','ayer'=>'Ayer','semana'=>'Esta semana','mes'=>'Este mes','personalizado'=>'Rango personalizado','siempre'=>'Desde siempre'];
                         $rangoLabel  = $rangoLabels[$rango] ?? 'Fecha';
                         $rangoActivo = ($rango !== 'mes');
                         ?>
@@ -189,6 +189,7 @@
                                     <button type="button" class="dfd-item <?= $rango==='ayer'   ?'is-active':'' ?>" data-rango="ayer"   onclick="cambiarRango('ayer')"><i class="fas fa-history"></i> Ayer</button>
                                     <button type="button" class="dfd-item <?= $rango==='semana' ?'is-active':'' ?>" data-rango="semana" onclick="cambiarRango('semana')"><i class="fas fa-calendar-week"></i> Esta semana</button>
                                     <button type="button" class="dfd-item <?= $rango==='mes'    ?'is-active':'' ?>" data-rango="mes"    onclick="cambiarRango('mes')"><i class="fas fa-calendar-alt"></i> Este mes</button>
+                                    <button type="button" class="dfd-item <?= $rango==='siempre' ?'is-active':'' ?>" data-rango="siempre" onclick="cambiarRango('siempre')"><i class="fas fa-infinity"></i> Desde siempre</button>
                                     <div class="dfd-divider"></div>
                                     <div class="dfd-custom">
                                         <span class="dfd-custom__label"><i class="fas fa-sliders-h"></i> Rango personalizado</span>
@@ -405,7 +406,7 @@
             'telefono'             => $p['telefono']             ?? null,
         ], $pedidos), JSON_UNESCAPED_UNICODE) ?>;
         window.__PLANTILLAS__  = <?= json_encode($plantillas_wa, JSON_UNESCAPED_UNICODE) ?>;
-        window.__RANGE_INIT__  = <?= json_encode(['hoy'=>'today','ayer'=>'yesterday','semana'=>'week','mes'=>'month','personalizado'=>'custom'][$rango] ?? 'month') ?>;
+        window.__RANGE_INIT__  = <?= json_encode(['hoy'=>'today','ayer'=>'yesterday','semana'=>'week','mes'=>'month','personalizado'=>'custom','siempre'=>'all'][$rango] ?? 'month') ?>;
         window.__RANGE_CUSTOM__ = <?= ($rango === 'personalizado' && $desde && $hasta)
             ? json_encode(['desde' => $desde, 'hasta' => $hasta])
             : 'null' ?>;
@@ -421,37 +422,15 @@
     <script>
     // ── Declaraciones hoistadas: disponibles aunque el IIFE de abajo falle ──
 
-    // Mapeo PHP-rango → JS-range
-    var __RANGO_MAP__ = {hoy:'today', ayer:'yesterday', semana:'week', mes:'month', personalizado:'custom'};
-    var __RANGO_LABELS__ = {hoy:'Hoy', ayer:'Ayer', semana:'Esta semana', mes:'Este mes', personalizado:'Rango personalizado'};
-
+    // El servidor sólo entrega los pedidos del rango pedido, así que cambiar de
+    // rango tiene que recargar la página (si sólo filtráramos en el navegador,
+    // los pedidos de meses anteriores nunca se cargarían).
     function cambiarRango(rango, desde, hasta) {
-        if (rango === 'personalizado') {
-            window.__RANGE_CUSTOM__ = (desde && hasta) ? {desde: desde, hasta: hasta} : window.__RANGE_CUSTOM__;
-        } else {
-            window.__RANGE_CUSTOM__ = null;
+        var qs = 'rango=' + encodeURIComponent(rango);
+        if (rango === 'personalizado' && desde && hasta) {
+            qs += '&desde=' + encodeURIComponent(desde) + '&hasta=' + encodeURIComponent(hasta);
         }
-
-        // Actualizar botones activos
-        document.querySelectorAll('.dfd-item[data-rango]').forEach(function(btn) {
-            btn.classList.toggle('is-active', btn.dataset.rango === rango);
-        });
-
-        // Actualizar label del summary
-        var lbl = document.querySelector('#fechaWrap summary .dtf-btn__label');
-        if (lbl) lbl.textContent = __RANGO_LABELS__[rango] || rango;
-
-        // Activar indicador visual en el botón
-        var wrap = document.getElementById('fechaWrap');
-        if (wrap) {
-            wrap.classList.toggle('dtf-wrap--active', rango !== 'mes');
-            wrap.open = false;
-        }
-
-        // Disparar el evento que funciones.js ya escucha (actualiza charts, KPIs, DT)
-        var rangoJs = __RANGO_MAP__[rango] || 'month';
-        window.__RANGE_SELECTED = rangoJs;
-        window.dispatchEvent(new CustomEvent('range:change', {detail: {range: rangoJs}}));
+        window.location.href = '<?= BASE_URL ?>/AdminPedidos/index?' + qs;
     }
 
     function cambiarRangoPersonalizado(form) {

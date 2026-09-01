@@ -267,6 +267,18 @@
       const s = addDays(today, -6); // 7 días incl.
       return { start: s, end: addDays(today, 1), mode: 'days', titleA: 'Pedidos (7 días)', titleB: 'Ventas (7 días)' };
     }
+    if (range === 'all') {
+      // "Desde siempre": arranca en el pedido más antiguo que tengamos cargado
+      // (así el filtro de la tabla no oculta nada y los charts no generan
+      // miles de días vacíos).
+      let minTs = today.getTime();
+      pedidos.forEach((p) => {
+        const d = parseDateFlexible(p);
+        if (d && d.getTime() < minTs) minTs = d.getTime();
+      });
+      const s = startOfDay(new Date(minTs));
+      return { start: s, end: addDays(today, 1), mode: 'days', titleA: 'Pedidos (histórico)', titleB: 'Ventas (histórico)' };
+    }
     if (range === 'custom') {
       const c = window.__RANGE_CUSTOM__;
       if (c && c.desde && c.hasta) {

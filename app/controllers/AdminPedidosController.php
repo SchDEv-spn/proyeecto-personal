@@ -6,9 +6,9 @@ class AdminPedidosController extends Controller
     {
         $this->requireLogin();
 
-        // ✅ Rango permitido: hoy | ayer | semana | mes | personalizado
+        // ✅ Rango permitido: hoy | ayer | semana | mes | personalizado | siempre
         $rango = $_GET['rango'] ?? 'mes';
-        $permitidos = ['hoy', 'ayer', 'semana', 'mes', 'personalizado'];
+        $permitidos = ['hoy', 'ayer', 'semana', 'mes', 'personalizado', 'siempre'];
         if (!in_array($rango, $permitidos, true)) $rango = 'mes';
 
         // Fechas custom para rango personalizado
@@ -27,9 +27,12 @@ class AdminPedidosController extends Controller
 
         $pedidoModel = new Pedido();
 
+        // "Desde siempre" necesita traer más filas que un rango acotado
+        $limite = ($rango === 'siempre') ? 2000 : 300;
+
         // ✅ Ideal: filtrar desde el modelo/DB
         if (method_exists($pedidoModel, 'obtenerPorRango')) {
-            $pedidos = $pedidoModel->obtenerPorRango($inicioStr, $finStr, 300);
+            $pedidos = $pedidoModel->obtenerPorRango($inicioStr, $finStr, $limite);
         } else {
             // ✅ Fallback: filtrar en PHP
             $todos = $pedidoModel->obtenerTodos(2000);
@@ -43,7 +46,7 @@ class AdminPedidosController extends Controller
                 return ($ts >= $inicioTs && $ts < $finTs);
             }));
 
-            $pedidos = array_slice($pedidos, 0, 300);
+            $pedidos = array_slice($pedidos, 0, $limite);
         }
 
         // ======= Métricas sobre el rango =======
@@ -161,6 +164,10 @@ class AdminPedidosController extends Controller
     {
         $fin = clone $inicio;
         switch ($rango) {
+            case 'siempre':
+                // Sin periodo previo con qué comparar: ventana vacía => tendencia plana
+                $inicio = clone $fin;
+                break;
             case 'personalizado':
                 if ($finActual !== null) {
                     $durSecs = $finActual->getTimestamp() - $inicio->getTimestamp();
@@ -202,6 +209,12 @@ class AdminPedidosController extends Controller
         $now = new DateTime('now', $tz);
 
         switch ($rango) {
+            case 'siempre':
+                // Desde el primer pedido posible hasta el fin del día de hoy
+                $inicio = (new DateTime('2000-01-01 00:00:00', $tz));
+                $fin    = (clone $now)->setTime(0, 0, 0)->modify('+1 day');
+                break;
+
             case 'personalizado':
                 $inicio = (new DateTime($desdeStr, $tz))->setTime(0, 0, 0);
                 $fin    = (new DateTime($hastaStr, $tz))->setTime(0, 0, 0)->modify('+1 day');
@@ -237,7 +250,7 @@ class AdminPedidosController extends Controller
         $this->requireLogin();
 
         $rango      = $_GET['rango'] ?? 'mes';
-        $permitidos = ['hoy', 'ayer', 'semana', 'mes', 'personalizado'];
+        $permitidos = ['hoy', 'ayer', 'semana', 'mes', 'personalizado', 'siempre'];
         if (!in_array($rango, $permitidos, true)) $rango = 'mes';
 
         $desdeStr = null;
