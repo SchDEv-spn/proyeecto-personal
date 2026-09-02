@@ -32,6 +32,9 @@
     $fuentes       = $fuentes       ?? [];
     $campanas      = $campanas      ?? [];
     $heatmap       = $heatmap       ?? [];
+    $heat_opcion   = $heat_opcion   ?? '4s';
+    $heat_opciones = $heat_opciones ?? [];
+    $heat_semanas  = $heat_semanas  ?? 4;
     $serie         = $serie         ?? [];
     $errores       = $errores       ?? [];
     $sesiones      = $sesiones      ?? [];
@@ -51,11 +54,12 @@
     $showSearch      = false;
 
     /** Enlace al mismo panel cambiando un solo filtro. */
-    $filtroUrl = function (array $cambios) use ($dias, $producto_id, $entorno, $canal) {
+    $filtroUrl = function (array $cambios) use ($dias, $producto_id, $entorno, $canal, $heat_opcion) {
         $q = array_merge(
-            ['dias' => $dias, 'producto' => $producto_id, 'entorno' => $entorno, 'canal' => $canal],
+            ['dias' => $dias, 'producto' => $producto_id, 'entorno' => $entorno, 'canal' => $canal, 'heat' => $heat_opcion],
             $cambios
         );
+        if (($q['heat'] ?? '') === '4s') unset($q['heat']);  // '4s' es el valor por defecto
         return BASE_URL . '/AdminEstadisticas/index?' . http_build_query(array_filter(
             $q,
             fn($v) => $v !== '' && $v !== 0 && $v !== null
@@ -630,11 +634,17 @@
                 <?php endif; ?>
 
                 <!-- ══ Heatmap horario ══
-                     Cuándo entra el tráfico, por hora y día. La señal para
-                     decidir a qué hora reforzar la pauta. Hora de Colombia. -->
-                <?php if (!empty($heatmap['grid']) && (int)($heatmap['max'] ?? 0) > 0):
-                    $diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-                    $hMax = max(1, (int)$heatmap['max']);
+                     Cuándo entra el tráfico, por hora y día de la semana: la
+                     señal para decidir a qué hora reforzar la pauta. Su ventana
+                     es independiente del periodo de arriba —el reparto por
+                     hora×día necesita varias semanas para que cada celda
+                     promedie más de una visita—. Hora de Colombia. -->
+                <?php
+                $hGrid  = $heatmap['grid'] ?? [];
+                $hMax   = max(1, (int)($heatmap['max'] ?? 0));
+                $hTotal = (int)($heatmap['total'] ?? 0);
+                $hEtq   = $heat_opciones[$heat_opcion][0] ?? 'Últimas 4 semanas';
+                $diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
                 ?>
                 <div class="panel">
                     <div class="panel__head">
@@ -642,6 +652,26 @@
                         <span class="chip">Hora × día</span>
                     </div>
                     <div class="panel__body">
+                        <!-- Ventana propia: no la tocan los chips de periodo de
+                             arriba. Cada opción lleva su URL ya armada. -->
+                        <div class="heat-bar">
+                            <label class="stats-select stats-select--sm">
+                                <i class="fas fa-calendar-week" aria-hidden="true"></i>
+                                <select id="filtroHeat" aria-label="Ventana del heatmap">
+                                    <?php foreach ($heat_opciones as $clave => $op): ?>
+                                        <option value="<?= htmlspecialchars($filtroUrl(['heat' => $clave])) ?>"
+                                                <?= $heat_opcion === $clave ? 'selected' : '' ?>><?= htmlspecialchars($op[0]) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <?php if ($hTotal > 0): ?>
+                                <span class="heat-bar__n"><?= number_format($hTotal, 0, ',', '.') ?> visitas en la ventana</span>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php if ($hTotal === 0): ?>
+                            <p class="stats-empty">Sin visitas en esta ventana.</p>
+                        <?php else: ?>
                         <div class="heat-scroll">
                             <div class="heat" role="img" aria-label="Mapa de calor de visitas por hora y día de la semana">
                                 <div class="heat__corner" aria-hidden="true"></div>
@@ -651,20 +681,31 @@
                                 <?php foreach ($diasSemana as $d => $nombre): ?>
                                     <div class="heat__day"><?= $nombre ?></div>
                                     <?php for ($h = 0; $h < 24; $h++):
-                                        $v = (int)($heatmap['grid'][$d][$h] ?? 0);
+                                        $v = (int)($hGrid[$d][$h] ?? 0);
                                         $alpha = $v ? round(0.12 + 0.88 * $v / $hMax, 2) : 0;
+                                        // Con varias semanas, la media semanal es lo que
+                                        // se lee bien ("los miércoles 8pm entran ~3").
+                                        $prom = ($heat_semanas > 1 && $v)
+                                            ? ' · ~' . max(1, (int)round($v / $heat_semanas)) . '/semana'
+                                            : '';
                                     ?>
                                         <div class="heat__cell"
                                              style="<?= $v ? 'background:rgba(26,61,46,' . $alpha . ')' : '' ?>"
-                                             title="<?= $nombre ?> <?= $h ?>:00 — <?= $v ?> visitas"></div>
+                                             title="<?= $nombre ?> <?= $h ?>:00 — <?= $v ?> visita<?= $v === 1 ? '' : 's' ?><?= $prom ?>"></div>
                                     <?php endfor; ?>
                                 <?php endforeach; ?>
                             </div>
                         </div>
-                        <p class="stats-hint">Más oscuro = más visitas. Hora de Colombia.</p>
+                        <p class="stats-hint">
+                            Más oscuro = más visitas. <?= htmlspecialchars($hEtq) ?> · hora de Colombia.
+                            <?php if ($hTotal < 50): ?>
+                                <br><strong>Pocos datos</strong> (<?= number_format($hTotal, 0, ',', '.') ?> visitas en la ventana):
+                                el patrón todavía puede no ser fiable<?= $heat_opcion !== '8s' ? '; prueba una ventana más amplia' : '' ?>.
+                            <?php endif; ?>
+                        </p>
+                        <?php endif; ?>
                     </div>
                 </div>
-                <?php endif; ?>
 
                 <!-- ══ Errores de JS ══ -->
                 <h2 class="stats-head">Detalle</h2>
@@ -1118,6 +1159,11 @@
         aspect-ratio: 1 / 1; border-radius: 2px;
         background: var(--surface-3);
     }
+    .heat-bar {
+        display: flex; align-items: center; flex-wrap: wrap;
+        gap: var(--sp-3); margin-bottom: var(--sp-4);
+    }
+    .heat-bar__n { font-size: var(--text-xs); color: var(--tx-dim); font-weight: 600; }
 
     .stats-empty { color: var(--tx-dim); font-size: var(--text-sm); text-align: center; padding: var(--sp-4) 0; }
     .stats-hint  { color: var(--tx-muted); font-size: var(--text-xs); margin-top: var(--sp-3); line-height: 1.5; }
@@ -1144,12 +1190,15 @@
 
     <?php if ($instalado): ?>
     <script>
-    // El filtro de producto es un <select> y cada opción lleva ya su URL:
-    // así el filtro ocupa una línea aunque haya veinte productos.
+    // El filtro de producto y la ventana del heatmap son <select> y cada
+    // opción lleva ya su URL: así el control ocupa una línea aunque haya
+    // veinte productos.
     (function () {
-        var sel = document.getElementById('filtroProducto');
-        if (!sel) return;
-        sel.addEventListener('change', function () { window.location.href = sel.value; });
+        ['filtroProducto', 'filtroHeat'].forEach(function (id) {
+            var sel = document.getElementById(id);
+            if (!sel) return;
+            sel.addEventListener('change', function () { window.location.href = sel.value; });
+        });
     })();
     </script>
 

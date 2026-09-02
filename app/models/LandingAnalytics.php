@@ -729,7 +729,11 @@ class LandingAnalytics extends Model
      * 6=domingo; HOUR() ya viene en hora de Colombia porque la conexión fija
      * time_zone = '-05:00'.
      *
-     * @return array{grid: array<int, array<int, int>>, max: int} rejilla 7×24
+     * La ventana (`desde`/`hasta`) la fija quien llama: el controlador le pasa
+     * varias semanas aunque el periodo del panel sea "Hoy", porque el reparto
+     * por hora×día no significa nada con una sola muestra por celda.
+     *
+     * @return array{grid: array<int, array<int, int>>, max: int, total: int} rejilla 7×24
      */
     public function heatmapHorario(array $f): array
     {
@@ -740,17 +744,19 @@ class LandingAnalytics extends Model
                 WHERE {$where}
                 GROUP BY dia, hora";
 
-        $grid = array_fill(0, 7, array_fill(0, 24, 0));
-        $max  = 0;
+        $grid  = array_fill(0, 7, array_fill(0, 24, 0));
+        $max   = 0;
+        $total = 0;
         foreach ($this->consulta($sql, $params) as $row) {
             $d = (int)$row['dia'];
             $h = (int)$row['hora'];
             if ($d < 0 || $d > 6 || $h < 0 || $h > 23) continue;
             $grid[$d][$h] = (int)$row['n'];
-            $max = max($max, (int)$row['n']);
+            $max    = max($max, (int)$row['n']);
+            $total += (int)$row['n'];
         }
 
-        return ['grid' => $grid, 'max' => $max];
+        return ['grid' => $grid, 'max' => $max, 'total' => $total];
     }
 
     /** Errores de JavaScript capturados en la landing, agrupados. */

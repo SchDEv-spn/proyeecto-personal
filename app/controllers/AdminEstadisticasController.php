@@ -10,6 +10,18 @@
  */
 class AdminEstadisticasController extends Controller
 {
+    /**
+     * Ventanas del heatmap "cuándo entra la gente". Es independiente del
+     * periodo de arriba: el reparto por hora×día necesita varias semanas para
+     * que cada celda promedie más de una visita. Clave => [etiqueta, días];
+     * 0 días = "esta semana", contada desde el lunes.
+     */
+    private const HEAT_OPCIONES = [
+        '4s'     => ['Últimas 4 semanas', 28],
+        '8s'     => ['Últimas 8 semanas', 56],
+        'semana' => ['Esta semana', 0],
+    ];
+
     private function requireLogin(): void
     {
         if (empty($_SESSION['usuario_id'])) {
@@ -35,6 +47,13 @@ class AdminEstadisticasController extends Controller
     {
         $c = $_GET['canal'] ?? '';
         return in_array($c, ['facebook', 'tiktok', 'otros'], true) ? $c : '';
+    }
+
+    /** Ventana elegida para el heatmap horario. Por defecto, 4 semanas. */
+    private function heatOpcion(): string
+    {
+        $h = (string)($_GET['heat'] ?? '');
+        return isset(self::HEAT_OPCIONES[$h]) ? $h : '4s';
     }
 
     /**
@@ -88,6 +107,21 @@ class AdminEstadisticasController extends Controller
         $settings  = new AppSettings();
         $analisis  = new LandingAnalisis();
 
+        // El heatmap horario lee su propia ventana, no la del selector de
+        // arriba: para programar pauta hace falta el patrón de varias semanas,
+        // no el día en curso. Conserva producto, canal y entorno del filtro.
+        $heatOpcion  = $this->heatOpcion();
+        $heatDias    = self::HEAT_OPCIONES[$heatOpcion][1];
+        $filtroHeat  = $filtro;
+        if ($heatOpcion === 'semana') {
+            $filtroHeat['desde'] = (new DateTime('monday this week'))->format('Y-m-d H:i:s');
+            $heatSemanas = 1;
+        } else {
+            $filtroHeat['desde'] = (new DateTime('tomorrow'))
+                ->modify('-' . $heatDias . ' days')->format('Y-m-d H:i:s');
+            $heatSemanas = intdiv($heatDias, 7);
+        }
+
         $this->view('admin/estadisticas/index', [
             'instalado'    => true,
             'pixel_activo' => !es_entorno_local(),
@@ -121,7 +155,10 @@ class AdminEstadisticasController extends Controller
             'navegadores'  => $analytics->porDimension($filtro, 'navegador'),
             'fuentes'      => $analytics->porDimension($filtro, 'fuente'),
             'campanas'     => $analytics->porDimension($filtro, 'campana'),
-            'heatmap'      => $analytics->heatmapHorario($filtro),
+            'heatmap'      => $analytics->heatmapHorario($filtroHeat),
+            'heat_opcion'   => $heatOpcion,
+            'heat_opciones' => self::HEAT_OPCIONES,
+            'heat_semanas'  => $heatSemanas,
             'serie'        => $analytics->serieDiaria($filtro),
             'errores'      => $analytics->errores($filtro),
             'sesiones'     => $analytics->ultimasSesiones($filtro, 40),
