@@ -1561,7 +1561,7 @@
   const getRastreoUrl = (tipoEntrega) =>
     (tipoEntrega || '').toLowerCase() === 'domicilio'
       ? 'https://envia.com/rastreo/'
-      : 'https://www.interrapidisimo.com/rastreo/';
+      : 'https://siguetuenvio.interrapidisimo.com/';
 
   const resolveMsg = (template, data) =>
     template
