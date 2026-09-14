@@ -1563,6 +1563,18 @@
       ? 'https://envia.com/rastreo/'
       : 'https://siguetuenvio.interrapidisimo.com/';
 
+  // Domicilio: entrega un mensajero en la puerta. Oficina: el cliente recoge
+  // — no hay mensajero ni "puerta". Evita prometer algo que no va a pasar.
+  const getMomentoPago = (tipoEntrega) =>
+    (tipoEntrega || '').toLowerCase() === 'domicilio'
+      ? 'el mensajero te lo entregue en la puerta'
+      : 'recojas tu pedido en la oficina';
+
+  const getReceptorPago = (tipoEntrega) =>
+    (tipoEntrega || '').toLowerCase() === 'domicilio'
+      ? 'al mensajero'
+      : 'en la oficina';
+
   const resolveMsg = (template, data) =>
     template
       .replace(/{nombre}/g,         data.nombre                        || '')
@@ -1573,7 +1585,9 @@
       .replace(/{municipio}/g,       data.municipio                     || '')
       .replace(/{departamento}/g,    data.departamento                  || '')
       .replace(/{transportadora}/g,  getTransportadora(data.tipoEntrega))
-      .replace(/{rastreo}/g,         getRastreoUrl(data.tipoEntrega));
+      .replace(/{rastreo}/g,         getRastreoUrl(data.tipoEntrega))
+      .replace(/{momento_pago}/g,    getMomentoPago(data.tipoEntrega))
+      .replace(/{receptor_pago}/g,   getReceptorPago(data.tipoEntrega));
       // {guia} NO se reemplaza — el admin lo completa manualmente
 
   const getTemplate = (estado) => {

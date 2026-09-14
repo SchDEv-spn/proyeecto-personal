@@ -18,8 +18,12 @@ class PlantillaWa extends Model
      *   de pedidos, solo un mensaje adicional seleccionable en el picker de
      *   WhatsApp para avisar antes de que Interrapidísimo devuelva
      *   automáticamente un pedido no reclamado a los 5 días hábiles.
+     *   2026-09-14-3: corrige nuevo/confirmado/enviado, que prometían "el
+     *   mensajero" incluso para pedidos de oficina (nadie entrega en la
+     *   puerta ahí). Usan {momento_pago}/{receptor_pago}, que se resuelven
+     *   según tipo_entrega igual que {transportadora}/{rastreo}.
      */
-    private const TEMPLATES_VERSION = '2026-09-14-2';
+    private const TEMPLATES_VERSION = '2026-09-14-3';
 
     public function __construct()
     {
@@ -108,7 +112,7 @@ class PlantillaWa extends Model
         return [
             'nuevo' => [
                 'Recibimos tu pedido',
-                "Hola {nombre} 😊\nRecibimos tu pedido de *{producto}* y ya lo estamos procesando.\n\nRecuerda: el envío es *gratis* 📦, pagas *contraentrega* — solo pagas cuando el mensajero te lo entregue en la puerta, sin adelantos — y tienes *garantía de 1 año* por defectos de fabricación.\n\nPronto te enviamos el número de guía. ¡Gracias por tu compra! 🙏",
+                "Hola {nombre} 😊\nRecibimos tu pedido de *{producto}* y ya lo estamos procesando.\n\nRecuerda: el envío es *gratis* 📦, pagas *contraentrega* — solo pagas cuando {momento_pago}, sin adelantos — y tienes *garantía de 1 año* por defectos de fabricación.\n\nPronto te enviamos el número de guía. ¡Gracias por tu compra! 🙏",
             ],
             'contactado' => [
                 'En espera de confirmación',
@@ -116,11 +120,11 @@ class PlantillaWa extends Model
             ],
             'confirmado' => [
                 'Pedido confirmado',
-                "¡Hola {nombre}! ✅\nTu pedido de *{producto}* ha sido confirmado y ya estamos trabajando en él.\n\nTotal a pagar al mensajero: *{precio}* (envío gratis incluido, sin cobros adicionales).\n\nPronto te estaremos enviando el número de guía. 📦\n\nBendiciones 🙏",
+                "¡Hola {nombre}! ✅\nTu pedido de *{producto}* ha sido confirmado y ya estamos trabajando en él.\n\nTotal a pagar {receptor_pago}: *{precio}* (envío gratis incluido, sin cobros adicionales).\n\nPronto te estaremos enviando el número de guía. 📦\n\nBendiciones 🙏",
             ],
             'enviado' => [
                 'Pedido despachado',
-                "¡Buenas noticias {nombre}! 📦\nTu pedido de *{producto}* ya fue despachado hacia {municipio}.\n\n*Transportadora:* {transportadora}\n*Número de guía:* #{guia}\n*Seguimiento:* {rastreo}\n\nRecuerda que pagas *contraentrega*: ten listo *{precio}* en efectivo cuando llegue el mensajero, así evitamos demoras.\n\nBendiciones 🙏\n\n✅ Cuando llegue, ¡nos encantaría ver una foto con tu pedido!",
+                "¡Buenas noticias {nombre}! 📦\nTu pedido de *{producto}* ya fue despachado hacia {municipio}.\n\n*Transportadora:* {transportadora}\n*Número de guía:* #{guia}\n*Seguimiento:* {rastreo}\n\nRecuerda que pagas *contraentrega*: ten listo *{precio}* en efectivo cuando {momento_pago}, así evitamos demoras.\n\nBendiciones 🙏\n\n✅ Cuando llegue, ¡nos encantaría ver una foto con tu pedido!",
             ],
             'en_oficina' => [
                 'Listo para recoger',
