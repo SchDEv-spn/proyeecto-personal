@@ -399,7 +399,7 @@ $cfStep3Desc  = $val('cf_step3_desc', 'El mensajero llega a tu casa. Revisas el 
 // ===== GARANTÍA =====
 $showGarantia  = (int)($cfg['show_garantia']  ?? 1);
 $garantiaTitle = $val('garantia_title', 'Tu compra está 100% protegida');
-$garantiaDesc  = $val('garantia_desc', 'Si el producto llega dañado, diferente a lo descrito o simplemente no te convence, te lo solucionamos. Sin burocracia, sin excusas. Nuestra promesa es tu tranquilidad.');
+$garantiaDesc  = $val('garantia_desc', 'Si el producto llega dañado, diferente a lo descrito o simplemente no te convence, te lo solucionamos. Sin burocracia, sin excusas. Nuestra promesa es tu tranquilidad. Además, cuentas con garantía de 1 año por defectos de fabricación.');
 /* Sin emoji delante: esta sección ya pone su propio icono SVG por tarjeta,
    y de hecho $stripIcon() borraba el emoji al pintar — o sea que estos
    caracteres nunca llegaban a verse. */

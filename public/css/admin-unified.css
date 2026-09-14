@@ -1549,6 +1549,22 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   border-color: var(--green-dark);
 }
 
+.wa-emoji-strip {
+  display: flex;
+  gap: var(--sp-2);
+}
+.wa-emoji-chip {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 16px;
+  line-height: 1;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.wa-emoji-chip:hover { border-color: var(--green-dark); background: var(--surface-3, var(--surface-2)); }
+
 .wa-picker-foot {
   padding: var(--sp-4) var(--sp-5);
   border-top: 1px solid var(--border);

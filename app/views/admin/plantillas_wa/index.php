@@ -13,34 +13,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
     <style>
-        .plantillas-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 1.25rem;
-            margin-top: 1.5rem;
-        }
-
-        .plantilla-card {
-            background: var(--bg-elevated);
-            border-radius: 16px;
-            border: 1px solid var(--bd-subtle);
-            padding: 1.25rem 1.4rem 1.4rem;
-            display: flex;
-            flex-direction: column;
-            gap: .9rem;
-            transition: border-color .2s, box-shadow .2s;
-        }
-        .plantilla-card:hover {
-            border-color: var(--bd-default);
-            box-shadow: 0 6px 24px rgba(0,0,0,.45);
-        }
-
-        .plantilla-card-head {
-            display: flex;
-            align-items: center;
-            gap: .7rem;
-        }
-
         .plantilla-estado-badge {
             font-size: 10px;
             font-weight: 800;
@@ -55,6 +27,7 @@
         .p-badge-confirmado { background: var(--ok-bg);    color: var(--ok);    border: 1px solid var(--ok-bd); }
         .p-badge-enviado    { background: var(--warn-bg);  color: var(--warn);  border: 1px solid var(--warn-bd); }
         .p-badge-en_oficina { background: var(--warn-bg);  color: var(--warn);  border: 1px solid var(--warn-bd); }
+        .p-badge-recordatorio_oficina { background: var(--err-bg); color: var(--err); border: 1px solid var(--err-bd); }
         .p-badge-entregado  { background: var(--ok-bg);    color: var(--ok);    border: 1px solid var(--ok-bd); }
         .p-badge-cancelado  { background: var(--err-bg);   color: var(--err);   border: 1px solid var(--err-bd); }
 
@@ -69,7 +42,9 @@
         }
 
         .plantilla-field input,
-        .plantilla-field textarea {
+        .plantilla-field textarea,
+        .plantilla-field select,
+        .wa-buscar-row input {
             width: 100%;
             background: var(--bg-overlay);
             border: 1px solid var(--bd-default);
@@ -84,129 +59,82 @@
             outline: none;
         }
         .plantilla-field input:focus,
-        .plantilla-field textarea:focus {
+        .plantilla-field textarea:focus,
+        .plantilla-field select:focus,
+        .wa-buscar-row input:focus {
             border-color: var(--gold-dim);
             box-shadow: 0 0 0 3px rgba(201,168,76,.10);
         }
 
-        .vars-strip {
+        /* El input y los botones reciclan .plantilla-field / .btn-primary
+           (mismos estilos que Productos) — aquí solo va el layout. */
+        .wa-buscar-row {
             display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 2px;
-        }
-
-        .var-chip {
-            background: var(--gold-ghost);
-            color: var(--gold);
-            border: 1px solid rgba(201,168,76,.22);
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            font-family: ui-monospace, "SF Mono", monospace;
-            padding: 2px 8px;
-            cursor: pointer;
-            transition: background .15s;
-            user-select: none;
-        }
-        .var-chip:hover { background: rgba(201,168,76,.14); }
-
-        .vars-hint {
-            font-size: 11px;
-            color: var(--tx-muted);
-            margin-bottom: 5px;
-        }
-
-        .plantillas-footer {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-top: 2rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid var(--bd-subtle);
-        }
-
-        .btn-guardar-plantillas {
-            background: var(--gold);
-            color: #fff; /* 4.9:1 sobre --gold; el texto oscuro daba 3.6 */
-            border: none;
-            border-radius: 12px;
-            padding: 11px 28px;
-            font-size: 13px;
-            font-weight: 700;
-            font-family: var(--font-body);
-            cursor: pointer;
-            box-shadow: 0 6px 18px rgba(201,168,76,.30);
-            transition: filter .15s, transform .15s;
-        }
-        .btn-guardar-plantillas:hover   { filter: brightness(1.10); transform: translateY(-1px); }
-        .btn-guardar-plantillas:active  { transform: scale(.97); filter: none; }
-        .btn-guardar-plantillas:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
-
-        .saved-banner {
-            display: flex;
-            align-items: center;
             gap: .6rem;
-            background: var(--ok-bg);
-            color: var(--ok);
-            border: 1px solid var(--ok-bd);
+        }
+        .wa-buscar-row input { flex: 1; }
+
+        .wa-resultados {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: .6rem;
+        }
+        .wa-resultado-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .8rem;
+            background: var(--bg-overlay);
+            border: 1px solid var(--bd-subtle);
             border-radius: 10px;
-            padding: 9px 14px;
+            padding: .7rem .9rem;
             font-size: 13px;
-            font-weight: 600;
+        }
+        .wa-resultado-meta {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: 11.5px;
+            color: var(--tx-muted);
+            margin-top: 3px;
         }
 
-        .preview-box {
-            background: var(--bg-overlay);
-            border: 1px dashed var(--bd-default);
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 13px;
-            color: var(--tx-secondary);
-            white-space: pre-wrap;
-            min-height: 48px;
-            line-height: 1.5;
+        .wa-manual { margin-top: 1rem; }
+        .wa-manual-hint {
+            font-size: 12.5px;
+            color: var(--tx-muted);
+            margin-bottom: .75rem;
+        }
+        .wa-manual-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: .8rem;
+            margin-bottom: 1rem;
         }
 
         @media (max-width: 600px) {
-            .plantillas-grid { grid-template-columns: 1fr; }
+            .wa-buscar-row { flex-direction: column; }
+            .wa-resultado-card { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
 <body>
 <?php
 $plantillas    = $plantillas    ?? [];
-$saved         = $saved         ?? false;
 $usuarioNombre = $_SESSION['usuario_nombre'] ?? 'Admin';
 $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
 
 $estados = [
-    'nuevo'      => 'Nuevo',
-    'contactado' => 'Contactado',
-    'confirmado' => 'Confirmado',
-    'enviado'    => 'Enviado',
-    'en_oficina' => 'En oficina',
-    'entregado'  => 'Entregado',
-    'cancelado'  => 'Cancelado',
+    'nuevo'                => 'Nuevo',
+    'contactado'           => 'Contactado',
+    'confirmado'           => 'Confirmado',
+    'enviado'              => 'Enviado',
+    'en_oficina'           => 'En oficina',
+    'recordatorio_oficina' => 'Recordatorio de recogida',
+    'entregado'            => 'Entregado',
+    'cancelado'            => 'Cancelado',
 ];
-
-$vars = ['{nombre}', '{apellidos}', '{producto}', '{cantidad}', '{precio}', '{municipio}', '{departamento}'];
-$varsAuto  = ['{transportadora}', '{rastreo}'];   // se resuelven por tipo de entrega
-$varManual = ['{guia}'];                           // el admin las completa antes de enviar
-
-$previewData = [
-    '{nombre}'       => 'Juan',
-    '{apellidos}'    => 'Pérez',
-    '{producto}'     => 'Fedora Clásica',
-    '{cantidad}'     => '2',
-    '{precio}'       => '$120.000',
-    '{municipio}'    => 'Bogotá',
-    '{departamento}' => 'Cundinamarca',
-];
-
-$resolvePreview = fn(string $msg): string => str_replace(
-    array_keys($previewData), array_values($previewData), $msg
-);
 ?>
 
 <div class="sidebar-overlay" aria-hidden="true"></div>
@@ -225,12 +153,60 @@ $resolvePreview = fn(string $msg): string => str_replace(
 
         <section class="material-content">
 
-            <?php if ($saved): ?>
-                <div class="saved-banner" style="margin-bottom:1rem;">
-                    <i class="fas fa-check-circle"></i>
-                    Plantillas guardadas correctamente.
+            <!-- Compositor de mensajes -->
+            <div class="panel" id="waComposerPanel" style="padding:1.1rem 1.25rem 1.25rem;margin-bottom:1rem;">
+                <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;">Enviar mensaje por WhatsApp</h2>
+                <p style="font-size:12.5px;color:var(--tx-muted);margin-bottom:.85rem;">
+                    Busca por teléfono: si corresponde a un pedido de la landing se autocompletan sus datos.
+                    Si no, arma el mensaje a mano (por ejemplo, un cliente cerrado directo por WhatsApp).
+                </p>
+
+                <div class="wa-buscar-row">
+                    <input type="tel" id="waBuscarTelefono" placeholder="Ej: 3001234567" inputmode="tel">
+                    <button type="button" id="waBuscarBtn" class="btn-primary"><i class="fas fa-magnifying-glass"></i> Buscar</button>
                 </div>
-            <?php endif; ?>
+
+                <div id="waResultados" class="wa-resultados" hidden></div>
+
+                <div id="waManual" class="wa-manual" hidden>
+                    <p class="wa-manual-hint">No encontramos un pedido de la landing con ese teléfono. Arma el mensaje a mano:</p>
+                    <div class="wa-manual-grid">
+                        <div class="plantilla-field"><label>Nombre</label><input type="text" id="mNombre"></div>
+                        <div class="plantilla-field">
+                            <label>Producto</label>
+                            <select id="mProducto">
+                                <option value="">— Elige un producto —</option>
+                                <?php foreach ($productos as $prod): ?>
+                                    <option value="<?= htmlspecialchars($prod['nombre']) ?>"
+                                            data-precio="<?= htmlspecialchars((string)($prod['precio_venta'] ?? '')) ?>">
+                                        <?= htmlspecialchars($prod['nombre']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="plantilla-field"><label>Cantidad</label><input type="text" id="mCantidad" value="1"></div>
+                        <div class="plantilla-field"><label>Precio</label><input type="text" id="mPrecio" placeholder="$0"></div>
+                        <div class="plantilla-field"><label>Municipio</label><input type="text" id="mMunicipio"></div>
+                        <div class="plantilla-field"><label>Departamento</label><input type="text" id="mDepartamento"></div>
+                        <div class="plantilla-field">
+                            <label>Tipo de entrega</label>
+                            <select id="mTipoEntrega">
+                                <option value="domicilio">Domicilio (Envia)</option>
+                                <option value="oficina">Oficina (Interrapidísimo)</option>
+                            </select>
+                        </div>
+                        <div class="plantilla-field">
+                            <label>Estado / plantilla</label>
+                            <select id="mEstado">
+                                <?php foreach ($estados as $key => $label): ?>
+                                    <option value="<?= $key ?>"><?= $label ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" id="waComponerBtn" class="btn-primary"><i class="fab fa-whatsapp"></i> Componer mensaje</button>
+                </div>
+            </div>
 
             <!-- Guía de flujo de trabajo -->
             <div class="panel" style="padding:1rem 1.25rem 1rem;margin-bottom:1rem;">
@@ -250,96 +226,16 @@ $resolvePreview = fn(string $msg): string => str_replace(
                             <span class="plantilla-estado-badge p-badge-nuevo" style="font-size:10px;">Nuevo</span> Recibimos tu pedido<br>
                             <span class="plantilla-estado-badge p-badge-enviado" style="font-size:10px;">Enviado</span> Despachado con guía<br>
                             <span class="plantilla-estado-badge p-badge-en_oficina" style="font-size:10px;">En oficina</span> Listo para recoger<br>
+                            <span class="plantilla-estado-badge p-badge-recordatorio_oficina" style="font-size:10px;">Recordatorio</span> Antes de que se devuelva (5 días hábiles)<br>
                             <span class="plantilla-estado-badge p-badge-entregado" style="font-size:10px;">Entregado</span> ¿Cómo llegó? + foto
                         </div>
                     </div>
                 </div>
                 <p style="font-size:11px;color:var(--muted);margin-top:.7rem;">
                     💡 En el picker de WhatsApp, <strong>{transportadora}</strong> y <strong>{rastreo}</strong> se llenan solos según el tipo de entrega del pedido. Solo debes escribir el <strong>{guia}</strong>.
+                    Interrapidísimo devuelve automáticamente los pedidos no reclamados a los 5 días hábiles — si ves uno "en oficina" que lleva varios días, usa la plantilla <strong>Recordatorio de recogida</strong>.
                 </p>
             </div>
-
-            <div class="panel" style="padding:1rem 1.25rem .9rem;">
-                <p style="font-size:13px;color:var(--muted);margin-bottom:.6rem;">
-                    Haz clic en una variable para insertarla en el mensaje. El botón WhatsApp de cada pedido
-                    usará la plantilla del estado actual y reemplazará las variables automáticamente.
-                </p>
-                <div class="vars-strip">
-                    <?php foreach ($vars as $v): ?>
-                        <span class="var-chip" title="Clic para insertar"><?= $v ?></span>
-                    <?php endforeach; ?>
-                </div>
-                <p style="font-size:11px;color:var(--muted);margin:.6rem 0 .3rem;font-weight:600;">
-                    Auto según tipo de entrega (domicilio → Envia · oficina → Interrapidísimo):
-                </p>
-                <div class="vars-strip">
-                    <?php foreach ($varsAuto as $v): ?>
-                        <span class="var-chip" title="Se resuelve automáticamente"><?= $v ?></span>
-                    <?php endforeach; ?>
-                </div>
-                <p style="font-size:11px;color:var(--muted);margin:.6rem 0 .3rem;font-weight:600;">
-                    Manual — el admin completa este dato antes de enviar:
-                </p>
-                <div class="vars-strip">
-                    <?php foreach ($varManual as $v): ?>
-                        <span class="var-chip" style="border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1);color:#92400E;"
-                              title="Lo completas en el picker antes de enviar"><?= $v ?></span>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <form action="<?= BASE_URL ?>/AdminPlantillasWa/guardar" method="POST" id="formPlantillas">
-                <?= csrf_field() ?>
-
-                <div class="plantillas-grid">
-                    <?php foreach ($estados as $key => $label):
-                        $p       = $plantillas[$key] ?? [];
-                        $titulo  = $p['titulo']  ?? '';
-                        $mensaje = $p['mensaje'] ?? '';
-                    ?>
-                    <div class="plantilla-card">
-                        <div class="plantilla-card-head">
-                            <span class="plantilla-estado-badge p-badge-<?= $key ?>">
-                                <?= $label ?>
-                            </span>
-                        </div>
-
-                        <div class="plantilla-field">
-                            <label>Título (referencia interna)</label>
-                            <input type="text"
-                                   name="titulo_<?= $key ?>"
-                                   value="<?= htmlspecialchars($titulo) ?>"
-                                   placeholder="Ej: Primer contacto"
-                                   maxlength="100">
-                        </div>
-
-                        <div class="plantilla-field">
-                            <label>Mensaje</label>
-                            <textarea name="mensaje_<?= $key ?>"
-                                      rows="4"
-                                      placeholder="Escribe el mensaje..."
-                                      class="js-msg-textarea"
-                                      data-estado="<?= $key ?>"><?= htmlspecialchars($mensaje) ?></textarea>
-                        </div>
-
-                        <div>
-                            <p class="vars-hint">Vista previa:</p>
-                            <div class="preview-box js-preview" data-estado="<?= $key ?>">
-                                <?= htmlspecialchars($resolvePreview($mensaje)) ?>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <div class="plantillas-footer">
-                    <button type="submit" class="btn-guardar-plantillas" id="btnGuardar">
-                        <i class="fas fa-save"></i> Guardar plantillas
-                    </button>
-                    <span id="saveStatus" style="font-size:13px;color:var(--muted)"></span>
-                </div>
-
-            </form>
         </section>
     </main>
 </div>
@@ -349,53 +245,114 @@ $resolvePreview = fn(string $msg): string => str_replace(
 <script src="<?= BASE_URL ?>/public/js/form-labels.js"></script>
 <script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
 <script>
+// Compositor de mensajes: busca pedido por teléfono o arma uno a mano
 (() => {
-    const PREVIEW_DATA = <?= json_encode($previewData, JSON_UNESCAPED_UNICODE) ?>;
+    window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE) ?>;
 
-    const resolve = (msg) => {
-        let out = msg;
-        for (const [k, v] of Object.entries(PREVIEW_DATA)) {
-            out = out.replaceAll(k, v);
+    const ESTADO_LABEL = <?= json_encode($estados, JSON_UNESCAPED_UNICODE) ?>;
+
+    const telInput   = document.getElementById('waBuscarTelefono');
+    const buscarBtn  = document.getElementById('waBuscarBtn');
+    const resultados = document.getElementById('waResultados');
+    const manualBox  = document.getElementById('waManual');
+    const mProducto  = document.getElementById('mProducto');
+    const mPrecio    = document.getElementById('mPrecio');
+
+    // Al elegir un producto real de la BD, sugiere su precio de venta.
+    mProducto.addEventListener('change', () => {
+        const precio = mProducto.selectedOptions[0]?.dataset.precio;
+        if (precio) mPrecio.value = '$' + Number(precio).toLocaleString('es-CO');
+    });
+
+    let ultimosPedidos = [];
+
+    const renderResultados = (pedidos) => {
+        ultimosPedidos = pedidos;
+
+        if (!pedidos.length) {
+            resultados.hidden   = true;
+            resultados.innerHTML = '';
+            manualBox.hidden    = false;
+            return;
         }
-        return out;
+
+        manualBox.hidden    = true;
+        resultados.hidden   = false;
+        resultados.innerHTML = pedidos.map((p, i) => `
+            <div class="wa-resultado-card">
+                <div>
+                    <strong>${p.nombre} ${p.apellidos}</strong> — ${p.producto} (${p.cantidad})
+                    <div class="wa-resultado-meta">
+                        Pedido #${p.id} · ${p.fecha}
+                        <span class="plantilla-estado-badge p-badge-${p.estado}">${ESTADO_LABEL[p.estado] || p.estado}</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-primary btn-primary--soft" data-idx="${i}">Usar este pedido</button>
+            </div>
+        `).join('');
     };
 
-    // Vista previa en tiempo real
-    document.querySelectorAll('.js-msg-textarea').forEach(ta => {
-        const estado  = ta.dataset.estado;
-        const preview = document.querySelector(`.js-preview[data-estado="${estado}"]`);
-        if (!preview) return;
+    const buscar = async () => {
+        const telefono = telInput.value.trim();
+        if (!telefono) return;
 
-        ta.addEventListener('input', () => {
-            preview.textContent = resolve(ta.value);
+        buscarBtn.disabled = true;
+        try {
+            const res  = await fetch((window.BASE_URL || '') + '/AdminPlantillasWa/buscarPedido?telefono=' + encodeURIComponent(telefono));
+            const json = await res.json();
+            renderResultados(json.pedidos || []);
+        } catch {
+            renderResultados([]);
+        } finally {
+            buscarBtn.disabled = false;
+        }
+    };
+
+    buscarBtn.addEventListener('click', buscar);
+    telInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); buscar(); }
+    });
+
+    resultados.addEventListener('click', e => {
+        const btn = e.target.closest('[data-idx]');
+        if (!btn) return;
+        const p = ultimosPedidos[Number(btn.dataset.idx)];
+        if (p) window.WaPicker.open(p);
+    });
+
+    document.getElementById('waComponerBtn').addEventListener('click', () => {
+        const telefono = telInput.value.trim();
+        if (!telefono) { alert('Escribe el teléfono primero.'); return; }
+
+        const nombre = document.getElementById('mNombre').value.trim();
+
+        const data = {
+            telefono,
+            nombre,
+            apellidos:    '',
+            producto:     mProducto.value.trim(),
+            cantidad:     document.getElementById('mCantidad').value.trim() || '1',
+            precio:       mPrecio.value.trim(),
+            municipio:    document.getElementById('mMunicipio').value.trim(),
+            departamento: document.getElementById('mDepartamento').value.trim(),
+            estado:       document.getElementById('mEstado').value,
+            tipoEntrega:  document.getElementById('mTipoEntrega').value,
+        };
+
+        window.WaPicker.open(data, {
+            onSend: (mensaje, estado) => {
+                const fd = new FormData();
+                fd.append('telefono', telefono);
+                fd.append('nombre', nombre);
+                fd.append('estado', estado);
+                fd.append('csrf_token', window.__CSRF__ || '');
+                fetch((window.BASE_URL || '') + '/AdminPlantillasWa/registrarEnvioManual', {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'fetch' },
+                }).catch(() => {});
+            },
         });
-    });
-
-    // Chips: insertar variable en el textarea enfocado
-    let lastFocusedTA = null;
-    document.querySelectorAll('.js-msg-textarea').forEach(ta => {
-        ta.addEventListener('focus', () => { lastFocusedTA = ta; });
-    });
-
-    document.querySelectorAll('.var-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            const v = chip.textContent.trim();
-            if (!lastFocusedTA) return;
-            const ta    = lastFocusedTA;
-            const start = ta.selectionStart;
-            const end   = ta.selectionEnd;
-            ta.value    = ta.value.slice(0, start) + v + ta.value.slice(end);
-            ta.selectionStart = ta.selectionEnd = start + v.length;
-            ta.dispatchEvent(new Event('input'));
-            ta.focus();
-        });
-    });
-
-    // Feedback al guardar
-    document.getElementById('formPlantillas').addEventListener('submit', () => {
-        const btn = document.getElementById('btnGuardar');
-        btn.disabled    = true;
-        btn.textContent = 'Guardando...';
     });
 })();
 </script>

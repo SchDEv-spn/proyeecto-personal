@@ -169,6 +169,38 @@ class Pedido extends Model
         return $row ?: null;
     }
 
+    /**
+     * Busca pedidos cuyo teléfono coincida con los últimos 8 dígitos del
+     * número buscado — estable sin importar si el guardado tiene o no el
+     * indicativo 57 o un 0 inicial. Se usa desde el compositor de mensajes
+     * de AdminPlantillasWa para traer los datos del pedido antes de armar
+     * el WhatsApp.
+     */
+    public function buscarPorTelefono(string $telefonoInput, int $limit = 15): array
+    {
+        $digits = preg_replace('/\D+/', '', $telefonoInput);
+        if (strlen($digits) < 7) return [];
+
+        $sufijo = substr($digits, -8);
+        $telefonoLimpioSql = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.telefono,' ',''),'-',''),'+',''),'(',''),')','')";
+
+        $sql = "SELECT
+                    p.*,
+                    pr.nombre AS producto_nombre
+                FROM pedidos p
+                INNER JOIN productos pr ON p.producto_id = pr.id
+                WHERE {$telefonoLimpioSql} LIKE :sufijo
+                ORDER BY p.created_at DESC
+                LIMIT :limite";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':sufijo', '%' . $sufijo, PDO::PARAM_STR);
+        $stmt->bindValue(':limite', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function actualizarEstado($id, $estado): bool
     {
         $sql = "UPDATE pedidos SET estado = :estado WHERE id = :id";

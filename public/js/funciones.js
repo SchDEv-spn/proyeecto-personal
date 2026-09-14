@@ -1519,18 +1519,40 @@
 // WHATSAPP: Picker de plantillas
 // =========================
 (() => {
-  const ESTADOS = ['nuevo','contactado','confirmado','enviado','en_oficina','entregado','cancelado'];
+  const ESTADOS = ['nuevo','contactado','confirmado','enviado','en_oficina','recordatorio_oficina','entregado','cancelado'];
   const LABEL   = { nuevo:'Nuevo', contactado:'Contactado', confirmado:'Confirmado',
-                    enviado:'Enviado', en_oficina:'En oficina', entregado:'Entregado', cancelado:'Cancelado' };
+                    enviado:'Enviado', en_oficina:'En oficina', recordatorio_oficina:'Recordatorio',
+                    entregado:'Entregado', cancelado:'Cancelado' };
 
-  const buildWaUrl = (telefono, mensaje) => {
+  // En celular, wa.me abre la app directo. En computadora, wa.me siempre
+  // muestra una pantalla intermedia (Abrir aplicación / WhatsApp Web) porque
+  // no sabe qué cliente de escritorio tienes — el protocolo whatsapp:// salta
+  // esa pantalla y abre la app de escritorio (Microsoft Store o clásica)
+  // directo en el chat, sin pasar por el navegador.
+  const esMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  const normalizarTelefono = (telefono) => {
     let tel = telefono.replace(/\D/g, '');
     if (tel.startsWith('00')) tel = tel.slice(2);
     if (!tel.startsWith('57')) {
       if (tel.length === 11 && tel[0] === '0') tel = tel.slice(1);
       tel = '57' + tel;
     }
-    return `https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`;
+    return tel;
+  };
+
+  // Respaldo si whatsapp:// no está registrado en esta computadora (p. ej.
+  // no tiene la app de escritorio instalada): la pantalla intermedia de
+  // wa.me, que sí funciona siempre.
+  const buildWaUrlWeb = (telefono, mensaje) =>
+    `https://wa.me/${normalizarTelefono(telefono)}?text=${encodeURIComponent(mensaje)}`;
+
+  const buildWaUrl = (telefono, mensaje) => {
+    const tel   = normalizarTelefono(telefono);
+    const texto = encodeURIComponent(mensaje);
+    return esMobile
+      ? `https://wa.me/${tel}?text=${texto}`
+      : `whatsapp://send?phone=${tel}&text=${texto}`;
   };
 
   const getTransportadora = (tipoEntrega) =>
@@ -1559,6 +1581,10 @@
     return plantillas[estado]?.mensaje || '';
   };
 
+  // Únicos emojis con render garantizado en cualquier versión de WhatsApp
+  // (ver app/models/PlantillaWa.php) — se ofrecen como atajo al escribir a mano.
+  const EMOJIS_SEGUROS = ['📦', '✅', '🙏', '😊'];
+
   let pickerEl = null;
 
   const closePicker = () => {
@@ -1566,7 +1592,13 @@
     pickerEl = null;
   };
 
-  const openPicker = (data) => {
+  /**
+   * opts.onSend(mensaje, estado) — opcional, se dispara al hacer clic en
+   * "Abrir WhatsApp" (además de abrir el link, no en su lugar). Lo usa el
+   * compositor de AdminPlantillasWa para dejar constancia de los mensajes
+   * armados a mano para números que no son de la landing.
+   */
+  const openPicker = (data, opts = {}) => {
     closePicker();
 
     const overlay = document.createElement('div');
@@ -1576,6 +1608,8 @@
       <button class="wa-tab${e === data.estado ? ' is-active' : ''}" data-e="${e}" type="button">
         ${LABEL[e]}
       </button>`).join('');
+
+    const emojisHtml = EMOJIS_SEGUROS.map(em => `<button type="button" class="wa-emoji-chip">${em}</button>`).join('');
 
     const initialMsg = resolveMsg(getTemplate(data.estado), data);
 
@@ -1589,6 +1623,7 @@
         <div class="wa-picker-body">
           <label>Mensaje (editable)</label>
           <textarea id="waMsgTA">${initialMsg}</textarea>
+          <div class="wa-emoji-strip">${emojisHtml}</div>
         </div>
         <div class="wa-picker-foot">
           <a class="btn-wa-send" id="waSendBtn" href="#" target="_blank" rel="noopener">
@@ -1603,6 +1638,7 @@
 
     const ta      = overlay.querySelector('#waMsgTA');
     const sendBtn = overlay.querySelector('#waSendBtn');
+    let   estadoActivo = data.estado;
 
     const updateSendUrl = () => {
       sendBtn.href = buildWaUrl(data.telefono, ta.value);
@@ -1611,15 +1647,48 @@
     updateSendUrl();
     ta.addEventListener('input', updateSendUrl);
 
+    // En computadora, whatsapp:// puede no estar registrado (sin app de
+    // escritorio instalada). Si tras el clic la pestaña sigue visible
+    // pasado un momento, asumimos que no abrió nada y caemos a wa.me.
+    if (!esMobile) {
+      sendBtn.addEventListener('click', () => {
+        const urlRespaldo = buildWaUrlWeb(data.telefono, ta.value);
+        const inicio = Date.now();
+        const revisar = () => {
+          if (document.hidden) return; // sí abrió la app de escritorio
+          if (Date.now() - inicio < 1200) { setTimeout(revisar, 200); return; }
+          window.open(urlRespaldo, '_blank', 'noopener');
+        };
+        setTimeout(revisar, 200);
+      });
+    }
+
+    // Chips de emoji: insertar en el textarea
+    overlay.querySelectorAll('.wa-emoji-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const start = ta.selectionStart ?? ta.value.length;
+        const end   = ta.selectionEnd   ?? ta.value.length;
+        ta.value = ta.value.slice(0, start) + chip.textContent + ta.value.slice(end);
+        ta.selectionStart = ta.selectionEnd = start + chip.textContent.length;
+        ta.focus();
+        updateSendUrl();
+      });
+    });
+
     // Tabs
     overlay.querySelectorAll('.wa-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         overlay.querySelectorAll('.wa-tab').forEach(t => t.classList.remove('is-active'));
         tab.classList.add('is-active');
-        ta.value = resolveMsg(getTemplate(tab.dataset.e), data);
+        estadoActivo = tab.dataset.e;
+        ta.value = resolveMsg(getTemplate(estadoActivo), data);
         updateSendUrl();
       });
     });
+
+    if (typeof opts.onSend === 'function') {
+      sendBtn.addEventListener('click', () => opts.onSend(ta.value, estadoActivo));
+    }
 
     // Cerrar
     overlay.querySelector('.wa-picker-close').addEventListener('click', closePicker);
@@ -1660,6 +1729,10 @@
       tipoEntrega:  btn.dataset.tipoEntrega  || '',
     });
   });
+
+  // Motor compartido: lo reutiliza el compositor de AdminPlantillasWa para
+  // pedidos encontrados por teléfono y para mensajes armados a mano.
+  window.WaPicker = { open: openPicker, buildWaUrl, resolveMsg, getTemplate };
 })();
 
 // =========================
