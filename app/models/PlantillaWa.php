@@ -22,8 +22,11 @@ class PlantillaWa extends Model
      *   mensajero" incluso para pedidos de oficina (nadie entrega en la
      *   puerta ahí). Usan {momento_pago}/{receptor_pago}, que se resuelven
      *   según tipo_entrega igual que {transportadora}/{rastreo}.
+     *   2026-09-15: en_oficina ya avisa desde el primer mensaje que pase
+     *   pronto para evitar la devolución automática — sin dar el plazo
+     *   exacto todavía, eso queda para recordatorio_oficina si no pasa.
      */
-    private const TEMPLATES_VERSION = '2026-09-14-3';
+    private const TEMPLATES_VERSION = '2026-09-15';
 
     public function __construct()
     {
@@ -128,7 +131,7 @@ class PlantillaWa extends Model
             ],
             'en_oficina' => [
                 'Listo para recoger',
-                "¡Hola {nombre}! 📦\nTu pedido de *{producto}* ya llegó a la oficina de *Interrapidísimo* en {municipio}.\n\nPuedes pasar a recogerlo presentando:\n*Número de guía:* #{guia}\nO tu número de cédula\n\nRecuerda que pagas *{precio}* contraentrega directo en la oficina, sin cobros adicionales.\n\n¡Te esperamos! Bendiciones 🙏",
+                "¡Hola {nombre}! 📦\nTu pedido de *{producto}* ya llegó a la oficina de *Interrapidísimo* en {municipio}.\n\nPuedes pasar a recogerlo presentando:\n*Número de guía:* #{guia}\nO tu número de cédula\n\nTe recomendamos pasar cuanto antes para evitar que se genere una devolución automática.\n\nRecuerda que pagas *{precio}* contraentrega directo en la oficina, sin cobros adicionales.\n\n¡Te esperamos! Bendiciones 🙏",
             ],
             'entregado' => [
                 '¿Cómo llegó todo?',
