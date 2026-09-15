@@ -1531,42 +1531,6 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   letter-spacing: .04em;
   color: var(--tx-muted);
 }
-.wa-lote-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: var(--sp-3);
-  padding: var(--sp-3);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-}
-.wa-lote-field label {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--tx-muted);
-  margin-bottom: 4px;
-}
-.wa-lote-field input,
-.wa-lote-field select {
-  width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  padding: var(--sp-2) var(--sp-3);
-  font-family: var(--font);
-  font-size: var(--text-sm);
-  color: inherit;
-  box-sizing: border-box;
-}
-.wa-lote-field input:focus,
-.wa-lote-field select:focus {
-  outline: none;
-  border-color: var(--green-dark);
-}
-
 .wa-guia-row {
   display: flex;
   align-items: center;
