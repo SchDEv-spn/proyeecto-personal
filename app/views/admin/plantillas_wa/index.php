@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
+    <link rel="stylesheet" href="<?= asset_url('public/css/admin-unified.css') ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
     <style>
@@ -172,6 +172,7 @@ $estados = [
                     <p class="wa-manual-hint">No encontramos un pedido de la landing con ese teléfono. Arma el mensaje a mano:</p>
                     <div class="wa-manual-grid">
                         <div class="plantilla-field"><label>Nombre</label><input type="text" id="mNombre"></div>
+                        <div class="plantilla-field"><label>Apellidos</label><input type="text" id="mApellidos"></div>
                         <div class="plantilla-field">
                             <label>Producto</label>
                             <select id="mProducto">
@@ -254,9 +255,9 @@ $estados = [
 </div>
 
 <script src="<?= BASE_URL ?>/public/vendor/jquery-3.7.1.min.js"></script>
-<script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
-<script src="<?= BASE_URL ?>/public/js/form-labels.js"></script>
-<script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
+<script src="<?= asset_url('public/js/modal-a11y.js') ?>"></script>
+<script src="<?= asset_url('public/js/form-labels.js') ?>"></script>
+<script src="<?= asset_url('public/js/funciones.js') ?>"></script>
 <script>
 // Compositor de mensajes: busca pedido por teléfono o arma uno a mano
 (() => {
@@ -357,12 +358,13 @@ $estados = [
         const telefono = telInput.value.trim();
         if (!telefono) { alert('Escribe el teléfono primero.'); return; }
 
-        const nombre = document.getElementById('mNombre').value.trim();
+        const nombre    = document.getElementById('mNombre').value.trim();
+        const apellidos = document.getElementById('mApellidos').value.trim();
 
         const data = {
             telefono,
             nombre,
-            apellidos:    '',
+            apellidos,
             producto:     mProducto.value.trim(),
             cantidad:     document.getElementById('mCantidad').value.trim() || '1',
             precio:       mPrecio.value.trim(),
@@ -376,7 +378,7 @@ $estados = [
             onSend: (mensaje, estado) => {
                 const fd = new FormData();
                 fd.append('telefono', telefono);
-                fd.append('nombre', nombre);
+                fd.append('nombre', [nombre, apellidos].filter(Boolean).join(' '));
                 fd.append('estado', estado);
                 fd.append('csrf_token', window.__CSRF__ || '');
                 fetch((window.BASE_URL || '') + '/AdminPlantillasWa/registrarEnvioManual', {

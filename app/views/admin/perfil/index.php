@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="<?= BASE_URL ?>/public/css/admin-unified.css">
+    <link rel="stylesheet" href="<?= asset_url('public/css/admin-unified.css') ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
     <style>
@@ -302,9 +302,9 @@ $initials = strtoupper(substr($usuarioNombre, 0, 1) . (strpos($usuarioNombre, ' 
     </main>
 </div>
 
-<script src="<?= BASE_URL ?>/public/js/modal-a11y.js"></script>
+<script src="<?= asset_url('public/js/modal-a11y.js') ?>"></script>
 
-<script src="<?= BASE_URL ?>/public/js/funciones.js"></script>
+<script src="<?= asset_url('public/js/funciones.js') ?>"></script>
 <script>
     // Confirm password match before submit
     document.getElementById('btnCambiarPass').closest('form').addEventListener('submit', function(e) {
