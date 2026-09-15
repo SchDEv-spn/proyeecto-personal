@@ -186,8 +186,21 @@ $estados = [
                         </div>
                         <div class="plantilla-field"><label>Cantidad</label><input type="text" id="mCantidad" value="1"></div>
                         <div class="plantilla-field"><label>Precio</label><input type="text" id="mPrecio" placeholder="$0"></div>
-                        <div class="plantilla-field"><label>Municipio</label><input type="text" id="mMunicipio"></div>
-                        <div class="plantilla-field"><label>Departamento</label><input type="text" id="mDepartamento"></div>
+                        <div class="plantilla-field">
+                            <label>Departamento</label>
+                            <select id="mDepartamento">
+                                <option value="">— Elige un departamento —</option>
+                                <?php foreach (array_keys($ubicaciones) as $dep): ?>
+                                    <option value="<?= htmlspecialchars($dep) ?>"><?= htmlspecialchars($dep) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="plantilla-field">
+                            <label>Municipio</label>
+                            <select id="mMunicipio" disabled>
+                                <option value="">Primero elige el departamento</option>
+                            </select>
+                        </div>
                         <div class="plantilla-field">
                             <label>Tipo de entrega</label>
                             <select id="mTipoEntrega">
@@ -249,19 +262,39 @@ $estados = [
 (() => {
     window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE) ?>;
 
-    const ESTADO_LABEL = <?= json_encode($estados, JSON_UNESCAPED_UNICODE) ?>;
+    const ESTADO_LABEL  = <?= json_encode($estados, JSON_UNESCAPED_UNICODE) ?>;
+    const UBICACIONES   = <?= json_encode($ubicaciones, JSON_UNESCAPED_UNICODE) ?>; // mismo dataset del formulario de la landing
 
-    const telInput   = document.getElementById('waBuscarTelefono');
-    const buscarBtn  = document.getElementById('waBuscarBtn');
-    const resultados = document.getElementById('waResultados');
-    const manualBox  = document.getElementById('waManual');
-    const mProducto  = document.getElementById('mProducto');
-    const mPrecio    = document.getElementById('mPrecio');
+    const telInput      = document.getElementById('waBuscarTelefono');
+    const buscarBtn     = document.getElementById('waBuscarBtn');
+    const resultados    = document.getElementById('waResultados');
+    const manualBox     = document.getElementById('waManual');
+    const mProducto     = document.getElementById('mProducto');
+    const mPrecio       = document.getElementById('mPrecio');
+    const mDepartamento = document.getElementById('mDepartamento');
+    const mMunicipio    = document.getElementById('mMunicipio');
 
     // Al elegir un producto real de la BD, sugiere su precio de venta.
     mProducto.addEventListener('change', () => {
         const precio = mProducto.selectedOptions[0]?.dataset.precio;
         if (precio) mPrecio.value = '$' + Number(precio).toLocaleString('es-CO');
+    });
+
+    // Municipio depende del departamento elegido — mismo dataset de la landing.
+    mDepartamento.addEventListener('change', () => {
+        const dep = mDepartamento.value;
+        const municipios = UBICACIONES[dep] || [];
+
+        mMunicipio.innerHTML = '';
+        if (!dep) {
+            mMunicipio.disabled = true;
+            mMunicipio.appendChild(new Option('Primero elige el departamento', ''));
+            return;
+        }
+
+        mMunicipio.disabled = false;
+        mMunicipio.appendChild(new Option('— Elige un municipio —', ''));
+        municipios.forEach(mun => mMunicipio.appendChild(new Option(mun, mun)));
     });
 
     let ultimosPedidos = [];
@@ -333,8 +366,8 @@ $estados = [
             producto:     mProducto.value.trim(),
             cantidad:     document.getElementById('mCantidad').value.trim() || '1',
             precio:       mPrecio.value.trim(),
-            municipio:    document.getElementById('mMunicipio').value.trim(),
-            departamento: document.getElementById('mDepartamento').value.trim(),
+            municipio:    mMunicipio.value.trim(),
+            departamento: mDepartamento.value.trim(),
             estado:       document.getElementById('mEstado').value,
             tipoEntrega:  document.getElementById('mTipoEntrega').value,
         };

@@ -14,9 +14,13 @@ class AdminPlantillasWaController extends Controller
             fn(array $p) => !empty($p['activo'])
         ));
 
+        // Mismo dataset que usa el formulario de la landing (departamento => [municipios]).
+        $ubicaciones = require __DIR__ . '/../data/colombia.php';
+
         $this->view('admin/plantillas_wa/index', [
-            'plantillas' => $plantillas,
-            'productos'  => $productos,
+            'plantillas'  => $plantillas,
+            'productos'   => $productos,
+            'ubicaciones' => $ubicaciones,
         ]);
     }
 
