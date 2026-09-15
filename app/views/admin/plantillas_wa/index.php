@@ -261,10 +261,15 @@ $estados = [
 <script>
 // Compositor de mensajes: busca pedido por teléfono o arma uno a mano
 (() => {
-    window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE) ?>;
+    window.__PLANTILLAS__  = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE) ?>;
+    // Globales (no locales al IIFE): el modo lote del picker de WhatsApp
+    // (funciones.js) los necesita para armar sus propios selects de
+    // producto y departamento/municipio dentro del modal.
+    window.__PRODUCTOS__   = <?= json_encode($productos, JSON_UNESCAPED_UNICODE) ?>;
+    window.__UBICACIONES__ = <?= json_encode($ubicaciones, JSON_UNESCAPED_UNICODE) ?>;
 
     const ESTADO_LABEL  = <?= json_encode($estados, JSON_UNESCAPED_UNICODE) ?>;
-    const UBICACIONES   = <?= json_encode($ubicaciones, JSON_UNESCAPED_UNICODE) ?>; // mismo dataset del formulario de la landing
+    const UBICACIONES   = window.__UBICACIONES__; // mismo dataset del formulario de la landing
 
     const telInput      = document.getElementById('waBuscarTelefono');
     const buscarBtn     = document.getElementById('waBuscarBtn');
@@ -385,19 +390,12 @@ $estados = [
     });
 
     document.getElementById('waComponerBtn').addEventListener('click', () => {
-        const telefono = telInput.value.trim();
-        if (!telefono) { alert('Escribe el teléfono primero.'); return; }
-
-        const nombre    = document.getElementById('mNombre').value.trim();
-        const apellidos = document.getElementById('mApellidos').value.trim();
-        const cantidad  = document.getElementById('mCantidad').value.trim() || '1';
-
         const data = {
-            telefono,
-            nombre,
-            apellidos,
+            telefono: telInput.value.trim(),
+            nombre:       document.getElementById('mNombre').value.trim(),
+            apellidos:    document.getElementById('mApellidos').value.trim(),
             producto:     mProducto.value.trim(),
-            cantidad,
+            cantidad:     document.getElementById('mCantidad').value.trim() || '1',
             precio:       mPrecio.value.trim(),
             municipio:    mMunicipio.value.trim(),
             departamento: mDepartamento.value.trim(),
@@ -405,11 +403,16 @@ $estados = [
             tipoEntrega:  mTipoEntrega.value,
         };
 
+        // En modo lote el teléfono se completa dentro del mismo modal (útil
+        // para despachar varios pedidos del mismo producto seguidos), así
+        // que aquí ya no es obligatorio traerlo escrito de antemano.
         window.WaPicker.open(data, {
+            modoLote: true,
             onSend: (mensaje, estado) => {
+                if (!data.telefono) return; // nada que registrar si no se llenó
                 const fd = new FormData();
-                fd.append('telefono', telefono);
-                fd.append('nombre', [nombre, apellidos].filter(Boolean).join(' '));
+                fd.append('telefono', data.telefono);
+                fd.append('nombre', [data.nombre, data.apellidos].filter(Boolean).join(' '));
                 fd.append('estado', estado);
                 fd.append('csrf_token', window.__CSRF__ || '');
                 // Snapshot completo — para que la próxima búsqueda de este

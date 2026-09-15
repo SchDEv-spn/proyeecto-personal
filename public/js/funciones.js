@@ -1627,6 +1627,29 @@
 
     const initialMsg = resolveMsg(getTemplate(data.estado), data);
 
+    // Modo lote: para despachar varios pedidos del mismo producto seguidos
+    // sin salir del modal — nombre/teléfono/ubicación se editan aquí mismo
+    // y se limpian después de cada envío; producto y precio quedan fijos.
+    const loteHtml = opts.modoLote ? `
+      <div class="wa-lote-grid" id="waLoteGrid">
+        <div class="wa-lote-field"><label>Nombre</label><input type="text" id="waLNombre"></div>
+        <div class="wa-lote-field"><label>Apellidos</label><input type="text" id="waLApellidos"></div>
+        <div class="wa-lote-field"><label>Teléfono</label><input type="tel" id="waLTelefono" inputmode="tel"></div>
+        <div class="wa-lote-field"><label>Cantidad</label><input type="text" id="waLCantidad" value="1"></div>
+        <div class="wa-lote-field"><label>Producto</label><select id="waLProducto"></select></div>
+        <div class="wa-lote-field"><label>Precio</label><input type="text" id="waLPrecio"></div>
+        <div class="wa-lote-field"><label>Departamento</label><select id="waLDepartamento"></select></div>
+        <div class="wa-lote-field"><label>Municipio</label><select id="waLMunicipio" disabled></select></div>
+        <div class="wa-lote-field">
+          <label>Tipo de entrega</label>
+          <select id="waLTipoEntrega">
+            <option value="domicilio">Domicilio (Envia)</option>
+            <option value="oficina">Oficina (Interrapidísimo)</option>
+          </select>
+        </div>
+      </div>
+    ` : '';
+
     overlay.innerHTML = `
       <div class="wa-picker-card" role="dialog" aria-modal="true" aria-label="Mensaje WhatsApp">
         <div class="wa-picker-head">
@@ -1635,6 +1658,7 @@
         </div>
         <div class="wa-picker-tabs">${tabsHtml}</div>
         <div class="wa-picker-body">
+          ${loteHtml}
           <div class="wa-guia-row">
             <label for="waGuiaInput">Número de guía</label>
             <input type="text" id="waGuiaInput" placeholder="Ej: 114015565557" inputmode="numeric">
@@ -1645,7 +1669,7 @@
         </div>
         <div class="wa-picker-foot">
           <a class="btn-wa-send" id="waSendBtn" href="#" target="_blank" rel="noopener">
-            <i class="fab fa-whatsapp"></i> Abrir WhatsApp
+            <i class="fab fa-whatsapp"></i> ${opts.modoLote ? 'Enviar y preparar siguiente' : 'Abrir WhatsApp'}
           </a>
         </div>
       </div>
@@ -1680,8 +1704,29 @@
       sendBtn.href = buildWaUrl(data.telefono, mensajeParaEnviar());
     };
 
+    // Reconstruye el mensaje completo desde la plantilla activa — se usa al
+    // cambiar de pestaña y, en modo lote, cada vez que se toca un campo.
+    const regenerar = () => {
+      ta.value = resolveMsg(getTemplate(estadoActivo), data);
+      if (guiaActual) ta.value = ta.value.replace(/{guia}/g, guiaActual);
+      updateSendUrl();
+    };
+
     updateSendUrl();
     ta.addEventListener('input', updateSendUrl);
+
+    // Modo lote: sin teléfono no hay a quién mandarle — bloquea antes de
+    // armar un link de WhatsApp roto.
+    if (opts.modoLote) {
+      sendBtn.addEventListener('click', e => {
+        if (!data.telefono) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          alert('Escribe el teléfono del cliente primero.');
+          overlay.querySelector('#waLTelefono')?.focus();
+        }
+      });
+    }
 
     // Avisa antes de enviar sin guía — mejor preguntar que mandar
     // "Número de guía: #{guia}" tal cual al cliente.
@@ -1727,14 +1772,113 @@
         overlay.querySelectorAll('.wa-tab').forEach(t => t.classList.remove('is-active'));
         tab.classList.add('is-active');
         estadoActivo = tab.dataset.e;
-        ta.value = resolveMsg(getTemplate(estadoActivo), data);
-        if (guiaActual) ta.value = ta.value.replace(/{guia}/g, guiaActual);
-        updateSendUrl();
+        regenerar();
       });
     });
 
+    // Modo lote: nombre/teléfono/ubicación se editan aquí mismo y recalculan
+    // el mensaje en vivo — así se pueden despachar varios clientes del mismo
+    // producto sin cerrar el modal.
+    if (opts.modoLote) {
+      const lNombre       = overlay.querySelector('#waLNombre');
+      const lApellidos    = overlay.querySelector('#waLApellidos');
+      const lTelefono     = overlay.querySelector('#waLTelefono');
+      const lCantidad     = overlay.querySelector('#waLCantidad');
+      const lProducto     = overlay.querySelector('#waLProducto');
+      const lPrecio       = overlay.querySelector('#waLPrecio');
+      const lDepartamento = overlay.querySelector('#waLDepartamento');
+      const lMunicipio    = overlay.querySelector('#waLMunicipio');
+      const lTipoEntrega  = overlay.querySelector('#waLTipoEntrega');
+
+      const productos   = window.__PRODUCTOS__   || [];
+      const ubicaciones = window.__UBICACIONES__ || {};
+
+      lProducto.innerHTML = '<option value="">— Elige un producto —</option>' +
+        productos.map(p => `<option value="${p.nombre}" data-precio="${p.precio_venta || ''}">${p.nombre}</option>`).join('');
+
+      lDepartamento.innerHTML = '<option value="">— Elige un departamento —</option>' +
+        Object.keys(ubicaciones).map(dep => `<option value="${dep}">${dep}</option>`).join('');
+
+      const poblarMunicipioLote = (preseleccion) => {
+        const municipios = ubicaciones[lDepartamento.value] || [];
+        lMunicipio.innerHTML = '';
+        if (!lDepartamento.value) {
+          lMunicipio.disabled = true;
+          lMunicipio.appendChild(new Option('Primero elige el departamento', ''));
+          return;
+        }
+        lMunicipio.disabled = false;
+        lMunicipio.appendChild(new Option('— Elige un municipio —', ''));
+        municipios.forEach(mun => lMunicipio.appendChild(new Option(mun, mun, false, mun === preseleccion)));
+      };
+
+      // Precarga con lo que ya traía `data` al abrir (por si vino de un
+      // contacto manual guardado, o de "usar este pedido").
+      lNombre.value       = data.nombre       || '';
+      lApellidos.value    = data.apellidos    || '';
+      lTelefono.value     = data.telefono     || '';
+      lCantidad.value     = data.cantidad     || '1';
+      lProducto.value     = data.producto     || '';
+      lPrecio.value       = data.precio       || '';
+      lTipoEntrega.value  = data.tipoEntrega  || 'domicilio';
+      lDepartamento.value = data.departamento || '';
+      poblarMunicipioLote(data.municipio || '');
+
+      lProducto.addEventListener('change', () => {
+        const precio = lProducto.selectedOptions[0]?.dataset.precio;
+        if (precio) lPrecio.value = '$' + Number(precio).toLocaleString('es-CO');
+        data.producto = lProducto.value;
+        data.precio   = lPrecio.value;
+        regenerar();
+      });
+
+      lDepartamento.addEventListener('change', () => {
+        data.departamento = lDepartamento.value;
+        data.municipio     = '';
+        poblarMunicipioLote('');
+        regenerar();
+      });
+
+      [[lNombre, 'nombre'], [lApellidos, 'apellidos'], [lTelefono, 'telefono'], [lCantidad, 'cantidad'], [lPrecio, 'precio']]
+        .forEach(([el, campo]) => el.addEventListener('input', () => { data[campo] = el.value.trim(); regenerar(); }));
+
+      [[lMunicipio, 'municipio'], [lTipoEntrega, 'tipoEntrega']]
+        .forEach(([el, campo]) => el.addEventListener('change', () => { data[campo] = el.value; regenerar(); }));
+    }
+
     if (typeof opts.onSend === 'function') {
       sendBtn.addEventListener('click', () => opts.onSend(mensajeParaEnviar(), estadoActivo));
+    }
+
+    // Modo lote: tras enviar, limpia todo menos producto y precio — así
+    // queda listo para el siguiente cliente sin cerrar el modal. Va después
+    // del guard de guía (que puede cancelar el clic) y del onSend (que
+    // necesita leer los datos del envío que se acaba de hacer).
+    if (opts.modoLote) {
+      sendBtn.addEventListener('click', () => {
+        data.nombre = data.apellidos = data.telefono = data.municipio = data.departamento = '';
+        data.cantidad = '1';
+        data.tipoEntrega = 'domicilio';
+        estadoActivo = 'nuevo';
+        guiaActual = '';
+
+        overlay.querySelector('#waLNombre').value = '';
+        overlay.querySelector('#waLApellidos').value = '';
+        overlay.querySelector('#waLTelefono').value = '';
+        overlay.querySelector('#waLCantidad').value = '1';
+        overlay.querySelector('#waLDepartamento').value = '';
+        overlay.querySelector('#waLTipoEntrega').value = 'domicilio';
+        const lMunicipioReset = overlay.querySelector('#waLMunicipio');
+        lMunicipioReset.innerHTML = '';
+        lMunicipioReset.disabled = true;
+        lMunicipioReset.appendChild(new Option('Primero elige el departamento', ''));
+        guiaInput.value = '';
+
+        overlay.querySelectorAll('.wa-tab').forEach(t => t.classList.toggle('is-active', t.dataset.e === 'nuevo'));
+        regenerar();
+
+        setTimeout(() => overlay.querySelector('#waLTelefono')?.focus(), 60);
+      });
     }
 
     // Cerrar
@@ -1745,10 +1889,14 @@
     const onKey = e => { if (e.key === 'Escape') { closePicker(); window.removeEventListener('keydown', onKey); } };
     window.addEventListener('keydown', onKey);
 
-    // Foco: si el mensaje necesita la guía, foco directo al campo dedicado
-    // (ya no se edita {guia} a mano dentro del textarea).
+    // Foco: en modo lote sin teléfono, ahí es donde hay que empezar a
+    // escribir. Si no, y el mensaje necesita la guía, foco directo al campo
+    // dedicado (ya no se edita {guia} a mano dentro del textarea).
     setTimeout(() => {
-      if (ta.value.includes('{guia}')) {
+      const lTelefonoInicial = opts.modoLote ? overlay.querySelector('#waLTelefono') : null;
+      if (lTelefonoInicial && !lTelefonoInicial.value) {
+        lTelefonoInicial.focus();
+      } else if (ta.value.includes('{guia}')) {
         guiaInput.focus();
       } else {
         ta.focus();
