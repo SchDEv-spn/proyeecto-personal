@@ -1654,8 +1654,14 @@
     const sendBtn = overlay.querySelector('#waSendBtn');
     let   estadoActivo = data.estado;
 
+    // Si el admin escribe la guía DENTRO de {guia} en vez de reemplazarlo
+    // completo, quedan llaves alrededor del número ("#{123}"). Se limpian
+    // solo al armar lo que de verdad se envía — el textarea visible no se
+    // toca, para no interferir mientras se está escribiendo.
+    const mensajeParaEnviar = () => ta.value.replace(/[{}]/g, '');
+
     const updateSendUrl = () => {
-      sendBtn.href = buildWaUrl(data.telefono, ta.value);
+      sendBtn.href = buildWaUrl(data.telefono, mensajeParaEnviar());
     };
 
     updateSendUrl();
@@ -1666,7 +1672,7 @@
     // pasado un momento, asumimos que no abrió nada y caemos a wa.me.
     if (!esMobile) {
       sendBtn.addEventListener('click', () => {
-        const urlRespaldo = buildWaUrlWeb(data.telefono, ta.value);
+        const urlRespaldo = buildWaUrlWeb(data.telefono, mensajeParaEnviar());
         const inicio = Date.now();
         const revisar = () => {
           if (document.hidden) return; // sí abrió la app de escritorio
@@ -1701,7 +1707,7 @@
     });
 
     if (typeof opts.onSend === 'function') {
-      sendBtn.addEventListener('click', () => opts.onSend(ta.value, estadoActivo));
+      sendBtn.addEventListener('click', () => opts.onSend(mensajeParaEnviar(), estadoActivo));
     }
 
     // Cerrar
