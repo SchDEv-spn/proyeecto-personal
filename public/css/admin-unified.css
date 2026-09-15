@@ -1531,6 +1531,35 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
   letter-spacing: .04em;
   color: var(--tx-muted);
 }
+.wa-guia-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+}
+.wa-guia-row label {
+  flex-shrink: 0;
+  margin: 0;
+}
+.wa-guia-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-2) var(--sp-3);
+  color: inherit;
+  font-family: var(--font);
+  font-size: var(--text-sm);
+}
+.wa-guia-row input:focus {
+  outline: none;
+  border-color: var(--green-dark);
+}
+
 .wa-picker-body textarea {
   width: 100%;
   min-height: 220px;

@@ -1635,6 +1635,10 @@
         </div>
         <div class="wa-picker-tabs">${tabsHtml}</div>
         <div class="wa-picker-body">
+          <div class="wa-guia-row">
+            <label for="waGuiaInput">Número de guía</label>
+            <input type="text" id="waGuiaInput" placeholder="Ej: 114015565557" inputmode="numeric">
+          </div>
           <label>Mensaje (editable)</label>
           <textarea id="waMsgTA">${initialMsg}</textarea>
           <div class="wa-emoji-strip">${emojisHtml}</div>
@@ -1650,15 +1654,27 @@
     document.body.appendChild(overlay);
     pickerEl = overlay;
 
-    const ta      = overlay.querySelector('#waMsgTA');
-    const sendBtn = overlay.querySelector('#waSendBtn');
+    const ta        = overlay.querySelector('#waMsgTA');
+    const sendBtn   = overlay.querySelector('#waSendBtn');
+    const guiaInput = overlay.querySelector('#waGuiaInput');
     let   estadoActivo = data.estado;
+    let   guiaActual   = '';
 
-    // Si el admin escribe la guía DENTRO de {guia} en vez de reemplazarlo
-    // completo, quedan llaves alrededor del número ("#{123}"). Se limpian
-    // solo al armar lo que de verdad se envía — el textarea visible no se
-    // toca, para no interferir mientras se está escribiendo.
+    // Última red de seguridad: si por lo que sea queda alguna llave suelta
+    // en el texto (nunca deberían quedar, pero por si acaso), se quita solo
+    // de lo que de verdad se envía — el textarea visible no se toca.
     const mensajeParaEnviar = () => ta.value.replace(/[{}]/g, '');
+
+    // El campo de guía reemplaza {guia} en vivo dentro del mensaje, en vez
+    // de obligar al admin a encontrar y reescribir el placeholder a mano
+    // (eso era lo que dejaba llaves sueltas cuando escribía adentro).
+    guiaInput.addEventListener('input', () => {
+      const anterior = guiaActual || '{guia}';
+      const nueva    = guiaInput.value.trim() || '{guia}';
+      ta.value    = ta.value.split(anterior).join(nueva);
+      guiaActual  = guiaInput.value.trim();
+      updateSendUrl();
+    });
 
     const updateSendUrl = () => {
       sendBtn.href = buildWaUrl(data.telefono, mensajeParaEnviar());
@@ -1666,6 +1682,16 @@
 
     updateSendUrl();
     ta.addEventListener('input', updateSendUrl);
+
+    // Avisa antes de enviar sin guía — mejor preguntar que mandar
+    // "Número de guía: #{guia}" tal cual al cliente.
+    sendBtn.addEventListener('click', e => {
+      if (ta.value.includes('{guia}') && !confirm('No pusiste el número de guía. ¿Enviar así de todas formas?')) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        guiaInput.focus();
+      }
+    });
 
     // En computadora, whatsapp:// puede no estar registrado (sin app de
     // escritorio instalada). Si tras el clic la pestaña sigue visible
@@ -1702,6 +1728,7 @@
         tab.classList.add('is-active');
         estadoActivo = tab.dataset.e;
         ta.value = resolveMsg(getTemplate(estadoActivo), data);
+        if (guiaActual) ta.value = ta.value.replace(/{guia}/g, guiaActual);
         updateSendUrl();
       });
     });
@@ -1718,12 +1745,11 @@
     const onKey = e => { if (e.key === 'Escape') { closePicker(); window.removeEventListener('keydown', onKey); } };
     window.addEventListener('keydown', onKey);
 
-    // Foco: si hay {guia} seleccionarlo para que el admin lo reemplace de inmediato
+    // Foco: si el mensaje necesita la guía, foco directo al campo dedicado
+    // (ya no se edita {guia} a mano dentro del textarea).
     setTimeout(() => {
-      const guiaIdx = ta.value.indexOf('{guia}');
-      if (guiaIdx !== -1) {
-        ta.focus();
-        ta.setSelectionRange(guiaIdx, guiaIdx + 6);
+      if (ta.value.includes('{guia}')) {
+        guiaInput.focus();
       } else {
         ta.focus();
       }
