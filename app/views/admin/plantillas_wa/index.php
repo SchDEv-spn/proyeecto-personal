@@ -206,7 +206,7 @@ $estados = [
                             <label>Tipo de entrega</label>
                             <select id="mTipoEntrega">
                                 <option value="domicilio">Domicilio (Envia)</option>
-                                <option value="oficina">Oficina (Interrapidísimo)</option>
+                                <option value="oficina" selected>Oficina (Interrapidísimo)</option>
                             </select>
                         </div>
                         <div class="plantilla-field">
@@ -427,6 +427,19 @@ $estados = [
                     body: fd,
                     headers: { 'X-Requested-With': 'fetch' },
                 }).catch(() => {});
+
+                // Producto, precio y tipo de entrega quedan puestos para el
+                // siguiente cliente (mismo producto, mucha salida a oficina).
+                // Lo que sí es de cada cliente se limpia y el buscador queda
+                // listo para el siguiente teléfono.
+                telInput.value = '';
+                document.getElementById('mNombre').value = '';
+                document.getElementById('mApellidos').value = '';
+                document.getElementById('mCantidad').value = '1';
+                mDepartamento.value = '';
+                mDepartamento.dispatchEvent(new Event('change'));
+                document.getElementById('mEstado').value = 'nuevo';
+                telInput.focus();
             },
         });
     });
