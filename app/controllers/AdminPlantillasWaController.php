@@ -30,6 +30,10 @@ class AdminPlantillasWaController extends Controller
      * el picker de WhatsApp: nombre, apellidos, producto, cantidad, precio,
      * municipio, departamento, estado, tipoEntrega) para que el JS los pase
      * directo a window.WaPicker.open() sin transformarlos de nuevo.
+     *
+     * Si no hay pedido de la landing, cae al contacto manual guardado para
+     * ese teléfono (si existe) — así no hay que volver a escribir los datos
+     * de un cliente que llega por WhatsApp directo de las vendedoras.
      */
     public function buscarPedido()
     {
@@ -38,7 +42,7 @@ class AdminPlantillasWaController extends Controller
 
         $telefono = trim((string)($_GET['telefono'] ?? ''));
         if ($telefono === '') {
-            echo json_encode(['ok' => true, 'pedidos' => []]);
+            echo json_encode(['ok' => true, 'pedidos' => [], 'contacto' => null]);
             exit;
         }
 
@@ -66,15 +70,34 @@ class AdminPlantillasWaController extends Controller
             ];
         }, $rows);
 
-        echo json_encode(['ok' => true, 'pedidos' => $pedidos], JSON_UNESCAPED_UNICODE);
+        $contacto = null;
+        if (empty($pedidos)) {
+            $c = (new ContactoManual())->buscarPorTelefono($telefono);
+            if ($c) {
+                $contacto = [
+                    'nombre'       => $c['nombre'] ?? '',
+                    'apellidos'    => $c['apellidos'] ?? '',
+                    'producto'     => $c['producto'] ?? '',
+                    'cantidad'     => $c['cantidad'] ?? '1',
+                    'precio'       => $c['precio'] ?? '',
+                    'municipio'    => $c['municipio'] ?? '',
+                    'departamento' => $c['departamento'] ?? '',
+                    'tipoEntrega'  => $c['tipo_entrega'] ?? 'domicilio',
+                    'estado'       => $c['estado'] ?? 'nuevo',
+                ];
+            }
+        }
+
+        echo json_encode(['ok' => true, 'pedidos' => $pedidos, 'contacto' => $contacto], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     /**
      * Registra un mensaje armado a mano para un número que no corresponde a
      * un pedido de la landing (p. ej. clientes de las vendedoras de
-     * WhatsApp). Solo deja constancia de que se armó/envió, no guarda el
-     * texto completo del mensaje.
+     * WhatsApp). Deja constancia en el log de auditoría (no el texto
+     * completo del mensaje) y guarda/actualiza el contacto manual completo
+     * para que la próxima búsqueda por ese teléfono ya traiga los datos.
      */
     public function registrarEnvioManual()
     {
@@ -98,6 +121,19 @@ class AdminPlantillasWaController extends Controller
 
         $usuarioNombre = $_SESSION['usuario_nombre'] ?? 'Admin';
         $ok = (new WaMensajeLog())->registrar($telefono, $nombre, $estado, $usuarioNombre);
+
+        (new ContactoManual())->upsert($telefono, [
+            'nombre'        => trim((string)($_POST['datosNombre']       ?? $nombre)),
+            'apellidos'     => trim((string)($_POST['datosApellidos']    ?? '')),
+            'producto'      => trim((string)($_POST['datosProducto']     ?? '')),
+            'cantidad'      => trim((string)($_POST['datosCantidad']     ?? '1')),
+            'precio'        => trim((string)($_POST['datosPrecio']       ?? '')),
+            'municipio'     => trim((string)($_POST['datosMunicipio']    ?? '')),
+            'departamento'  => trim((string)($_POST['datosDepartamento'] ?? '')),
+            'tipoEntrega'   => trim((string)($_POST['datosTipoEntrega']  ?? 'domicilio')),
+            'estado'        => $estado,
+            'usuarioNombre' => $usuarioNombre,
+        ]);
 
         echo json_encode(['ok' => $ok]);
         exit;

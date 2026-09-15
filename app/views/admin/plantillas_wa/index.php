@@ -169,7 +169,7 @@ $estados = [
                 <div id="waResultados" class="wa-resultados" hidden></div>
 
                 <div id="waManual" class="wa-manual" hidden>
-                    <p class="wa-manual-hint">No encontramos un pedido de la landing con ese teléfono. Arma el mensaje a mano:</p>
+                    <p class="wa-manual-hint" id="waManualHint">No encontramos un pedido de la landing con ese teléfono. Arma el mensaje a mano:</p>
                     <div class="wa-manual-grid">
                         <div class="plantilla-field"><label>Nombre</label><input type="text" id="mNombre"></div>
                         <div class="plantilla-field"><label>Apellidos</label><input type="text" id="mApellidos"></div>
@@ -270,10 +270,12 @@ $estados = [
     const buscarBtn     = document.getElementById('waBuscarBtn');
     const resultados    = document.getElementById('waResultados');
     const manualBox     = document.getElementById('waManual');
+    const waManualHint  = document.getElementById('waManualHint');
     const mProducto     = document.getElementById('mProducto');
     const mPrecio       = document.getElementById('mPrecio');
     const mDepartamento = document.getElementById('mDepartamento');
     const mMunicipio    = document.getElementById('mMunicipio');
+    const mTipoEntrega  = document.getElementById('mTipoEntrega');
 
     // Al elegir un producto real de la BD, sugiere su precio de venta.
     mProducto.addEventListener('change', () => {
@@ -303,13 +305,6 @@ $estados = [
     const renderResultados = (pedidos) => {
         ultimosPedidos = pedidos;
 
-        if (!pedidos.length) {
-            resultados.hidden   = true;
-            resultados.innerHTML = '';
-            manualBox.hidden    = false;
-            return;
-        }
-
         manualBox.hidden    = true;
         resultados.hidden   = false;
         resultados.innerHTML = pedidos.map((p, i) => `
@@ -326,17 +321,52 @@ $estados = [
         `).join('');
     };
 
+    // Prellena el formulario manual con un contacto ya guardado (mismo
+    // teléfono, sin pedido de la landing) — nada que volver a escribir.
+    const cargarContactoManual = (c) => {
+        document.getElementById('mNombre').value       = c.nombre       || '';
+        document.getElementById('mApellidos').value    = c.apellidos    || '';
+        document.getElementById('mCantidad').value     = c.cantidad     || '1';
+        mPrecio.value = c.precio || '';
+
+        mProducto.value = c.producto || '';
+        mTipoEntrega.value = c.tipoEntrega || 'domicilio';
+        document.getElementById('mEstado').value = c.estado || 'nuevo';
+
+        mDepartamento.value = c.departamento || '';
+        mDepartamento.dispatchEvent(new Event('change'));
+        // El municipio se llena async al disparar el 'change' de arriba —
+        // se asigna después de que termine de poblar las opciones.
+        setTimeout(() => { mMunicipio.value = c.municipio || ''; }, 0);
+    };
+
     const buscar = async () => {
         const telefono = telInput.value.trim();
         if (!telefono) return;
 
+        waManualHint.textContent = 'No encontramos un pedido de la landing con ese teléfono. Arma el mensaje a mano:';
         buscarBtn.disabled = true;
         try {
             const res  = await fetch((window.BASE_URL || '') + '/AdminPlantillasWa/buscarPedido?telefono=' + encodeURIComponent(telefono));
             const json = await res.json();
-            renderResultados(json.pedidos || []);
+            const pedidos = json.pedidos || [];
+
+            if (pedidos.length) {
+                renderResultados(pedidos);
+                return;
+            }
+
+            resultados.hidden = true;
+            resultados.innerHTML = '';
+            manualBox.hidden = false;
+
+            if (json.contacto) {
+                cargarContactoManual(json.contacto);
+                waManualHint.textContent = 'No es un pedido de la landing, pero ya tenías datos guardados de este teléfono — revisa antes de enviar:';
+            }
         } catch {
-            renderResultados([]);
+            resultados.hidden = true;
+            manualBox.hidden = false;
         } finally {
             buscarBtn.disabled = false;
         }
@@ -360,18 +390,19 @@ $estados = [
 
         const nombre    = document.getElementById('mNombre').value.trim();
         const apellidos = document.getElementById('mApellidos').value.trim();
+        const cantidad  = document.getElementById('mCantidad').value.trim() || '1';
 
         const data = {
             telefono,
             nombre,
             apellidos,
             producto:     mProducto.value.trim(),
-            cantidad:     document.getElementById('mCantidad').value.trim() || '1',
+            cantidad,
             precio:       mPrecio.value.trim(),
             municipio:    mMunicipio.value.trim(),
             departamento: mDepartamento.value.trim(),
             estado:       document.getElementById('mEstado').value,
-            tipoEntrega:  document.getElementById('mTipoEntrega').value,
+            tipoEntrega:  mTipoEntrega.value,
         };
 
         window.WaPicker.open(data, {
@@ -381,6 +412,16 @@ $estados = [
                 fd.append('nombre', [nombre, apellidos].filter(Boolean).join(' '));
                 fd.append('estado', estado);
                 fd.append('csrf_token', window.__CSRF__ || '');
+                // Snapshot completo — para que la próxima búsqueda de este
+                // teléfono ya traiga los datos (ver ContactoManual::upsert).
+                fd.append('datosNombre',       data.nombre);
+                fd.append('datosApellidos',    data.apellidos);
+                fd.append('datosProducto',     data.producto);
+                fd.append('datosCantidad',     data.cantidad);
+                fd.append('datosPrecio',       data.precio);
+                fd.append('datosMunicipio',    data.municipio);
+                fd.append('datosDepartamento', data.departamento);
+                fd.append('datosTipoEntrega',  data.tipoEntrega);
                 fetch((window.BASE_URL || '') + '/AdminPlantillasWa/registrarEnvioManual', {
                     method: 'POST',
                     body: fd,
