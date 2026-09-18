@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="<?= asset_url('public/css/admin-unified.css') ?>">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/vendor/dataTables.dataTables.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js');</script>
     <style>
@@ -160,7 +161,20 @@ $estados = [
                     Pedidos reales y contactos manuales a los que ya se les avisó que están en la oficina de Interrapidísimo.
                     Interrapidísimo devuelve automáticamente los no reclamados a los 5 días hábiles.
                 </p>
-                <div id="waEnOficinaLista" class="wa-resultados"></div>
+                <div class="dt-table-wrap">
+                    <table id="tablaEnOficina" class="pedidos-dt">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Producto</th>
+                                <th>Teléfono</th>
+                                <th>Días esperando</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Compositor de mensajes -->
@@ -265,6 +279,7 @@ $estados = [
 </div>
 
 <script src="<?= BASE_URL ?>/public/vendor/jquery-3.7.1.min.js"></script>
+<script src="<?= BASE_URL ?>/public/vendor/dataTables.min.js"></script>
 <script src="<?= asset_url('public/js/modal-a11y.js') ?>"></script>
 <script src="<?= asset_url('public/js/form-labels.js') ?>"></script>
 <script src="<?= asset_url('public/js/funciones.js') ?>"></script>
@@ -464,9 +479,11 @@ $estados = [
 
     // Panel "En oficina, esperando recogida" — junta pedidos reales y
     // contactos manuales ya notificados, para saber a quién le toca el
-    // recordatorio sin tener que acordarse ni buscar uno por uno.
+    // recordatorio sin tener que acordarse ni buscar uno por uno. Misma
+    // tabla (pedidos-dt + DataTable) que usa Pedidos, para que se vea y
+    // se maneje igual: 10 filas por defecto, con opción de mostrar más.
     const enOficinaPanel = document.getElementById('waEnOficinaPanel');
-    const enOficinaLista = document.getElementById('waEnOficinaLista');
+    const enOficinaTbody = document.querySelector('#tablaEnOficina tbody');
     let   ultimosEnOficina = [];
 
     const cargarEnOficina = async () => {
@@ -479,24 +496,40 @@ $estados = [
             if (!items.length) { enOficinaPanel.hidden = true; return; }
 
             enOficinaPanel.hidden = false;
-            enOficinaLista.innerHTML = items.map((it, i) => `
-                <div class="wa-resultado-card">
-                    <div>
-                        <strong>${it.nombre} ${it.apellidos}</strong> — ${it.producto} (${it.cantidad})
-                        <div class="wa-resultado-meta">
-                            ${it.telefono} · ${it.diasEsperando} día${it.diasEsperando === 1 ? '' : 's'} esperando
-                            ${it.diasEsperando >= 2 ? '<span class="plantilla-estado-badge p-badge-recordatorio_oficina">Toca recordatorio</span>' : ''}
-                        </div>
-                    </div>
-                    <button type="button" class="btn-primary btn-primary--soft" data-idx="${i}">Enviar recordatorio</button>
-                </div>
+            enOficinaTbody.innerHTML = items.map((it, i) => `
+                <tr>
+                    <td>${it.nombre} ${it.apellidos}</td>
+                    <td>${it.producto}</td>
+                    <td>${it.telefono}</td>
+                    <td data-order="${it.diasEsperando}">
+                        ${it.diasEsperando} día${it.diasEsperando === 1 ? '' : 's'}
+                        ${it.diasEsperando >= 2 ? '<span class="plantilla-estado-badge p-badge-recordatorio_oficina">Toca recordatorio</span>' : ''}
+                    </td>
+                    <td><button type="button" class="btn-primary btn-primary--soft" data-idx="${i}">Enviar recordatorio</button></td>
+                </tr>
             `).join('');
+
+            new DataTable('#tablaEnOficina', {
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], ['10', '25', '50', 'Todos']],
+                searching: false,
+                order: [[3, 'desc']],
+                autoWidth: false,
+                columnDefs: [{ orderable: false, targets: [4] }],
+                language: {
+                    lengthMenu: 'Mostrar _MENU_ por página',
+                    info:       '_TOTAL_ esperando',
+                    infoEmpty:  'Sin pedidos esperando',
+                    paginate:   { first: '«', last: '»', next: '›', previous: '‹' },
+                },
+                dom: 't<"dt-bottom"ip>',
+            });
         } catch {
             enOficinaPanel.hidden = true;
         }
     };
 
-    enOficinaLista.addEventListener('click', e => {
+    enOficinaTbody.addEventListener('click', e => {
         const btn = e.target.closest('[data-idx]');
         if (!btn) return;
         const it = ultimosEnOficina[Number(btn.dataset.idx)];
