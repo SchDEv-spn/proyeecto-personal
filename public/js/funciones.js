@@ -1625,7 +1625,12 @@
 
     const emojisHtml = EMOJIS_SEGUROS.map(em => `<button type="button" class="wa-emoji-chip">${em}</button>`).join('');
 
-    const initialMsg = resolveMsg(getTemplate(data.estado), data);
+    // Si ya se había guardado la guía de este pedido/contacto antes (ver
+    // registrarEnvioWa), viene puesta desde el arranque — no hay que
+    // volver a escribirla en cada mensaje.
+    const guiaGuardada = (data.numeroGuia || '').trim();
+    let   initialMsg   = resolveMsg(getTemplate(data.estado), data);
+    if (guiaGuardada) initialMsg = initialMsg.replace(/{guia}/g, guiaGuardada);
 
     overlay.innerHTML = `
       <div class="wa-picker-card" role="dialog" aria-modal="true" aria-label="Mensaje WhatsApp">
@@ -1658,7 +1663,8 @@
     const sendBtn   = overlay.querySelector('#waSendBtn');
     const guiaInput = overlay.querySelector('#waGuiaInput');
     let   estadoActivo = data.estado;
-    let   guiaActual   = '';
+    let   guiaActual   = guiaGuardada;
+    if (guiaGuardada) guiaInput.value = guiaGuardada;
 
     // Última red de seguridad: si por lo que sea queda alguna llave suelta
     // en el texto (nunca deberían quedar, pero por si acaso), se quita solo
@@ -1734,7 +1740,25 @@
     });
 
     if (typeof opts.onSend === 'function') {
-      sendBtn.addEventListener('click', () => opts.onSend(mensajeParaEnviar(), estadoActivo));
+      sendBtn.addEventListener('click', () => opts.onSend(mensajeParaEnviar(), estadoActivo, guiaActual));
+    }
+
+    // Si es un pedido real de la landing (trae id), sincroniza su estado y
+    // guarda la guía al enviar — sin esto habría que cambiar el estado
+    // aparte en Pedidos, aunque ya se le avisó al cliente por WhatsApp.
+    if (data.id) {
+      sendBtn.addEventListener('click', () => {
+        const fd = new FormData();
+        fd.append('id', data.id);
+        fd.append('estado', estadoActivo);
+        fd.append('guia', guiaActual);
+        fd.append('csrf_token', window.__CSRF__ || '');
+        fetch((window.BASE_URL || '') + '/AdminPedidos/registrarEnvioWa', {
+          method: 'POST',
+          body: fd,
+          headers: { 'X-Requested-With': 'fetch' },
+        }).catch(() => {});
+      });
     }
 
     // Cerrar
@@ -1763,6 +1787,7 @@
     e.preventDefault();
 
     openPicker({
+      id:           btn.dataset.id          || '',
       telefono:     btn.dataset.telefono     || '',
       nombre:       btn.dataset.nombre       || '',
       apellidos:    btn.dataset.apellidos    || '',
@@ -1773,6 +1798,7 @@
       departamento: btn.dataset.departamento || '',
       estado:       btn.dataset.estado       || 'nuevo',
       tipoEntrega:  btn.dataset.tipoEntrega  || '',
+      numeroGuia:   btn.dataset.numeroGuia   || '',
     });
   });
 

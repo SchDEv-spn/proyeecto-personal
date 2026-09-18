@@ -66,6 +66,7 @@ class AdminPlantillasWaController extends Controller
                 'departamento' => $p['departamento'] ?? '',
                 'estado'       => $p['estado'] ?? 'nuevo',
                 'tipoEntrega'  => $p['tipo_entrega'] ?? '',
+                'numeroGuia'   => $p['numero_guia'] ?? '',
                 'fecha'        => !empty($p['created_at']) ? date('d/m/Y', strtotime($p['created_at'])) : '',
             ];
         }, $rows);
@@ -84,6 +85,7 @@ class AdminPlantillasWaController extends Controller
                     'departamento' => $c['departamento'] ?? '',
                     'tipoEntrega'  => $c['tipo_entrega'] ?? 'domicilio',
                     'estado'       => $c['estado'] ?? 'nuevo',
+                    'numeroGuia'   => $c['numero_guia'] ?? '',
                 ];
             }
         }
@@ -113,6 +115,7 @@ class AdminPlantillasWaController extends Controller
         $telefono = trim((string)($_POST['telefono'] ?? ''));
         $nombre   = trim((string)($_POST['nombre']   ?? ''));
         $estado   = trim((string)($_POST['estado']   ?? ''));
+        $guia     = trim((string)($_POST['guia']     ?? ''));
 
         if ($telefono === '') {
             echo json_encode(['ok' => false, 'error' => 'Falta el teléfono']);
@@ -122,7 +125,8 @@ class AdminPlantillasWaController extends Controller
         $usuarioNombre = $_SESSION['usuario_nombre'] ?? 'Admin';
         $ok = (new WaMensajeLog())->registrar($telefono, $nombre, $estado, $usuarioNombre);
 
-        (new ContactoManual())->upsert($telefono, [
+        $contactoModel = new ContactoManual();
+        $contactoModel->upsert($telefono, [
             'nombre'        => trim((string)($_POST['datosNombre']       ?? $nombre)),
             'apellidos'     => trim((string)($_POST['datosApellidos']    ?? '')),
             'producto'      => trim((string)($_POST['datosProducto']     ?? '')),
@@ -134,8 +138,69 @@ class AdminPlantillasWaController extends Controller
             'estado'        => $estado,
             'usuarioNombre' => $usuarioNombre,
         ]);
+        // Guía y fecha de aviso "en oficina" — mismo criterio que un pedido real.
+        $contactoModel->registrarEnvioWa($telefono, $estado, $guia !== '' ? $guia : null);
 
         echo json_encode(['ok' => $ok]);
+        exit;
+    }
+
+    /**
+     * Pedidos reales y contactos manuales que están "en oficina" y ya
+     * fueron notificados — con los días de espera, para saber a quién le
+     * toca el recordatorio antes de que Interrapidísimo devuelva el
+     * paquete. Se muestra como panel en Plantillas WA.
+     */
+    public function enOficina()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $pedidos = array_map(function (array $p) {
+            $cantidad = max(1, (int)($p['cantidad_total'] ?? 1));
+            $precio   = isset($p['precio_total'])
+                ? (float)$p['precio_total']
+                : (float)($p['precio_venta'] ?? 0) * $cantidad;
+
+            return [
+                'origen'       => 'pedido',
+                'id'           => (int)$p['id'],
+                'telefono'     => $p['telefono'] ?? '',
+                'nombre'       => $p['nombre'] ?? '',
+                'apellidos'    => $p['apellidos'] ?? '',
+                'producto'     => $p['producto_nombre'] ?? '',
+                'cantidad'     => (string)$cantidad,
+                'precio'       => '$' . number_format($precio, 0, ',', '.'),
+                'municipio'    => $p['municipio'] ?? '',
+                'departamento' => $p['departamento'] ?? '',
+                'tipoEntrega'  => $p['tipo_entrega'] ?? 'oficina',
+                'numeroGuia'   => $p['numero_guia'] ?? '',
+                'diasEsperando'=> (int)($p['dias_esperando'] ?? 0),
+            ];
+        }, (new Pedido())->obtenerEnOficinaEsperando());
+
+        $contactos = array_map(function (array $c) {
+            return [
+                'origen'       => 'manual',
+                'id'           => null,
+                'telefono'     => $c['telefono'] ?? '',
+                'nombre'       => $c['nombre'] ?? '',
+                'apellidos'    => $c['apellidos'] ?? '',
+                'producto'     => $c['producto'] ?? '',
+                'cantidad'     => $c['cantidad'] ?? '1',
+                'precio'       => $c['precio'] ?? '',
+                'municipio'    => $c['municipio'] ?? '',
+                'departamento' => $c['departamento'] ?? '',
+                'tipoEntrega'  => $c['tipo_entrega'] ?? 'oficina',
+                'numeroGuia'   => $c['numero_guia'] ?? '',
+                'diasEsperando'=> (int)($c['dias_esperando'] ?? 0),
+            ];
+        }, (new ContactoManual())->obtenerEnOficinaEsperando());
+
+        $todos = array_merge($pedidos, $contactos);
+        usort($todos, fn($a, $b) => $b['diasEsperando'] <=> $a['diasEsperando']);
+
+        echo json_encode(['ok' => true, 'items' => $todos], JSON_UNESCAPED_UNICODE);
         exit;
     }
 

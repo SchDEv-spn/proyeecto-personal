@@ -364,6 +364,37 @@ class AdminPedidosController extends Controller
         exit;
     }
 
+    /**
+     * Se llama automáticamente al hacer clic en "Abrir WhatsApp" del picker
+     * (funciones.js) para un pedido real — sincroniza el estado del pedido
+     * con la pestaña de plantilla usada y guarda la guía, ver
+     * Pedido::registrarEnvioWa().
+     */
+    public function registrarEnvioWa()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            exit;
+        }
+
+        $id     = (int)($_POST['id']     ?? 0);
+        $estado = trim((string)($_POST['estado'] ?? ''));
+        $guia   = trim((string)($_POST['guia']   ?? ''));
+
+        if ($id <= 0) {
+            echo json_encode(['ok' => false, 'error' => 'Falta el id del pedido']);
+            exit;
+        }
+
+        $ok = (new Pedido())->registrarEnvioWa($id, $estado, $guia !== '' ? $guia : null);
+        echo json_encode(['ok' => $ok]);
+        exit;
+    }
+
     public function detalle()
     {
         $this->requireLogin();

@@ -2,6 +2,39 @@
 
 class Pedido extends Model
 {
+    private static bool $columnasListas = false;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->asegurarColumnasNuevas();
+    }
+
+    /**
+     * Columnas añadidas después del CREATE original de pedidos. Mismo
+     * patrón que LandingConfig::asegurarColumnasNuevas() — el ALTER en
+     * try/catch traga el 1060 (columna duplicada) si ya existe, así que un
+     * deploy no revienta aunque la migración de producción no se haya
+     * corrido todavía a mano.
+     */
+    private function asegurarColumnasNuevas(): void
+    {
+        if (self::$columnasListas) return;
+        self::$columnasListas = true;
+
+        $cols = [
+            'numero_guia'           => 'VARCHAR(50) NULL',
+            'notificado_oficina_at' => 'TIMESTAMP NULL',
+        ];
+        foreach ($cols as $col => $def) {
+            try {
+                $this->db->exec("ALTER TABLE pedidos ADD COLUMN {$col} {$def}");
+            } catch (\PDOException $e) {
+                // 42S21 / 1060 = Duplicate column name → ya existe, nada que hacer.
+            }
+        }
+    }
+
     public function crearConId(array $data): int
     {
         $nombre       = trim((string)($data['nombre'] ?? ''));
@@ -209,6 +242,61 @@ class Pedido extends Model
             ':estado' => (string)$estado,
             ':id'     => (int)$id,
         ]);
+    }
+
+    /**
+     * Se llama al enviar un WhatsApp desde el picker (Pedidos o "usar este
+     * pedido" en el compositor). Si la pestaña usada es un estado real del
+     * pipeline, el pedido pasa a ese estado — ya no hace falta cambiarlo
+     * aparte. "recordatorio_oficina" no es un estado real, así que no
+     * toca el estado del pedido, solo puede traer una guía nueva.
+     * Guarda la guía si se escribió una, y si el estado es 'en_oficina'
+     * marca (o refresca) el momento en que se le avisó al cliente — de ahí
+     * se calculan los días de espera para el recordatorio.
+     */
+    public function registrarEnvioWa(int $id, string $estado, ?string $guia): bool
+    {
+        $estadosReales = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
+
+        $sets   = [];
+        $params = [':id' => $id];
+
+        if (in_array($estado, $estadosReales, true)) {
+            $sets[] = 'estado = :estado';
+            $params[':estado'] = $estado;
+        }
+        if ($guia !== null && $guia !== '') {
+            $sets[] = 'numero_guia = :guia';
+            $params[':guia'] = $guia;
+        }
+        if ($estado === 'en_oficina') {
+            $sets[] = 'notificado_oficina_at = NOW()';
+        }
+
+        if (empty($sets)) return true; // nada que actualizar (p.ej. recordatorio sin guía)
+
+        $sql = 'UPDATE pedidos SET ' . implode(', ', $sets) . ' WHERE id = :id';
+        return $this->db->prepare($sql)->execute($params);
+    }
+
+    /**
+     * Pedidos en oficina a los que ya se les avisó, con los días corridos
+     * desde ese aviso — para saber a quién le toca el recordatorio antes de
+     * que Interrapidísimo devuelva el paquete.
+     */
+    public function obtenerEnOficinaEsperando(): array
+    {
+        $sql = "SELECT
+                    p.*,
+                    pr.nombre AS producto_nombre,
+                    DATEDIFF(NOW(), p.notificado_oficina_at) AS dias_esperando
+                FROM pedidos p
+                INNER JOIN productos pr ON p.producto_id = pr.id
+                WHERE p.estado = 'en_oficina'
+                  AND p.notificado_oficina_at IS NOT NULL
+                ORDER BY p.notificado_oficina_at ASC";
+
+        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function actualizarTelefono(int $id, string $telefono): bool

@@ -335,6 +335,7 @@
                                             <?php if ($telLimpio !== ''): ?>
                                                 <button type="button" class="btn-icon-wa js-wa-open"
                                                         title="WhatsApp"
+                                                        data-id="<?= htmlspecialchars((string)($p['id'] ?? '')) ?>"
                                                         data-telefono="<?= htmlspecialchars($telRaw) ?>"
                                                         data-nombre="<?= htmlspecialchars($p['nombre'] ?? '') ?>"
                                                         data-apellidos="<?= htmlspecialchars($p['apellidos'] ?? '') ?>"
@@ -344,7 +345,8 @@
                                                         data-municipio="<?= htmlspecialchars($p['municipio'] ?? '') ?>"
                                                         data-departamento="<?= htmlspecialchars($p['departamento'] ?? '') ?>"
                                                         data-estado="<?= htmlspecialchars($estadoActual) ?>"
-                                                        data-tipo-entrega="<?= htmlspecialchars($p['tipo_entrega'] ?? '') ?>">
+                                                        data-tipo-entrega="<?= htmlspecialchars($p['tipo_entrega'] ?? '') ?>"
+                                                        data-numero-guia="<?= htmlspecialchars($p['numero_guia'] ?? '') ?>">
                                                     <i class="fab fa-whatsapp"></i>
                                                 </button>
                                             <?php endif; ?>

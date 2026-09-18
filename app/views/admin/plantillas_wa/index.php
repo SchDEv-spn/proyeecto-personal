@@ -153,6 +153,16 @@ $estados = [
 
         <section class="material-content">
 
+            <!-- En oficina esperando recogida -->
+            <div class="panel" id="waEnOficinaPanel" style="padding:1.1rem 1.25rem 1.25rem;margin-bottom:1rem;" hidden>
+                <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;">En oficina, esperando recogida</h2>
+                <p style="font-size:12.5px;color:var(--tx-muted);margin-bottom:.85rem;">
+                    Pedidos reales y contactos manuales a los que ya se les avisó que están en la oficina de Interrapidísimo.
+                    Interrapidísimo devuelve automáticamente los no reclamados a los 5 días hábiles.
+                </p>
+                <div id="waEnOficinaLista" class="wa-resultados"></div>
+            </div>
+
             <!-- Compositor de mensajes -->
             <div class="panel" id="waComposerPanel" style="padding:1.1rem 1.25rem 1.25rem;margin-bottom:1rem;">
                 <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;">Enviar mensaje por WhatsApp</h2>
@@ -321,6 +331,10 @@ $estados = [
         `).join('');
     };
 
+    // Guía guardada del contacto manual cargado (no hay campo propio en el
+    // formulario de afuera; se lleva al picker cuando se compone el mensaje).
+    let numeroGuiaContacto = '';
+
     // Prellena el formulario manual con un contacto ya guardado (mismo
     // teléfono, sin pedido de la landing) — nada que volver a escribir.
     const cargarContactoManual = (c) => {
@@ -332,6 +346,7 @@ $estados = [
         mProducto.value = c.producto || '';
         mTipoEntrega.value = c.tipoEntrega || 'domicilio';
         document.getElementById('mEstado').value = c.estado || 'nuevo';
+        numeroGuiaContacto = c.numeroGuia || '';
 
         mDepartamento.value = c.departamento || '';
         mDepartamento.dispatchEvent(new Event('change'));
@@ -344,6 +359,7 @@ $estados = [
         const telefono = telInput.value.trim();
         if (!telefono) return;
 
+        numeroGuiaContacto = '';
         waManualHint.textContent = 'No encontramos un pedido de la landing con ese teléfono. Arma el mensaje a mano:';
         buscarBtn.disabled = true;
         try {
@@ -403,14 +419,16 @@ $estados = [
             departamento: mDepartamento.value.trim(),
             estado:       document.getElementById('mEstado').value,
             tipoEntrega:  mTipoEntrega.value,
+            numeroGuia:   numeroGuiaContacto,
         };
 
         window.WaPicker.open(data, {
-            onSend: (mensaje, estado) => {
+            onSend: (mensaje, estado, guia) => {
                 const fd = new FormData();
                 fd.append('telefono', telefono);
                 fd.append('nombre', [nombre, apellidos].filter(Boolean).join(' '));
                 fd.append('estado', estado);
+                fd.append('guia', guia || '');
                 fd.append('csrf_token', window.__CSRF__ || '');
                 // Snapshot completo — para que la próxima búsqueda de este
                 // teléfono ya traiga los datos (ver ContactoManual::upsert).
@@ -443,6 +461,81 @@ $estados = [
             },
         });
     });
+
+    // Panel "En oficina, esperando recogida" — junta pedidos reales y
+    // contactos manuales ya notificados, para saber a quién le toca el
+    // recordatorio sin tener que acordarse ni buscar uno por uno.
+    const enOficinaPanel = document.getElementById('waEnOficinaPanel');
+    const enOficinaLista = document.getElementById('waEnOficinaLista');
+    let   ultimosEnOficina = [];
+
+    const cargarEnOficina = async () => {
+        try {
+            const res   = await fetch((window.BASE_URL || '') + '/AdminPlantillasWa/enOficina');
+            const json  = await res.json();
+            const items = json.items || [];
+            ultimosEnOficina = items;
+
+            if (!items.length) { enOficinaPanel.hidden = true; return; }
+
+            enOficinaPanel.hidden = false;
+            enOficinaLista.innerHTML = items.map((it, i) => `
+                <div class="wa-resultado-card">
+                    <div>
+                        <strong>${it.nombre} ${it.apellidos}</strong> — ${it.producto} (${it.cantidad})
+                        <div class="wa-resultado-meta">
+                            ${it.telefono} · ${it.diasEsperando} día${it.diasEsperando === 1 ? '' : 's'} esperando
+                            ${it.diasEsperando >= 2 ? '<span class="plantilla-estado-badge p-badge-recordatorio_oficina">Toca recordatorio</span>' : ''}
+                        </div>
+                    </div>
+                    <button type="button" class="btn-primary btn-primary--soft" data-idx="${i}">Enviar recordatorio</button>
+                </div>
+            `).join('');
+        } catch {
+            enOficinaPanel.hidden = true;
+        }
+    };
+
+    enOficinaLista.addEventListener('click', e => {
+        const btn = e.target.closest('[data-idx]');
+        if (!btn) return;
+        const it = ultimosEnOficina[Number(btn.dataset.idx)];
+        if (!it) return;
+
+        const data = { ...it, estado: 'recordatorio_oficina' };
+        const opts = {};
+
+        // Los contactos manuales no tienen id de pedido: el picker solo
+        // sincroniza estado/guía automáticamente cuando hay id, así que
+        // aquí hay que guardar la guía a mano igual que en el compositor.
+        if (it.origen === 'manual') {
+            opts.onSend = (mensaje, estado, guia) => {
+                const fd = new FormData();
+                fd.append('telefono', it.telefono);
+                fd.append('nombre', [it.nombre, it.apellidos].filter(Boolean).join(' '));
+                fd.append('estado', estado);
+                fd.append('guia', guia || '');
+                fd.append('csrf_token', window.__CSRF__ || '');
+                fd.append('datosNombre',       it.nombre);
+                fd.append('datosApellidos',    it.apellidos);
+                fd.append('datosProducto',     it.producto);
+                fd.append('datosCantidad',     it.cantidad);
+                fd.append('datosPrecio',       it.precio);
+                fd.append('datosMunicipio',    it.municipio);
+                fd.append('datosDepartamento', it.departamento);
+                fd.append('datosTipoEntrega',  it.tipoEntrega);
+                fetch((window.BASE_URL || '') + '/AdminPlantillasWa/registrarEnvioManual', {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'fetch' },
+                }).catch(() => {});
+            };
+        }
+
+        window.WaPicker.open(data, opts);
+    });
+
+    cargarEnOficina();
 })();
 </script>
 </body>

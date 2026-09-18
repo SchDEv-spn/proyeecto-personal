@@ -18,6 +18,7 @@ class ContactoManual extends Model
     {
         parent::__construct();
         $this->ensureTable();
+        $this->asegurarColumnasNuevas();
     }
 
     private function ensureTable(): void
@@ -42,6 +43,30 @@ class ContactoManual extends Model
                 updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
+    }
+
+    /**
+     * Columnas añadidas después del CREATE original — mismo patrón que
+     * Pedido::asegurarColumnasNuevas(). El ALTER en try/catch traga el 1060
+     * (columna duplicada) si ya existe.
+     */
+    private static bool $columnasListas = false;
+    private function asegurarColumnasNuevas(): void
+    {
+        if (self::$columnasListas) return;
+        self::$columnasListas = true;
+
+        $cols = [
+            'numero_guia'           => "VARCHAR(50) NOT NULL DEFAULT ''",
+            'notificado_oficina_at' => 'TIMESTAMP NULL',
+        ];
+        foreach ($cols as $col => $def) {
+            try {
+                $this->db->exec("ALTER TABLE contactos_manuales ADD COLUMN {$col} {$def}");
+            } catch (\PDOException $e) {
+                // 42S21 / 1060 = Duplicate column name → ya existe, nada que hacer.
+            }
+        }
     }
 
     public function upsert(string $telefono, array $data): bool
@@ -77,6 +102,46 @@ class ContactoManual extends Model
             ':estado'         => $data['estado']         ?? '',
             ':usuario_nombre' => $data['usuarioNombre']  ?? '',
         ]);
+    }
+
+    /**
+     * Mismo criterio que Pedido::registrarEnvioWa — guarda la guía si se
+     * escribió una y, si el estado enviado es 'en_oficina', marca/refresca
+     * el momento en que se le avisó al cliente.
+     */
+    public function registrarEnvioWa(string $telefono, string $estado, ?string $guia): bool
+    {
+        $sets   = [];
+        $params = [':telefono' => $telefono];
+
+        if ($guia !== null && $guia !== '') {
+            $sets[] = 'numero_guia = :guia';
+            $params[':guia'] = $guia;
+        }
+        if ($estado === 'en_oficina') {
+            $sets[] = 'notificado_oficina_at = NOW()';
+        }
+
+        if (empty($sets)) return true;
+
+        $sql = 'UPDATE contactos_manuales SET ' . implode(', ', $sets) . ' WHERE telefono = :telefono';
+        return $this->db->prepare($sql)->execute($params);
+    }
+
+    /**
+     * Contactos manuales en oficina a los que ya se les avisó, con los días
+     * corridos desde ese aviso — mismo criterio que
+     * Pedido::obtenerEnOficinaEsperando().
+     */
+    public function obtenerEnOficinaEsperando(): array
+    {
+        $sql = "SELECT *, DATEDIFF(NOW(), notificado_oficina_at) AS dias_esperando
+                FROM contactos_manuales
+                WHERE estado = 'en_oficina'
+                  AND notificado_oficina_at IS NOT NULL
+                ORDER BY notificado_oficina_at ASC";
+
+        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
