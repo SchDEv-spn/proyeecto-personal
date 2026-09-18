@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Pedidos</title>
+    <title>Admin - Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="<?= BASE_URL ?>/public/manifest.php">
     <meta name="theme-color" content="#C9A84C">

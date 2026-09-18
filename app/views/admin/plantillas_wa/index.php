@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Plantillas WhatsApp</title>
+    <title>Seguimiento WhatsApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="<?= BASE_URL ?>/public/manifest.php">
     <meta name="theme-color" content="#C9A84C">
@@ -145,8 +145,8 @@ $estados = [
 
     <main class="material-main">
         <?php
-        $pageTitle    = 'Plantillas de WhatsApp';
-        $pageSubtitle = 'Personaliza el mensaje por cada etapa del pedido';
+        $pageTitle    = 'Seguimiento de WhatsApp';
+        $pageSubtitle = 'Compón mensajes y da seguimiento a los pedidos en oficina';
         $showRangeFilter = false;
         $showSearch      = false;
         require __DIR__ . '/../partials/_header.php';

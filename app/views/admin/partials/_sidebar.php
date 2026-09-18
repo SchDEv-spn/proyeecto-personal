@@ -38,7 +38,7 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
 
         <a href="<?= BASE_URL ?>/AdminPedidos/index" class="<?= $activeNav === 'pedidos' ? 'active' : '' ?>">
             <i class="fas fa-box"></i>
-            <span>Pedidos</span>
+            <span>Dashboard</span>
         </a>
 
         <a href="<?= BASE_URL ?>/AdminProductos/index" class="<?= $activeNav === 'productos' ? 'active' : '' ?>">
@@ -60,7 +60,7 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
 
         <a href="<?= BASE_URL ?>/AdminPlantillasWa/index" class="<?= $activeNav === 'plantillas' ? 'active' : '' ?>">
             <i class="fab fa-whatsapp"></i>
-            <span>Plantillas WA</span>
+            <span>Seguimiento</span>
         </a>
 
         <a href="<?= BASE_URL ?>/AdminPerfil/index" class="<?= $activeNav === 'perfil' ? 'active' : '' ?>">
