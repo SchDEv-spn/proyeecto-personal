@@ -25,8 +25,13 @@ class PlantillaWa extends Model
      *   2026-09-15: en_oficina ya avisa desde el primer mensaje que pase
      *   pronto para evitar la devolución automática — sin dar el plazo
      *   exacto todavía, eso queda para recordatorio_oficina si no pasa.
+     *   2026-09-21: agrega "ultimo_aviso_oficina" — último mensaje antes de
+     *   que Interrapidísimo devuelva el pedido, con impacto emocional y el
+     *   argumento de que el envío ya lo pagamos nosotros. Se envía cuando
+     *   el recordatorio no funcionó y todavía quedan días para recogerlo
+     *   (no es un estado del pipeline, igual que recordatorio_oficina).
      */
-    private const TEMPLATES_VERSION = '2026-09-15';
+    private const TEMPLATES_VERSION = '2026-09-21';
 
     public function __construct()
     {
@@ -145,6 +150,10 @@ class PlantillaWa extends Model
                 'Recordatorio de recogida',
                 "¡Hola {nombre}! 📦\nTu pedido de *{producto}* sigue esperando en la oficina de *Interrapidísimo* en {municipio}.\n\n*Importante:* si no lo recoges pronto, la transportadora lo devuelve automáticamente a los *5 días hábiles* y perderías tu compra.\n\nPara recogerlo solo necesitas:\n*Número de guía:* #{guia}\nO tu número de cédula\n\nRecuerda que pagas *{precio}* contraentrega, sin cobros adicionales. ¡Te esperamos! 🙏",
             ],
+            'ultimo_aviso_oficina' => [
+                'Última oportunidad',
+                "¡Hola {nombre}! 😊\nTu pedido de *{producto}* sigue en la oficina de *Interrapidísimo* en {municipio}, y estamos por perderlo — quedan muy pocos días antes de que lo devuelvan automáticamente.\n\nNos daría tristeza que pasara: nosotros ya pagamos tu envío, y si se devuelve, ese costo se nos descuenta a nosotros, no a ti. 📦\n\nTodavía estás a tiempo de recogerlo:\n*Número de guía:* #{guia}\nO tu número de cédula\n\nSi necesitas ayuda para pasar hoy, escríbenos. 🙏",
+            ],
         ];
     }
 
@@ -167,7 +176,7 @@ class PlantillaWa extends Model
 
     public function todas(): array
     {
-        $order = "'nuevo','contactado','confirmado','enviado','en_oficina','recordatorio_oficina','entregado','cancelado'";
+        $order = "'nuevo','contactado','confirmado','enviado','en_oficina','recordatorio_oficina','ultimo_aviso_oficina','entregado','cancelado'";
         return $this->db->query(
             "SELECT * FROM plantillas_wa ORDER BY FIELD(estado, {$order})"
         )->fetchAll(PDO::FETCH_ASSOC);

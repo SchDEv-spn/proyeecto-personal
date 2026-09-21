@@ -1519,9 +1519,10 @@
 // WHATSAPP: Picker de plantillas
 // =========================
 (() => {
-  const ESTADOS = ['nuevo','contactado','confirmado','enviado','en_oficina','recordatorio_oficina','entregado','cancelado'];
+  const ESTADOS = ['nuevo','contactado','confirmado','enviado','en_oficina','recordatorio_oficina','ultimo_aviso_oficina','entregado','cancelado'];
   const LABEL   = { nuevo:'Nuevo', contactado:'Contactado', confirmado:'Confirmado',
                     enviado:'Enviado', en_oficina:'En oficina', recordatorio_oficina:'Recordatorio',
+                    ultimo_aviso_oficina:'Última oportunidad',
                     entregado:'Entregado', cancelado:'Cancelado' };
 
   // En celular, wa.me abre la app directo. En computadora, wa.me siempre

@@ -29,6 +29,7 @@
         .p-badge-enviado    { background: var(--warn-bg);  color: var(--warn);  border: 1px solid var(--warn-bd); }
         .p-badge-en_oficina { background: var(--warn-bg);  color: var(--warn);  border: 1px solid var(--warn-bd); }
         .p-badge-recordatorio_oficina { background: var(--err-bg); color: var(--err); border: 1px solid var(--err-bd); }
+        .p-badge-ultimo_aviso_oficina { background: var(--err-bg); color: var(--err); border: 1px solid var(--err-bd); font-weight: 900; }
         .p-badge-entregado  { background: var(--ok-bg);    color: var(--ok);    border: 1px solid var(--ok-bd); }
         .p-badge-cancelado  { background: var(--err-bg);   color: var(--err);   border: 1px solid var(--err-bd); }
 
@@ -133,6 +134,7 @@ $estados = [
     'enviado'              => 'Enviado',
     'en_oficina'           => 'En oficina',
     'recordatorio_oficina' => 'Recordatorio de recogida',
+    'ultimo_aviso_oficina' => 'Última oportunidad',
     'entregado'            => 'Entregado',
     'cancelado'            => 'Cancelado',
 ];
@@ -265,6 +267,7 @@ $estados = [
                             <span class="plantilla-estado-badge p-badge-enviado" style="font-size:10px;">Enviado</span> Despachado con guía<br>
                             <span class="plantilla-estado-badge p-badge-en_oficina" style="font-size:10px;">En oficina</span> Listo para recoger<br>
                             <span class="plantilla-estado-badge p-badge-recordatorio_oficina" style="font-size:10px;">Recordatorio</span> Antes de que se devuelva (5 días hábiles)<br>
+                            <span class="plantilla-estado-badge p-badge-ultimo_aviso_oficina" style="font-size:10px;">Última oportunidad</span> Si el recordatorio no funcionó<br>
                             <span class="plantilla-estado-badge p-badge-entregado" style="font-size:10px;">Entregado</span> ¿Cómo llegó? + foto
                         </div>
                     </div>
