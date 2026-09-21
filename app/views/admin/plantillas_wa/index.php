@@ -154,29 +154,6 @@ $estados = [
 
         <section class="material-content">
 
-            <!-- En oficina esperando recogida -->
-            <div class="panel" id="waEnOficinaPanel" style="padding:1.1rem 1.25rem 1.25rem;margin-bottom:1rem;" hidden>
-                <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;">En oficina, esperando recogida</h2>
-                <p style="font-size:12.5px;color:var(--tx-muted);margin-bottom:.85rem;">
-                    Pedidos reales y contactos manuales a los que ya se les avisó que están en la oficina de Interrapidísimo.
-                    Interrapidísimo devuelve automáticamente los no reclamados a los 5 días hábiles.
-                </p>
-                <div class="dt-table-wrap">
-                    <table id="tablaEnOficina" class="pedidos-dt">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Producto</th>
-                                <th>Teléfono</th>
-                                <th>Días esperando</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
             <!-- Compositor de mensajes -->
             <div class="panel" id="waComposerPanel" style="padding:1.1rem 1.25rem 1.25rem;margin-bottom:1rem;">
                 <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;">Enviar mensaje por WhatsApp</h2>
@@ -243,6 +220,29 @@ $estados = [
                         </div>
                     </div>
                     <button type="button" id="waComponerBtn" class="btn-primary"><i class="fab fa-whatsapp"></i> Componer mensaje</button>
+                </div>
+            </div>
+
+            <!-- En oficina esperando recogida -->
+            <div class="panel" id="waEnOficinaPanel" style="padding:1.1rem 1.25rem 1.25rem;margin-bottom:1rem;" hidden>
+                <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;">En oficina, esperando recogida</h2>
+                <p style="font-size:12.5px;color:var(--tx-muted);margin-bottom:.85rem;">
+                    Pedidos reales y contactos manuales a los que ya se les avisó que están en la oficina de Interrapidísimo.
+                    Interrapidísimo devuelve automáticamente los no reclamados a los 5 días hábiles.
+                </p>
+                <div class="dt-table-wrap">
+                    <table id="tablaEnOficina" class="pedidos-dt">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Producto</th>
+                                <th>Teléfono</th>
+                                <th>Días esperando</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -511,7 +511,7 @@ $estados = [
 
             new DataTable('#tablaEnOficina', {
                 pageLength: 10,
-                lengthMenu: [[10, 25, 50, -1], ['10', '25', '50', 'Todos']],
+                lengthMenu: [[10, 50, 100, 200], ['10', '50', '100', '200']],
                 searching: false,
                 order: [[3, 'desc']],
                 autoWidth: false,
@@ -522,7 +522,7 @@ $estados = [
                     infoEmpty:  'Sin pedidos esperando',
                     paginate:   { first: '«', last: '»', next: '›', previous: '‹' },
                 },
-                dom: 't<"dt-bottom"ip>',
+                dom: 't<"dt-bottom"lip>',
             });
         } catch {
             enOficinaPanel.hidden = true;
