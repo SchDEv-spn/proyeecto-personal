@@ -1352,6 +1352,40 @@ h3 {
   display: block;
 }
 
+/* El display:block de img/video ganaría al atributo hidden */
+.product-gallery [hidden] { display: none !important; }
+
+.product-gallery__main-video {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+.product-gallery__thumb { position: relative; }
+
+.product-gallery__thumb video {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+/* Insignia de "play" sobre las miniaturas de video */
+.product-gallery__thumb.is-video::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><polygon points='9 6 18 12 9 18' fill='white'/></svg>") center / 70% no-repeat;
+  pointer-events: none;
+}
+
 .product-gallery__thumbs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1480,7 +1514,8 @@ h3 {
   transition: border-color 0.18s, box-shadow 0.18s, transform 0.15s;
 }
 
-.gallery-color-thumb img {
+.gallery-color-thumb img,
+.gallery-color-thumb video {
   display: block;
   width: 100%;
   aspect-ratio: 1;

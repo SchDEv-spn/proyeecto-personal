@@ -519,8 +519,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
     // renderiza como preview. Si el hero es vídeo, usar el poster o la
     // primera imagen de galería (con $val() porque hero_poster_path puede
     // guardarse como '' y no como NULL — ?? no cubriría ese caso).
+    $primeraFotoGaleria = '';
+    foreach ($galleryPaths as $gp) { if (!es_video($gp)) { $primeraFotoGaleria = $gp; break; } }
     $ogImagePath = es_video($heroMediaPath)
-        ? $val('hero_poster_path', $galleryPaths[0] ?? ($producto['imagen_principal'] ?? ''))
+        ? $val('hero_poster_path', $primeraFotoGaleria ?: ($producto['imagen_principal'] ?? ''))
         : $heroMediaPath;
     $ogImage = !empty($ogImagePath) ? 'https://' . $_SERVER['HTTP_HOST'] . $ogImagePath : '';
 
@@ -897,30 +899,40 @@ $colorBorder     = $cfg['color_border']     ?? null;
             <?php endif; ?>
 
             <div class="product-gallery" data-product-gallery>
-                <figure class="product-gallery__main">
+                <?php // Cada casilla lleva <img> y <video>; el JS (galleryPintar) muestra el que toque según la extensión. ?>
+                <figure class="product-gallery__main" data-src="<?= htmlspecialchars($mainImg) ?>">
                     <img
                         class="product-gallery__main-img"
-                        src="<?= htmlspecialchars($mainImg) ?>"
+                        <?php if (!es_video($mainImg)): ?>src="<?= htmlspecialchars($mainImg) ?>"<?php else: ?>hidden<?php endif; ?>
                         alt="Foto principal del producto"
                         loading="lazy"
                         decoding="async">
+                    <video
+                        class="product-gallery__main-video"
+                        <?php if (es_video($mainImg)): ?>src="<?= htmlspecialchars($mainImg) ?>"<?php else: ?>hidden<?php endif; ?>
+                        muted loop playsinline
+                        preload="metadata"
+                        aria-label="Video principal del producto"></video>
                 </figure>
 
                 <?php if (!empty($thumbImgs)): ?>
                     <div class="product-gallery__thumbs" role="group" aria-label="Miniaturas del producto">
                         <?php foreach ($thumbImgs as $i => $src): ?>
                             <?php if (trim($src) === '') continue; ?>
+                            <?php $thumbEsVideo = es_video($src); ?>
                             <button
                                 type="button"
-                                class="product-gallery__thumb"
-                                
-                                aria-label="Ver imagen <?= (int)($i + 2) ?>"
+                                class="product-gallery__thumb<?= $thumbEsVideo ? ' is-video' : '' ?>"
+                                aria-label="Ver <?= $thumbEsVideo ? 'video' : 'imagen' ?> <?= (int)($i + 2) ?>"
                                 data-src="<?= htmlspecialchars($src) ?>">
                                 <img
-                                    src="<?= htmlspecialchars($src) ?>"
+                                    <?php if (!$thumbEsVideo): ?>src="<?= htmlspecialchars($src) ?>"<?php else: ?>hidden<?php endif; ?>
                                     alt="Miniatura <?= (int)($i + 2) ?>"
                                     loading="lazy"
                                     decoding="async">
+                                <video
+                                    <?php if ($thumbEsVideo): ?>src="<?= htmlspecialchars($src) ?>#t=0.1"<?php else: ?>hidden<?php endif; ?>
+                                    muted playsinline preload="metadata" tabindex="-1" aria-hidden="true"></video>
                             </button>
                         <?php endforeach; ?>
                     </div>
@@ -938,7 +950,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     aria-label="Color <?= htmlspecialchars($sc['name']) ?>"
                     title="<?= htmlspecialchars($sc['name']) ?>"
                     style="--cv-color:<?= htmlspecialchars($sc['hex']) ?>">
+                    <?php if (es_video($sc['img'])): ?>
+                    <video src="<?= htmlspecialchars($sc['img']) ?>#t=0.1" muted playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+                    <?php else: ?>
                     <img src="<?= htmlspecialchars($sc['img']) ?>" alt="Color <?= htmlspecialchars($sc['name']) ?>" loading="lazy" decoding="async">
+                    <?php endif; ?>
                 </button>
                 <?php endforeach; ?>
             </div>
@@ -953,22 +969,20 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 if (!gallery || (!pills.length && !thumbs.length)) return;
 
                 function applyImages(images) {
-                    var mainImg   = gallery.querySelector('.product-gallery__main-img');
+                    var mainBox   = gallery.querySelector('.product-gallery__main');
                     var thumbBtns = Array.from(gallery.querySelectorAll('.product-gallery__thumb'));
 
-                    if (mainImg && images[0]) {
-                        mainImg.src = images[0];
+                    if (mainBox && images[0] && window.galleryPintar) {
+                        window.galleryPintar(mainBox, images[0], true);
                     }
                     thumbBtns.forEach(function (btn, i) {
-                        var img = btn.querySelector('img');
                         var src = images[i + 1] || '';
                         if (!src) {
                             btn.style.display = 'none';
                             return;
                         }
                         btn.style.display = '';
-                        btn.setAttribute('data-src', src);
-                        if (img) img.src = src;
+                        if (window.galleryPintar) window.galleryPintar(btn, src, false);
                     });
 
                     // Notificar a initGallery() que reconstruya allSrcs desde el DOM actualizado

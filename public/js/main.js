@@ -326,12 +326,64 @@ function initAccordion() {
 /* ══════════════════════════════════════════════════════════════
    GALERÍA — swap + estado activo + swipe
    ══════════════════════════════════════════════════════════════ */
+function galleryEsVideo(src) {
+    return /\.(mp4|mov|m4v|webm|ogg)(\?|#|$)/i.test(src || '');
+}
+
+/* Pinta `src` en una casilla de la galería (la figura principal o una
+   miniatura). Cada casilla trae un <img> y un <video>; se muestra el que
+   corresponda por extensión y el otro se apaga. */
+window.galleryPintar = function (box, src, esPrincipal) {
+    const img   = box.querySelector('img');
+    const video = box.querySelector('video');
+    if (!img || !video) return;
+
+    box.setAttribute('data-src', src);
+    box.classList.toggle('is-video', galleryEsVideo(src));
+
+    if (galleryEsVideo(src)) {
+        // En miniatura, #t=0.1 fuerza a pintar el primer cuadro como portada
+        video.src = esPrincipal ? src : src + '#t=0.1';
+        video.hidden = false;
+        img.hidden = true;
+        img.removeAttribute('src');
+        if (esPrincipal) {
+            const p = video.play();
+            if (p && p.catch) p.catch(function () {});
+        }
+    } else {
+        video.pause();
+        video.hidden = true;
+        video.removeAttribute('src');
+        video.load();
+        img.src = src;
+        img.hidden = false;
+    }
+};
+
 function initGallery() {
     const mainFigure = document.querySelector('.product-gallery__main');
     const mainImg    = document.querySelector('.product-gallery__main-img');
+    const mainVideo  = document.querySelector('.product-gallery__main-video');
     const thumbs     = Array.from(document.querySelectorAll('.product-gallery__thumb'));
 
-    if (!mainImg || !thumbs.length) return;
+    if (!mainImg) return;
+
+    // Video principal: arranca al entrar en pantalla y se pausa al salir
+    // (mismo criterio que initVideoAutoplay, para no gastar decodificadores).
+    // Va antes del return de abajo: una galería con un solo video y sin
+    // miniaturas también debe reproducirse.
+    if (mainVideo && 'IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (mainVideo.hidden) return;
+                if (entry.isIntersecting) mainVideo.play().catch(function () {});
+                else mainVideo.pause();
+            });
+        }, { threshold: 0.25 }).observe(mainFigure);
+    }
+
+    if (!thumbs.length) return;
 
     // Modelo: la foto principal y cada miniatura son "casillas" — al elegir
     // una miniatura, intercambia su imagen con la que está en la casilla
@@ -341,17 +393,12 @@ function initGallery() {
     let swipePointer = 0; // cicla 0..N-1 para saber qué miniatura toca en el próximo swipe
 
     function swapWithThumb(thumb) {
-        const thumbImgEl = thumb.querySelector('img');
-        if (!thumbImgEl) return;
+        const mainSrc  = mainFigure.getAttribute('data-src');
+        const thumbSrc = thumb.getAttribute('data-src');
+        if (!thumbSrc || !mainSrc || thumbSrc === mainSrc) return;
 
-        const mainSrc  = mainImg.src;
-        const thumbSrc = thumbImgEl.getAttribute('src') || thumbImgEl.src;
-        if (!thumbSrc || thumbSrc === mainSrc) return;
-
-        mainImg.src = thumbSrc;
-        thumbImgEl.src = mainSrc;
-        thumb.dataset.src = mainSrc;
-        thumb.setAttribute('data-src', mainSrc);
+        window.galleryPintar(mainFigure, thumbSrc, true);
+        window.galleryPintar(thumb, mainSrc, false);
 
         stopThumbPulse();
     }

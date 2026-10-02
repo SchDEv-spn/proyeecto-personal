@@ -605,24 +605,28 @@
                         <div class="gallery-card">
                           <div class="gallery-card__head">
                             <span class="gallery-card__badge"><?= $i ?></span>
-                            <span class="gallery-title">Imagen <?= $i ?></span>
+                            <span class="gallery-title">Imagen o video <?= $i ?></span>
                             <span class="gallery-card__role"><?= $galeriaRoles[$i - 1] ?></span>
                           </div>
                           <div class="gallery-card__body">
                             <div class="media-preview">
                               <?php if (!empty($config[$key])): ?>
-                                <img src="<?= htmlspecialchars($config[$key]) ?>" alt="Galería <?= $i ?>">
+                                <?php if (es_video($config[$key])): ?>
+                                  <video src="<?= htmlspecialchars($config[$key]) ?>" muted loop playsinline controls preload="metadata"></video>
+                                <?php else: ?>
+                                  <img src="<?= htmlspecialchars($config[$key]) ?>" alt="Galería <?= $i ?>">
+                                <?php endif; ?>
                               <?php else: ?>
                                 <div class="media-empty">
-                                  <i class="fas fa-image"></i>
-                                  <span>Sin imagen</span>
+                                  <i class="fas fa-photo-video"></i>
+                                  <span>Sin imagen ni video</span>
                                 </div>
                               <?php endif; ?>
                             </div>
                             <input type="hidden" name="<?= $actual ?>" value="<?= htmlspecialchars($config[$key] ?? '') ?>">
                             <div class="admin-form-group">
-                              <label for="<?= $inputName ?>">Subir nueva</label>
-                              <input type="file" id="<?= $inputName ?>" name="<?= $inputName ?>" accept="image/*">
+                              <label for="<?= $inputName ?>">Subir nueva <span style="font-weight:400;text-transform:none;opacity:.65">(imagen hasta 2 MB · video mp4/webm/mov hasta 10 MB)</span></label>
+                              <input type="file" id="<?= $inputName ?>" name="<?= $inputName ?>" accept="image/*,video/mp4,video/webm,video/quicktime">
                             </div>
                           </div>
                         </div>
@@ -697,10 +701,14 @@
                             $gFile   = "cv{$ci}_g{$gi}_file";
                           ?>
                           <div class="admin-form-group" style="margin-bottom:8px;">
-                            <label style="font-size:0.8rem;">Imagen <?= $gi ?></label>
+                            <label style="font-size:0.8rem;">Imagen o video <?= $gi ?></label>
                             <div class="media-preview" id="cv<?= $ci ?>_g<?= $gi ?>_preview" style="margin-bottom:4px; height:80px;">
                               <?php if ($gSrc !== ''): ?>
+                                <?php if (es_video($gSrc)): ?>
+                                <video src="<?= $gSrc ?>" muted loop playsinline controls preload="metadata" style="height:100%; object-fit:cover; border-radius:6px;"></video>
+                                <?php else: ?>
                                 <img src="<?= $gSrc ?>" alt="Color <?= $ci ?> img <?= $gi ?>" style="height:100%; object-fit:cover; border-radius:6px;">
+                                <?php endif; ?>
                                 <button type="button" class="btn-media-remove" title="Quitar imagen"
                                   onclick="landingCvRemoveImage(<?= $ci ?>, <?= $gi ?>)">
                                   <i class="fas fa-times" aria-hidden="true"></i>
@@ -712,7 +720,7 @@
                               <?php endif; ?>
                             </div>
                             <input type="hidden" id="<?= $gActual ?>" name="<?= $gActual ?>" value="<?= $gSrc ?>">
-                            <input type="file" id="<?= $gFile ?>" name="<?= $gFile ?>" accept="image/*" style="font-size:0.8rem;">
+                            <input type="file" id="<?= $gFile ?>" name="<?= $gFile ?>" accept="image/*,video/mp4,video/webm,video/quicktime" style="font-size:0.8rem;">
                           </div>
                           <?php endfor; ?>
                         </div>
