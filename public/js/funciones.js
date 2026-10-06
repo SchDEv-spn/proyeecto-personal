@@ -1561,7 +1561,7 @@
 
   const getRastreoUrl = (tipoEntrega) =>
     (tipoEntrega || '').toLowerCase() === 'domicilio'
-      ? 'https://envia.com/rastreo/'
+      ? 'https://envia.co/'
       : 'https://siguetuenvio.interrapidisimo.com/';
 
   // Domicilio: entrega un mensajero en la puerta. Oficina: el cliente recoge
