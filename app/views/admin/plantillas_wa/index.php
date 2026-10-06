@@ -108,6 +108,26 @@
             color: var(--tx-muted);
             margin-bottom: .75rem;
         }
+        .wa-dictado-row {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            margin-bottom: .5rem;
+        }
+        .wa-dictado-estado {
+            font-size: 12px;
+            color: var(--tx-muted);
+        }
+        #waDictarBtn.is-escuchando {
+            background: var(--err-bg);
+            color: var(--err);
+            border-color: var(--err-bd);
+            animation: wa-pulso 1.1s ease-in-out infinite;
+        }
+        @keyframes wa-pulso {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: .55; }
+        }
         .wa-manual-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -173,6 +193,18 @@ $estados = [
 
                 <div id="waManual" class="wa-manual" hidden>
                     <p class="wa-manual-hint" id="waManualHint">No encontramos un pedido de la landing con ese teléfono. Arma el mensaje a mano:</p>
+
+                    <div class="wa-dictado-row" id="waDictadoRow" hidden>
+                        <button type="button" id="waDictarBtn" class="btn-primary btn-primary--soft">
+                            <i class="fas fa-microphone"></i> Dictar nombre, departamento, municipio y teléfono
+                        </button>
+                        <span id="waDictadoEstado" class="wa-dictado-estado"></span>
+                    </div>
+                    <p class="wa-manual-hint" id="waDictadoAyuda" hidden>
+                        Dilo en este orden: <strong>nombre y apellidos</strong> → <strong>departamento</strong> → <strong>municipio</strong> → <strong>teléfono</strong> (dígito por dígito).
+                        Ej: "Jesús Mosquera, Antioquia, Medellín, tres cero cero uno dos tres cuatro cinco seis siete".
+                    </p>
+
                     <div class="wa-manual-grid">
                         <div class="plantilla-field"><label>Nombre</label><input type="text" id="mNombre"></div>
                         <div class="plantilla-field"><label>Apellidos</label><input type="text" id="mApellidos"></div>
@@ -327,6 +359,159 @@ $estados = [
         mMunicipio.appendChild(new Option('— Elige un municipio —', ''));
         municipios.forEach(mun => mMunicipio.appendChild(new Option(mun, mun)));
     });
+
+    // Dictado por voz: nombre y apellidos → departamento → municipio →
+    // teléfono. El orden importa — departamento antes que municipio reduce
+    // la búsqueda de 1.122 municipios a solo los del departamento
+    // reconocido, así se equivoca mucho menos.
+    (() => {
+        const dictarBtn    = document.getElementById('waDictarBtn');
+        const dictadoRow   = document.getElementById('waDictadoRow');
+        const dictadoEstado= document.getElementById('waDictadoEstado');
+        const dictadoAyuda = document.getElementById('waDictadoAyuda');
+
+        const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognitionCtor) return; // sin soporte (p. ej. Firefox, Safari): el botón queda oculto
+
+        dictadoRow.hidden  = false;
+        dictadoAyuda.hidden = false;
+
+        const PALABRAS_DIGITO = { cero:'0', uno:'1', dos:'2', tres:'3', cuatro:'4', cinco:'5', seis:'6', siete:'7', ocho:'8', nueve:'9' };
+
+        // Rango Unicode de marcas diacríticas combinantes (U+0300–U+036F) —
+        // construido con fromCharCode para no depender de cómo cada editor
+        // guarde un carácter combinante suelto en el código fuente.
+        const DIACRITICOS = new RegExp('[' + String.fromCharCode(0x0300) + '-' + String.fromCharCode(0x036f) + ']', 'g');
+        const normalizar = (s) => s.toLowerCase()
+            .normalize('NFD').replace(DIACRITICOS, '')
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        // Racha más larga de tokens numéricos (dígitos sueltos o ya escritos
+        // como número) — mide por cantidad de DÍGITOS, no de palabras, por
+        // si el reconocedor junta todo en un solo token.
+        const extraerTelefono = (palabras) => {
+            const comoDigitos = palabras.map(p => {
+                if (PALABRAS_DIGITO[p] !== undefined) return PALABRAS_DIGITO[p];
+                return /^\d+$/.test(p) ? p : null;
+            });
+
+            let mejor = { inicio: -1, fin: -1, digitos: '' };
+            let inicio = -1, digitos = '';
+            for (let i = 0; i <= comoDigitos.length; i++) {
+                const d = i < comoDigitos.length ? comoDigitos[i] : null;
+                if (d !== null) {
+                    if (inicio === -1) inicio = i;
+                    digitos += d;
+                } else {
+                    if (digitos.length > mejor.digitos.length) mejor = { inicio, fin: i, digitos };
+                    inicio = -1; digitos = '';
+                }
+            }
+
+            if (mejor.digitos.length < 7) return { telefono: '', resto: palabras };
+            return { telefono: mejor.digitos, resto: [...palabras.slice(0, mejor.inicio), ...palabras.slice(mejor.fin)] };
+        };
+
+        // Busca, dentro de `palabras`, la secuencia que mejor calce con
+        // alguno de `candidatos` (nombres de depto/municipio, pueden ser de
+        // varias palabras como "Valle del Cauca"). Se queda con el más largo.
+        const buscarCoincidencia = (palabras, candidatos) => {
+            const normPalabras = palabras.map(normalizar);
+            let mejor = null;
+            for (const candidato of candidatos) {
+                const tokensCand = normalizar(candidato).split(' ');
+                for (let i = 0; i <= normPalabras.length - tokensCand.length; i++) {
+                    let ok = true;
+                    for (let j = 0; j < tokensCand.length; j++) {
+                        if (normPalabras[i + j] !== tokensCand[j]) { ok = false; break; }
+                    }
+                    if (ok && (!mejor || tokensCand.length > mejor.largo)) {
+                        mejor = { valor: candidato, inicio: i, largo: tokensCand.length };
+                    }
+                }
+            }
+            return mejor;
+        };
+
+        const procesarDictado = (texto) => {
+            let palabras = texto.trim().split(/\s+/).filter(Boolean);
+
+            const { telefono, resto: sinTelefono } = extraerTelefono(palabras);
+            palabras = sinTelefono;
+
+            let departamento = '';
+            const depMatch = buscarCoincidencia(palabras, Object.keys(UBICACIONES));
+            if (depMatch) {
+                departamento = depMatch.valor;
+                palabras = [...palabras.slice(0, depMatch.inicio), ...palabras.slice(depMatch.inicio + depMatch.largo)];
+            }
+
+            let municipio = '';
+            if (departamento) {
+                const munMatch = buscarCoincidencia(palabras, UBICACIONES[departamento] || []);
+                if (munMatch) {
+                    municipio = munMatch.valor;
+                    palabras = [...palabras.slice(0, munMatch.inicio), ...palabras.slice(munMatch.inicio + munMatch.largo)];
+                }
+            }
+
+            // Lo que sobra es el nombre — últimas 2 palabras como apellidos
+            // (convención más común: uno o dos nombres, dos apellidos).
+            let nombre = '', apellidos = '';
+            if (palabras.length === 1)      { nombre = palabras[0]; }
+            else if (palabras.length === 2) { nombre = palabras[0]; apellidos = palabras[1]; }
+            else if (palabras.length > 2)   { apellidos = palabras.slice(-2).join(' '); nombre = palabras.slice(0, -2).join(' '); }
+
+            return { nombre, apellidos, departamento, municipio, telefono };
+        };
+
+        let enCurso = null;
+
+        dictarBtn.addEventListener('click', () => {
+            if (enCurso) { enCurso.stop(); return; }
+
+            const rec = new SpeechRecognitionCtor();
+            rec.lang = 'es-CO';
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+
+            rec.onstart = () => {
+                dictarBtn.classList.add('is-escuchando');
+                dictadoEstado.textContent = 'Escuchando…';
+            };
+
+            rec.onresult = (e) => {
+                const texto = e.results[0][0].transcript;
+                const r = procesarDictado(texto);
+
+                if (r.nombre)    document.getElementById('mNombre').value = r.nombre;
+                if (r.apellidos) document.getElementById('mApellidos').value = r.apellidos;
+                if (r.telefono)  telInput.value = r.telefono;
+
+                if (r.departamento) {
+                    mDepartamento.value = r.departamento;
+                    mDepartamento.dispatchEvent(new Event('change'));
+                    if (r.municipio) setTimeout(() => { mMunicipio.value = r.municipio; }, 0);
+                }
+
+                dictadoEstado.textContent = 'Escuché: "' + texto + '" — revisa los campos antes de componer.';
+            };
+
+            rec.onerror = (e) => {
+                dictadoEstado.textContent = 'No se pudo reconocer (' + e.error + '). Intenta de nuevo.';
+            };
+
+            rec.onend = () => {
+                dictarBtn.classList.remove('is-escuchando');
+                enCurso = null;
+            };
+
+            enCurso = rec;
+            rec.start();
+        });
+    })();
 
     let ultimosPedidos = [];
 
