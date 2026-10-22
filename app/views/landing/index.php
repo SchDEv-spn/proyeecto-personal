@@ -1914,27 +1914,43 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         if (!$oldColores) $oldColores = [''];
 
                         /* Foto y tono de cada color, de las "Variantes de color" del
-                           editor — las mismas que ya pinta la galería. El valor que
-                           viaja en el pedido sigue siendo el nombre de producto_colores
-                           (el servidor lo valida contra esa lista): la foto solo decora.
-                           El cruce es por nombre sin tildes, mayúsculas ni signos
-                           ("Café Miel" = "cafe-miel"). Un color sin pareja conserva la
-                           pastilla de texto de siempre, no se rompe nada. */
-                        $normColor = function ($s) {
-                            $s = mb_strtolower(trim((string)$s), 'UTF-8');
-                            $s = strtr($s, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n']);
-                            return (string)preg_replace('/[^a-z0-9]+/', '', $s);
-                        };
+                           editor de la landing — las mismas que ya pinta la galería.
+                           Los nombres se escriben en dos sitios (los colores del
+                           producto, al crearlo, y estas variantes) y se cruzan con
+                           clave_color(): sin tildes, mayúsculas ni signos, y una
+                           etiqueta compuesta de Dropi ("Negro / M") también casa con
+                           la variante "Negro". El valor que viaja en el pedido sigue
+                           siendo el nombre de producto_colores (el servidor lo valida
+                           contra esa lista): la foto solo decora. Un color sin pareja
+                           conserva la pastilla de texto de siempre, no se rompe nada.
+                           El editor solo admite 4 variantes: con más de 4 colores unos
+                           llevan foto y otros no, y se marca la mezcla para que las
+                           pastillas de texto no queden más bajas que las tarjetas. */
                         $colorFotos = [];
                         $colorTonos = [];
                         foreach ($colorVariants as $_cv) {
-                            $_k = $normColor($_cv['name']);
-                            if ($_k === '') continue;
+                            $_k = clave_color($_cv['name']);
+                            if ($_k === '' || isset($colorFotos[$_k])) continue;
+                            $_f = '';
                             foreach ($_cv['images'] as $_im) {
-                                if (!es_video($_im)) { $colorFotos[$_k] = $_im; break; }
+                                if (!es_video($_im)) { $_f = $_im; break; }
                             }
+                            if ($_f === '') continue;
+                            $colorFotos[$_k] = $_f;
                             if (preg_match('/^#[0-9a-fA-F]{3,8}$/', $_cv['hex'])) $colorTonos[$_k] = $_cv['hex'];
                         }
+                        $tarjetaColor = [];
+                        $coloresConFoto = 0;
+                        foreach ($colores as $_c) {
+                            $_f = '';
+                            $_t = '';
+                            foreach (claves_color((string)$_c) as $_k) {
+                                if (isset($colorFotos[$_k])) { $_f = $colorFotos[$_k]; $_t = $colorTonos[$_k] ?? ''; break; }
+                            }
+                            $tarjetaColor[$_c] = ['foto' => $_f, 'tono' => $_t];
+                            if ($_f !== '') $coloresConFoto++;
+                        }
+                        $mezclaColores = $coloresConFoto > 0 && $coloresConFoto < count($colores);
                         ?>
                         <div id="colorRowsWrap">
                             <?php foreach ($oldColores as $_i => $_colorSel):
@@ -1943,11 +1959,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                 if ($_cantSel < 1 || $_cantSel > 5) $_cantSel = 1;
                             ?>
                             <div class="color-row" data-row="<?= (int)$_i ?>">
-                                <div class="color-pills-wrap" role="group" aria-label="Colores disponibles" style="display:none;">
+                                <div class="color-pills-wrap<?= $mezclaColores ? ' color-pills-wrap--mixto' : '' ?>" role="group" aria-label="Colores disponibles" style="display:none;">
                                     <?php foreach ($colores as $c):
-                                        $_ck    = $normColor($c);
-                                        $_foto  = $colorFotos[$_ck] ?? '';
-                                        $_tono  = $colorTonos[$_ck] ?? '';
+                                        $_foto  = $tarjetaColor[$c]['foto'] ?? '';
+                                        $_tono  = $tarjetaColor[$c]['tono'] ?? '';
                                     ?>
                                     <button type="button" class="color-pill<?= $_foto !== '' ? ' color-pill--foto' : '' ?><?= $c === $_colorSel ? ' is-selected' : '' ?>"
                                         data-color="<?= htmlspecialchars($c) ?>"<?= $_foto !== '' ? ' data-foto="' . htmlspecialchars($_foto) . '"' : '' ?>

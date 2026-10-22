@@ -652,6 +652,38 @@
                         Deja el nombre en blanco para desactivar esa variante.
                       </p>
 
+                      <?php
+                      /* El formulario de pedido pone la foto de cada variante en la tarjeta
+                         del color que se llame IGUAL en el producto (sin importar tildes ni
+                         mayúsculas; "Negro" también sirve a "Negro / M"). Si no coincide, esa
+                         tarjeta sale sin foto. Aquí se ve contra qué nombres se compara. */
+                      $coloresProd = $colores_producto ?? [];
+                      $clavesProd  = [];
+                      foreach ($coloresProd as $_cp) {
+                          foreach (claves_color((string)$_cp) as $_k) $clavesProd[$_k] = true;
+                      }
+                      $sinPareja = [];
+                      foreach ($cvData as $_cv) {
+                          $_n = trim((string)($_cv['name'] ?? ''));
+                          if ($_n !== '' && $coloresProd && !isset($clavesProd[clave_color($_n)])) $sinPareja[] = $_n;
+                      }
+                      ?>
+                      <?php if ($coloresProd): ?>
+                      <p style="font-size:0.85rem; color:var(--tx-muted); margin:-6px 0 14px;">
+                        <i class="fas fa-link" aria-hidden="true"></i>
+                        Colores del producto: <strong><?= htmlspecialchars(implode(' · ', $coloresProd)) ?></strong>.
+                        Escribe el nombre igual para que el formulario de pedido muestre su foto en la tarjeta del color.
+                      </p>
+                      <?php endif; ?>
+                      <?php if ($sinPareja): ?>
+                      <p role="alert" style="font-size:0.85rem; margin:-6px 0 14px; padding:8px 12px; border-radius:8px; border:1px solid rgba(255,180,0,0.5); background:rgba(255,180,0,0.08);">
+                        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                        <?= count($sinPareja) === 1 ? 'Este nombre no coincide' : 'Estos nombres no coinciden' ?> con ningún color del producto:
+                        <strong><?= htmlspecialchars(implode(' · ', $sinPareja)) ?></strong>.
+                        En el formulario de pedido esa tarjeta saldrá sin foto (la galería sí la muestra).
+                      </p>
+                      <?php endif; ?>
+
                       <div class="stack-cards stack-cards--4col" style="align-items:start;">
                         <?php for ($ci = 1; $ci <= 4; $ci++):
                           $cv     = $cvData[$ci - 1] ?? [];

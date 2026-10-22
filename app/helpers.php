@@ -57,6 +57,37 @@ function es_video(?string $path): bool
 }
 
 /**
+ * Clave para comparar un nombre de color escrito en dos sitios distintos: los
+ * colores del producto (producto_colores, se escriben al crear el producto) y las
+ * "Variantes de color" del editor de la landing (nombre + tono + fotos). Se
+ * ignoran tildes, mayúsculas y signos: "Café Miel" = "cafe-miel".
+ */
+function clave_color(string $nombre): string
+{
+    $s = mb_strtolower(trim($nombre), 'UTF-8');
+    $s = strtr($s, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n']);
+    return (string)preg_replace('/[^a-z0-9]+/', '', $s);
+}
+
+/**
+ * Claves con las que un color del producto puede emparejarse con una variante
+ * del editor: la del nombre completo y, si es una etiqueta compuesta como las
+ * que arma Dropi ("Negro / M", "Rojo / Talla 38"), la de cada parte — así la
+ * foto de "Negro" sirve a "Negro / M" y a "Negro / L". El nombre completo va
+ * primero para que un emparejamiento exacto gane a uno parcial.
+ *
+ * @return string[]
+ */
+function claves_color(string $color): array
+{
+    $claves = [clave_color($color)];
+    foreach (preg_split('/\s*\/\s*/u', $color) ?: [] as $parte) {
+        $claves[] = clave_color($parte);
+    }
+    return array_values(array_unique(array_filter($claves, fn($k) => $k !== '')));
+}
+
+/**
  * Id del Facebook Pixel de la landing — única fuente de verdad.
  * Vive aquí y no repetido en la vista y en el controlador (Conversions API
  * necesita el mismo id que el pixel del navegador para poder deduplicar).

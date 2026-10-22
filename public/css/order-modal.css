@@ -761,3 +761,14 @@ body.form-en-vista .wa-float-btn {
     transform: scale(0.8);
     pointer-events: none;
 }
+
+/* Más de 4 colores (el editor solo admite 4 variantes con foto) o nombres sin
+   pareja: unas tarjetas llevan foto y otras no. Las de solo texto igualan el alto
+   de las otras para que la cuadrícula no quede dentada. */
+.color-pills-wrap--mixto .color-pill:not(.color-pill--foto) {
+    min-height: 60px;
+}
+
+@media (max-width: 360px) {
+    .color-pills-wrap--mixto .color-pill:not(.color-pill--foto) { min-height: 52px; }
+}

@@ -302,6 +302,9 @@ class AdminLandingController extends Controller
 
         $settings = new AppSettings();
         $this->view('admin/landing/index', [
+            // Para avisar en "Variantes de color" cuando un nombre no coincide con
+            // ningún color del producto (el formulario de pedido no mostraría su foto).
+            'colores_producto'   => $productoId > 0 ? (new ProductoColor())->obtenerActivosPorProducto((int)$productoId) : [],
             'config'             => $config,
             'success'            => $success,
             'error'              => $error,
