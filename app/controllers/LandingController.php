@@ -144,10 +144,27 @@ class LandingController extends Controller
             $pricingMode = 'individual';
         }
 
-        // Campos base
-        $nombre       = trim($_POST['nombre']       ?? '');
-        $apellidos    = trim($_POST['apellidos']    ?? '');
-        $telefono     = trim($_POST['telefono']     ?? '');
+        /* El formulario pide "Nombre y apellido" en UN solo campo
+           (nombre_completo) y aqui se parte en las dos columnas de `pedidos`.
+           La separacion vive en el servidor y no en el JS: asi el pedido sale
+           igual con el JavaScript apagado, y hay un solo sitio con la regla.
+           Si llega nombre + apellidos sueltos (una pagina vieja en cache del
+           navegador de Facebook) se usan tal cual: la logica de antes no cambia. */
+        $unSoloCampo    = array_key_exists('nombre_completo', $_POST);
+        $nombreCompleto = trim((string)($_POST['nombre_completo'] ?? ''));
+        if ($unSoloCampo) {
+            [$nombre, $apellidos] = $this->partirNombreCompleto($nombreCompleto);
+        } else {
+            $nombre    = trim($_POST['nombre']    ?? '');
+            $apellidos = trim($_POST['apellidos'] ?? '');
+        }
+
+        /* El telefono se limpia antes de validarlo: el autocompletado y el
+           pegado traen "300 123 4567" o "+57 300 123 4567", y la regla exige
+           10 digitos pelados. Se valida y se guarda lo ya limpio; el limite de
+           largo sigue mirando lo que llego crudo. */
+        $telefonoRaw  = trim($_POST['telefono'] ?? '');
+        $telefono     = $this->normalizarTelefono($telefonoRaw);
         $departamento = trim($_POST['departamento'] ?? '');
         $municipio    = trim($_POST['municipio']    ?? '');
         $tipoEntrega  = trim($_POST['tipo_entrega'] ?? '');
@@ -170,6 +187,8 @@ class LandingController extends Controller
         $old = [
             'nombre'           => $nombre,
             'apellidos'        => $apellidos,
+            // Lo que el comprador escribio, tal cual, para repintar el campo unico.
+            'nombre_completo'  => $unSoloCampo ? $nombreCompleto : trim($nombre . ' ' . $apellidos),
             'telefono'         => $telefono,
             'departamento'     => $departamento,
             'municipio'        => $municipio,
@@ -192,7 +211,7 @@ class LandingController extends Controller
         $limites = [
             'nombre'       => ['valor' => $nombre,       'max' => 100, 'msg' => 'El nombre es demasiado largo.'],
             'apellidos'    => ['valor' => $apellidos,    'max' => 100, 'msg' => 'Los apellidos son demasiado largos.'],
-            'telefono'     => ['valor' => $telefono,     'max' => 30,  'msg' => 'El número de WhatsApp es demasiado largo.'],
+            'telefono'     => ['valor' => $telefonoRaw,  'max' => 30,  'msg' => 'El número de WhatsApp es demasiado largo.'],
             'departamento' => ['valor' => $departamento, 'max' => 100, 'msg' => 'El departamento no es válido.'],
             'municipio'    => ['valor' => $municipio,    'max' => 100, 'msg' => 'El municipio no es válido.'],
             'direccion'    => ['valor' => $direccion,    'max' => 255, 'msg' => 'La dirección es demasiado larga (máximo 255 caracteres).'],
@@ -201,8 +220,16 @@ class LandingController extends Controller
 
         // Validaciones base
         $errores = [];
-        if ($nombre === '')       $errores[] = "El nombre es obligatorio.";
-        if ($apellidos === '')    $errores[] = "Los apellidos son obligatorios.";
+        if ($unSoloCampo) {
+            if ($nombreCompleto === '') {
+                $errores[] = "Escribe tu nombre y tu apellido.";
+            } elseif (!$this->nombreCompletoValido($nombreCompleto)) {
+                $errores[] = "Escribe tu nombre y tu apellido (ej: María González).";
+            }
+        } else {
+            if ($nombre === '')       $errores[] = "El nombre es obligatorio.";
+            if ($apellidos === '')    $errores[] = "Los apellidos son obligatorios.";
+        }
 
         foreach ($limites as $campo) {
             if (mb_strlen($campo['valor']) > $campo['max']) $errores[] = $campo['msg'];
@@ -507,6 +534,66 @@ class LandingController extends Controller
             : BASE_URL . '/Landing/index?producto_id=' . $productoId;
         header("Location: " . $destino . "#form-pedido");
         exit;
+    }
+
+    /**
+     * Parte "Nombre y apellido" en las dos columnas de `pedidos`.
+     *
+     *   2 palabras  → 1 nombre + 1 apellido
+     *   3 palabras  → 1 nombre + 2 apellidos
+     *   4 o más     → 2 nombres + el resto de apellidos
+     *
+     * Con 3 palabras es imposible saber si es "Juan Carlos Pérez" o "Juan Pérez
+     * Gómez": da igual, porque nombre + ' ' + apellidos devuelve siempre lo que
+     * escribió la persona y nada se pierde. Lo que sí importa es que {nombre}
+     * en las plantillas de WhatsApp sea el primer nombre, nunca un apellido.
+     * Mismo criterio que partirNombre() en public/js/order-submit.js.
+     *
+     * @return array{0: string, 1: string} [nombre, apellidos]
+     */
+    private function partirNombreCompleto(string $completo): array
+    {
+        $partes = preg_split('/\s+/u', trim($completo), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $n = count($partes);
+        if ($n <= 1) return [$partes[0] ?? '', ''];
+
+        $corte = ($n >= 4) ? 2 : 1;
+        return [
+            implode(' ', array_slice($partes, 0, $corte)),
+            implode(' ', array_slice($partes, $corte)),
+        ];
+    }
+
+    /**
+     * Hay nombre Y apellido: al menos dos palabras, y la primera y la última
+     * con 2 letras o más (así "María G." no pasa: una inicial no sirve para
+     * la guía del envío). Misma regla que nombreValido() en order-submit.js.
+     */
+    private function nombreCompletoValido(string $completo): bool
+    {
+        $partes = preg_split('/\s+/u', trim($completo), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if (count($partes) < 2) return false;
+
+        foreach ([$partes[0], $partes[count($partes) - 1]] as $palabra) {
+            if ((int)preg_match_all('/\p{L}/u', $palabra) < 2) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Deja solo los dígitos del celular y quita el prefijo de país que traen
+     * el autocompletado y el pegado ("+57 300…", "0057300…"). Un celular
+     * colombiano nunca empieza por 5, así que "57" + 10 dígitos no es
+     * ambiguo. Si no hay ni un dígito se devuelve lo recibido, para que la
+     * validación diga "número inválido" y no "obligatorio".
+     */
+    private function normalizarTelefono(string $raw): string
+    {
+        $digitos = (string)preg_replace('/\D+/', '', $raw);
+        if ($digitos === '') return $raw;
+
+        if (preg_match('/^(?:00)?57(3\d{9})$/', $digitos, $m)) return $m[1];
+        return $digitos;
     }
 
     /**

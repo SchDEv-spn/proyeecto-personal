@@ -11,7 +11,8 @@
  *   · initRecentOrders          — contador pseudo-dinámico
  *   · initScrollAnimations      — fade-up con IntersectionObserver
  *   · initStickyVisibility      — ocultar sticky al llegar al form
- *   · initLazyImages            — marcar imágenes loaded
+ *   · initChromeEnFormulario    — apartar barra de anuncios y WhatsApp flotante en el form
+ *   · initLazyImages           — marcar imágenes loaded
  *   · initWaLinksIAB            — WhatsApp links en Facebook IAB
  *   · initVideoAutoplay         — play/pause por IntersectionObserver
  * ─────────────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
     arrancar('initRecentOrders', initRecentOrders);
     arrancar('initScrollAnimations', initScrollAnimations);
     arrancar('initStickyVisibility', initStickyVisibility);
+    arrancar('initChromeEnFormulario', initChromeEnFormulario);
     arrancar('initLazyImages', initLazyImages);
     arrancar('initVideoControls', initVideoControls);
     arrancar('initVideoAutoplay', initVideoAutoplay);
@@ -522,6 +524,28 @@ function initStickyVisibility() {
         /* Con la barra escondida, el espaciador que le reserva sitio deja un
            hueco vacío al final de la página. La clase lo colapsa. */
         document.body.classList.toggle('sticky-cta-oculto', visible);
+    }, { threshold: 0.1 });
+
+    observer.observe(form);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   BARRAS FIJAS — se apartan mientras se llena el formulario
+   La barra de anuncios (66px arriba) y el botón flotante de WhatsApp
+   (sobre el borde derecho de los campos) seguían encima del formulario:
+   con el teclado abierto se comían una quinta parte de la pantalla útil, y
+   el botón de WhatsApp recibía los toques que iban al chevron de un select.
+   Es lo mismo que ya hace la barra CTA al llegar aquí. WhatsApp sigue a un
+   toque: "¿Prefieres pedir por WhatsApp?" está al final del formulario.
+   La clase la usa order-modal.css.
+   ══════════════════════════════════════════════════════════════ */
+function initChromeEnFormulario() {
+    var form = document.getElementById('form-pedido');
+    if (!form || !window.IntersectionObserver) return;
+
+    var observer = new IntersectionObserver(function (entries) {
+        document.body.classList.toggle('form-en-vista', entries[0].isIntersecting);
     }, { threshold: 0.1 });
 
     observer.observe(form);

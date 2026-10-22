@@ -1007,14 +1007,28 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     applyImages(images);
                 }
 
+                /* Solo un clic explícito avisa al formulario (no el color que
+                   sale por defecto): así el pedido arranca con el color que el
+                   comprador de verdad miró. Ver 'landing:color-galeria' en el
+                   script del formulario. */
+                function avisarColor(el) {
+                    try {
+                        document.dispatchEvent(new CustomEvent('landing:color-galeria', {
+                            detail: { nombre: el.getAttribute('title') || '' }
+                        }));
+                    } catch (e) { /* el aviso es un extra: la galería sigue igual */ }
+                }
+
                 pills.forEach(function (pill) {
                     pill.addEventListener('click', function () {
                         selectColor(pill.getAttribute('data-color-idx'));
+                        avisarColor(pill);
                     });
                 });
                 thumbs.forEach(function (thumb) {
                     thumb.addEventListener('click', function () {
                         selectColor(thumb.getAttribute('data-color-idx'));
+                        avisarColor(thumb);
                     });
                 });
             })();
@@ -1898,6 +1912,29 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         $oldColores = (isset($old['color_item']) && is_array($old['color_item'])) ? $old['color_item'] : [];
                         $oldCants   = (isset($old['qty_item'])   && is_array($old['qty_item']))   ? $old['qty_item']   : [];
                         if (!$oldColores) $oldColores = [''];
+
+                        /* Foto y tono de cada color, de las "Variantes de color" del
+                           editor — las mismas que ya pinta la galería. El valor que
+                           viaja en el pedido sigue siendo el nombre de producto_colores
+                           (el servidor lo valida contra esa lista): la foto solo decora.
+                           El cruce es por nombre sin tildes, mayúsculas ni signos
+                           ("Café Miel" = "cafe-miel"). Un color sin pareja conserva la
+                           pastilla de texto de siempre, no se rompe nada. */
+                        $normColor = function ($s) {
+                            $s = mb_strtolower(trim((string)$s), 'UTF-8');
+                            $s = strtr($s, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n']);
+                            return (string)preg_replace('/[^a-z0-9]+/', '', $s);
+                        };
+                        $colorFotos = [];
+                        $colorTonos = [];
+                        foreach ($colorVariants as $_cv) {
+                            $_k = $normColor($_cv['name']);
+                            if ($_k === '') continue;
+                            foreach ($_cv['images'] as $_im) {
+                                if (!es_video($_im)) { $colorFotos[$_k] = $_im; break; }
+                            }
+                            if (preg_match('/^#[0-9a-fA-F]{3,8}$/', $_cv['hex'])) $colorTonos[$_k] = $_cv['hex'];
+                        }
                         ?>
                         <div id="colorRowsWrap">
                             <?php foreach ($oldColores as $_i => $_colorSel):
@@ -1907,11 +1944,27 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             ?>
                             <div class="color-row" data-row="<?= (int)$_i ?>">
                                 <div class="color-pills-wrap" role="group" aria-label="Colores disponibles" style="display:none;">
-                                    <?php foreach ($colores as $c): ?>
-                                    <button type="button" class="color-pill<?= $c === $_colorSel ? ' is-selected' : '' ?>"
-                                        data-color="<?= htmlspecialchars($c) ?>"
+                                    <?php foreach ($colores as $c):
+                                        $_ck    = $normColor($c);
+                                        $_foto  = $colorFotos[$_ck] ?? '';
+                                        $_tono  = $colorTonos[$_ck] ?? '';
+                                    ?>
+                                    <button type="button" class="color-pill<?= $_foto !== '' ? ' color-pill--foto' : '' ?><?= $c === $_colorSel ? ' is-selected' : '' ?>"
+                                        data-color="<?= htmlspecialchars($c) ?>"<?= $_foto !== '' ? ' data-foto="' . htmlspecialchars($_foto) . '"' : '' ?>
                                         aria-pressed="<?= $c === $_colorSel ? 'true' : 'false' ?>">
-                                        <?= htmlspecialchars($c) ?>
+                                        <?php if ($_foto !== ''): ?>
+                                        <?php /* El punto del tono va sobre la esquina de la foto, no al lado
+                                                 del nombre: en una tarjeta de ~140px, foto + punto le dejaban
+                                                 al nombre 40px y "Negro" salía partido en "Negr/o". */ ?>
+                                        <span class="color-pill__thumb">
+                                            <img class="color-pill__foto" src="<?= htmlspecialchars($_foto) ?>" alt=""
+                                                 width="48" height="48" loading="lazy" decoding="async">
+                                            <?php if ($_tono !== ''): ?>
+                                            <span class="color-pill__tono" style="background:<?= htmlspecialchars($_tono) ?>" aria-hidden="true"></span>
+                                            <?php endif; ?>
+                                        </span>
+                                        <?php endif; ?>
+                                        <span class="color-pill__nombre"><?= htmlspecialchars($c) ?></span>
                                     </button>
                                     <?php endforeach; ?>
                                 </div>
@@ -2107,7 +2160,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <label for="direccion" class="form-label-lg">Dirección</label>
                             <input type="text" id="direccion" name="direccion" class="input-lg"
                                 placeholder="Ej: Calle 5 # 10-20, frente a la escuela"
-                                autocomplete="street-address"
+                                autocomplete="street-address" enterkeyhint="next"
                                 value="<?= htmlspecialchars($old['direccion'] ?? '') ?>">
                             <p class="field-hint">Escríbela bien para que el mensajero llegue sin problema</p>
                         </div>
@@ -2146,25 +2199,38 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <p class="form-step__sub">Te escribimos por WhatsApp para confirmarlo</p>
                         </div>
 
+                        <?php /* Nombre y apellido en UN campo: una casilla menos que
+                                 llenar. El ejemplo lleva dos palabras a propósito —enseña
+                                 qué escribir mejor que cualquier regla— y la pista dice
+                                 el PORQUÉ (la guía del envío). El servidor lo parte en
+                                 nombre + apellidos (LandingController::partirNombreCompleto)
+                                 y exige las dos partes; order-submit.js avisa al salir del
+                                 campo si falta el apellido, no al final del formulario.
+                                 autocomplete="name" deja que el celular lo rellene entero. */
+                        $oldNombreCompleto = (string)($old['nombre_completo']
+                            ?? trim(($old['nombre'] ?? '') . ' ' . ($old['apellidos'] ?? ''))); ?>
                         <div class="form-group">
-                            <label for="nombre" class="form-label-lg">Tu nombre</label>
-                            <input type="text" id="nombre" name="nombre" required class="input-lg"
-                                placeholder="Ej: María"
-                                autocomplete="given-name"
-                                value="<?= htmlspecialchars($old['nombre'] ?? '') ?>">
-                        </div>
-                        <div class="form-group">
-                            <label for="apellidos" class="form-label-lg">Tu apellido</label>
-                            <input type="text" id="apellidos" name="apellidos" required class="input-lg"
-                                placeholder="Ej: González"
-                                autocomplete="family-name"
-                                value="<?= htmlspecialchars($old['apellidos'] ?? '') ?>">
+                            <label for="nombre_completo" class="form-label-lg">Nombre y apellido</label>
+                            <input type="text" id="nombre_completo" name="nombre_completo" required class="input-lg"
+                                placeholder="Ej: María González"
+                                autocomplete="name" autocapitalize="words" enterkeyhint="next"
+                                aria-describedby="nombreHint"
+                                value="<?= htmlspecialchars($oldNombreCompleto) ?>">
+                            <?php /* Corta a propósito: en una pantalla de 320px "Lo necesitamos
+                                     para la guía del envío" ocupaba dos líneas, y el aviso que la
+                                     reemplaza al salir del campo (una línea) movía el botón. */ ?>
+                            <p class="field-hint" id="nombreHint">Es para la guía del envío</p>
                         </div>
                         <div class="form-group">
                             <label for="telefono" class="form-label-lg"><?= $micoPhone ?> Tu número de WhatsApp</label>
+                            <?php /* Sin maxlength: con él, un "+57 300 123 4567" pegado o
+                                     autocompletado se cortaba a 10 caracteres ANTES de que el
+                                     JS pudiera limpiarlo y quedaba inválido. Ahora se pega
+                                     entero y se deja en 10 dígitos; sin JS el servidor hace
+                                     la misma limpieza (LandingController::normalizarTelefono). */ ?>
                             <input type="tel" id="telefono" name="telefono" required class="input-lg"
                                 placeholder="Ej: 3001234567"
-                                maxlength="10" autocomplete="tel-national" inputmode="numeric"
+                                autocomplete="tel-national" inputmode="numeric" enterkeyhint="go"
                                 value="<?= htmlspecialchars($old['telefono'] ?? '') ?>">
                             <?php /* La pista dice el PORQUÉ, no el formato. La regla —
                                      10 dígitos, empieza en 3 — ya la enseña la validación
@@ -2431,8 +2497,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         errs.push('La dirección es obligatoria para envío a domicilio.');
                     }
                 } else if (n === 3) {
-                    if (!valorDe('#nombre'))    errs.push('El nombre es obligatorio.');
-                    if (!valorDe('#apellidos')) errs.push('El apellido es obligatorio.');
+                    var nc = valorDe('#nombre_completo').split(/\s+/);
+                    if (!valorDe('#nombre_completo')) errs.push('Escribe tu nombre y tu apellido.');
+                    else if (nc.length < 2) errs.push('Escribe tu nombre y tu apellido (ej: María González).');
                     var tv = valorDe('#telefono');
                     if (!tv)                       errs.push('El número de WhatsApp es obligatorio.');
                     else if (!/^3\d{9}$/.test(tv)) errs.push('El número debe tener 10 dígitos y empezar en 3.');
@@ -2527,22 +2594,70 @@ $colorBorder     = $cfg['color_border']     ?? null;
             /* ── Color pills (paso 2 con colores) ─────────────── */
             var colorRowsWrap = document.getElementById('colorRowsWrap');
 
+            /* La foto de la barra del producto (arriba del formulario) es la que
+               había al cargar; al elegir un color con foto pasa a ser la de ese
+               color, para que el comprador vea exactamente qué va a recibir. */
+            var barImg     = document.querySelector('.order-modal-product-bar__img');
+            var barImgOrig = barImg ? barImg.getAttribute('src') : '';
+
+            function fotoDeColor(color) {
+                if (!colorRowsWrap) return '';
+                var ps = colorRowsWrap.querySelectorAll('.color-pill');
+                for (var i = 0; i < ps.length; i++) {
+                    if (ps[i].getAttribute('data-color') === color) return ps[i].getAttribute('data-foto') || '';
+                }
+                return '';
+            }
+
             function updateColorSummary() {
                 var sumEl = document.getElementById('colorSelSummary');
                 var txtEl = document.getElementById('colorSelText');
                 if (!sumEl || !txtEl || !colorRowsWrap) return;
                 var parts = [];
+                var ultimaFoto = '';
                 Array.prototype.forEach.call(colorRowsWrap.querySelectorAll('.color-row'), function (row) {
                     var cSel = row.querySelector('.color-item-sel');
                     var qSel = row.querySelector('.qty-item-sel');
-                    if (cSel && cSel.value) parts.push(cSel.value + ' ×' + ((qSel && qSel.value) || '1'));
+                    if (cSel && cSel.value) {
+                        var foto = fotoDeColor(cSel.value);
+                        if (foto) ultimaFoto = foto;
+                        parts.push({ texto: cSel.value + ' ×' + ((qSel && qSel.value) || '1'), foto: foto });
+                    }
                 });
-                txtEl.textContent = parts.join(' · ');
+                txtEl.innerHTML = '';
+                parts.forEach(function (p, i) {
+                    if (i) txtEl.appendChild(document.createTextNode(' · '));
+                    if (p.foto) {
+                        var im = document.createElement('img');
+                        im.className = 'sel-thumb';
+                        im.src = p.foto;
+                        im.alt = '';
+                        im.width = 28;
+                        im.height = 28;
+                        txtEl.appendChild(im);
+                    }
+                    txtEl.appendChild(document.createTextNode(p.texto));
+                });
                 sumEl.style.display = parts.length ? 'flex' : 'none';
+
+                if (barImg) {
+                    var destino = ultimaFoto || barImgOrig;
+                    if (destino && barImg.getAttribute('src') !== destino) barImg.setAttribute('src', destino);
+                }
             }
 
             /* Tope por color: el mismo 5 que aplica el servidor. */
             var MAX_POR_COLOR = 5;
+
+            /* En cuanto el comprador toca una pastilla del formulario, manda él:
+               ya no se le cambia el color por lo que haga en la galería. */
+            var eligioEnFormulario = false;
+
+            function claveColor(s) {
+                var t = String(s || '').toLowerCase();
+                if (t.normalize) t = t.normalize('NFD');
+                return t.replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+            }
 
             function initColorRow(row) {
                 var pills    = row.querySelectorAll('.color-pill');
@@ -2560,20 +2675,31 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 if (nativo)    nativo.style.display = 'none';
                 if (pillsWrap) pillsWrap.style.display = '';
 
+                /* Elegir una pastilla vive en una función aparte para que el color
+                   que el comprador ya tocó en la galería pueda dejarla marcada sin
+                   simular un clic: un clic de mentira dispararía AddToCart del
+                   pixel y el evento "campo color" del embudo sin que nadie tocara
+                   el formulario. */
+                var elegirPill = function (pill) {
+                    Array.prototype.forEach.call(pills, function (p) {
+                        p.classList.remove('is-selected');
+                        p.setAttribute('aria-pressed', 'false');
+                    });
+                    pill.classList.add('is-selected');
+                    pill.setAttribute('aria-pressed', 'true');
+                    if (cSel) cSel.value = pill.dataset.color;
+                    if (qtyWrap) qtyWrap.style.display = '';
+                    var addBtn = document.getElementById('addColorRowBtn');
+                    if (addBtn) addBtn.style.display = '';
+                    updateColorSummary();
+                    recalcular();
+                };
+                row.elegirPill = elegirPill;
+
                 Array.prototype.forEach.call(pills, function (pill) {
                     pill.addEventListener('click', function () {
-                        Array.prototype.forEach.call(pills, function (p) {
-                            p.classList.remove('is-selected');
-                            p.setAttribute('aria-pressed', 'false');
-                        });
-                        pill.classList.add('is-selected');
-                        pill.setAttribute('aria-pressed', 'true');
-                        if (cSel) cSel.value = pill.dataset.color;
-                        if (qtyWrap) qtyWrap.style.display = '';
-                        var addBtn = document.getElementById('addColorRowBtn');
-                        if (addBtn) addBtn.style.display = '';
-                        updateColorSummary();
-                        recalcular();
+                        eligioEnFormulario = true;
+                        elegirPill(pill);
                     });
                 });
 
@@ -2619,6 +2745,25 @@ $colorBorder     = $cfg['color_border']     ?? null;
             if (colorRowsWrap) {
                 Array.prototype.forEach.call(colorRowsWrap.querySelectorAll('.color-row'), initColorRow);
                 updateColorSummary();
+
+                /* El comprador ya eligió color en la galería (clic explícito, no el
+                   que sale por defecto): el formulario lo deja marcado en la primera
+                   fila en vez de volver a preguntarle. Queda a la vista en "Tu
+                   selección" y en el resumen, y un toque en otra pastilla lo cambia.
+                   Si el nombre no coincide con ninguna pastilla, no hace nada. */
+                document.addEventListener('landing:color-galeria', function (e) {
+                    if (eligioEnFormulario) return;
+                    var buscado = claveColor(e.detail && e.detail.nombre);
+                    var fila = colorRowsWrap.querySelector('.color-row');
+                    if (!buscado || !fila || !fila.elegirPill) return;
+                    var ps = fila.querySelectorAll('.color-pill');
+                    for (var i = 0; i < ps.length; i++) {
+                        if (claveColor(ps[i].getAttribute('data-color')) === buscado) {
+                            fila.elegirPill(ps[i]);
+                            return;
+                        }
+                    }
+                });
 
                 var addBtn = document.getElementById('addColorRowBtn');
                 if (addBtn) addBtn.addEventListener('click', function () {
@@ -2672,7 +2817,21 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 var tel  = form.querySelector('#telefono');
                 var hint = document.getElementById('telHint');
                 if (!tel || !hint) return;
+                /* Lo que llega pegado o autocompletado ("300 123 4567",
+                   "+57 300 123 4567") se deja en 10 dígitos pelados antes de
+                   juzgarlo: solo números, sin el prefijo 57 (un celular
+                   colombiano nunca empieza por 5) y con tope de 10. Hay que
+                   hacerlo aquí y no con maxlength, que cortaría el texto
+                   crudo antes de poder limpiarlo. */
+                function limpiarTel(valor) {
+                    var d = String(valor || '').replace(/\D+/g, '');
+                    if (d.indexOf('0057') === 0) d = d.slice(4);
+                    else if (d.length > 2 && d.indexOf('57') === 0) d = d.slice(2);
+                    return d.slice(0, 10);
+                }
                 tel.addEventListener('input', function () {
+                    var limpio = limpiarTel(tel.value);
+                    if (limpio !== tel.value) tel.value = limpio;
                     var v = tel.value.trim();
                     if (!v) {
                         tel.classList.remove('tel-valid', 'tel-invalid');

@@ -118,6 +118,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (el) el.textContent = valor;
   }
 
+  /* Foto del color (data-foto de su pastilla); '' si ese color no tiene. */
+  function fotoDeColor(color) {
+    var ps = form.querySelectorAll('.color-pill');
+    for (var i = 0; i < ps.length; i++) {
+      if (ps[i].getAttribute('data-color') === color) return ps[i].getAttribute('data-foto') || '';
+    }
+    return '';
+  }
+
   function updateSummary() {
     var units = getUnits();
 
@@ -168,9 +177,28 @@ document.addEventListener('DOMContentLoaded', function () {
         var qSel = fila.querySelector('select[name="qty_item[]"]');
         if (!cSel || !cSel.value) return;
         var q = parseInt((qSel && qSel.value) || '1', 10);
-        partes.push(q > 1 ? cSel.value + ' ×' + q : cSel.value);
+        partes.push({ texto: q > 1 ? cSel.value + ' ×' + q : cSel.value, foto: fotoDeColor(cSel.value) });
       });
-      texto('summaryColor', partes.join(' · '));
+
+      /* Con miniatura: es lo unico del pedido que el comprador no puede
+         verificar despues, y verlo en foto lo confirma mejor que el nombre. */
+      var colorEl = document.getElementById('summaryColor');
+      if (colorEl) {
+        colorEl.innerHTML = '';
+        partes.forEach(function (p, i) {
+          if (i) colorEl.appendChild(document.createTextNode(' · '));
+          if (p.foto) {
+            var im = document.createElement('img');
+            im.className = 'sel-thumb';
+            im.src = p.foto;
+            im.alt = '';
+            im.width = 28;
+            im.height = 28;
+            colorEl.appendChild(im);
+          }
+          colorEl.appendChild(document.createTextNode(p.texto));
+        });
+      }
       colorRow.style.display = partes.length ? 'flex' : 'none';
     }
 

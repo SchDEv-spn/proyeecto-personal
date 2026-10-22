@@ -624,3 +624,140 @@ body.modal-open { overflow: hidden; }
 @media (min-width: 640px) {
     .pedido-panel { padding: 26px 26px 30px; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   TARJETAS DE COLOR CON FOTO
+   La pastilla de color era un botón de texto — "Negro", "Camel" — y el
+   comprador no puede tocar el producto: ver el color le dice más que su
+   nombre. La foto sale de las "Variantes de color" del editor (las mismas
+   de la galería); un color sin foto conserva la pastilla de texto de
+   siempre. Es el mismo <button class="color-pill">, así que el valor, la
+   cantidad, el precio y el embudo no se enteran.
+   ══════════════════════════════════════════════════════════════ */
+.color-pill--foto {
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 6px 8px 6px 6px;
+    min-height: 60px;
+    text-align: left;
+}
+
+.color-pill__thumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+}
+
+.color-pill__foto {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    background: var(--bg-base);
+}
+
+/* El tono real del color, sobre la esquina de la foto (igual que el punto de
+   las pastillas de la galería). El aro del color de la tarjeta lo separa de la foto. */
+.color-pill__tono {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-layer2);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+/* El nombre solo se parte entre palabras ("Verde / oliva"), nunca dentro de
+   una: break-word corta una palabra solo si no cabe entera en la línea. */
+.color-pill__nombre {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
+}
+
+.color-pill--foto.is-selected::after {
+    top: 5px;
+    right: 7px;
+}
+
+/* Pantallas de 360px o menos: la tarjeta mide ~110px, la foto cede sitio al nombre */
+@media (max-width: 360px) {
+    .color-pill--foto { gap: 6px; padding: 5px 6px 5px 5px; min-height: 52px; font-size: 13px; }
+    .color-pill__thumb { width: 40px; height: 40px; }
+}
+
+/* Miniatura del color en "Tu selección" y en el resumen del pedido */
+.sel-thumb {
+    width: 28px;
+    height: 28px;
+    object-fit: cover;
+    border-radius: 6px;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ERRORES JUNTO AL CAMPO
+   El mensaje vive pegado al campo que falla (antes salía todo en una
+   lista arriba del formulario) y el campo se marca en rojo.
+   ══════════════════════════════════════════════════════════════ */
+.field-error {
+    margin: 6px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--error);
+}
+
+.field-hint.err {
+    color: var(--error);
+    font-weight: 600;
+}
+
+.input-lg.is-invalid,
+.select-lg.is-invalid,
+.pedido-section textarea.is-invalid {
+    border-color: var(--error) !important;
+}
+
+/* Grupos sin un único campo: la fila de colores y las tarjetas de entrega */
+.is-invalid-grupo {
+    outline: 2px solid var(--error);
+    outline-offset: 6px;
+    border-radius: 12px;
+}
+
+/* Errores del servidor (pedido repetido, fallo al guardar, sin red): justo
+   encima del botón que se acaba de tocar */
+.envio-errores {
+    margin: 14px 0 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BARRAS FIJAS APARTADAS MIENTRAS SE LLENA EL FORMULARIO
+   body.form-en-vista lo pone initChromeEnFormulario() (main.js).
+   La barra de anuncios y el botón flotante de WhatsApp tapaban una
+   quinta parte de la pantalla útil y los toques de los selects.
+   ══════════════════════════════════════════════════════════════ */
+.announcement-bar {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+body.form-en-vista .announcement-bar {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.form-en-vista .wa-float-btn {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+}

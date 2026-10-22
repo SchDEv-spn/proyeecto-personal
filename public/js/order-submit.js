@@ -27,11 +27,61 @@
         return (el && el.value) ? el.value.trim() : '';
     }
 
-    /* El orden de los errores sigue el orden del formulario — que pides, a
-       donde, quien eres. Si la lista va en otro orden, el comprador tiene que
-       buscar hacia arriba y hacia abajo el campo de cada linea. */
+    function quitar(nodo) {
+        if (nodo && nodo.parentNode) nodo.parentNode.removeChild(nodo);
+    }
+
+    function esControl(el) {
+        return /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName);
+    }
+
+    /* ── Nombre y apellido en un solo campo ───────────────────────────
+       Mismas reglas que LandingController::nombreCompletoValido() y
+       ::partirNombreCompleto(): si cambian aqui, cambian alli. */
+    function palabras(v) {
+        var t = String(v || '').replace(/^\s+|\s+$/g, '');
+        return t ? t.split(/\s+/) : [];
+    }
+
+    function letras(s) {
+        var m = String(s).match(/[A-Za-zÀ-ɏ]/g);
+        return m ? m.length : 0;
+    }
+
+    /* Nombre Y apellido: dos palabras o mas, la primera y la ultima con 2
+       letras o mas (una inicial como "G." no sirve para la guia del envio). */
+    function nombreValido(v) {
+        var p = palabras(v);
+        return p.length >= 2 && letras(p[0]) >= 2 && letras(p[p.length - 1]) >= 2;
+    }
+
+    function partirNombre(v) {
+        var p = palabras(v);
+        if (p.length <= 1) return { nombre: p[0] || '', apellidos: '' };
+        var corte = p.length >= 4 ? 2 : 1;
+        return { nombre: p.slice(0, corte).join(' '), apellidos: p.slice(corte).join(' ') };
+    }
+
+    /* Cabe en UNA línea hasta en 360px: el aviso reemplaza la pista del campo
+       al salir de él, y si ocupara dos líneas empujaría el botón de abajo en el
+       instante en que se lo está tocando. El ejemplo ya está en el placeholder. */
+    var MSG_NOMBRE = 'Escribe tu nombre y tu apellido';
+
+    /* Celular en 10 digitos pelados: sin espacios ni signos, sin el prefijo
+       57 (un celular colombiano nunca empieza por 5) y con tope de 10. */
+    function limpiarTel(valor) {
+        var d = String(valor || '').replace(/\D+/g, '');
+        if (d.indexOf('0057') === 0) d = d.slice(4);
+        else if (d.length > 2 && d.indexOf('57') === 0) d = d.slice(2);
+        return d.slice(0, 10);
+    }
+
+    /* Cada error lleva el campo (o grupo) al que pertenece: asi el mensaje se
+       pinta junto a el y el foco va al primero. El orden de la lista sigue el
+       del formulario — que pides, a donde, quien eres. */
     function validar() {
         var errors = [];
+        function falla(el, msg) { errors.push({ el: el, msg: msg }); }
 
         var modeEl = form.querySelector('#pricingMode');
         var mode = (modeEl && modeEl.value) ? modeEl.value : 'individual';
@@ -39,11 +89,11 @@
         if (mode === 'combo') {
             var blocks = form.querySelectorAll('.combo-block');
             if (!blocks.length) {
-                errors.push('Debes tener al menos 1 combo.');
+                falla(form, 'Debes tener al menos 1 combo.');
             } else {
                 Array.prototype.forEach.call(blocks, function (b, idx) {
                     Array.prototype.forEach.call(b.querySelectorAll('select.combo-color'), function (s) {
-                        if (!s.value) errors.push('Selecciona el color del combo ' + (idx + 1) + '.');
+                        if (!s.value) falla(s, 'Selecciona el color del combo ' + (idx + 1) + '.');
                     });
                 });
             }
@@ -56,39 +106,217 @@
             var filas = form.querySelectorAll('.color-row');
             if (filas.length) {
                 var conColor = 0;
-                var vacias = 0;
+                var vacias = [];
                 Array.prototype.forEach.call(filas, function (fila) {
                     var s = fila.querySelector('select[name="color_item[]"]');
                     if (!s) return;
-                    if (s.value) conColor++; else vacias++;
+                    if (s.value) conColor++; else vacias.push(fila);
                 });
-                if (!conColor) errors.push('Selecciona al menos un color.');
-                else if (vacias) errors.push('Te faltó elegir el color en una de las filas (o quítala con “✕ Quitar”).');
+                if (!conColor) {
+                    falla(filas[0], 'Toca el color que quieres pedir.');
+                } else {
+                    vacias.forEach(function (fila) {
+                        falla(fila, 'Te faltó elegir el color en esta fila (o quítala con “✕ Quitar”).');
+                    });
+                }
             }
         }
 
-        if (!valorDe('#departamento')) errors.push('Selecciona un departamento.');
-        if (!valorDe('#municipio')) errors.push('Selecciona un municipio.');
+        var dep = form.querySelector('#departamento');
+        var mun = form.querySelector('#municipio');
+        if (dep && !valorDe('#departamento')) falla(dep, 'Selecciona un departamento.');
+        if (mun && !valorDe('#municipio')) falla(mun, 'Selecciona un municipio.');
 
         var entrega = form.querySelector('input[name="tipo_entrega"]:checked');
-        if (!entrega) errors.push('Selecciona cómo quieres recibir tu pedido.');
-        else if (entrega.value === 'domicilio' && !valorDe('#direccion')) {
-            errors.push('La dirección es obligatoria para envío a domicilio.');
+        if (!entrega) {
+            var radios = form.querySelector('input[name="tipo_entrega"]');
+            falla(radios ? (radios.closest('fieldset') || radios) : form, 'Selecciona cómo quieres recibir tu pedido.');
+        } else if (entrega.value === 'domicilio' && !valorDe('#direccion')) {
+            falla(form.querySelector('#direccion') || form, 'La dirección es obligatoria para envío a domicilio.');
         }
 
-        if (!valorDe('#nombre'))    errors.push('El nombre es obligatorio.');
-        if (!valorDe('#apellidos')) errors.push('Los apellidos son obligatorios.');
+        var nombreEl = form.querySelector('#nombre_completo');
+        if (nombreEl) {
+            var nom = valorDe('#nombre_completo');
+            if (!nom || !nombreValido(nom)) falla(nombreEl, MSG_NOMBRE);
+        }
 
-        var tel = valorDe('#telefono');
-        if (!tel) errors.push('El número de WhatsApp es obligatorio.');
-        else if (!/^3\d{9}$/.test(tel)) errors.push('Número inválido (10 dígitos, empieza en 3).');
+        var telEl = form.querySelector('#telefono');
+        if (telEl) {
+            var tel = limpiarTel(valorDe('#telefono'));
+            if (!tel) falla(telEl, 'El número de WhatsApp es obligatorio.');
+            else if (!/^3\d{9}$/.test(tel)) falla(telEl, 'Número inválido (10 dígitos, empieza en 3).');
+        }
 
         return errors;
     }
 
-    function mostrarErrores(errors) {
-        if (!errorsBox) return;
-        if (!errors.length) { errorsBox.style.display = 'none'; errorsBox.innerHTML = ''; return; }
+    /* ── Errores junto al campo ───────────────────────────────────────
+       Antes todo salia en una lista ARRIBA del formulario: quien fallaba
+       desde el boton final subia a leerla, ningun campo se marcaba ni
+       recibia el foco, y la barra de anuncios fija tapaba las primeras
+       lineas. Ahora cada mensaje vive pegado a su campo y el foco va al
+       primero que falla. */
+    var contador = 0;
+    var telMarcado = false;
+
+    function restaurarPistaNombre() {
+        var h = document.getElementById('nombreHint');
+        if (h && h.hasAttribute('data-orig')) {
+            h.textContent = h.getAttribute('data-orig');
+            h.removeAttribute('data-orig');
+            h.classList.remove('err');
+        }
+    }
+
+    function marcar(el, msg) {
+        /* El nombre y el telefono ya tienen una pista debajo: esa misma linea
+           hace de mensaje. No se inserta nada, asi no se mueve el boton en el
+           instante en que el comprador lo esta tocando. */
+        if (el.id === 'nombre_completo') {
+            var h = document.getElementById('nombreHint');
+            if (h) {
+                if (!h.hasAttribute('data-orig')) h.setAttribute('data-orig', h.textContent);
+                h.textContent = msg;
+                h.classList.add('err');
+            }
+        } else if (el.id === 'telefono') {
+            var th = document.getElementById('telHint');
+            if (th) {
+                th.textContent = msg;
+                th.className = 'tel-hint err';
+                telMarcado = true;
+            }
+        } else {
+            var p = document.createElement('p');
+            p.className = 'field-error';
+            p.id = 'err-' + (el.id || ('g' + (++contador)));
+            p.setAttribute('role', 'alert');
+            p.textContent = msg;
+            if (esControl(el)) {
+                el.parentNode.insertBefore(p, el.nextSibling);
+                el.setAttribute('aria-describedby', p.id);
+            } else {
+                el.appendChild(p);
+            }
+        }
+
+        if (esControl(el)) {
+            el.classList.add('is-invalid');
+            el.setAttribute('aria-invalid', 'true');
+        } else if (el !== form) {
+            el.classList.add('is-invalid-grupo');
+        }
+    }
+
+    function limpiarGrupo(g) {
+        if (!g) return;
+        Array.prototype.slice.call(g.children).forEach(function (h) {
+            if (h.classList && h.classList.contains('field-error')) quitar(h);
+        });
+        g.classList.remove('is-invalid-grupo');
+    }
+
+    function limpiarCampo(el) {
+        if (!el || !el.classList) return;
+        var d = el.getAttribute('aria-describedby');
+        if (d && d.indexOf('err-') === 0) {
+            quitar(document.getElementById(d));
+            el.removeAttribute('aria-describedby');
+        }
+        el.classList.remove('is-invalid');
+        el.removeAttribute('aria-invalid');
+        if (el.id === 'nombre_completo') restaurarPistaNombre();
+    }
+
+    function limpiarErrores() {
+        Array.prototype.forEach.call(form.querySelectorAll('.is-invalid'), limpiarCampo);
+        Array.prototype.forEach.call(form.querySelectorAll('.is-invalid-grupo'), limpiarGrupo);
+        Array.prototype.forEach.call(form.querySelectorAll('.field-error'), quitar);
+        restaurarPistaNombre();
+        if (telMarcado) {
+            telMarcado = false;
+            /* La pista del telefono la escribe su validacion en vivo (script de
+               la vista): se le pide que la recalcule en vez de duplicar su texto. */
+            var telEl = form.querySelector('#telefono');
+            try { if (telEl) telEl.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) { /* sin Event(): queda la ultima pista */ }
+        }
+    }
+
+    function llevarA(el) {
+        var foco = esControl(el) ? el : (el.querySelector('.color-pill, select, input, button') || el);
+        var r = foco.getBoundingClientRect();
+        var alto = window.innerHeight || document.documentElement.clientHeight || 600;
+        var base = window.pageYOffset || document.documentElement.scrollTop || 0;
+        var y = Math.max(0, Math.round(r.top + base - alto * 0.3));
+        try { window.scrollTo({ top: y, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, y); }
+        try { foco.focus({ preventScroll: true }); } catch (e2) { try { foco.focus(); } catch (e3) { /* sin foco: ya quedo marcado */ } }
+    }
+
+    /* Se corrige en el propio campo: el aviso de ese campo se va al tocarlo. */
+    form.addEventListener('input', function (e) { limpiarCampo(e.target); });
+    form.addEventListener('change', function (e) {
+        limpiarCampo(e.target);
+        limpiarGrupo(e.target.closest ? e.target.closest('.is-invalid-grupo') : null);
+    });
+    form.addEventListener('click', function (e) {
+        limpiarGrupo(e.target.closest ? e.target.closest('.is-invalid-grupo') : null);
+    });
+
+    /* El apellido se echa de menos al salir del campo, no en el boton final.
+       Solo si ya escribio algo: un campo vacio al pasar de largo no se regaña. */
+    var nombreCampo = document.getElementById('nombre_completo');
+    if (nombreCampo) {
+        nombreCampo.addEventListener('blur', function () {
+            var v = nombreCampo.value.trim();
+            limpiarCampo(nombreCampo);
+            if (v && !nombreValido(v)) marcar(nombreCampo, MSG_NOMBRE);
+        });
+    }
+
+    /* La tecla "Ir"/Intro del teclado enviaba el formulario desde cualquier
+       campo de texto: quien la tocaba en "Nombre y apellido" esperando pasar
+       al siguiente disparaba el envio con todo lo demas vacio. Ahora Intro
+       salta al campo siguiente; solo en el ultimo envia. */
+    function siguienteCampo(actual) {
+        var todos = form.querySelectorAll('input:not([type=hidden]):not([type=radio]):not([type=checkbox]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+        var visibles = Array.prototype.filter.call(todos, function (c) { return c.offsetParent !== null; });
+        var i = visibles.indexOf(actual);
+        return i >= 0 ? (visibles[i + 1] || null) : null;
+    }
+
+    form.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.keyCode !== 13) return;
+        var t = e.target;
+        if (!t || t.tagName !== 'INPUT') return;
+        var tipo = (t.type || '').toLowerCase();
+        if (tipo !== 'text' && tipo !== 'tel') return;
+        var sig = siguienteCampo(t);
+        if (!sig) return;           // ultimo campo: que envie
+        e.preventDefault();
+        sig.focus();
+    });
+
+    /* Los errores que devuelve el servidor (pedido duplicado, fallo al
+       guardar, error de red) salen justo encima del boton que se acaba de
+       tocar, no arriba del formulario a dos mil pixeles de distancia. */
+    var cajaDelEnvio = null;
+    function cajaEnvio() {
+        if (cajaDelEnvio) return cajaDelEnvio;
+        var nav = form.querySelector('.form-step__nav--submit');
+        if (!nav) return errorsBox;
+        cajaDelEnvio = document.createElement('div');
+        cajaDelEnvio.className = 'error envio-errores';
+        cajaDelEnvio.setAttribute('role', 'alert');
+        cajaDelEnvio.style.display = 'none';
+        nav.parentNode.insertBefore(cajaDelEnvio, nav);
+        return cajaDelEnvio;
+    }
+
+    function mostrarErroresEnvio(errors) {
+        var box = cajaEnvio();
+        if (!box) return;
+        if (!errors.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
         var ul = document.createElement('ul');
         errors.forEach(function (e) {
             var li = document.createElement('li');
@@ -97,10 +325,10 @@
         });
         /* replaceChildren() es de 2020 y en un WebView viejo no existe:
            vaciar y volver a llenar funciona en cualquier motor. */
-        errorsBox.innerHTML = '';
-        errorsBox.appendChild(ul);
-        errorsBox.style.display = 'block';
-        errorsBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        box.innerHTML = '';
+        box.appendChild(ul);
+        box.style.display = 'block';
+        try { box.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { box.scrollIntoView(); }
     }
 
     function restaurarBoton(btnSubmit, btnText, btnSpinner) {
@@ -116,9 +344,20 @@
 
         e.preventDefault();
 
+        limpiarErrores();
+        mostrarErroresEnvio([]);
+        if (errorsBox) { errorsBox.style.display = 'none'; errorsBox.innerHTML = ''; }
+
         var errors = validar();
-        if (errors.length) { mostrarErrores(errors); return; }
-        mostrarErrores([]);
+        if (errors.length) {
+            errors.forEach(function (x) { marcar(x.el, x.msg); });
+            llevarA(errors[0].el);
+            return;
+        }
+
+        /* Lo que viaja es el numero ya limpio (el servidor lo limpia igual). */
+        var telCampo = form.querySelector('#telefono');
+        if (telCampo) telCampo.value = limpiarTel(telCampo.value);
 
         var btnText = document.getElementById('btnSubmitText');
         var btnSpinner = document.getElementById('btnSubmitSpinner');
@@ -142,7 +381,7 @@
                 restaurarBoton(btnSubmit, btnText, btnSpinner);
 
                 if (!res || !res.ok) {
-                    mostrarErrores(res && res.errores && res.errores.length
+                    mostrarErroresEnvio(res && res.errores && res.errores.length
                         ? res.errores
                         : ['No pudimos registrar tu pedido. Inténtalo de nuevo o escríbenos por WhatsApp.']);
                     return;
@@ -177,10 +416,14 @@
                     // cliente ya dio en el formulario, antes de trackear Lead
                     // y Purchase — mejora el emparejamiento justo en el
                     // tráfico de in-app browser, donde las cookies valen poco.
+                    // El nombre se parte igual que en el servidor
+                    // (LandingController::partirNombreCompleto), así el pixel
+                    // y la Conversions API mandan el mismo fn/ln.
                     var telLocal = valorDe('#telefono').replace(/\D/g, '');
+                    var nombrePartido = partirNombre(valorDe('#nombre_completo'));
                     fbq('init', window.landingPixelId, {
-                        fn: valorDe('#nombre').toLowerCase(),
-                        ln: valorDe('#apellidos').toLowerCase(),
+                        fn: nombrePartido.nombre.toLowerCase(),
+                        ln: nombrePartido.apellidos.toLowerCase(),
                         ph: telLocal ? '57' + telLocal : '',
                         ct: valorDe('#municipio').toLowerCase(),
                         st: valorDe('#departamento').toLowerCase(),
@@ -253,7 +496,7 @@
             })
             .catch(function () {
                 restaurarBoton(btnSubmit, btnText, btnSpinner);
-                mostrarErrores(['Error de conexión. Verifica tu internet e inténtalo de nuevo.']);
+                mostrarErroresEnvio(['Error de conexión. Verifica tu internet e inténtalo de nuevo.']);
             });
     });
 })();
