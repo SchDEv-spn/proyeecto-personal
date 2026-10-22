@@ -81,26 +81,29 @@ body.modal-open { overflow: hidden; }
 /* ── Nombre y precio del producto ──────────────────────────────
    Sin foto ni insignia de cantidad (repetían lo que ya se ve en la tarjeta del
    color y en el resumen y ocupaban una franja entera del encabezado). Una sola
-   línea: el nombre a la izquierda, que se corta con "…" si no cabe, y el precio
-   a la derecha. Con el nombre partido en dos líneas y el precio debajo el
-   bloque seguía midiendo casi lo mismo que cuando llevaba la foto. */
+   línea y CENTRADA, como el resto del formulario: nombre y precio juntos en el
+   medio; si el nombre no cabe se corta con "…" y el precio no se mueve. Con el
+   nombre partido en dos líneas y el precio debajo el bloque seguía midiendo
+   casi lo mismo que cuando llevaba la foto. */
 .order-modal-product-bar {
     display: flex;
-    align-items: baseline;
-    gap: 12px;
+    justify-content: center;
     padding: 0 2px 12px;
 }
 
 .order-modal-product-bar__info {
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
+    max-width: 100%;
     display: flex;
     align-items: baseline;
+    justify-content: center;
     gap: 12px;
+    text-align: center;
 }
 
 .order-modal-product-bar__name {
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
     font-weight: 600;
     font-size: 15px;
