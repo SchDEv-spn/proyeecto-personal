@@ -1754,11 +1754,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
         $hasColors = !empty($colores);
         ?>
 
-        <?php
-        $modalProductImg = !empty($producto['imagen_principal'])
-            ? $producto['imagen_principal']
-            : ($heroMediaType === 'imagen' && !empty($heroMediaPath) ? $heroMediaPath : BASE_URL . '/public/img/producto/uso-1.png');
-        ?>
         <!-- ══════════════════════════════════════════════════════
              MODAL DE PEDIDO
         ══════════════════════════════════════════════════════════ -->
@@ -1806,17 +1801,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </p>
                 <?php endif; ?>
 
-                <?php /* La barra del producto va DESPUÉS del título: arriba del todo el
-                         panel se leía como el resumen de un carrito y el título quedaba
-                         colgando debajo. Es la que cambia de foto al elegir un color. */ ?>
-                <!-- Barra del producto -->
+                <?php /* Nombre y precio del producto, sin foto ni insignia de cantidad:
+                         la foto del producto ya se ve en la tarjeta del color elegido y
+                         arriba en la landing, y la cantidad en el resumen. Ocupaba una
+                         franja entera del encabezado solo para repetirlas. */ ?>
                 <div class="order-modal-product-bar">
-                    <div class="order-modal-product-bar__imgwrap">
-                        <img src="<?= htmlspecialchars($modalProductImg) ?>"
-                             alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>"
-                             class="order-modal-product-bar__img" loading="eager">
-                        <span class="order-modal-product-bar__badge" id="modalCartBadge">1</span>
-                    </div>
                     <div class="order-modal-product-bar__info">
                         <p class="order-modal-product-bar__name" id="orderModalProductName">
                             <?= htmlspecialchars($producto['nombre'] ?? '') ?>
@@ -2630,12 +2619,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
             /* ── Color pills (paso 2 con colores) ─────────────── */
             var colorRowsWrap = document.getElementById('colorRowsWrap');
 
-            /* La foto de la barra del producto (arriba del formulario) es la que
-               había al cargar; al elegir un color con foto pasa a ser la de ese
-               color, para que el comprador vea exactamente qué va a recibir. */
-            var barImg     = document.querySelector('.order-modal-product-bar__img');
-            var barImgOrig = barImg ? barImg.getAttribute('src') : '';
-
             function fotoDeColor(color) {
                 if (!colorRowsWrap) return '';
                 var ps = colorRowsWrap.querySelectorAll('.color-pill');
@@ -2650,14 +2633,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 var txtEl = document.getElementById('colorSelText');
                 if (!sumEl || !txtEl || !colorRowsWrap) return;
                 var parts = [];
-                var ultimaFoto = '';
                 Array.prototype.forEach.call(colorRowsWrap.querySelectorAll('.color-row'), function (row) {
                     var cSel = row.querySelector('.color-item-sel');
                     var qSel = row.querySelector('.qty-item-sel');
                     if (cSel && cSel.value) {
-                        var foto = fotoDeColor(cSel.value);
-                        if (foto) ultimaFoto = foto;
-                        parts.push({ texto: cSel.value + ' ×' + ((qSel && qSel.value) || '1'), foto: foto });
+                        parts.push({ texto: cSel.value + ' ×' + ((qSel && qSel.value) || '1'), foto: fotoDeColor(cSel.value) });
                     }
                 });
                 txtEl.innerHTML = '';
@@ -2675,11 +2655,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     txtEl.appendChild(document.createTextNode(p.texto));
                 });
                 sumEl.style.display = parts.length ? 'flex' : 'none';
-
-                if (barImg) {
-                    var destino = ultimaFoto || barImgOrig;
-                    if (destino && barImg.getAttribute('src') !== destino) barImg.setAttribute('src', destino);
-                }
             }
 
             /* Tope por color: el mismo 5 que aplica el servidor. */

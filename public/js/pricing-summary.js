@@ -8,8 +8,8 @@
    llevaba signo menos solo en uno, y cada uno formateaba la moneda a su
    manera. Ganaba el que corriera de ultimo. Ahora manda solo este.
 
-   Cubre: el resumen de compra, la tira de precio del paso 2, la insignia del
-   carrito y el total flotante. Todo se recalcula con el evento
+   Cubre: el resumen de compra, la tira de precio del paso 2 y el total
+   flotante. Todo se recalcula con el evento
    'landing:recalc', que es lo que disparan los pasos del formulario.
 
    Sin sintaxis ES2020 (?. y ??) a proposito: no hay build, el archivo se
@@ -202,9 +202,8 @@ document.addEventListener('DOMContentLoaded', function () {
       colorRow.style.display = partes.length ? 'flex' : 'none';
     }
 
-    // Tira de precio del paso 2 y insignia del carrito: mismo numero, mismo formato.
+    // Tira de precio del paso 2: mismo numero, mismo formato.
     texto('pricePreviewAmt', formatCOP(totalPay));
-    texto('modalCartBadge', String(units));
     texto('qtyUnitLbl', units > 1 ? 'unidades' : 'unidad');
 
     if (totalUnitsEl) totalUnitsEl.textContent = String(units);

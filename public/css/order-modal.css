@@ -78,63 +78,42 @@ body.modal-open { overflow: hidden; }
 }
 .order-modal-close:hover { background: var(--gold-dim); }
 
-/* ── Barra de producto ─────────────────────────────────────── */
+/* ── Nombre y precio del producto ──────────────────────────────
+   Sin foto ni insignia de cantidad (repetían lo que ya se ve en la tarjeta del
+   color y en el resumen y ocupaban una franja entera del encabezado). Una sola
+   línea: el nombre a la izquierda, que se corta con "…" si no cabe, y el precio
+   a la derecha. Con el nombre partido en dos líneas y el precio debajo el
+   bloque seguía midiendo casi lo mismo que cuando llevaba la foto. */
 .order-modal-product-bar {
     display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 4px 4px 16px;
-}
-
-.order-modal-product-bar__imgwrap {
-    position: relative;
-    flex-shrink: 0;
-}
-
-.order-modal-product-bar__img {
-    width: 68px;
-    height: 68px;
-    object-fit: cover;
-    border-radius: 10px;
-    border: 1px solid var(--gold-border);
-    display: block;
-}
-
-.order-modal-product-bar__badge {
-    position: absolute;
-    top: -7px;
-    right: -7px;
-    background: var(--gold);
-    color: var(--bg-base, #fff);
-    font-size: 11px;
-    font-weight: 800;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
+    align-items: baseline;
+    gap: 12px;
+    padding: 0 2px 12px;
 }
 
 .order-modal-product-bar__info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
 }
 
 .order-modal-product-bar__name {
+    flex: 1;
+    min-width: 0;
     font-weight: 600;
     font-size: 15px;
     color: var(--cream);
-    margin: 0 0 5px;
+    margin: 0;
     line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .order-modal-product-bar__price {
+    flex-shrink: 0;
     font-weight: 700;
     font-size: 18px;
     color: var(--gold);
@@ -695,6 +674,9 @@ body.modal-open { overflow: hidden; }
 
 /* Miniatura del color en "Tu selección" y en el resumen del pedido */
 .sel-thumb {
+    /* inline-block a propósito: style.css pone `display:block` a toda <img> y la
+       miniatura quedaba sola en una línea con el texto del color debajo. */
+    display: inline-block;
     width: 28px;
     height: 28px;
     object-fit: cover;
@@ -807,4 +789,27 @@ body.form-en-vista .wa-float-btn {
     min-width: 0;
     margin: 0;
     text-align: left;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CANTIDAD POR COLOR — que el "+" no quede cortado
+   La etiqueta "¿Cuántos de ese color?" se llevaba el sitio del selector y
+   este, que tiene overflow:hidden, se encogía hasta dejar el botón "+" a
+   medias (a 390px y hasta a 412px). Ahora el selector no se encoge y la
+   etiqueta cede: se parte en dos líneas y, si ni así le quedan ~110px
+   (pantallas angostas), el selector baja a su propia línea.
+   ══════════════════════════════════════════════════════════════ */
+.color-row__qty-wrap {
+    flex-wrap: wrap;
+}
+
+.color-row__qty-wrap .qty-stepper {
+    flex-shrink: 0;
+    margin: 0 0 0 auto;
+}
+
+.color-row__qty-wrap .color-row__qty-lbl {
+    flex: 1 1 110px;
+    min-width: 0;
+    margin: 0;
 }
