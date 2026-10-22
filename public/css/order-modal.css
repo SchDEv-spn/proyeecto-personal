@@ -795,3 +795,63 @@ body.form-en-vista .wa-float-btn {
     min-width: 0;
     margin: 0;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   FOTO GRANDE DEL PRODUCTO (solo productos con colores)
+   Es el punto de partida de la compra: arriba del bloque de colores, y al
+   elegir un color pasa a ser la foto de ese color. Cuadrada y con el alto
+   reservado por adelantado (el truco del padding, que entienden hasta los
+   WebViews viejos que no conocen aspect-ratio) para que no salte al cargar.
+   ══════════════════════════════════════════════════════════════ */
+.color-foto {
+    position: relative;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto 14px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--gold-border);
+    background: var(--bg-base);
+}
+
+.color-foto::before {
+    content: '';
+    display: block;
+    padding-bottom: 100%;
+}
+
+.color-foto__img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.18s ease;
+}
+
+.color-foto__img.is-cambiando {
+    opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .color-foto__img { transition: none; }
+}
+
+/* "Quiero otro color diferente": un botoncito, no una franja */
+.pedido-section .btn-add-color-row {
+    display: flex;
+    width: fit-content;
+    margin: 10px auto 0;
+    padding: 7px 14px;
+    font-size: 13px;
+    border-radius: 999px;
+}
+
+/* Sin el paso a paso, los contenedores de los botones Siguiente/Atrás quedan
+   VACÍOS pero conservan su margen de 24px: ~50px de aire muerto entre un bloque
+   y el siguiente. La fila del botón de confirmar (--submit) sí se queda. */
+.order-modal-body:not(.js-pasos) .form-step__nav:not(.form-step__nav--submit) {
+    display: none;
+}

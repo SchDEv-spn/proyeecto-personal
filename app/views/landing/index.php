@@ -1888,6 +1888,21 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
                         <?php if ($hasColors): ?>
                         <!-- Con colores: pills visuales -->
+                        <?php /* La foto del producto, grande, es el punto de partida de la
+                                 compra: al elegir un color pasa a ser la de ese color (y vuelve
+                                 a esta si el color no tiene foto). Solo en productos con
+                                 colores. Sin JS se queda la foto del producto, que ya sirve. */
+                        $fotoProducto = !empty($producto['imagen_principal'])
+                            ? $producto['imagen_principal']
+                            : ($heroMediaType === 'imagen' && !empty($heroMediaPath) ? $heroMediaPath : BASE_URL . '/public/img/producto/uso-1.png');
+                        ?>
+                        <figure class="color-foto" id="colorFoto">
+                            <img id="colorFotoImg" class="color-foto__img"
+                                 src="<?= htmlspecialchars($fotoProducto) ?>"
+                                 alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>"
+                                 width="280" height="280" loading="lazy" decoding="async">
+                        </figure>
+
                         <?php /* Sin subtítulo: el título ya pregunta, y debajo venía
                                  además "Elige el color:" — tres veces la misma
                                  instrucción seguida. La pregunta vive en el
@@ -2016,7 +2031,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                 </div>
 
                                 <div class="color-row__qty-wrap" style="display:none;">
-                                    <p class="color-row__qty-lbl">¿Cuántos de ese color?</p>
+                                    <p class="color-row__qty-lbl">Unidades</p>
                                     <div class="qty-stepper qty-stepper--big">
                                         <button type="button" class="qty-btn qty-btn--big" data-action="minus" aria-label="Menos">−</button>
                                         <span class="qty-val-big" aria-live="polite"><?= $_cantSel ?></span>
@@ -2027,12 +2042,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <?php endforeach; ?>
                         </div>
 
+                        <?php /* Sin la franja "Tu selección": la foto grande y la tarjeta marcada ya
+                                 muestran lo elegido, y el resumen final lista cada color. */ ?>
                         <button type="button" id="addColorRowBtn" class="btn-add-color-row" style="display:none;">
                             + Quiero otro color diferente
                         </button>
-                        <div class="color-sel-summary" id="colorSelSummary" style="display:none;">
-                            Tu selección: <strong id="colorSelText"></strong>
-                        </div>
 
                         <?php else: ?>
                         <!-- Sin colores: selector grande de cantidad -->
@@ -2621,33 +2635,47 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 return '';
             }
 
-            function updateColorSummary() {
-                var sumEl = document.getElementById('colorSelSummary');
-                var txtEl = document.getElementById('colorSelText');
-                if (!sumEl || !txtEl || !colorRowsWrap) return;
-                var parts = [];
+            /* Foto grande del producto: la del color elegido, o la del producto si
+               ese color no tiene foto. Con varias filas manda la ultima fila con
+               un color que tenga foto. La nueva se precarga antes de cambiarla
+               para que no parpadee, y si llegan dos cambios seguidos gana el ultimo. */
+            var fotoImg        = document.getElementById('colorFotoImg');
+            var fotoOrig       = fotoImg ? fotoImg.getAttribute('src') : '';
+            var fotoNombre     = fotoImg ? fotoImg.getAttribute('alt') : '';
+            var fotoPendiente  = '';
+
+            function mostrarFoto(url, color) {
+                if (!fotoImg) return;
+                var destino = url || fotoOrig;
+                fotoPendiente = destino;
+                if (fotoImg.getAttribute('src') === destino) {
+                    fotoImg.classList.remove('is-cambiando');
+                    return;
+                }
+                fotoImg.classList.add('is-cambiando');
+                var nueva = new Image();
+                var listo = function () {
+                    if (fotoPendiente !== destino) return;
+                    fotoImg.setAttribute('src', destino);
+                    fotoImg.setAttribute('alt', color ? fotoNombre + ' — ' + color : fotoNombre);
+                    fotoImg.classList.remove('is-cambiando');
+                };
+                nueva.onload = listo;
+                nueva.onerror = listo;
+                nueva.src = destino;
+            }
+
+            function actualizarFotoGrande() {
+                if (!colorRowsWrap) return;
+                var url = '';
+                var color = '';
                 Array.prototype.forEach.call(colorRowsWrap.querySelectorAll('.color-row'), function (row) {
                     var cSel = row.querySelector('.color-item-sel');
-                    var qSel = row.querySelector('.qty-item-sel');
-                    if (cSel && cSel.value) {
-                        parts.push({ texto: cSel.value + ' ×' + ((qSel && qSel.value) || '1'), foto: fotoDeColor(cSel.value) });
-                    }
+                    if (!cSel || !cSel.value) return;
+                    var foto = fotoDeColor(cSel.value);
+                    if (foto) { url = foto; color = cSel.value; }
                 });
-                txtEl.innerHTML = '';
-                parts.forEach(function (p, i) {
-                    if (i) txtEl.appendChild(document.createTextNode(' · '));
-                    if (p.foto) {
-                        var im = document.createElement('img');
-                        im.className = 'sel-thumb';
-                        im.src = p.foto;
-                        im.alt = '';
-                        im.width = 28;
-                        im.height = 28;
-                        txtEl.appendChild(im);
-                    }
-                    txtEl.appendChild(document.createTextNode(p.texto));
-                });
-                sumEl.style.display = parts.length ? 'flex' : 'none';
+                mostrarFoto(url, color);
             }
 
             /* Tope por color: el mismo 5 que aplica el servidor. */
@@ -2695,7 +2723,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     if (qtyWrap) qtyWrap.style.display = '';
                     var addBtn = document.getElementById('addColorRowBtn');
                     if (addBtn) addBtn.style.display = '';
-                    updateColorSummary();
+                    actualizarFotoGrande();
                     recalcular();
                 };
                 row.elegirPill = elegirPill;
@@ -2727,11 +2755,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     };
                     btnMinus.addEventListener('click', function () {
                         var v = parseInt(qSel.value, 10);
-                        if (v > 1) { qSel.value = v - 1; syncQty(); updateColorSummary(); recalcular(); }
+                        if (v > 1) { qSel.value = v - 1; syncQty(); actualizarFotoGrande(); recalcular(); }
                     });
                     btnPlus.addEventListener('click', function () {
                         var v = parseInt(qSel.value, 10);
-                        if (v < MAX_POR_COLOR) { qSel.value = v + 1; syncQty(); updateColorSummary(); recalcular(); }
+                        if (v < MAX_POR_COLOR) { qSel.value = v + 1; syncQty(); actualizarFotoGrande(); recalcular(); }
                     });
                     syncQty();
                 }
@@ -2740,7 +2768,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 if (removeBtn) {
                     removeBtn.addEventListener('click', function () {
                         row.parentNode.removeChild(row);
-                        updateColorSummary();
+                        actualizarFotoGrande();
                         recalcular();
                     });
                 }
@@ -2748,7 +2776,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
             if (colorRowsWrap) {
                 Array.prototype.forEach.call(colorRowsWrap.querySelectorAll('.color-row'), initColorRow);
-                updateColorSummary();
+                actualizarFotoGrande();
 
                 /* El comprador ya eligió color en la galería (clic explícito, no el
                    que sale por defecto): el formulario lo deja marcado en la primera
