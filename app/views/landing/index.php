@@ -1801,19 +1801,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </p>
                 <?php endif; ?>
 
-                <?php /* Nombre y precio del producto, sin foto ni insignia de cantidad:
-                         la foto del producto ya se ve en la tarjeta del color elegido y
-                         arriba en la landing, y la cantidad en el resumen. Ocupaba una
-                         franja entera del encabezado solo para repetirlas. */ ?>
+                <?php /* Solo el nombre del producto, sin foto, insignia de cantidad ni
+                         precio: la foto ya se ve en la tarjeta del color elegido, la
+                         cantidad en el resumen y el precio en "Pagarás al recibirlo" y en
+                         el botón — y ese precio cambiaba con las unidades, así que al
+                         lado del nombre parecía el precio unitario. */ ?>
                 <div class="order-modal-product-bar">
-                    <div class="order-modal-product-bar__info">
-                        <p class="order-modal-product-bar__name" id="orderModalProductName">
-                            <?= htmlspecialchars($producto['nombre'] ?? '') ?>
-                        </p>
-                        <p class="order-modal-product-bar__price" id="modalBarPrice">
-                            $<?= number_format($precio_venta, 0, ',', '.') ?>
-                        </p>
-                    </div>
+                    <p class="order-modal-product-bar__name" id="orderModalProductName">
+                        <?= htmlspecialchars($producto['nombre'] ?? '') ?>
+                    </p>
                 </div>
 
 
@@ -2560,9 +2556,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 if (!texto) return;
 
                 if (floatingAmt) floatingAmt.textContent = texto;
-
-                var barPrice = document.getElementById('modalBarPrice');
-                if (barPrice) barPrice.textContent = texto;
 
                 var submitText = document.getElementById('btnSubmitText');
                 if (!submitText) return;
