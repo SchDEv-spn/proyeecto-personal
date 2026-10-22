@@ -669,10 +669,15 @@
                       }
                       ?>
                       <?php if ($coloresProd): ?>
+                      <?php /* Al escribir el nombre de una variante el navegador sugiere estos mismos
+                               colores: elegir uno de la lista garantiza que coincida. */ ?>
+                      <datalist id="cvColoresProducto">
+                        <?php foreach ($coloresProd as $_cp): ?><option value="<?= htmlspecialchars($_cp) ?>"><?php endforeach; ?>
+                      </datalist>
                       <p style="font-size:0.85rem; color:var(--tx-muted); margin:-6px 0 14px;">
                         <i class="fas fa-link" aria-hidden="true"></i>
                         Colores del producto: <strong><?= htmlspecialchars(implode(' · ', $coloresProd)) ?></strong>.
-                        Escribe el nombre igual para que el formulario de pedido muestre su foto en la tarjeta del color.
+                        Elige el nombre de la lista (o escríbelo igual) para que el formulario de pedido muestre su foto en la tarjeta del color.
                       </p>
                       <?php endif; ?>
                       <?php if ($sinPareja): ?>
@@ -703,6 +708,7 @@
                           <div class="admin-form-group" style="margin-bottom:8px;">
                             <label for="cv<?= $ci ?>_name">Nombre</label>
                             <input type="text" id="cv<?= $ci ?>_name" name="cv<?= $ci ?>_name"
+                              list="cvColoresProducto" autocomplete="off"
                               value="<?= $cvName ?>" placeholder="ej. Rojo, Azul marino…" style="font-size:0.9rem;">
                           </div>
 
@@ -2057,8 +2063,8 @@
                         <label for="form_kicker">Aviso de impulso (con puntico animado)</label>
                         <input type="text" id="form_kicker" name="form_kicker"
                           placeholder="Ej: Último paso · te toma menos de 1 minuto"
-                          value="<?= htmlspecialchars($config['form_kicker'] ?? 'Último paso · te toma menos de 1 minuto') ?>">
-                        <small>Va justo encima del título, con el punto verde que late. Déjalo vacío para ocultarlo.</small>
+                          value="<?= htmlspecialchars($config['form_kicker'] ?? '') ?>">
+                        <small>Va justo encima del título, con el punto verde que late. Viene oculto: escríbelo solo si lo quieres. Vacío = oculto.</small>
                       </div>
                       <div class="admin-form-group admin-form-group--full">
                         <label for="form_title">Título del formulario</label>
@@ -2068,7 +2074,9 @@
                       <div class="admin-form-group admin-form-group--full">
                         <label for="form_subtitle">Subtítulo</label>
                         <input type="text" id="form_subtitle" name="form_subtitle"
-                          value="<?= htmlspecialchars($config['form_subtitle'] ?? 'Sin adelantos · El mensajero llega a tu puerta') ?>">
+                          placeholder="Ej: Sin adelantos · El mensajero llega a tu puerta"
+                          value="<?= htmlspecialchars($config['form_subtitle'] ?? '') ?>">
+                        <small>Va debajo del título. Viene oculto: escríbelo solo si lo quieres. Vacío = oculto.</small>
                       </div>
                     </div>
                   </div>

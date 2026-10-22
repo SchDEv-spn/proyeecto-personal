@@ -245,7 +245,10 @@
 
     function llevarA(el) {
         var foco = esControl(el) ? el : (el.querySelector('.color-pill, select, input, button') || el);
-        var r = foco.getBoundingClientRect();
+        /* Se centra el grupo entero, no su primer control: los radios de la
+           entrega son invisibles (0x0) y medirlos mandaba el scroll a cualquier
+           parte. Un campo suelto sí se mide a sí mismo. */
+        var r = el.getBoundingClientRect();
         var alto = window.innerHeight || document.documentElement.clientHeight || 600;
         var base = window.pageYOffset || document.documentElement.scrollTop || 0;
         var y = Math.max(0, Math.round(r.top + base - alto * 0.3));

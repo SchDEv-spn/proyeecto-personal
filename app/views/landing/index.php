@@ -427,9 +427,23 @@ $showFomo            = (int)($cfg['show_fomo']             ?? 1);
 $showExitPopup       = (int)($cfg['show_exit_popup']       ?? 1);
 
 // ===== FORM HEADER =====
-$formKicker   = $val('form_kicker', 'Último paso · te toma menos de 1 minuto');
+/* Kicker y subtítulo nacen VACÍOS, o sea ocultos: el kicker prometía "te toma
+   menos de 1 minuto" y el subtítulo ("sin adelantos, el mensajero llega a tu
+   puerta") repetía lo que ya dicen el título, el precio y el botón. Como $val()
+   devuelve el default cuando el campo está en blanco, con un default de texto
+   el "déjalo vacío para ocultarlo" del editor nunca funcionaba. Quien los tenga
+   escritos en el editor los sigue viendo; vaciarlos los oculta. */
+$formKicker   = $val('form_kicker', '');
 $formTitle    = $val('form_title', 'Haz tu pedido — Pago al recibir');
-$formSubtitle = $val('form_subtitle', 'Sin adelantos · El mensajero llega a tu puerta');
+$formSubtitle = $val('form_subtitle', '');
+
+/* El editor mostraba esos dos textos por defecto en sus casillas y, al guardar
+   cualquier cosa de la landing, los dejaba escritos en la base como si fueran
+   del dueño: cambiar el default no los quita de las landings ya guardadas. Si
+   siguen siendo EXACTAMENTE el texto de antes, no los eligió nadie: se ocultan.
+   Cualquier texto distinto, o este mismo cambiado a propósito, sigue saliendo. */
+if (trim((string)$formKicker) === 'Último paso · te toma menos de 1 minuto') $formKicker = '';
+if (trim((string)$formSubtitle) === 'Sin adelantos · El mensajero llega a tu puerta') $formSubtitle = '';
 
 // ===== TÍTULOS DE SECCIÓN =====
 /* "Galería" era la única etiqueta de catálogo entre doce títulos que
@@ -1772,6 +1786,29 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </p>
                 <?php endif; ?>
 
+                <?php /* Aquí vivían tres pastillas — Envío GRATIS · Pagas al recibirlo ·
+                         Ahorras $X — y decían exactamente lo mismo que las tres promesas
+                         de dos líneas más abajo y que la fila de confianza del pie del
+                         formulario. En la zona del formulario "pagas al recibir" salía
+                         seis veces y "gratis" tres antes de la primera casilla: media
+                         pantalla de móvil convenciendo a alguien que ya bajó a comprar.
+                         Se quedan las promesas, que son las que hablan del miedo real
+                         ("si no llega, no pagas"). El ahorro sigue en la barra de oferta
+                         y en el resumen final. */ ?>
+
+                <!-- Título (y subtítulo, solo si está escrito en el editor) -->
+                <?php if (!empty($formTitle)): ?>
+                <h2 class="order-modal-form-title"><?= htmlspecialchars($formTitle) ?></h2>
+                <?php endif; ?>
+                <?php if (!empty($formSubtitle)): ?>
+                <p class="order-modal-intro-text">
+                    <?= htmlspecialchars($formSubtitle) ?>
+                </p>
+                <?php endif; ?>
+
+                <?php /* La barra del producto va DESPUÉS del título: arriba del todo el
+                         panel se leía como el resumen de un carrito y el título quedaba
+                         colgando debajo. Es la que cambia de foto al elegir un color. */ ?>
                 <!-- Barra del producto -->
                 <div class="order-modal-product-bar">
                     <div class="order-modal-product-bar__imgwrap">
@@ -1790,23 +1827,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     </div>
                 </div>
 
-                <?php /* Aquí vivían tres pastillas — Envío GRATIS · Pagas al recibirlo ·
-                         Ahorras $X — y decían exactamente lo mismo que las tres promesas
-                         de dos líneas más abajo y que la fila de confianza del pie del
-                         formulario. En la zona del formulario "pagas al recibir" salía
-                         seis veces y "gratis" tres antes de la primera casilla: media
-                         pantalla de móvil convenciendo a alguien que ya bajó a comprar.
-                         Se quedan las promesas, que son las que hablan del miedo real
-                         ("si no llega, no pagas"). El ahorro sigue en la barra de oferta
-                         y en el resumen final. */ ?>
-
-                <!-- Título y subtítulo del formulario -->
-                <?php if (!empty($formTitle)): ?>
-                <h2 class="order-modal-form-title"><?= htmlspecialchars($formTitle) ?></h2>
-                <?php endif; ?>
-                <p class="order-modal-intro-text">
-                    <?= htmlspecialchars($formSubtitle) ?>
-                </p>
 
                 <?php /* Aquí vivían tres promesas fijas — "No pagas nada ahora ·
                          Pagas cuando lo tengas en la mano · Si no llega, no pagas".
@@ -2075,7 +2095,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <div class="form-step__head">
                             <div class="step-emoji" aria-hidden="true"><?= $micoBox ?></div>
                             <h3 class="form-step__title">¿A dónde te lo enviamos?</h3>
-                            <p class="form-step__sub">Envío gratis a todo el país</p>
                         </div>
 
                         <?php
@@ -2140,15 +2159,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <legend class="form-label-lg">¿Cómo quieres recibirlo?</legend>
                             <div class="radio-group--cards radio-group--cards-lg">
                                 <label class="radio-card radio-card--lg">
-                                    <?php /* Domicilio viene marcado por defecto. Antes no habia
-                                             ninguno marcado, pero la direccion SI se veia y SI era
-                                             obligatoria: el comprador la llenaba, daba a confirmar
-                                             y recibia "Selecciona como quieres recibir tu pedido"
-                                             por algo que nunca supo que tenia que tocar. Es ademas
-                                             lo que promete toda la landing: el mensajero llega a
-                                             tu puerta. Recoger en oficina sigue a un toque. */ ?>
+                                    <?php /* Ninguna opción viene marcada. Marcar domicilio de entrada
+                                             sacaba la dirección y las indicaciones al mensajero en
+                                             cuanto se cargaba el formulario, aunque quien reclama en
+                                             oficina (el caso más común) nunca las necesita: se veía
+                                             más largo de lo que es. Ahora la dirección y las
+                                             indicaciones solo salen al elegir domicilio, así que ya no
+                                             existe el viejo callejón "llené la dirección y me pide
+                                             elegir cómo recibirlo": la dirección no aparece antes. */ ?>
                                     <input type="radio" name="tipo_entrega" value="domicilio"
-                                        <?= (empty($old['tipo_entrega']) || $old['tipo_entrega'] === 'domicilio') ? 'checked' : '' ?>>
+                                        <?= (!empty($old['tipo_entrega']) && $old['tipo_entrega'] === 'domicilio') ? 'checked' : '' ?>>
                                     <span class="radio-card__icon"><?= $micoHouse ?></span>
                                     <span class="radio-card__main">Me lo llevan a mi casa</span>
                                     <span class="radio-card__note">Te lo entregan en la puerta</span>
@@ -2210,8 +2230,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <div class="form-step" data-step="3">
                         <div class="form-step__head">
                             <div class="step-emoji" aria-hidden="true"><?= $micoUser ?></div>
+                            <?php /* Sin subtítulo: "te escribimos por WhatsApp para confirmarlo"
+                                     ya está debajo del botón, justo donde se decide. */ ?>
                             <h3 class="form-step__title">¿A nombre de quién va el pedido?</h3>
-                            <p class="form-step__sub">Te escribimos por WhatsApp para confirmarlo</p>
                         </div>
 
                         <?php /* Nombre y apellido en UN campo: una casilla menos que

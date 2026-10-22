@@ -232,22 +232,27 @@ function initTipoEntrega() {
         let tipoSeleccionado = '';
         Array.prototype.forEach.call(radiosEntrega, r => { if (r.checked) tipoSeleccionado = r.value; });
 
-        /* Mientras no haya elegido nada, la direccion se queda visible: es como
-           llega del servidor y es lo que necesita quien no tenga JS. Solo se
-           esconde cuando dice expresamente que recoge en oficina. */
-        const esOficina = tipoSeleccionado === 'oficina';
+        /* La direccion y la nota SOLO salen al elegir domicilio. Sin elegir nada
+           o con oficina quedan escondidas: quien reclama en la oficina de la
+           transportadora no las necesita y el formulario se veia mas largo.
+           El HTML las trae visibles — es lo que necesita quien no tenga JS — y
+           es este codigo quien las esconde: se oculta lo que sobra, nunca se
+           revela lo imprescindible. */
+        const esDomicilio = tipoSeleccionado === 'domicilio';
 
-        grupoDireccion.style.display = esOficina ? 'none' : 'block';
-        if (esOficina) {
-            inputDireccion.removeAttribute('required');
-            inputDireccion.value = '';
-        } else {
+        grupoDireccion.style.display = esDomicilio ? 'block' : 'none';
+        if (esDomicilio) {
             inputDireccion.setAttribute('required', 'required');
+        } else {
+            inputDireccion.removeAttribute('required');
+            /* Solo se vacia si eligio oficina: sin elegir nada, lo escrito (por
+               ejemplo tras un envio rechazado sin JS) se conserva. */
+            if (tipoSeleccionado === 'oficina') inputDireccion.value = '';
         }
 
         /* La nota es para el mensajero: solo tiene sentido con domicilio.
            Quien recoge en oficina no tiene a quien dejarle una indicacion. */
-        if (grupoNota) grupoNota.style.display = esOficina ? 'none' : 'block';
+        if (grupoNota) grupoNota.style.display = esDomicilio ? 'block' : 'none';
     }
 
     Array.prototype.forEach.call(radiosEntrega, r => r.addEventListener('change', actualizarDireccion));

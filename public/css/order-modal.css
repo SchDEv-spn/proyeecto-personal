@@ -772,3 +772,39 @@ body.form-en-vista .wa-float-btn {
 @media (max-width: 360px) {
     .color-pills-wrap--mixto .color-pill:not(.color-pill--foto) { min-height: 52px; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   CABECERA DE BLOQUE EN UNA SOLA LÍNEA
+   El icono iba encima del título y cada bloque gastaba ~100px antes de su
+   primer campo. Con el icono al lado, el bloque arranca ~45px antes y sigue
+   leyéndose igual. En pantallas muy angostas el título se parte en dos
+   líneas junto al icono, no debajo.
+   ══════════════════════════════════════════════════════════════ */
+.pedido-section .form-step__head {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+}
+
+.pedido-section .form-step__head .step-emoji {
+    flex-shrink: 0;
+    margin: 0;
+    transform: none;
+    opacity: 1;
+}
+
+.pedido-section .form-step__head .step-emoji svg {
+    width: 28px;
+    height: 28px;
+}
+
+.pedido-section .form-step__head .form-step__title {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin: 0;
+    text-align: left;
+}
