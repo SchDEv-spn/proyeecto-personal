@@ -5,13 +5,15 @@
  * Cali pidió hace 25 min" de la landing. Nada se inventa: si no hay pedidos
  * recientes, devuelve [] y la landing no muestra nada.
  *
- * Dos fuentes, las dos reales:
+ * Tres fuentes, las tres reales:
  *  - La landing: la tabla `pedidos` (hora = created_at).
  *  - WhatsApp: los pedidos que se registran a mano en Seguimiento. Cada mensaje
  *    de "pedido recibido" (estado nuevo) o "pedido confirmado" que se envía queda
  *    en wa_mensajes_log con su hora; los datos del cliente (producto, municipio)
  *    están en contactos_manuales, que guarda un registro por teléfono y se
  *    sobrescribe con cada seguimiento — por eso la hora sale del log y no de ahí.
+ *  - Dropi: las órdenes importadas desde su exportación a Excel (DropiImport).
+ *    Traen su propia hora de pedido en contactos_manuales.dropi_fecha.
  *
  * Solo se expone el nombre de pila y el municipio: nunca apellidos ni teléfono.
  */
@@ -70,6 +72,28 @@ class FomoPedidos extends Model
                 foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $f) $filas[] = $f;
             } catch (\Throwable $e) {
                 error_log('[FomoPedidos] whatsapp: ' . $e->getMessage());
+            }
+
+            // 3) Órdenes traídas de la exportación de Dropi: llevan la hora real del
+            //    pedido (dropi_fecha), así que no dependen de que se haya enviado un
+            //    mensaje. Si el cliente también está en el log, el filtro de
+            //    repetidos de abajo (mismo nombre y municipio) deja una sola.
+            try {
+                $stmt = $this->db->prepare(
+                    "SELECT nombre, municipio, TIMESTAMPDIFF(SECOND, dropi_fecha, NOW()) AS seg
+                     FROM contactos_manuales
+                     WHERE dropi_fecha IS NOT NULL
+                       AND dropi_fecha >= NOW() - INTERVAL {$horas} HOUR
+                       AND dropi_fecha <= NOW()
+                       AND estado <> 'cancelado'
+                       AND TRIM(producto) = :producto
+                     ORDER BY dropi_fecha DESC
+                     LIMIT {$max}"
+                );
+                $stmt->execute([':producto' => $productoNombre]);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $f) $filas[] = $f;
+            } catch (\Throwable $e) {
+                error_log('[FomoPedidos] dropi: ' . $e->getMessage());
             }
         }
 

@@ -46,9 +46,16 @@ class ContactoManual extends Model
     }
 
     /**
-     * Columnas añadidas después del CREATE original — mismo patrón que
-     * Pedido::asegurarColumnasNuevas(). El ALTER en try/catch traga el 1060
-     * (columna duplicada) si ya existe.
+     * Columnas añadidas después del CREATE original. Se consulta cuáles faltan
+     * con un solo SHOW COLUMNS y solo se hace ALTER de esas: esta clase se
+     * instancia en cada visita a la landing (notificaciones de pedidos
+     * recientes) y un ALTER por columna en cada visita saldría caro. El
+     * try/catch sigue tragando el 1060 (columna duplicada) por si dos
+     * peticiones llegan a la vez.
+     *
+     * Las dropi_* las llena la importación de Dropi (DropiImport): qué orden de
+     * Dropi dio origen al contacto, su estatus tal cual lo escribe Dropi, la
+     * novedad de la transportadora y la hora real en que se hizo el pedido.
      */
     private static bool $columnasListas = false;
     private function asegurarColumnasNuevas(): void
@@ -59,8 +66,23 @@ class ContactoManual extends Model
         $cols = [
             'numero_guia'           => "VARCHAR(50) NOT NULL DEFAULT ''",
             'notificado_oficina_at' => 'TIMESTAMP NULL',
+            'dropi_order_id'        => 'BIGINT UNSIGNED NULL',
+            'dropi_estatus'         => "VARCHAR(60) NOT NULL DEFAULT ''",
+            'dropi_novedad'         => "VARCHAR(255) NOT NULL DEFAULT ''",
+            'dropi_fecha'           => 'DATETIME NULL',
         ];
+
+        try {
+            $existentes = array_column(
+                $this->db->query('SHOW COLUMNS FROM contactos_manuales')->fetchAll(PDO::FETCH_ASSOC),
+                'Field'
+            );
+        } catch (\PDOException $e) {
+            $existentes = [];
+        }
+
         foreach ($cols as $col => $def) {
+            if (in_array($col, $existentes, true)) continue;
             try {
                 $this->db->exec("ALTER TABLE contactos_manuales ADD COLUMN {$col} {$def}");
             } catch (\PDOException $e) {

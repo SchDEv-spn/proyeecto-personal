@@ -171,6 +171,12 @@ $estados = [
         $pageSubtitle = 'Compón mensajes y da seguimiento a los pedidos en oficina';
         $showRangeFilter = false;
         $showSearch      = false;
+        $headerCtas = [[
+            'href'  => BASE_URL . '/AdminPlantillasWa/importarDropi',
+            'label' => 'Importar de Dropi',
+            'class' => 'btn-detail',
+            'icon'  => 'fa-file-import',
+        ]];
         require __DIR__ . '/../partials/_header.php';
         ?>
 
