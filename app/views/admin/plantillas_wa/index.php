@@ -178,6 +178,11 @@ $estados = [
             'label' => 'Importar de Dropi',
             'class' => 'btn-detail',
             'icon'  => 'fa-file-import',
+        ], [
+            'href'  => BASE_URL . '/AdminPlantillasWa/clientesRiesgo',
+            'label' => 'Clientes con devolución' . (!empty($contadores['clientes_riesgo']) ? ' (' . (int)$contadores['clientes_riesgo'] . ')' : ''),
+            'class' => 'btn-detail',
+            'icon'  => 'fa-user-slash',
         ]];
         require __DIR__ . '/../partials/_header.php';
         ?>
@@ -217,7 +222,7 @@ $estados = [
                         <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" class="btn-primary"><i class="fas fa-file-import"></i> Importar de Dropi</a>
                     </div>
                 <?php else: ?>
-                    <p style="font-size:12.5px;margin:0 0 .75rem;color:<?= $desactualizada ? 'var(--warn)' : 'var(--tx-muted)' ?>;">
+                    <p style="font-size:12.5px;margin:0 0 .75rem;color:<?= $desactualizada ? 'var(--gold)' : 'var(--tx-muted)' ?>;">
                         <i class="fas <?= $desactualizada ? 'fa-triangle-exclamation' : 'fa-file-excel' ?>" aria-hidden="true"></i>
                         <?php if ($ui): ?>
                             Última importación: <strong><?= htmlspecialchars($cuando) ?></strong> · <?= (int)$ui['ordenes'] ?> órdenes.

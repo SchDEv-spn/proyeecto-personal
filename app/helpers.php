@@ -271,3 +271,18 @@ function es_entorno_local(): bool
 
     return false;
 }
+
+/**
+ * Etiqueta "⚠ Devolvió 1 vez · $15.000" para un cliente con devoluciones anteriores (ver
+ * DropiOrden::riesgoPorTelefonos). Vacía si no hay nada que avisar. Una devolución sale en
+ * ámbar; los reincidentes y los marcados a mano, en rojo. Ya escapada: lista para imprimir.
+ */
+function riesgo_cliente_chip(?array $riesgo): string
+{
+    if (!$riesgo) return '';
+
+    $color = ($riesgo['nivel'] ?? '') === 'devolvio' ? 'var(--gold)' : 'var(--red)';
+    return '<small class="dt-cell-sub riesgo-cliente" style="display:block;color:' . $color . ';font-weight:700">'
+        . '<i class="fas fa-triangle-exclamation" aria-hidden="true"></i> '
+        . htmlspecialchars(DropiOrden::riesgoEtiqueta($riesgo), ENT_QUOTES, 'UTF-8') . '</small>';
+}

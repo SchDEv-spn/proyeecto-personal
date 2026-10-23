@@ -5612,3 +5612,27 @@ div.dataTables_wrapper,
   .stats-grid.stats-grid--seis { grid-template-columns: repeat(3, 1fr); }
 }
 .stats-grid.stats-grid--seis > .stat-card:nth-child(5) { grid-column: auto; }
+
+/* Clientes con devolución. DataTables alinea a la derecha (e invierte el encabezado) las columnas que
+   reconoce como numéricas; aquí las cifras acompañan a un texto, así que todo va a la izquierda. */
+#tablaClientesRiesgo th,
+#tablaClientesRiesgo td { text-align: left !important; }
+#tablaClientesRiesgo .dt-column-header { flex-direction: row !important; justify-content: flex-start !important; }
+#tablaClientesRiesgo th:last-child,
+#tablaClientesRiesgo td:last-child { white-space: nowrap; min-width: 5.5rem; }
+#tablaClientesRiesgo small.dt-cell-sub { display: block; }
+
+/* Celular: Cliente, Nivel y Ver. Las devoluciones y los fletes se ven al abrir el detalle. */
+@media (max-width: 599px) {
+  #tablaClientesRiesgo { table-layout: fixed; }
+  #tablaClientesRiesgo thead th:nth-child(3),
+  #tablaClientesRiesgo tbody td:nth-child(3) { display: none; }
+  #tablaClientesRiesgo thead th:nth-child(1) { width: 100%; }
+  #tablaClientesRiesgo thead th:nth-child(2) { width: 7.25rem; }
+  #tablaClientesRiesgo thead th:nth-child(6) { width: 4.75rem; }
+  #tablaClientesRiesgo th:last-child,
+  #tablaClientesRiesgo td:last-child { min-width: 0; }
+  #tablaClientesRiesgo thead th,
+  #tablaClientesRiesgo tbody td { padding-left: var(--sp-2); padding-right: var(--sp-2); }
+  #tablaClientesRiesgo tbody td { white-space: normal; overflow-wrap: anywhere; vertical-align: top; }
+}

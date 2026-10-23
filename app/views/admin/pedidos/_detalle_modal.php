@@ -81,6 +81,14 @@ $ubicacionTexto   = trim(($pedido['municipio']??'').', '.($pedido['departamento'
   <!-- BODY -->
   <div class="pedido-modal-scroll">
 
+    <?php $riesgo = $riesgo ?? null; if ($riesgo): ?>
+    <div class="admin-alert-error" role="alert" style="margin:var(--sp-4) var(--sp-5) 0;">
+      <div class="admin-alert-title"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Cliente con devolución anterior</div>
+      <?= htmlspecialchars(DropiOrden::riesgoEtiqueta($riesgo)) ?>.
+      Confírmalo por WhatsApp antes de despachar: si se devuelve, el flete de regreso lo pagas tú.
+    </div>
+    <?php endif; ?>
+
     <!-- ESTADO Y PRODUCTO -->
     <div class="modal-section">
       <p class="modal-section__head">Estado y producto</p>

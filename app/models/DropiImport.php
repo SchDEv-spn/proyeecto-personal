@@ -421,6 +421,12 @@ class DropiImport extends Model
         if ($campos['cantidad'] === null)  unset($campos['cantidad']);
         $campos['estatus_desde'] = $this->estatusDesde($d, $ex, $ahora);
 
+        // Si la orden pasa a devolución ahora, se guarda por qué (una sola vez: no se recalcula mientras siga
+        // devuelta). Se deduce del estado en que estaba y de su novedad, no de lo que diga Dropi después.
+        if ($d['estado'] === 'devolucion' && (!$ex || (string)$ex['estado'] !== 'devolucion')) {
+            $campos['devolucion_causa'] = DropiOrden::devolucionCausa($ex['estado'] ?? null, (string)($ex['novedad_tipo'] ?? ''), trim($d['novedad'] . ' ' . $d['ultimo_mov']));
+        }
+
         if (!$ex) {
             // Avisos que ya se le habían enviado a este teléfono desde la fecha del pedido.
             $avisos = [];

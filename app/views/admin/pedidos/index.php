@@ -287,6 +287,7 @@
                                     <td>
                                         <strong><?= htmlspecialchars(trim(($p['nombre'] ?? '') . ' ' . ($p['apellidos'] ?? ''))) ?></strong>
                                         <br><small class="dt-cell-sub"><?= htmlspecialchars($p['municipio'] ?? '') ?><?= !empty($p['departamento']) ? ', ' . htmlspecialchars($p['departamento']) : '' ?></small>
+                                        <?= riesgo_cliente_chip(($riesgos ?? [])[DropiOrden::sufijo((string)$telRaw)] ?? null) ?>
                                     </td>
 
                                     <td>

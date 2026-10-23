@@ -144,7 +144,17 @@ class AdminPedidosController extends Controller
 
         $plantillasWa = (new PlantillaWa())->keyedByEstado();
 
+        // Clientes con una devolución anterior (ver DropiOrden): se marcan en el listado para
+        // confirmarlos por WhatsApp antes de despachar. Si falla la consulta, el listado sale igual.
+        $riesgos = [];
+        try {
+            $riesgos = (new DropiOrden(false))->riesgoPorTelefonos(array_column($pedidos, 'telefono'));
+        } catch (\Throwable $e) {
+            error_log('[AdminPedidos] riesgo de clientes: ' . $e->getMessage());
+        }
+
         $this->view('admin/pedidos/index', [
+            'riesgos'          => $riesgos,
             'pedidos'          => $pedidos,
             'total_pedidos'    => $totalPedidos,
             'total_utilidad'   => $totalUtilidad,
@@ -413,6 +423,14 @@ class AdminPedidosController extends Controller
             exit;
         }
 
+        $riesgo = null;
+        try {
+            $tel = (string)($pedido['telefono'] ?? '');
+            $riesgo = (new DropiOrden(false))->riesgoPorTelefonos([$tel])[DropiOrden::sufijo($tel)] ?? null;
+        } catch (\Throwable $e) {
+            error_log('[AdminPedidos] riesgo de cliente: ' . $e->getMessage());
+        }
+
         if (isset($_GET['partial']) && $_GET['partial'] == '1') {
             require __DIR__ . '/../views/admin/pedidos/_detalle_modal.php';
             return;
@@ -420,6 +438,7 @@ class AdminPedidosController extends Controller
 
         $this->view('admin/pedidos/detalle', [
             'pedido' => $pedido,
+            'riesgo' => $riesgo,
         ]);
     }
 

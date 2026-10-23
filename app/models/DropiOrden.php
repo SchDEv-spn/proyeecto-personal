@@ -42,6 +42,18 @@ class DropiOrden extends Model
      */
     private const DIAS_HABILES_PLAZO = 4;
 
+    /** Por qué se devolvió un pedido, tal como se muestra. */
+    public const CAUSAS_DEVOLUCION = [
+        'no_recogio'    => 'No recogió en la oficina',
+        'pago'          => 'No tenía el dinero',
+        'direccion'     => 'No se encontró la dirección',
+        'contacto'      => 'No contestó',
+        'coordinar'     => 'No coordinó la entrega',
+        'recoger'       => 'No fue a la bodega',
+        'rechazo'       => 'Rechazó el pedido',
+        'indeterminada' => 'Causa sin determinar',
+    ];
+
     /** Tipos de novedad y cómo se llaman en pantalla. */
     public const NOVEDAD_ETIQUETAS = [
         'direccion' => 'Dirección',
@@ -58,10 +70,15 @@ class DropiOrden extends Model
 
     private static bool $listo = false;
 
-    public function __construct()
+    /**
+     * @param bool $crearTablas  false en rutas que no deben tocar el esquema (el pedido de la
+     *        landing solo consulta el riesgo del cliente: si las tablas no existen todavía,
+     *        las consultas lo toleran y devuelven vacío).
+     */
+    public function __construct(bool $crearTablas = true)
     {
         parent::__construct();
-        $this->crearTablas();
+        if ($crearTablas) $this->crearTablas();
     }
 
     private function crearTablas(): void
@@ -91,6 +108,9 @@ class DropiOrden extends Model
                 novedad               VARCHAR(255) NOT NULL DEFAULT '',
                 novedad_tipo          VARCHAR(20)  NOT NULL DEFAULT '',
                 motivo_cancelacion    VARCHAR(255) NOT NULL DEFAULT '',
+                devolucion_causa      VARCHAR(20)  NOT NULL DEFAULT '',
+                devolucion_exenta     TINYINT(1)   NOT NULL DEFAULT 0,
+                devolucion_nota       VARCHAR(255) NOT NULL DEFAULT '',
                 producto              VARCHAR(190) NOT NULL DEFAULT '',
                 cantidad              INT NOT NULL DEFAULT 1,
                 valor                 DECIMAL(12,2) NOT NULL DEFAULT 0,
@@ -141,6 +161,18 @@ class DropiOrden extends Model
         ");
 
         $this->db->exec("
+            CREATE TABLE IF NOT EXISTS clientes_riesgo (
+                id        INT AUTO_INCREMENT PRIMARY KEY,
+                sufijo    CHAR(8)      NOT NULL,
+                telefono  VARCHAR(20)  NOT NULL DEFAULT '',
+                nombre    VARCHAR(150) NOT NULL DEFAULT '',
+                nota      VARCHAR(255) NOT NULL DEFAULT '',
+                creado_en DATETIME     NOT NULL,
+                UNIQUE KEY uq_sufijo (sufijo)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        ");
+
+        $this->db->exec("
             CREATE TABLE IF NOT EXISTS dropi_importaciones (
                 id           INT AUTO_INCREMENT PRIMARY KEY,
                 creado_en    DATETIME NOT NULL,
@@ -167,6 +199,9 @@ class DropiOrden extends Model
             'novedad_tipo'     => "VARCHAR(20) NOT NULL DEFAULT '' AFTER novedad",
             'aviso_reparto_at' => 'DATETIME NULL AFTER aviso_enviado_at',
             'aviso_novedad_at' => 'DATETIME NULL AFTER aviso_reparto_at',
+            'devolucion_causa'  => "VARCHAR(20) NOT NULL DEFAULT ''",
+            'devolucion_exenta' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'devolucion_nota'   => "VARCHAR(255) NOT NULL DEFAULT ''",
         ];
 
         try {
@@ -283,6 +318,184 @@ class DropiOrden extends Model
         $meses = [1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio', 7 => 'julio',
                   8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre'];
         return 'el ' . $dias[(int)date('N', $limite)] . ' ' . (int)date('j', $limite) . ' de ' . $meses[(int)date('n', $limite)];
+    }
+
+    /* ─────────────────────────────  Clientes con devolución  ───────────────────────────── */
+
+    /**
+     * Por qué se devolvió un pedido, deducido en el momento en que pasa a "devolución":
+     * si estaba en la oficina es que no lo recogió; si tenía una novedad abierta, esa
+     * es la causa (no tenía el dinero, la dirección no existía…); y si no, lo que diga
+     * el texto de Dropi. Sin pistas queda "indeterminada" (el dueño puede decidir si
+     * fue culpa del cliente con "no fue culpa del cliente").
+     */
+    public static function devolucionCausa(?string $estadoAnterior, string $novedadTipoAnterior, string $texto = ''): string
+    {
+        if ($estadoAnterior === 'en_oficina') return 'no_recogio';
+
+        if (preg_match('/\b(no reclam|no recog|no retir|sin reclamar|sin recoger)/', self::textoPlano($texto))) return 'no_recogio';
+
+        $utiles = ['pago', 'direccion', 'contacto', 'coordinar', 'recoger', 'rechazo'];
+        if (in_array($novedadTipoAnterior, $utiles, true)) return $novedadTipoAnterior;
+
+        $tipo = $texto !== '' ? self::novedadTipo($texto) : '';
+        return in_array($tipo, $utiles, true) ? $tipo : 'indeterminada';
+    }
+
+    /** Últimos 8 dígitos de un teléfono: con eso se reconoce al mismo cliente aunque lo hayan escrito con +57, espacios o 0 inicial. */
+    public static function sufijo(string $telefono): string
+    {
+        return substr((string)preg_replace('/\D+/', '', $telefono), -8);
+    }
+
+    /**
+     * Qué se sabe de la reputación de estos teléfonos: devoluciones que SÍ fueron culpa
+     * del cliente (las que el dueño no marcó como exentas), lo que costaron en fletes
+     * de regreso y si alguien lo marcó a mano. Solo devuelve a quien tiene algo.
+     *
+     * @param  string[] $telefonos
+     * @return array<string, array{devoluciones: int, costo: float, ultima: ?string, causa: string, manual: bool, nota: string, nivel: string}>
+     *         indexado por los últimos 8 dígitos. nivel: devolvio (1 vez), reincidente (2 o más) o marcado (a mano).
+     */
+    public function riesgoPorTelefonos(array $telefonos): array
+    {
+        $sufijos = [];
+        foreach ($telefonos as $t) {
+            $s = self::sufijo((string)$t);
+            if (strlen($s) >= 7) $sufijos[$s] = true;
+        }
+        if (!$sufijos) return [];
+
+        $out = [];
+        foreach (array_chunk(array_keys($sufijos), 500) as $lote) {
+            $in = implode(',', array_fill(0, count($lote), '?'));
+
+            // Una consulta que falla porque la tabla aún no existe es normal: no hay nada que mostrar.
+            try {
+                $stmt = $this->db->prepare("
+                    SELECT RIGHT(telefono, 8) AS suf, COUNT(*) AS n, COALESCE(SUM(flete_devolucion), 0) AS costo,
+                           MAX(estatus_desde) AS ultima,
+                           SUBSTRING_INDEX(GROUP_CONCAT(devolucion_causa ORDER BY estatus_desde DESC SEPARATOR ','), ',', 1) AS causa
+                    FROM dropi_ordenes
+                    WHERE estado = 'devolucion' AND devolucion_exenta = 0 AND RIGHT(telefono, 8) IN ({$in})
+                    GROUP BY RIGHT(telefono, 8)
+                ");
+                $stmt->execute($lote);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $out[$r['suf']] = ['devoluciones' => (int)$r['n'], 'costo' => (float)$r['costo'], 'ultima' => $r['ultima'],
+                                       'causa' => (string)$r['causa'], 'manual' => false, 'nota' => ''];
+                }
+            } catch (\PDOException $e) {
+                if ($e->getCode() !== '42S02') error_log('[DropiOrden] riesgo: ' . $e->getMessage());
+            }
+
+            try {
+                $stmt = $this->db->prepare("SELECT sufijo, nota FROM clientes_riesgo WHERE sufijo IN ({$in})");
+                $stmt->execute($lote);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $out[$r['sufijo']] = ($out[$r['sufijo']] ?? ['devoluciones' => 0, 'costo' => 0.0, 'ultima' => null, 'causa' => '']) + ['manual' => true, 'nota' => ''];
+                    $out[$r['sufijo']]['manual'] = true;
+                    $out[$r['sufijo']]['nota']   = (string)$r['nota'];
+                }
+            } catch (\PDOException $e) {
+                if ($e->getCode() !== '42S02') error_log('[DropiOrden] riesgo manual: ' . $e->getMessage());
+            }
+        }
+
+        foreach ($out as &$r) {
+            $r['nivel'] = $r['manual'] ? 'marcado' : ($r['devoluciones'] >= 2 ? 'reincidente' : 'devolvio');
+        }
+        unset($r);
+        return $out;
+    }
+
+    /** "Devolvió 1 vez · $15.000", "Reincidente: 2 devoluciones · $30.000", "Marcado a mano: nota". */
+    public static function riesgoEtiqueta(array $r): string
+    {
+        $costo = ($r['costo'] ?? 0) > 0 ? ' · $' . number_format((float)$r['costo'], 0, ',', '.') : '';
+        $n = (int)($r['devoluciones'] ?? 0);
+        $nota = trim((string)($r['nota'] ?? ''));
+
+        if (!empty($r['manual']) && $n === 0) return 'Marcado a mano' . ($nota !== '' ? ': ' . $nota : '');
+
+        $texto = $n === 1 ? 'Devolvió 1 vez' : "Reincidente: {$n} devoluciones";
+        return (!empty($r['manual']) ? 'Marcado a mano · ' : '') . $texto . $costo;
+    }
+
+    /**
+     * Todos los clientes con alguna devolución (con o sin culpa) y los marcados a mano, para
+     * la pantalla "Clientes con devolución", con el detalle de cada devolución.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function clientesRiesgo(): array
+    {
+        $clientes = [];
+
+        $q = $this->db->query("
+            SELECT id, dropi_id, telefono, nombre, apellidos, municipio, producto, fecha_pedido, estatus_desde,
+                   flete_devolucion, valor, devolucion_causa, devolucion_exenta, devolucion_nota
+            FROM dropi_ordenes WHERE estado = 'devolucion' ORDER BY estatus_desde DESC, id DESC
+        ");
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $o) {
+            $s = self::sufijo((string)$o['telefono']);
+            // Las filas vienen de la devolución más reciente a la más vieja: la primera da el nombre y el teléfono.
+            $clientes[$s] ??= ['sufijo' => $s, 'telefono' => $o['telefono'], 'nombre' => trim($o['nombre'] . ' ' . $o['apellidos']),
+                               'municipio' => $o['municipio'], 'ordenes' => [], 'manual' => null];
+            $clientes[$s]['ordenes'][] = $o;
+        }
+
+        foreach ($this->db->query('SELECT id, sufijo, telefono, nombre, nota, creado_en FROM clientes_riesgo')->fetchAll(PDO::FETCH_ASSOC) as $m) {
+            $clientes[$m['sufijo']] ??= ['sufijo' => $m['sufijo'], 'telefono' => $m['telefono'], 'nombre' => $m['nombre'],
+                                         'municipio' => '', 'ordenes' => [], 'manual' => null];
+            $clientes[$m['sufijo']]['manual'] = $m;
+            if ($clientes[$m['sufijo']]['nombre'] === '') $clientes[$m['sufijo']]['nombre'] = $m['nombre'];
+        }
+
+        foreach ($clientes as &$c) {
+            $culpa = array_filter($c['ordenes'], static fn($o) => !(int)$o['devolucion_exenta']);
+            $c['total']   = count($c['ordenes']);
+            $c['culpa']   = count($culpa);
+            $c['costo']   = (float)array_sum(array_column($culpa, 'flete_devolucion'));
+            $c['ultima']  = $c['ordenes'] ? $c['ordenes'][0]['estatus_desde'] : null;
+            $c['causas']  = array_values(array_unique(array_filter(array_column($culpa, 'devolucion_causa'))));
+            $c['nivel']   = $c['manual'] ? 'marcado' : ($c['culpa'] >= 2 ? 'reincidente' : ($c['culpa'] === 1 ? 'devolvio' : 'perdonado'));
+        }
+        unset($c);
+
+        $peso = ['marcado' => 0, 'reincidente' => 0, 'devolvio' => 1, 'perdonado' => 2];
+        usort($clientes, static fn($a, $b) => [$peso[$a['nivel']], -(int)strtotime((string)$a['ultima'])] <=> [$peso[$b['nivel']], -(int)strtotime((string)$b['ultima'])]);
+        return array_values($clientes);
+    }
+
+    /** El dueño decide si una devolución fue culpa del cliente (exenta = no lo fue) y deja una nota. */
+    public function marcarDevolucion(int $ordenId, bool $exenta, string $nota = ''): bool
+    {
+        $stmt = $this->db->prepare("SELECT 1 FROM dropi_ordenes WHERE id = :id AND estado = 'devolucion'");
+        $stmt->execute([':id' => $ordenId]);
+        if (!$stmt->fetchColumn()) return false;
+
+        return $this->db->prepare('UPDATE dropi_ordenes SET devolucion_exenta = :e, devolucion_nota = :n WHERE id = :id')
+            ->execute([':e' => $exenta ? 1 : 0, ':n' => mb_substr(trim($nota), 0, 255), ':id' => $ordenId]);
+    }
+
+    /** Marca a mano a un cliente (alguien que rechazó en la puerta, que insultó…), sin necesidad de una devolución. */
+    public function agregarClienteRiesgo(string $telefono, string $nombre, string $nota): bool
+    {
+        $digitos = (string)preg_replace('/\D+/', '', $telefono);
+        if (preg_match('/^(?:00)?57(3\d{9})$/', $digitos, $m)) $digitos = $m[1];
+        if (strlen($digitos) < 7) return false;
+
+        return $this->db->prepare("
+            INSERT INTO clientes_riesgo (sufijo, telefono, nombre, nota, creado_en)
+            VALUES (:s, :t, :n, :nota, NOW())
+            ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), nota = VALUES(nota)
+        ")->execute([':s' => self::sufijo($digitos), ':t' => $digitos, ':n' => mb_substr(trim($nombre), 0, 150), ':nota' => mb_substr(trim($nota), 0, 255)]);
+    }
+
+    public function quitarClienteRiesgo(int $id): bool
+    {
+        return $this->db->prepare('DELETE FROM clientes_riesgo WHERE id = :id')->execute([':id' => $id]);
     }
 
     /* ─────────────────────────────  Novedades de la transportadora  ───────────────────────────── */
@@ -415,9 +628,22 @@ class DropiOrden extends Model
             'entregados'         => (int)$r['entregados'],
             'devoluciones'       => (int)$r['devoluciones'],
             'costo_devoluciones' => (float)$r['costo_devoluciones'],
+            'clientes_riesgo'    => $this->contarClientesRiesgo(),
             'todas'              => (int)$r['todas'],
             'primera_orden'      => $r['primera_orden'],
         ];
+    }
+
+    /** Clientes distintos con una devolución que sí fue culpa suya, más los marcados a mano. */
+    private function contarClientesRiesgo(): int
+    {
+        return (int)$this->db->query("
+            SELECT COUNT(*) FROM (
+                SELECT RIGHT(telefono, 8) AS s FROM dropi_ordenes WHERE estado = 'devolucion' AND devolucion_exenta = 0
+                UNION
+                SELECT sufijo FROM clientes_riesgo
+            ) t
+        ")->fetchColumn();
     }
 
     /**
@@ -499,7 +725,11 @@ class DropiOrden extends Model
                 $lineas[(int)$l['orden_id']][] = $l;
             }
         }
-        foreach ($filas as &$o) $o['lineas'] = $lineas[(int)$o['id']] ?? [];
+        $riesgos = $this->riesgoPorTelefonos(array_column($filas, 'telefono'));
+        foreach ($filas as &$o) {
+            $o['lineas'] = $lineas[(int)$o['id']] ?? [];
+            $o['riesgo'] = $riesgos[self::sufijo((string)$o['telefono'])] ?? null;
+        }
         unset($o);
 
         return ['total' => $total, 'filtrado' => $filtrado, 'filas' => $filas];

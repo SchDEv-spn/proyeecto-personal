@@ -121,6 +121,65 @@ class AdminPlantillasWaController extends Controller
         exit;
     }
 
+    /* ───────────────  Clientes con devolución  ───────────────
+     *
+     * Quien devuelve un pedido le cuesta el flete de regreso al dueño. Cada devolución
+     * que fue culpa del cliente lo deja marcado (una vez: "devolvió antes"; dos o más:
+     * "reincidente"); el dueño puede decir que una devolución no fue culpa del cliente
+     * y también marcar a mano a alguien. La marca se muestra en Seguimiento, en esta
+     * pantalla y en los pedidos nuevos de la landing (listado, detalle y Telegram).
+     */
+
+    public function clientesRiesgo()
+    {
+        $this->requireLogin();
+        $this->view('admin/plantillas_wa/clientes_riesgo', ['clientes' => (new DropiOrden())->clientesRiesgo()]);
+    }
+
+    public function marcarDevolucion()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        $this->soloPost();
+
+        $ok = (new DropiOrden())->marcarDevolucion((int)($_POST['orden_id'] ?? 0), !empty($_POST['exenta']), (string)($_POST['nota'] ?? ''));
+        $this->responderJson($ok ? ['ok' => true] : ['ok' => false, 'error' => 'No encontré esa devolución.']);
+    }
+
+    public function agregarClienteRiesgo()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        $this->soloPost();
+
+        $ok = (new DropiOrden())->agregarClienteRiesgo((string)($_POST['telefono'] ?? ''), (string)($_POST['nombre'] ?? ''), (string)($_POST['nota'] ?? ''));
+        $this->responderJson($ok ? ['ok' => true] : ['ok' => false, 'error' => 'Escribe un teléfono válido.']);
+    }
+
+    public function quitarClienteRiesgo()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        $this->soloPost();
+
+        (new DropiOrden())->quitarClienteRiesgo((int)($_POST['id'] ?? 0));
+        $this->responderJson(['ok' => true]);
+    }
+
+    private function soloPost(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->responderJson(['ok' => false, 'error' => 'Método no permitido']);
+        }
+    }
+
+    private function responderJson(array $datos): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($datos, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     /**
      * Celdas (HTML ya escapado) y datos del compositor de una orden de la tabla.
      *
@@ -173,7 +232,7 @@ class AdminPlantillasWaController extends Controller
             $dAviso = (int)floor((strtotime(date('Y-m-d')) - strtotime(substr($ultimoAviso[0], 0, 10))) / 86400);
             $avisoHtml = '<small class="seg-sub">' . $e($ultimoAviso[1]) . ' ' . $dias($dAviso) . '</small>';
         } elseif ($estado === 'en_oficina') {
-            $avisoHtml = '<small class="seg-sub" style="color:var(--err);font-weight:700">Sin aviso</small>';
+            $avisoHtml = '<small class="seg-sub" style="color:var(--red);font-weight:700">Sin aviso</small>';
         } else {
             $avisoHtml = '';
         }
@@ -185,7 +244,7 @@ class AdminPlantillasWaController extends Controller
 
         $estadoHtml = '<span class="status-tag status-' . (['otro' => 'contactado', 'devolucion' => 'cancelado'][$estado] ?? $e($estado)) . '">' . $e($etiquetas[$estado] ?? $estado) . '</span>'
             . '<small class="seg-sub">Dropi: ' . $e($o['estatus'] !== '' ? $o['estatus'] : '—') . '</small>'
-            . ($o['novedad'] !== '' ? '<small class="seg-sub" style="color:var(--warn);font-weight:700">Novedad'
+            . ($o['novedad'] !== '' ? '<small class="seg-sub" style="color:var(--gold);font-weight:700">Novedad'
                 . (isset(DropiOrden::NOVEDAD_ETIQUETAS[$o['novedad_tipo']]) ? ' · ' . $e(DropiOrden::NOVEDAD_ETIQUETAS[$o['novedad_tipo']]) : '')
                 . ': ' . $e($o['novedad']) . '</small>' : '');
 
@@ -194,7 +253,7 @@ class AdminPlantillasWaController extends Controller
         $lugar = $e($o['municipio']) . ($o['departamento'] !== '' ? ' <small class="seg-sub">' . $e($o['departamento']) . '</small>' : '')
             . ($o['guia'] !== '' ? '<small class="seg-sub">Guía ' . $e($o['guia']) . '</small>' : '')
             . ($estado === 'devolucion' && (float)$o['flete_devolucion'] > 0
-                ? '<small class="seg-sub" style="color:var(--err);font-weight:700">Flete de devolución $' . number_format((float)$o['flete_devolucion'], 0, ',', '.') . '</small>' : '');
+                ? '<small class="seg-sub" style="color:var(--red);font-weight:700">Flete de devolución $' . number_format((float)$o['flete_devolucion'], 0, ',', '.') . '</small>' : '');
 
         // Botón: el mensaje que toca, o "Mensaje" para abrir el compositor con cualquier plantilla.
         if ($siguiente) {
@@ -205,6 +264,7 @@ class AdminPlantillasWaController extends Controller
         }
 
         $clienteHtml = '<strong>' . $e($nombre !== '' ? $nombre : 'Sin nombre') . '</strong><small class="seg-sub">' . $e($o['telefono']) . '</small>'
+            . riesgo_cliente_chip($o['riesgo'] ?? null)
             . '<span class="seg-m"><small class="seg-sub">' . $e($o['producto']) . ' · ' . $e($o['municipio']) . '</small>'
             . $estadoHtml . '<small class="seg-sub"><b>' . $e($tiempo) . '</b></small>' . $avisoHtml . $insignias . '</span>';
 

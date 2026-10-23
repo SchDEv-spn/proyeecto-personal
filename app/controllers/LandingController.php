@@ -785,17 +785,36 @@ class LandingController extends Controller
         }
     }
 
-    private function notificarTelegram(array $d): void
+    /**
+     * Aviso para Telegram si este teléfono ya tuvo una devolución que fue culpa del cliente
+     * (ver DropiOrden::riesgoPorTelefonos), o '' si no hay nada que avisar. Si el flete de
+     * regreso lo paga el dueño, enterarse al llegar el pedido —y no cuando ya se despachó—
+     * es lo que permite confirmarlo antes. Nunca debe romper ni retrasar el pedido: no crea
+     * tablas, y cualquier error se registra y se ignora.
+     *
+     * Telegram usa Markdown: de lo que viene de los datos se quitan los signos que lo rompen.
+     */
+    private function alertaRiesgoCliente(string $telefono): string
     {
-        $settings = new AppSettings();
-        $token  = trim((string)$settings->get('telegram_bot_token', '')) ?: trim((string)getenv('TELEGRAM_BOT_TOKEN'));
-        $chatId = trim((string)$settings->get('telegram_chat_id',  '')) ?: trim((string)getenv('TELEGRAM_CHAT_ID'));
+        try {
+            $riesgo = (new DropiOrden(false))->riesgoPorTelefonos([$telefono])[DropiOrden::sufijo($telefono)] ?? null;
+            if (!$riesgo) return '';
 
-        if (!$token || !$chatId) {
-            error_log('[Telegram] Token o chat_id no configurados (panel ni .env)');
-            return;
+            $detalle = str_replace(['*', '_', '`', '[', ']'], '', DropiOrden::riesgoEtiqueta($riesgo));
+            return "⚠️ *Cliente con devolución anterior:* {$detalle}. Confírmalo por WhatsApp antes de despachar.";
+        } catch (\Throwable $e) {
+            error_log('[Telegram] riesgo del cliente: ' . $e->getMessage());
+            return '';
         }
+    }
 
+    /**
+     * Texto del aviso de Telegram de un pedido nuevo (Markdown), con la alerta del cliente con
+     * devolución anterior bajo el título si la hay. Aparte de notificarTelegram() para poder
+     * probarlo sin enviar nada.
+     */
+    private function textoTelegram(array $d): string
+    {
         $entrega = $d['tipo_entrega'] === 'domicilio'
             ? "Domicilio: " . ($d['direccion'] ?: '—')
             : "Recoge en oficina";
@@ -819,7 +838,28 @@ class LandingController extends Controller
         if (!empty($d['nota_entrega'])) {
             $lineas[] = "📝 Nota: " . $d['nota_entrega'];
         }
+
+        // Bajo el título, para que se vea antes que nada: así se confirma por WhatsApp antes de despachar.
+        $alerta = $this->alertaRiesgoCliente((string)$d['telefono']);
+        if ($alerta !== '') array_splice($lineas, 2, 0, [$alerta, ""]);
+
         $texto = implode("\n", $lineas);
+
+        return $texto;
+    }
+
+    private function notificarTelegram(array $d): void
+    {
+        $settings = new AppSettings();
+        $token  = trim((string)$settings->get('telegram_bot_token', '')) ?: trim((string)getenv('TELEGRAM_BOT_TOKEN'));
+        $chatId = trim((string)$settings->get('telegram_chat_id',  '')) ?: trim((string)getenv('TELEGRAM_CHAT_ID'));
+
+        if (!$token || !$chatId) {
+            error_log('[Telegram] Token o chat_id no configurados (panel ni .env)');
+            return;
+        }
+
+        $texto = $this->textoTelegram($d);
 
         $url  = "https://api.telegram.org/bot{$token}/sendMessage";
         $body = json_encode(['chat_id' => $chatId, 'text' => $texto, 'parse_mode' => 'Markdown']);
