@@ -855,3 +855,20 @@ body.form-en-vista .wa-float-btn {
 .order-modal-body:not(.js-pasos) .form-step__nav:not(.form-step__nav--submit) {
     display: none;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   BOTÓN "CONFIRMAR MI PEDIDO" EN UNA LÍNEA
+   Ahora el texto es solo "Confirmar mi pedido", pero con el tamaño, el
+   espaciado entre letras y el relleno lateral de antes (pensados para una
+   frase larga que se partía) seguía rompiéndose en "CONFIRMAR MI / PEDIDO".
+   Un poco menos de relleno y de espaciado, y el tamaño sigue al ancho de la
+   pantalla: cabe en una línea desde ~360px. Por debajo de eso, si hay que
+   partirlo, que lo haga a la mitad y no dejando una palabra sola.
+   ══════════════════════════════════════════════════════════════ */
+.pedido-section .btn-submit-final {
+    padding-left: 14px;
+    padding-right: 14px;
+    letter-spacing: 0.02em;
+    font-size: clamp(15px, 4.4vw, 17px);
+    text-wrap: balance;
+}

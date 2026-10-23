@@ -2334,7 +2334,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         <div class="form-step__nav form-step__nav--submit">
                             <button type="button" class="btn-step-prev" data-prev="2">← Atrás</button>
                             <button type="submit" id="btnSubmit" class="btn-submit-final">
-                                <span id="btnSubmitText"><?= $micoCheck ?> Confirmar mi pedido — pago $<?= number_format($precio_venta, 0, ',', '.') ?> al recibirlo</span>
+                                <?php /* Solo "Confirmar mi pedido": antes llevaba además "— pago $X al recibirlo" y el precio
+         se reescribía con cada cambio de unidades. El total ya está en "Pagarás al
+         recibirlo" y en el resumen justo encima del botón. */ ?>
+                                <span id="btnSubmitText"><?= $micoCheck ?> Confirmar mi pedido</span>
                                 <span id="btnSubmitSpinner" style="display:none;">Enviando tu pedido...</span>
                             </button>
                         </div>
@@ -2557,7 +2560,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
 
             var progressFill   = document.getElementById('modalProgressFill');
             var floatingTotal  = document.getElementById('modalFloatingTotal');
-            var floatingAmt    = document.getElementById('modalFloatingTotalAmt');
             var PROGRESS_MAP   = { 1: '10%', 2: '48%', 3: '82%' };
 
             function updateIndicator(n) {
@@ -2573,37 +2575,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 if (progressFill) progressFill.style.width = PROGRESS_MAP[n] || '10%';
                 if (floatingTotal) floatingTotal.classList.toggle('is-hidden', n === 3);
             }
-
-            /* El precio lo calcula pricing-summary.js y lo anuncia con
-               'landing:precio' ya formateado. Aqui solo se reparte a los
-               sitios que lo muestran. Antes esto leia el textContent del
-               resumen dentro de un setTimeout, confiando en que el otro
-               script hubiera escrito primero. */
-            function repartirTotal(texto) {
-                if (!texto) return;
-
-                if (floatingAmt) floatingAmt.textContent = texto;
-
-                var submitText = document.getElementById('btnSubmitText');
-                if (!submitText) return;
-
-                /* El span lleva un SVG delante del texto: se cambian solo los
-                   nodos de texto para no perder el icono. */
-                var svgEl = submitText.querySelector('svg');
-                var frase = ' Confirmar mi pedido — pago ' + texto + ' al recibirlo';
-                if (svgEl) {
-                    Array.prototype.slice.call(submitText.childNodes).forEach(function (n) {
-                        if (n.nodeType === 3) n.parentNode.removeChild(n);
-                    });
-                    submitText.appendChild(document.createTextNode(frase));
-                } else {
-                    submitText.textContent = '✓' + frase;
-                }
-            }
-
-            document.addEventListener('landing:precio', function (e) {
-                repartirTotal(e.detail && e.detail.texto);
-            });
 
             function recalcular() {
                 document.dispatchEvent(new Event('landing:recalc'));

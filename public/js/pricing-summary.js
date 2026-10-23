@@ -8,9 +8,9 @@
    llevaba signo menos solo en uno, y cada uno formateaba la moneda a su
    manera. Ganaba el que corriera de ultimo. Ahora manda solo este.
 
-   Cubre: el resumen de compra, la tira de precio del paso 2 y el total
-   flotante. Todo se recalcula con el evento
-   'landing:recalc', que es lo que disparan los pasos del formulario.
+   Cubre: el resumen de compra y la tira de precio del paso 2. Todo se
+   recalcula con el evento 'landing:recalc', que es lo que disparan los
+   pasos del formulario.
 
    Sin sintaxis ES2020 (?. y ??) a proposito: no hay build, el archivo se
    sirve tal cual, y en un WebView viejo — el navegador de Facebook, de donde
@@ -208,12 +208,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (totalUnitsEl) totalUnitsEl.textContent = String(units);
     if (totalHidden) totalHidden.value = String(units);
-
-    /* El total flotante, la barra del producto y el texto del boton de
-       confirmar leen de aqui. Se avisa despues de escribir, no antes. */
-    document.dispatchEvent(new CustomEvent('landing:precio', {
-      detail: { units: units, total: totalPay, texto: formatCOP(totalPay) }
-    }));
   }
 
   // Exponer para que otros scripts lo llamen si quieren
