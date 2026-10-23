@@ -81,7 +81,7 @@
                 <?php endforeach; ?>
             </div>
 
-            <details class="wa-aparte" style="margin:var(--sp-4) 0;">
+            <details style="margin:var(--sp-4) 0;">
                 <summary class="btn-detail" style="cursor:pointer;"><i class="fas fa-plus" aria-hidden="true"></i> Marcar a un cliente a mano</summary>
                 <div class="panel" style="margin-top:var(--sp-3);">
                     <div class="panel__body">

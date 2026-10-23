@@ -202,38 +202,6 @@ class Pedido extends Model
         return $row ?: null;
     }
 
-    /**
-     * Busca pedidos cuyo teléfono coincida con los últimos 8 dígitos del
-     * número buscado — estable sin importar si el guardado tiene o no el
-     * indicativo 57 o un 0 inicial. Se usa desde el compositor de mensajes
-     * de AdminPlantillasWa para traer los datos del pedido antes de armar
-     * el WhatsApp.
-     */
-    public function buscarPorTelefono(string $telefonoInput, int $limit = 15): array
-    {
-        $digits = preg_replace('/\D+/', '', $telefonoInput);
-        if (strlen($digits) < 7) return [];
-
-        $sufijo = substr($digits, -8);
-        $telefonoLimpioSql = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.telefono,' ',''),'-',''),'+',''),'(',''),')','')";
-
-        $sql = "SELECT
-                    p.*,
-                    pr.nombre AS producto_nombre
-                FROM pedidos p
-                INNER JOIN productos pr ON p.producto_id = pr.id
-                WHERE {$telefonoLimpioSql} LIKE :sufijo
-                ORDER BY p.created_at DESC
-                LIMIT :limite";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':sufijo', '%' . $sufijo, PDO::PARAM_STR);
-        $stmt->bindValue(':limite', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
     public function actualizarEstado($id, $estado): bool
     {
         $sql = "UPDATE pedidos SET estado = :estado WHERE id = :id";
@@ -245,8 +213,7 @@ class Pedido extends Model
     }
 
     /**
-     * Se llama al enviar un WhatsApp desde el picker (Pedidos o "usar este
-     * pedido" en el compositor). Si la pestaña usada es un estado real del
+     * Se llama al enviar un WhatsApp desde el picker de Pedidos. Si la pestaña usada es un estado real del
      * pipeline, el pedido pasa a ese estado — ya no hace falta cambiarlo
      * aparte. "recordatorio_oficina" no es un estado real, así que no
      * toca el estado del pedido, solo puede traer una guía nueva.
@@ -277,26 +244,6 @@ class Pedido extends Model
 
         $sql = 'UPDATE pedidos SET ' . implode(', ', $sets) . ' WHERE id = :id';
         return $this->db->prepare($sql)->execute($params);
-    }
-
-    /**
-     * Pedidos en oficina a los que ya se les avisó, con los días corridos
-     * desde ese aviso — para saber a quién le toca el recordatorio antes de
-     * que Interrapidísimo devuelva el paquete.
-     */
-    public function obtenerEnOficinaEsperando(): array
-    {
-        $sql = "SELECT
-                    p.*,
-                    pr.nombre AS producto_nombre,
-                    DATEDIFF(NOW(), p.notificado_oficina_at) AS dias_esperando
-                FROM pedidos p
-                INNER JOIN productos pr ON p.producto_id = pr.id
-                WHERE p.estado = 'en_oficina'
-                  AND p.notificado_oficina_at IS NOT NULL
-                ORDER BY p.notificado_oficina_at ASC";
-
-        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function actualizarTelefono(int $id, string $telefono): bool
