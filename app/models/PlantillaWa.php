@@ -30,8 +30,15 @@ class PlantillaWa extends Model
      *   argumento de que el envío ya lo pagamos nosotros. Se envía cuando
      *   el recordatorio no funcionó y todavía quedan días para recogerlo
      *   (no es un estado del pipeline, igual que recordatorio_oficina).
+     *   2026-10-23: con las órdenes de Dropi ya se sabe desde cuándo está el paquete en
+     *   la oficina. en_oficina/recordatorio_oficina/ultimo_aviso_oficina dan una FECHA
+     *   límite ({plazo}) en vez de "pronto"; enviado dice según el tipo de entrega qué
+     *   esperar ({aviso_llegada}: no ir antes a la oficina / estar pendiente del teléfono);
+     *   y dos mensajes nuevos: en_reparto ("hoy te lo llevan": tener el efectivo listo) y
+     *   novedad (según el tipo de novedad de la transportadora pide confirmar la dirección,
+     *   decir cuándo estará, etc.: {novedad_motivo}/{novedad_peticion}).
      */
-    private const TEMPLATES_VERSION = '2026-09-21';
+    private const TEMPLATES_VERSION = '2026-10-23';
 
     public function __construct()
     {
@@ -132,11 +139,15 @@ class PlantillaWa extends Model
             ],
             'enviado' => [
                 'Pedido despachado',
-                "¡Buenas noticias {nombre}! 📦\nTu pedido de *{producto}* ya fue despachado hacia {municipio}.\n\n*Transportadora:* {transportadora}\n*Número de guía:* #{guia}\n*Seguimiento:* {rastreo}\n\nRecuerda que pagas *contraentrega*: ten listo *{precio}* en efectivo cuando {momento_pago}, así evitamos demoras.\n\nBendiciones 🙏\n\n✅ Cuando llegue, ¡nos encantaría ver una foto con tu pedido!",
+                "¡Buenas noticias {nombre}! 📦\nTu pedido de *{producto}* ya fue despachado hacia {municipio}.\n\n*Transportadora:* {transportadora}\n*Número de guía:* #{guia}\n*Seguimiento:* {rastreo}\n\n{aviso_llegada}\n\nRecuerda que pagas *contraentrega*: ten listo *{precio}* en efectivo cuando {momento_pago}, así evitamos demoras.\n\nBendiciones 🙏\n\n✅ Cuando llegue, ¡nos encantaría ver una foto con tu pedido!",
+            ],
+            'en_reparto' => [
+                'Hoy te lo llevan',
+                "¡Hola {nombre}! 📦\nHoy van a llevar tu pedido de *{producto}*. Estate pendiente del teléfono: el mensajero te va a llamar.\n\nTen listo *{precio}* en efectivo, el valor exacto si puedes. Si no hay quien reciba o no tienes el dinero en ese momento, el paquete se devuelve y la entrega se demora.\n\nCualquier cosa, escríbenos. 🙏",
             ],
             'en_oficina' => [
                 'Listo para recoger',
-                "¡Hola {nombre}! 📦\nTu pedido de *{producto}* ya llegó a la oficina de *Interrapidísimo* en {municipio}.\n\nPuedes pasar a recogerlo presentando:\n*Número de guía:* #{guia}\nO tu número de cédula\n\nTe recomendamos pasar cuanto antes para evitar que se genere una devolución automática.\n\nRecuerda que pagas *{precio}* contraentrega directo en la oficina, sin cobros adicionales.\n\n¡Te esperamos! Bendiciones 🙏",
+                "¡Hola {nombre}! 📦\nTu pedido de *{producto}* ya llegó a la oficina de *Interrapidísimo* en {municipio}. {plazo}\n\nLleva:\n*Número de guía:* #{guia} (o tu cédula)\n*{precio}* en efectivo: pagas ahí mismo, sin cobros adicionales.\n\n¡Te esperamos! Bendiciones 🙏",
             ],
             'entregado' => [
                 '¿Cómo llegó todo?',
@@ -148,11 +159,15 @@ class PlantillaWa extends Model
             ],
             'recordatorio_oficina' => [
                 'Recordatorio de recogida',
-                "¡Hola {nombre}! 📦\nTu pedido de *{producto}* sigue esperando en la oficina de *Interrapidísimo* en {municipio}.\n\n*Importante:* si no lo recoges pronto, la transportadora lo devuelve automáticamente a los *5 días hábiles* y perderías tu compra.\n\nPara recogerlo solo necesitas:\n*Número de guía:* #{guia}\nO tu número de cédula\n\nRecuerda que pagas *{precio}* contraentrega, sin cobros adicionales. ¡Te esperamos! 🙏",
+                "¡Hola {nombre}! 📦\nTu pedido de *{producto}* sigue esperando en la oficina de *Interrapidísimo* en {municipio}. {plazo}\n\n*Importante:* si no lo recoges, la transportadora lo devuelve y perderías tu compra.\n\nLleva:\n*Número de guía:* #{guia} (o tu cédula)\n*{precio}* en efectivo, sin cobros adicionales.\n\n¡Te esperamos! 🙏",
             ],
             'ultimo_aviso_oficina' => [
                 'Última oportunidad',
-                "¡Hola {nombre}! 😊\nTu pedido de *{producto}* sigue en la oficina de *Interrapidísimo* en {municipio}, y estamos por perderlo — quedan muy pocos días antes de que lo devuelvan automáticamente.\n\nNos daría tristeza que pasara: nosotros ya pagamos tu envío, y si se devuelve, ese costo se nos descuenta a nosotros, no a ti. 📦\n\nTodavía estás a tiempo de recogerlo:\n*Número de guía:* #{guia}\nO tu número de cédula\n\nSi necesitas ayuda para pasar hoy, escríbenos. 🙏",
+                "¡Hola {nombre}! 😊\nTu pedido de *{producto}* sigue en la oficina de *Interrapidísimo* en {municipio} y estamos por perderlo. {plazo}\n\nNos daría tristeza que pasara: nosotros ya pagamos tu envío y, si se devuelve, ese costo nos lo cobran a nosotros, no a ti. 📦\n\nTodavía estás a tiempo:\n*Número de guía:* #{guia} (o tu cédula)\n\nSi necesitas ayuda para pasar hoy, escríbenos. 🙏",
+            ],
+            'novedad' => [
+                'Novedad con la entrega',
+                "Hola {nombre} 😊\nTe escribimos por tu pedido de *{producto}*. {novedad_motivo}\n\n{novedad_peticion}\n\nEstamos atentos para que te llegue pronto. 🙏",
             ],
         ];
     }
@@ -176,7 +191,7 @@ class PlantillaWa extends Model
 
     public function todas(): array
     {
-        $order = "'nuevo','contactado','confirmado','enviado','en_oficina','recordatorio_oficina','ultimo_aviso_oficina','entregado','cancelado'";
+        $order = "'nuevo','contactado','confirmado','enviado','en_reparto','en_oficina','recordatorio_oficina','ultimo_aviso_oficina','novedad','entregado','cancelado'";
         return $this->db->query(
             "SELECT * FROM plantillas_wa ORDER BY FIELD(estado, {$order})"
         )->fetchAll(PDO::FETCH_ASSOC);

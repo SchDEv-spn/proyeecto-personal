@@ -152,9 +152,11 @@ $estados = [
     'contactado'           => 'Contactado',
     'confirmado'           => 'Confirmado',
     'enviado'              => 'Enviado',
+    'en_reparto'           => 'Hoy llega',
     'en_oficina'           => 'En oficina',
     'recordatorio_oficina' => 'Recordatorio de recogida',
     'ultimo_aviso_oficina' => 'Última oportunidad',
+    'novedad'              => 'Novedad con la entrega',
     'entregado'            => 'Entregado',
     'cancelado'            => 'Cancelado',
 ];
@@ -200,6 +202,7 @@ $estados = [
                 ['novedad',    'Con novedad',         'fa-triangle-exclamation', 'glow-purple', 'La transportadora reportó algo'],
                 ['en_camino',  'En camino',           'fa-truck',                'glow-blue',   'En preparación o despachados'],
                 ['entregados', 'Entregados',          'fa-circle-check',         'glow-green',  'En tu historial'],
+                ['devoluciones', 'Devoluciones',      'fa-rotate-left',          'glow-red',    null],
             ];
             ?>
 
@@ -226,7 +229,7 @@ $estados = [
                         <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" style="font-weight:700;">Importar ahora →</a>
                     </p>
 
-                    <div class="stats-grid stats-grid--compacta" id="segTarjetas">
+                    <div class="stats-grid stats-grid--compacta stats-grid--seis" id="segTarjetas">
                         <?php foreach ($tarjetas as [$vistaT, $titulo, $icono, $glow, $nota]): ?>
                             <div class="stat-card <?= $glow ?>" role="button" tabindex="0" data-vista="<?= $vistaT ?>">
                                 <div class="stat-info">
@@ -234,6 +237,8 @@ $estados = [
                                     <h2 data-c="<?= $vistaT ?>"><?= (int)($c[$vistaT] ?? 0) ?></h2>
                                     <?php if ($vistaT === 'esperando'): ?>
                                         <span class="target"><b data-c="piden_recordatorio"><?= (int)($c['piden_recordatorio'] ?? 0) ?></b> piden recordatorio</span>
+                                    <?php elseif ($vistaT === 'devoluciones'): ?>
+                                        <span class="target"><b data-c="costo_devoluciones" data-fmt="pesos">$<?= number_format((float)($c['costo_devoluciones'] ?? 0), 0, ',', '.') ?></b> en fletes de regreso</span>
                                     <?php else: ?>
                                         <span class="target"><?= $nota ?></span>
                                     <?php endif; ?>
@@ -417,6 +422,8 @@ $estados = [
                         <div style="font-size:12.5px;line-height:2;color:var(--tx-secondary);">
                             <span class="plantilla-estado-badge p-badge-nuevo" style="font-size:10px;">Nuevo</span> Recibimos tu pedido<br>
                             <span class="plantilla-estado-badge p-badge-enviado" style="font-size:10px;">Enviado</span> Guía + link Envia<br>
+                            <span class="plantilla-estado-badge p-badge-enviado" style="font-size:10px;">Hoy llega</span> Cuando va en reparto: ten el efectivo listo<br>
+                            <span class="plantilla-estado-badge p-badge-recordatorio_oficina" style="font-size:10px;">Novedad</span> Según la causa: dirección, contacto, coordinar…<br>
                             <span class="plantilla-estado-badge p-badge-entregado" style="font-size:10px;">Entregado</span> ¿Cómo llegó? + foto
                         </div>
                     </div>
@@ -425,7 +432,7 @@ $estados = [
                         <div style="font-size:12.5px;line-height:2;color:var(--tx-secondary);">
                             <span class="plantilla-estado-badge p-badge-nuevo" style="font-size:10px;">Nuevo</span> Recibimos tu pedido<br>
                             <span class="plantilla-estado-badge p-badge-enviado" style="font-size:10px;">Enviado</span> Despachado con guía<br>
-                            <span class="plantilla-estado-badge p-badge-en_oficina" style="font-size:10px;">En oficina</span> Listo para recoger<br>
+                            <span class="plantilla-estado-badge p-badge-en_oficina" style="font-size:10px;">En oficina</span> Listo para recoger, con fecha límite<br>
                             <span class="plantilla-estado-badge p-badge-recordatorio_oficina" style="font-size:10px;">Recordatorio</span> Antes de que se devuelva (5 días hábiles)<br>
                             <span class="plantilla-estado-badge p-badge-ultimo_aviso_oficina" style="font-size:10px;">Última oportunidad</span> Si el recordatorio no funcionó<br>
                             <span class="plantilla-estado-badge p-badge-entregado" style="font-size:10px;">Entregado</span> ¿Cómo llegó? + foto
@@ -909,7 +916,8 @@ $estados = [
     const pintarContadores = (c) => {
         if (!c) return;
         document.querySelectorAll('#segTarjetas [data-c]').forEach(el => {
-            if (c[el.dataset.c] !== undefined) el.textContent = c[el.dataset.c];
+            if (c[el.dataset.c] === undefined) return;
+            el.textContent = el.dataset.fmt === 'pesos' ? '$' + Number(c[el.dataset.c]).toLocaleString('es-CO') : c[el.dataset.c];
         });
     };
 
@@ -940,6 +948,7 @@ $estados = [
             info:         '_TOTAL_ órdenes',
             infoEmpty:    'Sin órdenes',
             infoFiltered: '(de _MAX_ en esta lista)',
+            infoCallback: (settings, start, end, max, total, pre) => pre.replace(/^1 órdenes/, '1 orden'),
             zeroRecords:  'No hay órdenes que coincidan.',
             emptyTable:   'No hay órdenes en esta lista.',
             paginate:     { first: '«', last: '»', next: '›', previous: '‹' },

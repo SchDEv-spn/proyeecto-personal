@@ -47,6 +47,7 @@ class DropiImport extends Model
         'en_oficina' => 'En oficina',
         'entregado'  => 'Entregado',
         'cancelado'  => 'Cancelado',
+        'devolucion' => 'Devolución',
         'otro'       => 'Sin clasificar',
     ];
 
@@ -363,7 +364,18 @@ class DropiImport extends Model
 
         $transportadora = clave_color($o['transportadora']);
         $tipo = $transportadora === '' ? '' : (strpos($transportadora, 'interrapid') !== false ? 'oficina' : 'domicilio');
-        $estado = self::ESTADOS[clave_color($o['estatus'])] ?? 'otro';
+        // Devolución: cualquier estatus de Dropi con esa raíz ("DEVOLUCION", "EN DEVOLUCION", "DEVUELTO"…).
+        // Esas sí le cobran el flete de regreso al dueño, así que se guardan como estado propio.
+        $claveEstatus = clave_color($o['estatus']);
+        $estado = self::ESTADOS[$claveEstatus] ?? (preg_match('/devol|devuelt/', $claveEstatus) ? 'devolucion' : 'otro');
+
+        // Novedad: la que reporta Dropi y, si no hay, el último movimiento cuando cuenta algo del cliente
+        // (no tenía el dinero, no contestó, la dirección no existe). Lo demás del movimiento
+        // (obstrucción en la vía, tránsito…) no es algo que el cliente pueda resolver.
+        $novedad = $o['novedad'];
+        if ($novedad === '' && $estado === 'enviado' && in_array(DropiOrden::novedadTipo($o['ultimo_mov']), ['pago', 'contacto', 'direccion'], true)) {
+            $novedad = mb_substr($o['ultimo_mov'], 0, 255);
+        }
 
         return [
             'nombre'             => $nombre,
@@ -379,7 +391,8 @@ class DropiImport extends Model
             'estado'             => $estado,
             'ultimo_mov'         => $o['ultimo_mov'],
             'ultimo_mov_at'      => $o['ultimo_mov_at'],
-            'novedad'            => $o['novedad'],
+            'novedad'            => $novedad,
+            'novedad_tipo'       => $novedad !== '' ? DropiOrden::novedadTipo($novedad) : '',
             'motivo_cancelacion' => $o['cancelacion'],
             'producto'           => $nombres ? mb_substr(implode(' + ', array_keys($nombres)), 0, 190) : null,
             'cantidad'           => $o['cantidad'],
@@ -412,8 +425,7 @@ class DropiImport extends Model
             // Avisos que ya se le habían enviado a este teléfono desde la fecha del pedido.
             $avisos = [];
             $porEstado = $previos[$this->sufijo($o['telefono'])] ?? [];
-            foreach (['enviado' => 'aviso_enviado_at', 'en_oficina' => 'aviso_oficina_at', 'recordatorio_oficina' => 'aviso_recordatorio_at',
-                      'ultimo_aviso_oficina' => 'aviso_ultimo_at', 'entregado' => 'aviso_entregado_at'] as $mensaje => $col) {
+            foreach (DropiOrden::COLUMNA_AVISO as $mensaje => $col) {
                 $cuando = $porEstado[$mensaje] ?? null;
                 if ($cuando !== null && ($o['fecha'] === null || $cuando >= $o['fecha'])) $avisos[$col] = $cuando;
             }
@@ -435,7 +447,10 @@ class DropiImport extends Model
             $cambios[] = 'Movimiento: ' . mb_substr($d['ultimo_mov'], 0, 40);
         }
         if ($d['guia'] !== '' && $d['guia'] !== (string)$ex['guia']) $cambios[] = $ex['guia'] === '' ? 'Guía' : 'Guía nueva';
-        if ($d['novedad'] !== (string)$ex['novedad']) $cambios[] = $d['novedad'] !== '' ? 'Novedad' : 'Novedad resuelta';
+        if ($d['novedad'] !== (string)$ex['novedad']) {
+            $cambios[] = $d['novedad'] !== '' ? 'Novedad' : 'Novedad resuelta';
+            $campos['aviso_novedad_at'] = null; // la novedad cambió: el aviso anterior ya no corresponde
+        }
         if ($this->difiere($d, $ex, ['nombre', 'apellidos', 'telefono', 'municipio', 'departamento', 'producto', 'cantidad', 'tipo_entrega'])) $cambios[] = 'Datos del cliente';
         if ($this->difiere($d, $ex, ['valor', 'costo_proveedor', 'flete', 'flete_devolucion', 'comision', 'ganancia'])) $cambios[] = 'Valores';
 

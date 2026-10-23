@@ -14,20 +14,44 @@
 class DropiOrden extends Model
 {
     /** Vistas de Seguimiento. */
-    public const VISTAS = ['por_avisar', 'esperando', 'novedad', 'en_camino', 'entregados', 'todas'];
+    public const VISTAS = ['por_avisar', 'esperando', 'novedad', 'en_camino', 'entregados', 'devoluciones', 'todas'];
 
     /** Mensaje (plantilla de Seguimiento) → columna donde se anota que ya se envió. */
-    private const COLUMNA_AVISO = [
+    public const COLUMNA_AVISO = [
         'enviado'              => 'aviso_enviado_at',
+        'en_reparto'           => 'aviso_reparto_at',
         'en_oficina'           => 'aviso_oficina_at',
         'recordatorio_oficina' => 'aviso_recordatorio_at',
         'ultimo_aviso_oficina' => 'aviso_ultimo_at',
+        'novedad'              => 'aviso_novedad_at',
         'entregado'            => 'aviso_entregado_at',
     ];
+
+    /** Estados en los que la orden ya no tiene entrega pendiente: una novedad ahí no se atiende. */
+    private const ESTADOS_CERRADOS = ['entregado', 'cancelado', 'devolucion'];
 
     /** Días en oficina desde los que toca cada recordatorio. */
     public const DIAS_RECORDATORIO = 2;
     public const DIAS_ULTIMO_AVISO = 4;
+
+    /**
+     * Interrapidísimo devuelve el paquete a los 5 días hábiles de que llega a la
+     * oficina. La fecha que se le da al cliente es 4 días hábiles después de la llegada:
+     * un día de margen, porque la llegada que registra Dropi puede estar corrida hasta
+     * un día. No se cuentan festivos (así el plazo, si algo, se queda corto y no largo).
+     */
+    private const DIAS_HABILES_PLAZO = 4;
+
+    /** Tipos de novedad y cómo se llaman en pantalla. */
+    public const NOVEDAD_ETIQUETAS = [
+        'direccion' => 'Dirección',
+        'contacto'  => 'Sin contacto',
+        'coordinar' => 'Coordinar entrega',
+        'pago'      => 'Pago',
+        'recoger'   => 'Recoger en bodega',
+        'rechazo'   => 'Rechazo',
+        'otra'      => 'Otra',
+    ];
 
     /** Una orden que no aparece en las últimas importaciones se da por "sin actualizar". */
     private const DIAS_SIN_ACTUALIZAR = 3;
@@ -65,6 +89,7 @@ class DropiOrden extends Model
                 ultimo_mov            VARCHAR(120) NOT NULL DEFAULT '',
                 ultimo_mov_at         DATETIME NULL,
                 novedad               VARCHAR(255) NOT NULL DEFAULT '',
+                novedad_tipo          VARCHAR(20)  NOT NULL DEFAULT '',
                 motivo_cancelacion    VARCHAR(255) NOT NULL DEFAULT '',
                 producto              VARCHAR(190) NOT NULL DEFAULT '',
                 cantidad              INT NOT NULL DEFAULT 1,
@@ -75,6 +100,8 @@ class DropiOrden extends Model
                 comision              DECIMAL(12,2) NOT NULL DEFAULT 0,
                 ganancia              DECIMAL(12,2) NULL,
                 aviso_enviado_at      DATETIME NULL,
+                aviso_reparto_at      DATETIME NULL,
+                aviso_novedad_at      DATETIME NULL,
                 aviso_oficina_at      DATETIME NULL,
                 aviso_recordatorio_at DATETIME NULL,
                 aviso_ultimo_at       DATETIME NULL,
@@ -125,6 +152,37 @@ class DropiOrden extends Model
                 sin_cambios  INT NOT NULL DEFAULT 0
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
+
+        $this->agregarColumnasNuevas();
+    }
+
+    /**
+     * Columnas que se añadieron después de crear la tabla por primera vez (en una
+     * instalación que ya la tiene, CREATE TABLE IF NOT EXISTS no las agrega). Un solo
+     * SHOW COLUMNS y ALTER solo de las que faltan, como ContactoManual.
+     */
+    private function agregarColumnasNuevas(): void
+    {
+        $nuevas = [
+            'novedad_tipo'     => "VARCHAR(20) NOT NULL DEFAULT '' AFTER novedad",
+            'aviso_reparto_at' => 'DATETIME NULL AFTER aviso_enviado_at',
+            'aviso_novedad_at' => 'DATETIME NULL AFTER aviso_reparto_at',
+        ];
+
+        try {
+            $existentes = array_column($this->db->query('SHOW COLUMNS FROM dropi_ordenes')->fetchAll(PDO::FETCH_ASSOC), 'Field');
+        } catch (\PDOException $e) {
+            return;
+        }
+
+        foreach ($nuevas as $col => $def) {
+            if (in_array($col, $existentes, true)) continue;
+            try {
+                $this->db->exec("ALTER TABLE dropi_ordenes ADD COLUMN {$col} {$def}");
+            } catch (\PDOException $e) {
+                // 1060 = la columna ya existe (otra petición la acaba de añadir).
+            }
+        }
     }
 
     /* ───────────────────────────  Qué mensaje toca enviar  ─────────────────────────── */
@@ -134,10 +192,16 @@ class DropiOrden extends Model
      * Necesita: estado, dias_estado (días en ese estado; en oficina, días en la
      * oficina) y las marcas aviso_*_at. Pura: no consulta nada.
      *
+     * Una novedad abierta (la transportadora reportó un problema) pasa por delante de
+     * todo: es lo que hace que el paquete se devuelva. Se vuelve a pedir si la novedad
+     * cambia (el importador borra aviso_novedad_at cuando cambia su texto).
+     *
      * Oficina: primero "ya llegó"; luego el recordatorio a partir de los 2 días y la
      * última oportunidad a partir de los 4 — contados desde que llegó, no desde que se
      * avisó (Interrapidísimo devuelve a los 5 días hábiles de la llegada) y nunca el
      * mismo día que el aviso anterior.
+     *
+     * En camino: si va en reparto y no se le ha dicho que hoy llega, eso; si no, la guía.
      *
      * @return array{estado: string, etiqueta: string, urgente: bool}|null
      */
@@ -147,6 +211,10 @@ class DropiOrden extends Model
         $dias = (int)($o['dias_estado'] ?? 0);
         $hay  = static fn($k) => !empty($o[$k]);
         $antesDeHoy = static fn($ts) => !empty($ts) && substr((string)$ts, 0, 10) < $hoy;
+
+        if (trim((string)($o['novedad'] ?? '')) !== '' && !in_array($o['estado'] ?? '', self::ESTADOS_CERRADOS, true) && !$hay('aviso_novedad_at')) {
+            return ['estado' => 'novedad', 'etiqueta' => 'Escribir por la novedad', 'urgente' => true];
+        }
 
         switch ($o['estado'] ?? '') {
             case 'en_oficina':
@@ -164,6 +232,9 @@ class DropiOrden extends Model
                 return null;
 
             case 'enviado':
+                if (clave_color((string)($o['estatus'] ?? '')) === 'enreparto' && !$hay('aviso_reparto_at')) {
+                    return ['estado' => 'en_reparto', 'etiqueta' => 'Avisar que llega hoy', 'urgente' => true];
+                }
                 return $hay('aviso_enviado_at') ? null
                     : ['estado' => 'enviado', 'etiqueta' => 'Enviar la guía', 'urgente' => false];
 
@@ -179,8 +250,113 @@ class DropiOrden extends Model
     /** Plantilla que se abre por defecto cuando no hay un aviso pendiente. */
     public static function plantillaPorDefecto(string $estado): string
     {
+        // Una devolución abre "En espera de confirmación": sirve para retomar la venta si el cliente la quiere.
         return ['en_oficina' => 'en_oficina', 'enviado' => 'enviado', 'entregado' => 'entregado',
-                'confirmado' => 'confirmado', 'cancelado' => 'cancelado'][$estado] ?? 'nuevo';
+                'confirmado' => 'confirmado', 'cancelado' => 'cancelado', 'devolucion' => 'contactado'][$estado] ?? 'nuevo';
+    }
+
+    /**
+     * Hasta cuándo puede recoger el cliente su pedido en la oficina, dicho como se lo
+     * diría una persona: "hoy", "mañana" o "el jueves 29 de octubre". Vacío si no se
+     * sabe desde cuándo está ahí.
+     *
+     * @param string|null $desde  cuándo llegó a la oficina (fecha de DropiOrden.estatus_desde)
+     */
+    public static function fechaLimite(?string $desde, ?string $hoy = null): string
+    {
+        if (empty($desde)) return '';
+
+        $hoyTs = strtotime(($hoy ?? date('Y-m-d')) . ' 00:00:00');
+        $limite = strtotime(substr($desde, 0, 10) . ' 00:00:00');
+        if ($limite === false || $hoyTs === false) return '';
+
+        for ($habiles = 0; $habiles < self::DIAS_HABILES_PLAZO;) {
+            $limite = strtotime('+1 day', $limite);
+            if ((int)date('N', $limite) < 6) $habiles++;   // lunes a viernes
+        }
+
+        $faltan = (int)round(($limite - $hoyTs) / 86400);
+        if ($faltan <= 0) return 'hoy';   // ya vencido o vence hoy: que corra
+        if ($faltan === 1) return 'mañana';
+
+        $dias  = [1 => 'lunes', 2 => 'martes', 3 => 'miércoles', 4 => 'jueves', 5 => 'viernes', 6 => 'sábado', 7 => 'domingo'];
+        $meses = [1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio', 7 => 'julio',
+                  8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre'];
+        return 'el ' . $dias[(int)date('N', $limite)] . ' ' . (int)date('j', $limite) . ' de ' . $meses[(int)date('n', $limite)];
+    }
+
+    /* ─────────────────────────────  Novedades de la transportadora  ───────────────────────────── */
+
+    /**
+     * Qué tipo de problema es una novedad, por el texto de la transportadora ("DIRECCION
+     * DESTINATARIO NO EXISTE", "COORDINAR LA ENTREGA"…). Con eso el mensaje al cliente
+     * pide lo que de verdad hace falta (confirmar la dirección, decir cuándo estará…).
+     * El orden importa: lo del dinero y la dirección se reconoce antes que lo demás.
+     *
+     * @return string  una clave de NOVEDAD_ETIQUETAS, o '' si el texto está vacío
+     */
+    public static function novedadTipo(string $texto): string
+    {
+        $t = self::textoPlano($texto);
+        if ($t === '') return '';
+
+        $reglas = [
+            'pago'      => '/\b(plata|dinero|efectivo|sin fondos|no tenia para|no alcanz)/',
+            'contacto'  => '/\b(ausente|no contesta|no responde|no atiende|sin contacto|telefono|cerrad|nadie (atiende|recibe)|(cliente|destinatario) no (se encuentra|se encontraba|esta))/',
+            'direccion' => '/\b(direcc|ubicar|ubicacion|no existe|incomplet|errad|nomenclatura|sin referencia|zona rural|dificil acceso)/',
+            'recoger'   => '/\b(bodega|receptoria|recoger|reclamar|oficina)/',
+            'coordinar' => '/\b(coordin|reprogram|agend|cita)/',
+            'rechazo'   => '/\b(rechaz|no quiere|no desea|no acept|desiste|cancel)/',
+        ];
+        foreach ($reglas as $tipo => $patron) {
+            if (preg_match($patron, $t)) return $tipo;
+        }
+        return 'otra';
+    }
+
+    /** Minúsculas, sin tildes y con los signos convertidos en espacios: "DIRECCIÓN NO-EXISTE." → "direccion no existe". */
+    private static function textoPlano(string $s): string
+    {
+        $s = mb_strtolower(trim($s), 'UTF-8');
+        $s = strtr($s, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n']);
+        return trim((string)preg_replace('/[^a-z0-9]+/', ' ', $s));
+    }
+
+    /**
+     * Las dos frases que arman el mensaje de novedad según el tipo: qué pasó y qué le
+     * pedimos al cliente. No se supone cómo son las direcciones de la gente: se pide
+     * "dirección completa y una referencia para llegar", sin ejemplos urbanos.
+     *
+     * @return array{motivo: string, peticion: string}
+     */
+    public static function novedadTextos(string $tipo, string $municipio = '', string $precio = ''): array
+    {
+        $cobro = $precio !== '' ? " Recuerda que pagas *{$precio}* en efectivo." : '';
+        $aqui  = $municipio !== '' ? " en {$municipio}" : '';
+
+        switch ($tipo) {
+            case 'direccion':
+                return ['motivo' => 'La transportadora no logró ubicar la dirección de entrega.',
+                        'peticion' => '¿Nos confirmas tu dirección completa y alguna referencia para llegar hasta ti? Con eso reprogramamos la entrega.'];
+            case 'contacto':
+                return ['motivo' => 'La transportadora intentó entregarlo y no pudo comunicarse contigo.',
+                        'peticion' => '¿Nos dices en qué horario estás disponible y si este es el mejor número para llamarte?'];
+            case 'coordinar':
+                return ['motivo' => 'La transportadora necesita coordinar contigo la entrega.',
+                        'peticion' => '¿Qué día y a qué hora te queda bien recibirlo? Respóndenos y lo coordinamos.'];
+            case 'pago':
+                return ['motivo' => 'El mensajero llegó pero no se pudo completar el pago contraentrega.',
+                        'peticion' => "¿Cuándo puedes recibirlo con el efectivo listo? Dinos el día y lo reprogramamos.{$cobro}"];
+            case 'recoger':
+                return ['motivo' => "Tu pedido quedó para recoger en la bodega u oficina de la transportadora{$aqui}.",
+                        'peticion' => "Pasa a recogerlo con tu cédula o el número de guía.{$cobro} ¿Cuándo vas a poder ir?"];
+            case 'rechazo':
+                return ['motivo' => 'Nos reportaron que el pedido no fue recibido.',
+                        'peticion' => '¿Nos cuentas qué pasó? Si todavía lo quieres, lo volvemos a enviar.'];
+            default:
+                return ['motivo' => 'La transportadora nos reportó una novedad con la entrega.',
+                        'peticion' => '¿Nos ayudas respondiendo este mensaje? Cuéntanos cuándo estás disponible y cómo te pueden ubicar mejor.'];
+        }
     }
 
     /* ───────────────────────────────  Consultas  ─────────────────────────────── */
@@ -196,7 +372,8 @@ class DropiOrden extends Model
      * Cuántas órdenes hay en cada vista (las tarjetas de Seguimiento).
      *
      * @return array{por_avisar: int, esperando: int, piden_recordatorio: int, novedad: int,
-     *               en_camino: int, entregados: int, todas: int, primera_orden: ?string}
+     *               en_camino: int, entregados: int, devoluciones: int, costo_devoluciones: float,
+     *               todas: int, primera_orden: ?string}
      */
     public function contadores(): array
     {
@@ -207,9 +384,11 @@ class DropiOrden extends Model
             SELECT COUNT(*) AS todas,
                    COALESCE(SUM(estado = 'en_oficina' AND aviso_oficina_at IS NULL AND {$vig}), 0)      AS por_avisar,
                    COALESCE(SUM(estado = 'en_oficina' AND aviso_oficina_at IS NOT NULL AND {$vig}), 0)  AS esperando,
-                   COALESCE(SUM(novedad <> '' AND estado NOT IN ('entregado', 'cancelado') AND {$vig}), 0) AS novedad,
+                   COALESCE(SUM(novedad <> '' AND estado NOT IN ('entregado', 'cancelado', 'devolucion') AND {$vig}), 0) AS novedad,
                    COALESCE(SUM(estado IN ('confirmado', 'enviado') AND {$vig}), 0)                     AS en_camino,
                    COALESCE(SUM(estado = 'entregado'), 0)                                               AS entregados,
+                   COALESCE(SUM(estado = 'devolucion'), 0)                                              AS devoluciones,
+                   COALESCE(SUM(CASE WHEN estado = 'devolucion' THEN flete_devolucion ELSE 0 END), 0)   AS costo_devoluciones,
                    MIN(fecha_pedido) AS primera_orden
             FROM dropi_ordenes
         ")->fetch(PDO::FETCH_ASSOC);
@@ -217,13 +396,14 @@ class DropiOrden extends Model
         // De los que esperan en la oficina, a cuántos ya les toca recordatorio o última oportunidad.
         $piden = 0;
         $q = $this->db->query("
-            SELECT estado, aviso_oficina_at, aviso_recordatorio_at, aviso_ultimo_at,
+            SELECT estado, estatus, novedad, aviso_oficina_at, aviso_recordatorio_at, aviso_ultimo_at, aviso_novedad_at,
                    DATEDIFF(CURDATE(), DATE(estatus_desde)) AS dias_estado
             FROM dropi_ordenes
             WHERE estado = 'en_oficina' AND aviso_oficina_at IS NOT NULL AND {$vig}
         ");
         foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $o) {
-            if (self::siguienteAviso($o) !== null) $piden++;
+            $toca = self::siguienteAviso($o);
+            if ($toca !== null && in_array($toca['estado'], ['recordatorio_oficina', 'ultimo_aviso_oficina'], true)) $piden++;
         }
 
         return [
@@ -233,6 +413,8 @@ class DropiOrden extends Model
             'novedad'            => (int)$r['novedad'],
             'en_camino'          => (int)$r['en_camino'],
             'entregados'         => (int)$r['entregados'],
+            'devoluciones'       => (int)$r['devoluciones'],
+            'costo_devoluciones' => (float)$r['costo_devoluciones'],
             'todas'              => (int)$r['todas'],
             'primera_orden'      => $r['primera_orden'],
         ];
@@ -253,9 +435,10 @@ class DropiOrden extends Model
         [$base, $orden] = [
             'por_avisar' => ["o.estado = 'en_oficina' AND o.aviso_oficina_at IS NULL AND {$vig}", 'o.estatus_desde ASC, o.id ASC'],
             'esperando'  => ["o.estado = 'en_oficina' AND o.aviso_oficina_at IS NOT NULL AND {$vig}", 'o.estatus_desde ASC, o.id ASC'],
-            'novedad'    => ["o.novedad <> '' AND o.estado NOT IN ('entregado', 'cancelado') AND {$vig}", 'o.ultimo_mov_at DESC, o.id DESC'],
+            'novedad'    => ["o.novedad <> '' AND o.estado NOT IN ('entregado', 'cancelado', 'devolucion') AND {$vig}", 'o.ultimo_mov_at DESC, o.id DESC'],
             'en_camino'  => ["o.estado IN ('confirmado', 'enviado') AND {$vig}", 'o.fecha_pedido ASC, o.id ASC'],
             'entregados' => ["o.estado = 'entregado'", 'o.fecha_pedido DESC, o.id DESC'],
+            'devoluciones' => ["o.estado = 'devolucion'", 'o.estatus_desde DESC, o.id DESC'],
             'todas'      => ['1 = 1', 'o.fecha_pedido DESC, o.id DESC'],
         ][$vista];
 

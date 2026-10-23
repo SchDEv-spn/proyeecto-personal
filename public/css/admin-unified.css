@@ -5606,3 +5606,9 @@ div.dataTables_wrapper,
 
 #tablaOrdenesDropi td:nth-child(3) b { white-space: nowrap; }
 #tablaOrdenesDropi .status-tag { margin: 0 0 2px; }
+
+/* Seis tarjetas: sin la "huérfana" que el resto de grillas estira a dos columnas. */
+@media (min-width: 768px) {
+  .stats-grid.stats-grid--seis { grid-template-columns: repeat(3, 1fr); }
+}
+.stats-grid.stats-grid--seis > .stat-card:nth-child(5) { grid-column: auto; }

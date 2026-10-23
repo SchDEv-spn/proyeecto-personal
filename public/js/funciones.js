@@ -1519,10 +1519,10 @@
 // WHATSAPP: Picker de plantillas
 // =========================
 (() => {
-  const ESTADOS = ['nuevo','contactado','confirmado','enviado','en_oficina','recordatorio_oficina','ultimo_aviso_oficina','entregado','cancelado'];
+  const ESTADOS = ['nuevo','contactado','confirmado','enviado','en_reparto','en_oficina','recordatorio_oficina','ultimo_aviso_oficina','novedad','entregado','cancelado'];
   const LABEL   = { nuevo:'Nuevo', contactado:'Contactado', confirmado:'Confirmado',
-                    enviado:'Enviado', en_oficina:'En oficina', recordatorio_oficina:'Recordatorio',
-                    ultimo_aviso_oficina:'Última oportunidad',
+                    enviado:'Enviado', en_reparto:'Hoy llega', en_oficina:'En oficina', recordatorio_oficina:'Recordatorio',
+                    ultimo_aviso_oficina:'Última oportunidad', novedad:'Novedad',
                     entregado:'Entregado', cancelado:'Cancelado' };
 
   // En celular, wa.me abre la app directo. En computadora, wa.me siempre
@@ -1576,6 +1576,20 @@
       ? 'al mensajero'
       : 'en la oficina';
 
+  // Hasta cuándo puede recoger en la oficina. data.fechaLimite ("hoy", "mañana", "el jueves 29 de
+  // octubre") lo calcula el servidor desde que el paquete llegó; los pedidos que no lo traen (los
+  // de la landing) quedan con la frase general, así el mensaje nunca sale con un hueco.
+  const getPlazo = (data) => data.fechaLimite
+    ? 'Tienes hasta ' + data.fechaLimite + ' para recogerlo; después la transportadora lo devuelve.'
+    : 'Te recomendamos pasar cuanto antes: pasados 5 días hábiles la transportadora lo devuelve.';
+
+  // Qué esperar cuando va en camino: a la oficina no se va antes de que avisemos; en domicilio
+  // hay que contestar el teléfono.
+  const getAvisoLlegada = (tipoEntrega) =>
+    (tipoEntrega || '').toLowerCase() === 'domicilio'
+      ? 'Estate pendiente del teléfono: el mensajero te llamará para la entrega.'
+      : 'Te escribimos por aquí apenas llegue a la oficina; no hace falta que vayas antes.';
+
   const resolveMsg = (template, data) =>
     template
       .replace(/{nombre}/g,         data.nombre                        || '')
@@ -1587,6 +1601,10 @@
       .replace(/{departamento}/g,    data.departamento                  || '')
       .replace(/{transportadora}/g,  getTransportadora(data.tipoEntrega))
       .replace(/{rastreo}/g,         getRastreoUrl(data.tipoEntrega))
+      .replace(/{plazo}/g,           getPlazo(data))
+      .replace(/{aviso_llegada}/g,   getAvisoLlegada(data.tipoEntrega))
+      .replace(/{novedad_motivo}/g,  data.novedadMotivo   || 'La transportadora nos reportó una novedad con la entrega.')
+      .replace(/{novedad_peticion}/g, data.novedadPeticion || '¿Nos ayudas respondiendo este mensaje? Cuéntanos cuándo estás disponible y cómo te pueden ubicar mejor.')
       .replace(/{momento_pago}/g,    getMomentoPago(data.tipoEntrega))
       .replace(/{receptor_pago}/g,   getReceptorPago(data.tipoEntrega));
       // {guia} NO se reemplaza — el admin lo completa manualmente

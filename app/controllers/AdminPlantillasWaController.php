@@ -95,7 +95,7 @@ class AdminPlantillasWaController extends Controller
         $guia   = trim((string)($_POST['guia'] ?? ''));
         $solo   = !empty($_POST['solo_marcar']);
 
-        $plantillas = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'recordatorio_oficina', 'ultimo_aviso_oficina', 'entregado', 'cancelado'];
+        $plantillas = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_reparto', 'en_oficina', 'recordatorio_oficina', 'ultimo_aviso_oficina', 'novedad', 'entregado', 'cancelado'];
         if (!in_array($estado, $plantillas, true)) {
             echo json_encode(['ok' => false, 'error' => 'Mensaje no reconocido']);
             exit;
@@ -151,6 +151,8 @@ class AdminPlantillasWaController extends Controller
             $tiempo = $diasEstado <= 0 ? 'Llegó hoy' : $diasEstado . ' día' . ($diasEstado === 1 ? '' : 's') . ' en oficina';
         } elseif ($estado === 'entregado') {
             $tiempo = 'Entregado ' . $dias($diasEstado);
+        } elseif ($estado === 'devolucion') {
+            $tiempo = 'Devolución ' . $dias($diasEstado);
         } elseif ($estado === 'cancelado') {
             $tiempo = 'Cancelado';
         } else {
@@ -181,12 +183,18 @@ class AdminPlantillasWaController extends Controller
         if ($siguiente && $siguiente['estado'] === 'ultimo_aviso_oficina')  $insignias .= ' <span class="status-tag status-cancelado">Última oportunidad</span>';
         if (!empty($o['sin_actualizar'])) $insignias .= ' <span class="status-tag" style="background:var(--surface-3);color:var(--tx-muted)" title="No apareció en tus últimas descargas de Dropi">Sin actualizar</span>';
 
-        $estadoHtml = '<span class="status-tag status-' . ($estado === 'otro' ? 'contactado' : $e($estado)) . '">' . $e($etiquetas[$estado] ?? $estado) . '</span>'
+        $estadoHtml = '<span class="status-tag status-' . (['otro' => 'contactado', 'devolucion' => 'cancelado'][$estado] ?? $e($estado)) . '">' . $e($etiquetas[$estado] ?? $estado) . '</span>'
             . '<small class="seg-sub">Dropi: ' . $e($o['estatus'] !== '' ? $o['estatus'] : '—') . '</small>'
-            . ($o['novedad'] !== '' ? '<small class="seg-sub" style="color:var(--warn);font-weight:700">Novedad: ' . $e($o['novedad']) . '</small>' : '');
+            . ($o['novedad'] !== '' ? '<small class="seg-sub" style="color:var(--warn);font-weight:700">Novedad'
+                . (isset(DropiOrden::NOVEDAD_ETIQUETAS[$o['novedad_tipo']]) ? ' · ' . $e(DropiOrden::NOVEDAD_ETIQUETAS[$o['novedad_tipo']]) : '')
+                . ': ' . $e($o['novedad']) . '</small>' : '');
+
+        $precioTxt = (float)$o['valor'] > 0 ? '$' . number_format((float)$o['valor'], 0, ',', '.') : '';
 
         $lugar = $e($o['municipio']) . ($o['departamento'] !== '' ? ' <small class="seg-sub">' . $e($o['departamento']) . '</small>' : '')
-            . ($o['guia'] !== '' ? '<small class="seg-sub">Guía ' . $e($o['guia']) . '</small>' : '');
+            . ($o['guia'] !== '' ? '<small class="seg-sub">Guía ' . $e($o['guia']) . '</small>' : '')
+            . ($estado === 'devolucion' && (float)$o['flete_devolucion'] > 0
+                ? '<small class="seg-sub" style="color:var(--err);font-weight:700">Flete de devolución $' . number_format((float)$o['flete_devolucion'], 0, ',', '.') . '</small>' : '');
 
         // Botón: el mensaje que toca, o "Mensaje" para abrir el compositor con cualquier plantilla.
         if ($siguiente) {
@@ -209,6 +217,8 @@ class AdminPlantillasWaController extends Controller
             'accion'   => $accion,
         ];
 
+        $novedadTextos = DropiOrden::novedadTextos($o['novedad_tipo'] !== '' ? $o['novedad_tipo'] : 'otra', (string)$o['municipio'], $precioTxt);
+
         $dato = [
             'ordenId'      => (int)$o['id'],
             'telefono'     => $o['telefono'],
@@ -216,13 +226,17 @@ class AdminPlantillasWaController extends Controller
             'apellidos'    => $o['apellidos'],
             'producto'     => $o['producto'],
             'cantidad'     => (string)max(1, (int)$o['cantidad']),
-            'precio'       => (float)$o['valor'] > 0 ? '$' . number_format((float)$o['valor'], 0, ',', '.') : '',
+            'precio'       => $precioTxt,
             'municipio'    => $o['municipio'],
             'departamento' => $o['departamento'],
             'tipoEntrega'  => $o['tipo_entrega'] !== '' ? $o['tipo_entrega'] : 'oficina',
             'numeroGuia'   => $o['guia'],
             'estado'       => $siguiente ? $siguiente['estado'] : DropiOrden::plantillaPorDefecto($estado),
             'siguiente'    => $siguiente ? $siguiente['estado'] : null,
+            // Para armar el mensaje: hasta cuándo puede recoger, y qué pasó + qué se le pide si hay novedad.
+            'fechaLimite'  => $estado === 'en_oficina' ? DropiOrden::fechaLimite($o['estatus_desde']) : '',
+            'novedadMotivo'   => $novedadTextos['motivo'],
+            'novedadPeticion' => $novedadTextos['peticion'],
         ];
 
         return [$fila, $dato];

@@ -165,7 +165,7 @@
                             <li>También sirve para cargar meses anteriores: todo queda guardado en Seguimiento para consultarlo cuando quieras.</li>
                             <li>El estado sale siempre de Dropi: guía generada, en procesamiento y en espera de ruta son <strong>Confirmado</strong>;
                                 en bodega, despachada, en reparto y novedad son <strong>Enviado</strong>; reclame en oficina es <strong>En oficina</strong>;
-                                entregado y cancelado igual.</li>
+                                entregado, cancelado y devolución igual (las devoluciones suman lo que te cobran de flete de regreso).</li>
                         </ul>
                     </div>
                 </div>
