@@ -26,8 +26,15 @@
     $coloresForm = $old['colores'] ?? [];
     if (is_string($coloresForm)) $coloresForm = array_map('trim', explode(',', $coloresForm));
     if (!is_array($coloresForm)) $coloresForm = [];
-    $coloresForm = array_values(array_filter(array_map(fn($c) => trim((string)$c), $coloresForm), fn($c) => $c !== ''));
-    if (empty($coloresForm)) $coloresForm = [''];
+    /* Cada fila lleva nombre + foto. Llega como texto (importación de Dropi, listas viejas)
+       o como ['color' => …, 'foto' => …] (lo que guarda el formulario). */
+    $filasColor = [];
+    foreach ($coloresForm as $c) {
+        $nombreColor = trim((string)(is_array($c) ? ($c['color'] ?? '') : $c));
+        if ($nombreColor === '') continue;
+        $filasColor[] = ['color' => $nombreColor, 'foto' => is_array($c) ? trim((string)($c['foto'] ?? '')) : ''];
+    }
+    if (empty($filasColor)) $filasColor = [['color' => '', 'foto' => '']];
 
     $importadoDeDropi = $importadoDeDropi ?? false;
     $dropiSuggested    = $dropiSuggested ?? 0;
@@ -67,7 +74,7 @@
                 <div class="admin-alert-success" style="margin-bottom:var(--sp-4)">
                     <div class="admin-alert-title"><i class="fas fa-cloud-arrow-down"></i> Datos traídos de Dropi</div>
                     <p style="margin:0">
-                        Nombre, costo, foto<?= !empty($coloresForm[0]) ? ' y colores' : '' ?> ya vienen prellenados. Revísalos y define
+                        Nombre, costo, foto<?= !empty($filasColor[0]['color']) ? ' y colores' : '' ?> ya vienen prellenados. Revísalos y define
                         vos el <strong>precio de venta</strong> —
                         <?= $dropiSuggested > 0 ? 'Dropi sugiere $' . number_format($dropiSuggested, 0, ',', '.') . ' al público.' : 'Dropi no trajo un precio sugerido.' ?>
                     </p>
@@ -252,11 +259,23 @@
                             <div class="form-group form-group--full">
                                 <label>Colores disponibles (opcional)</label>
                                 <div id="colorsWrap" class="colors-wrap">
-                                    <?php foreach ($coloresForm as $c): ?>
-                                        <div class="color-row">
+                                    <?php foreach ($filasColor as $fc): $fotoColor = $fc['foto']; ?>
+                                        <div class="color-row color-row--foto<?= $fotoColor !== '' ? ' tiene-foto' : '' ?>">
+                                            <?php /* La casilla de foto va a la izquierda del nombre: una por color. La foto
+                                                     que ya tenía viaja en color_foto_actual y una nueva en color_foto_file;
+                                                     las tres listas (nombre, actual, archivo) van alineadas por fila. */ ?>
+                                            <label class="color-foto-slot" title="Foto de este color">
+                                                <input type="file" name="color_foto_file[]" accept="image/jpeg,image/png,image/webp" class="color-foto-input">
+                                                <img class="color-foto-prev" alt=""<?= $fotoColor !== '' ? ' src="' . htmlspecialchars($fotoColor) . '"' : '' ?>>
+                                                <span class="color-foto-vacio"><i class="fas fa-camera"></i></span>
+                                            </label>
+                                            <input type="hidden" name="color_foto_actual[]" value="<?= htmlspecialchars($fotoColor) ?>">
                                             <input type="text" name="colores[]"
                                                    placeholder="Ej: Negro"
-                                                   value="<?= htmlspecialchars($c) ?>">
+                                                   value="<?= htmlspecialchars($fc['color']) ?>">
+                                            <button type="button" class="btn-quitar-foto" aria-label="Quitar la foto de este color" title="Quitar foto">
+                                                <i class="fas fa-xmark"></i>
+                                            </button>
                                             <button type="button" class="btn-remove-color" aria-label="Quitar">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -267,6 +286,7 @@
                                     <i class="fas fa-plus"></i> Agregar color
                                 </button>
                                 <small class="help">Si los dejas vacíos, la landing no mostrará selector de color.</small>
+                                <small class="help">La foto de cada color (opcional) es la que ve el cliente al elegirlo en el formulario de pedido; no toca la galería. JPG, PNG o WEBP de hasta 5 MB: si es muy pesada se reduce sola.</small>
                             </div>
 
                             <!-- Dropi -->
@@ -430,19 +450,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Colores ─────────────────────────────────────────
     const colorsWrap = document.getElementById('colorsWrap');
+    const FOTO_COLOR_MAX = 5 * 1024 * 1024;
+
+    // Una fila de color = casilla de foto + nombre. Las listas colores[], color_foto_actual[]
+    // y color_foto_file[] llegan al servidor en el mismo orden de fila.
+    const filaColorHtml = () => `<div class="color-row color-row--foto">
+            <label class="color-foto-slot" title="Foto de este color">
+                <input type="file" name="color_foto_file[]" accept="image/jpeg,image/png,image/webp" class="color-foto-input">
+                <img class="color-foto-prev" alt="">
+                <span class="color-foto-vacio"><i class="fas fa-camera"></i></span>
+            </label>
+            <input type="hidden" name="color_foto_actual[]" value="">
+            <input type="text" name="colores[]" placeholder="Ej: Azul">
+            <button type="button" class="btn-quitar-foto" aria-label="Quitar la foto de este color" title="Quitar foto"><i class="fas fa-xmark"></i></button>
+            <button type="button" class="btn-remove-color" aria-label="Quitar"><i class="fas fa-trash"></i></button>
+        </div>`;
+
+    const limpiarFotoDeFila = row => {
+        if (!row) return;
+        row.querySelector('.color-foto-input').value = '';
+        row.querySelector('input[name="color_foto_actual[]"]').value = '';
+        row.querySelector('.color-foto-prev').removeAttribute('src');
+        row.classList.remove('tiene-foto');
+    };
+
     document.getElementById('addColorBtn').addEventListener('click', () => {
-        const row = document.createElement('div');
-        row.className = 'color-row';
-        row.innerHTML = `<input type="text" name="colores[]" placeholder="Ej: Azul">
-            <button type="button" class="btn-remove-color" aria-label="Quitar"><i class="fas fa-trash"></i></button>`;
-        colorsWrap.appendChild(row);
-        row.querySelector('input').focus();
+        colorsWrap.insertAdjacentHTML('beforeend', filaColorHtml());
+        colorsWrap.lastElementChild.querySelector('input[name="colores[]"]').focus();
     });
+
+    // Vista previa al elegir la foto (y se rechaza lo que el servidor rechazaría igual)
+    colorsWrap.addEventListener('change', e => {
+        const input = e.target.closest('.color-foto-input');
+        if (!input) return;
+        const archivo = input.files && input.files[0];
+        if (!archivo) return;
+        if (!/^image\/(jpeg|png|webp)$/.test(archivo.type)) {
+            alert('La foto debe ser JPG, PNG o WEBP.');
+            input.value = '';
+            return;
+        }
+        if (archivo.size > FOTO_COLOR_MAX) {
+            alert('La foto pesa más de 5 MB. Comprímela o usa una más pequeña.');
+            input.value = '';
+            return;
+        }
+        const row = input.closest('.color-row');
+        row.querySelector('.color-foto-prev').src = URL.createObjectURL(archivo);
+        row.classList.add('tiene-foto');
+    });
+
     colorsWrap.addEventListener('click', e => {
+        const quitarFoto = e.target.closest('.btn-quitar-foto');
+        if (quitarFoto) { limpiarFotoDeFila(quitarFoto.closest('.color-row')); return; }
         const btn = e.target.closest('.btn-remove-color');
         if (!btn) return;
         const rows = colorsWrap.querySelectorAll('.color-row');
-        if (rows.length <= 1) { colorsWrap.querySelector('input[name="colores[]"]').value = ''; return; }
+        if (rows.length <= 1) {
+            colorsWrap.querySelector('input[name="colores[]"]').value = '';
+            limpiarFotoDeFila(rows[0]);
+            return;
+        }
         btn.closest('.color-row').remove();
     });
 

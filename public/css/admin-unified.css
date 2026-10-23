@@ -2335,6 +2335,60 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
 }
 .btn-add-color:hover { border-color: var(--green-dark); color: var(--green-dark); }
 
+/* Foto por color (crear / editar producto): casilla cuadrada a la izquierda del nombre.
+   El <input type="file"> cubre toda la casilla, invisible, para que un toque la abra. */
+.color-foto-slot {
+  position: relative;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-md);
+  border: 1.5px dashed var(--border-strong);
+  color: var(--tx-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--t), color var(--t);
+}
+.color-foto-slot:hover { border-color: var(--green-dark); color: var(--green-dark); }
+.color-row .color-foto-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  flex: none;
+}
+.color-foto-prev { display: none; width: 100%; height: 100%; object-fit: cover; }
+.color-row.tiene-foto .color-foto-prev  { display: block; }
+.color-row.tiene-foto .color-foto-vacio { display: none; }
+.color-row.tiene-foto .color-foto-slot  { border-style: solid; }
+.btn-quitar-foto {
+  display: none;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border-strong);
+  background: transparent;
+  color: var(--tx-muted);
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color var(--t), color var(--t);
+}
+.color-row.tiene-foto .btn-quitar-foto { display: inline-flex; }
+.btn-quitar-foto:hover { border-color: var(--red); color: var(--red); }
+@media (pointer: coarse) {
+  .btn-quitar-foto { width: 36px; height: 36px; }
+  .color-foto-slot { flex-basis: 52px; width: 52px; height: 52px; }
+}
+
 /* Footer de acciones del form */
 .form-actions {
   display: flex;

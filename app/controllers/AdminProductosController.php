@@ -124,6 +124,87 @@ class AdminProductosController extends Controller
         return true;
     }
 
+    /** Carpeta de fotos de producto: la misma regla que la imagen principal (persistente fuera del webroot si existe). */
+    private function dirSubidasProductos(): string
+    {
+        $persistentBase = dirname(dirname(dirname($_SERVER['DOCUMENT_ROOT']))) . '/uploads';
+        $dir = is_dir($persistentBase)
+            ? $persistentBase . '/productos/'
+            : dirname(__DIR__, 2) . '/public/uploads/productos/';
+        if (!is_dir($dir)) mkdir($dir, 0777, true);
+        return $dir;
+    }
+
+    /**
+     * Colores del formulario con su foto. Tres listas van alineadas por fila:
+     * colores[] (el nombre), color_foto_actual[] (la foto que ya tenía) y
+     * color_foto_file[] (una foto nueva). Una foto nueva gana; si no hay, se
+     * conserva la anterior (solo si es de nuestras subidas, no una URL cualquiera
+     * puesta a mano en el POST). Un nombre vacío o repetido descarta la fila
+     * entera. Los problemas con una foto se avisan en $errores y esa fila se
+     * queda con la que tenía.
+     *
+     * La foto se guarda reducida (guardar_foto_subida): una foto de celular de
+     * 4 MB se descargaría completa para mostrarse en una tarjeta de 48px.
+     *
+     * @return array<int, array{color: string, foto: string}>
+     */
+    private function leerColoresConFoto(array &$errores): array
+    {
+        $nombres  = $_POST['colores'] ?? [];
+        $actuales = $_POST['color_foto_actual'] ?? [];
+        if (!is_array($nombres))  $nombres  = [];
+        if (!is_array($actuales)) $actuales = [];
+        $archivos = (isset($_FILES['color_foto_file']) && is_array($_FILES['color_foto_file']['error'] ?? null))
+            ? $_FILES['color_foto_file']
+            : null;
+
+        $prefijoUrl = BASE_URL . '/public/uploads/productos/';
+        $dir    = null;   // solo se prepara si hay algo que guardar
+        $vistos = [];
+        $out    = [];
+
+        foreach ($nombres as $i => $nombre) {
+            $nombre = trim((string)$nombre);
+            if ($nombre === '' || isset($vistos[$nombre])) continue;
+            if (count($out) >= 30) break;
+            $vistos[$nombre] = true;
+
+            $foto = trim((string)($actuales[$i] ?? ''));
+            if ($foto !== '' && strpos($foto, $prefijoUrl) !== 0) $foto = '';
+
+            $codigo = $archivos !== null ? ($archivos['error'][$i] ?? UPLOAD_ERR_NO_FILE) : UPLOAD_ERR_NO_FILE;
+
+            if ($codigo === UPLOAD_ERR_OK) {
+                $archivo = [
+                    'name'     => $archivos['name'][$i]     ?? '',
+                    'tmp_name' => $archivos['tmp_name'][$i] ?? '',
+                    'size'     => $archivos['size'][$i]     ?? 0,
+                ];
+                $erroresFoto = [];
+                if ((int)$archivo['size'] > 5 * 1024 * 1024) {
+                    $errores[] = "La foto del color «{$nombre}» pesa más de 5 MB. Comprímela o usa una más pequeña.";
+                } elseif ($this->validarImagenUpload($archivo, $erroresFoto)) {
+                    $dir = $dir ?? $this->dirSubidasProductos();
+                    $guardada = guardar_foto_subida($archivo['tmp_name'], $dir, 'col', pathinfo((string)$archivo['name'], PATHINFO_EXTENSION));
+                    if ($guardada !== null) {
+                        $foto = $prefijoUrl . $guardada;
+                    } else {
+                        $errores[] = "No se pudo guardar la foto del color «{$nombre}». Intenta nuevamente.";
+                    }
+                } else {
+                    foreach ($erroresFoto as $e) $errores[] = "Color «{$nombre}»: " . $e;
+                }
+            } elseif ($codigo !== UPLOAD_ERR_NO_FILE) {
+                $errores[] = "No se pudo subir la foto del color «{$nombre}» (código {$codigo}). Prueba con una más pequeña.";
+            }
+
+            $out[] = ['color' => mb_substr($nombre, 0, 50), 'foto' => $foto];
+        }
+
+        return $out;
+    }
+
     public function index()
     {
         $this->requireLogin();
@@ -348,8 +429,6 @@ class AdminProductosController extends Controller
         $activo = (isset($_POST['activo']) && $_POST['activo'] == '1') ? 1 : 0;
         if ($costoEnvio < 0) $costoEnvio = 0;
 
-        $colores = $this->normalizarColores($_POST['colores'] ?? []);
-
         $dropiProductIdRaw = trim((string)($_POST['dropi_product_id'] ?? ''));
         $dropiProductId = $dropiProductIdRaw !== '' ? (int)$dropiProductIdRaw : null;
         $imagenUrlDropi = trim((string)($_POST['imagen_principal_actual'] ?? ''));
@@ -360,6 +439,10 @@ class AdminProductosController extends Controller
         $slug = $slugInput !== '' ? $this->generarSlug($slugInput) : $this->generarSlug($nombre);
 
         $errores = [];
+
+        // Colores con su foto (las fotos nuevas se guardan aquí, antes de validar el resto:
+        // si el formulario vuelve con errores, la foto ya subida regresa en color_foto_actual).
+        $colores = $this->leerColoresConFoto($errores);
 
         if ($nombre === '') {
             $errores[] = "El nombre es obligatorio.";
@@ -505,7 +588,7 @@ class AdminProductosController extends Controller
             exit;
         }
 
-        $colores = $productoModel->getColoresByProducto($id);
+        $colores = $productoModel->getColoresConFoto($id);
         $coloresDropi = $productoModel->obtenerColoresConVariacionDropi($id);
 
         $old = [
@@ -584,8 +667,6 @@ class AdminProductosController extends Controller
 
         if ($costoEnvio < 0) $costoEnvio = 0;
 
-        $colores = $this->normalizarColores($_POST['colores'] ?? []);
-
         $dropiProductIdRaw = trim((string)($_POST['dropi_product_id'] ?? ''));
         $dropiProductId = $dropiProductIdRaw !== '' ? (int)$dropiProductIdRaw : null;
         $variacionesDropi = $_POST['dropi_variation'] ?? [];
@@ -595,6 +676,9 @@ class AdminProductosController extends Controller
         $slug = $slugInput !== '' ? $this->generarSlug($slugInput) : ($productoExistente['slug'] ?? $this->generarSlug($nombre));
 
         $errores = [];
+
+        // Colores con su foto (ver guardarNuevo): la foto de un color viaja con su fila.
+        $colores = $this->leerColoresConFoto($errores);
 
         if ($nombre === '') {
             $errores[] = "El nombre es obligatorio.";

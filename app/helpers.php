@@ -88,6 +88,99 @@ function claves_color(string $color): array
 }
 
 /**
+ * Reduce una imagen subida para que no pese de más en un celular con datos
+ * limitados: lado mayor de $lado px y recompresión. Devuelve true si dejó la
+ * versión reducida en $destino; false si no hizo nada (el servidor no tiene GD,
+ * formato que no sabe reducir, imagen ya liviana, o cualquier error) y entonces
+ * quien llama guarda el archivo original tal cual: nunca es motivo para
+ * rechazar la foto.
+ *
+ * Las fotos de celular traen la orientación en el EXIF y el navegador la aplica
+ * al mostrarlas; al recomprimir ese dato se pierde, así que se gira la imagen
+ * antes. Si no hay forma de leer el EXIF, el JPEG se deja como vino.
+ */
+function reducir_imagen(string $origen, string $destino, string $ext, int $lado = 900): bool
+{
+    $ext = strtolower($ext);
+    if (!function_exists('imagecreatetruecolor')) return false;
+
+    $info = @getimagesize($origen);
+    if ($info === false) return false;
+    $ancho = (int)$info[0];
+    $alto  = (int)$info[1];
+    if ($ancho < 1 || $alto < 1 || $ancho * $alto > 40000000) return false; // evita agotar la memoria
+
+    $pesoOriginal = (int)@filesize($origen);
+    if (max($ancho, $alto) <= $lado && $pesoOriginal <= 350 * 1024) return false; // ya es liviana
+
+    if ($ext === 'jpg' || $ext === 'jpeg') {
+        if (!function_exists('imagecreatefromjpeg') || !function_exists('exif_read_data')) return false;
+        $img = @imagecreatefromjpeg($origen);
+    } elseif ($ext === 'png') {
+        if (!function_exists('imagecreatefrompng')) return false;
+        $img = @imagecreatefrompng($origen);
+    } elseif ($ext === 'webp') {
+        if (!function_exists('imagecreatefromwebp') || !function_exists('imagewebp')) return false;
+        $img = @imagecreatefromwebp($origen);
+    } else {
+        return false;
+    }
+    if (!$img) return false;
+
+    if ($ext === 'jpg' || $ext === 'jpeg') {
+        $exif = @exif_read_data($origen);
+        $orientacion = (int)(is_array($exif) ? ($exif['Orientation'] ?? 1) : 1);
+        if (in_array($orientacion, [2, 4, 5, 7], true)) return false; // espejadas: no se tocan
+        $giro = [3 => 180, 6 => -90, 8 => 90][$orientacion] ?? 0;
+        if ($giro !== 0) {
+            $girada = @imagerotate($img, $giro, 0);
+            if ($girada) $img = $girada;
+        }
+        $ancho = imagesx($img);
+        $alto  = imagesy($img);
+    }
+
+    $escala = min(1, $lado / max($ancho, $alto));
+    $nAncho = max(1, (int)round($ancho * $escala));
+    $nAlto  = max(1, (int)round($alto * $escala));
+
+    $nuevo = imagecreatetruecolor($nAncho, $nAlto);
+    if ($ext === 'png' || $ext === 'webp') {
+        imagealphablending($nuevo, false);
+        imagesavealpha($nuevo, true);
+        imagefilledrectangle($nuevo, 0, 0, $nAncho, $nAlto, imagecolorallocatealpha($nuevo, 0, 0, 0, 127));
+    }
+    imagecopyresampled($nuevo, $img, 0, 0, 0, 0, $nAncho, $nAlto, $ancho, $alto);
+
+    if ($ext === 'png')       $ok = imagepng($nuevo, $destino, 6);
+    elseif ($ext === 'webp')  $ok = imagewebp($nuevo, $destino, 82);
+    else                      $ok = imagejpeg($nuevo, $destino, 82);
+
+    if (!$ok || !is_file($destino) || (int)filesize($destino) >= $pesoOriginal) {
+        if (is_file($destino)) @unlink($destino);
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Guarda una foto subida en $dir (con barra final) como <prefijo>_<hora>_<n>.<ext>,
+ * reducida si el servidor puede. Devuelve el nombre del archivo o null si no se
+ * pudo guardar. $mover existe para poder probarla fuera de una subida real.
+ */
+function guardar_foto_subida(string $tmp, string $dir, string $prefijo, string $ext, int $lado = 900, ?callable $mover = null): ?string
+{
+    $ext     = strtolower($ext);
+    $nombre  = $prefijo . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
+    $destino = $dir . $nombre;
+
+    if (reducir_imagen($tmp, $destino, $ext, $lado)) return $nombre;
+
+    $mover = $mover ?: 'move_uploaded_file';
+    return $mover($tmp, $destino) ? $nombre : null;
+}
+
+/**
  * Id del Facebook Pixel de la landing — única fuente de verdad.
  * Vive aquí y no repetido en la vista y en el controlador (Conversions API
  * necesita el mismo id que el pixel del navegador para poder deduplicar).

@@ -176,23 +176,67 @@ class Producto extends Model
         return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
     }
 
+    /**
+     * Colores del producto con su foto, en el orden en que se escribieron:
+     * [['color' => 'Negro', 'foto' => '/…/col_1.jpg' | ''], …].
+     */
+    public function getColoresConFoto(int $productoId): array
+    {
+        return ProductoColor::conColumnaFoto($this->db, function () use ($productoId) {
+            $stmt = $this->db->prepare(
+                "SELECT color, foto
+                 FROM producto_colores
+                 WHERE producto_id = :pid AND activo = 1
+                 ORDER BY id ASC"
+            );
+            $stmt->execute([':pid' => $productoId]);
+
+            $out = [];
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $out[] = ['color' => (string)$r['color'], 'foto' => (string)($r['foto'] ?? '')];
+            }
+            return $out;
+        });
+    }
+
+    /**
+     * Reemplaza los colores del producto. Cada elemento de $colores es el
+     * nombre (texto) o ['color' => nombre, 'foto' => url]: la foto viaja con su
+     * color en cada guardado, porque aquí se borra y se vuelve a crear todo y de
+     * otro modo se perdería. Todo en una transacción: si algo falla a la mitad no
+     * quedan colores a medias.
+     */
     public function syncColoresProducto(int $productoId, array $colores): void
     {
-        $this->db->prepare("DELETE FROM producto_colores WHERE producto_id = :pid")
-                 ->execute([':pid' => $productoId]);
-
-        if (empty($colores)) return;
-
-        $ins = $this->db->prepare(
-            "INSERT INTO producto_colores (producto_id, color, activo)
-             VALUES (:pid, :color, 1)"
-        );
-
+        $filas = [];
         foreach ($colores as $c) {
-            $c = mb_substr(trim((string)$c), 0, 50);
-            if ($c === '') continue;
-            $ins->execute([':pid' => $productoId, ':color' => $c]);
+            $nombre = mb_substr(trim((string)(is_array($c) ? ($c['color'] ?? '') : $c)), 0, 50);
+            if ($nombre === '') continue;
+            $foto = is_array($c) ? mb_substr(trim((string)($c['foto'] ?? '')), 0, 255) : '';
+            $filas[] = [$nombre, $foto];
         }
+
+        ProductoColor::conColumnaFoto($this->db, function () use ($productoId, $filas) {
+            $this->db->beginTransaction();
+            try {
+                $this->db->prepare("DELETE FROM producto_colores WHERE producto_id = :pid")
+                         ->execute([':pid' => $productoId]);
+
+                if ($filas) {
+                    $ins = $this->db->prepare(
+                        "INSERT INTO producto_colores (producto_id, color, foto, activo)
+                         VALUES (:pid, :color, :foto, 1)"
+                    );
+                    foreach ($filas as [$nombre, $foto]) {
+                        $ins->execute([':pid' => $productoId, ':color' => $nombre, ':foto' => $foto !== '' ? $foto : null]);
+                    }
+                }
+                $this->db->commit();
+            } catch (\Throwable $t) {
+                if ($this->db->inTransaction()) $this->db->rollBack();
+                throw $t;
+            }
+        });
     }
 
     public function colorExisteParaProducto(int $productoId, string $color): bool

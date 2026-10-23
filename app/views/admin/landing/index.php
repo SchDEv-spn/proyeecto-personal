@@ -648,8 +648,11 @@
                         <i class="fas fa-palette" aria-hidden="true"></i> Variantes de color
                       </label>
                       <p style="font-size:0.85rem; color:var(--tx-muted); margin-bottom:14px;">
-                        Define hasta 4 colores. Al activar uno en la landing, la galería mostrará sus imágenes.
-                        Deja el nombre en blanco para desactivar esa variante.
+                        Opcional: solo si quieres una <strong>galería por color</strong>. Al llenar una variante, la galería de la
+                        landing deja de mostrar tus fotos mixtas y muestra las de cada color. Define hasta 4 colores;
+                        deja el nombre en blanco para desactivar esa variante.<br>
+                        La foto que ve el cliente al elegir color en el formulario de pedido se sube aparte, en cada
+                        color del producto (Productos → Editar → Imagen y colores). No hace falta llenar esto para eso.
                       </p>
 
                       <?php
@@ -677,7 +680,7 @@
                       <p style="font-size:0.85rem; color:var(--tx-muted); margin:-6px 0 14px;">
                         <i class="fas fa-link" aria-hidden="true"></i>
                         Colores del producto: <strong><?= htmlspecialchars(implode(' · ', $coloresProd)) ?></strong>.
-                        Elige el nombre de la lista (o escríbelo igual) para que el formulario de pedido muestre su foto en la tarjeta del color.
+                        Si quieres galería por color, elige el nombre de la lista (o escríbelo igual): además sirve de foto de respaldo en el formulario de pedido para el color que no tenga la suya.
                       </p>
                       <?php endif; ?>
                       <?php if ($sinPareja): ?>
@@ -685,7 +688,7 @@
                         <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
                         <?= count($sinPareja) === 1 ? 'Este nombre no coincide' : 'Estos nombres no coinciden' ?> con ningún color del producto:
                         <strong><?= htmlspecialchars(implode(' · ', $sinPareja)) ?></strong>.
-                        En el formulario de pedido esa tarjeta saldrá sin foto (la galería sí la muestra).
+                        La galería sí los muestra, pero el formulario de pedido no los usará como foto de respaldo.
                       </p>
                       <?php endif; ?>
 

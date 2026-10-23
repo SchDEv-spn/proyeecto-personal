@@ -1933,8 +1933,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         $oldCants   = (isset($old['qty_item'])   && is_array($old['qty_item']))   ? $old['qty_item']   : [];
                         if (!$oldColores) $oldColores = [''];
 
-                        /* Foto y tono de cada color, de las "Variantes de color" del
-                           editor de la landing — las mismas que ya pinta la galería.
+                        /* Foto y tono de cada color. La foto sale primero de lo que se sube en cada
+                           color al crear/editar el producto y, si no hay, de las "Variantes de
+                           color" del editor de la landing (las mismas que ya pinta la galería);
+                           el tono, de esas variantes.
                            Los nombres se escriben en dos sitios (los colores del
                            producto, al crearlo, y estas variantes) y se cruzan con
                            clave_color(): sin tildes, mayúsculas ni signos, y una
@@ -1959,6 +1961,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             $colorFotos[$_k] = $_f;
                             if (preg_match('/^#[0-9a-fA-F]{3,8}$/', $_cv['hex'])) $colorTonos[$_k] = $_cv['hex'];
                         }
+                        /* La foto que se sube en cada color al crear o editar el producto
+                           manda sobre la de las variantes: es por color, no toca la galería y
+                           no depende de que un nombre coincida con otro. Las variantes del
+                           editor quedan de respaldo (y siguen aportando el tono). Si la
+                           lectura falla, la landing sigue sin esas fotos: nunca por decorar. */
+                        try {
+                            $fotosProducto = (new ProductoColor())->obtenerFotosPorProducto((int)($producto['id'] ?? 0));
+                        } catch (\Throwable $e) {
+                            $fotosProducto = [];
+                        }
                         $tarjetaColor = [];
                         $coloresConFoto = 0;
                         foreach ($colores as $_c) {
@@ -1967,6 +1979,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             foreach (claves_color((string)$_c) as $_k) {
                                 if (isset($colorFotos[$_k])) { $_f = $colorFotos[$_k]; $_t = $colorTonos[$_k] ?? ''; break; }
                             }
+                            if (($fotosProducto[$_c] ?? '') !== '') $_f = $fotosProducto[$_c];
                             $tarjetaColor[$_c] = ['foto' => $_f, 'tono' => $_t];
                             if ($_f !== '') $coloresConFoto++;
                         }
