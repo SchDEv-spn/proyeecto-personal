@@ -3727,6 +3727,9 @@ img[loading="lazy"].loaded {
 
 @media (min-width: 900px) {
     .fomo-toast {
+        /* top:72px viene de la regla base: sin anularlo, top + bottom estiraban
+           la tarjeta a ~700px de alto. */
+        top: auto;
         bottom: 28px;
     }
 }

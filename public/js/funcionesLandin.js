@@ -235,72 +235,93 @@ try {
 try {
 (function () {
 
-    /* ---------- 1. FOMO TOASTS ----------
-       Muestra notificaciones bottom-left con compras recientes simuladas.
-       Primera aparece entre 8-15 seg, luego cada 18-30 seg.
+    /* ---------- 1. NOTIFICACIONES DE PEDIDOS RECIENTES ----------
+       Tarjetitas "María de Cali pidió este producto · hace 25 min" con
+       pedidos REALES de este producto: los de la landing y los de WhatsApp
+       que se registran en Seguimiento (los calcula FomoPedidos en el
+       servidor y llegan en window.landingFomo, con nombre de pila y
+       municipio, nunca apellidos ni teléfono). Antes salían de listas de
+       nombres y ciudades inventados al azar.
+
+       Sin pedidos recientes no sale NADA: no hay relleno. Máximo 3 por
+       visita, la primera a los 8-15 s y las demás cada 25-40 s, de la más
+       reciente a la más antigua. Se detienen mientras el comprador llena el
+       formulario o tiene abierto el popup de salida (se reintenta a los 8 s
+       sin gastar el turno). Sin ES2020: no hay build.
     ---------------------------------------------------------- */
-    const FOMO_NAMES = [
-        'María G.', 'Carlos R.', 'Ana M.', 'Pedro L.', 'Laura S.',
-        'Jorge R.', 'Daniela T.', 'Andrés G.', 'Valentina R.', 'Sebastián V.',
-        'Carolina D.', 'Camila O.', 'Felipe H.', 'Natalia C.', 'Diego B.',
-        'Paola F.', 'Santiago M.', 'Juliana A.', 'Esteban N.', 'Verónica P.'
-    ];
+    var FOMO_MAX_POR_VISITA = 3;
 
-    const FOMO_CITIES = [
-        'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Bucaramanga',
-        'Cartagena', 'Pereira', 'Manizales', 'Ibagué', 'Villavicencio',
-        'Cúcuta', 'Santa Marta', 'Pasto', 'Neiva', 'Armenia'
-    ];
-
-    const FOMO_ACTIONS = [
-        'acaba de hacer su pedido',
-        'acaba de confirmar su compra',
-        'acaba de realizar su pedido',
-        'acaba de pedir uno',
-    ];
-
-    const FOMO_TIMES = [
-        'hace un momento', 'hace 2 min', 'hace 3 min', 'hace 5 min',
-        'hace 7 min', 'hace 10 min', 'hace 12 min', 'hace 15 min'
-    ];
-
-    function rand(arr) {
-        return arr[Math.floor(Math.random() * arr.length)];
+    function etiquetaHace(seg) {
+        var min = Math.floor(seg / 60);
+        if (min < 1)  return 'hace un momento';
+        if (min < 60) return 'hace ' + min + ' min';
+        var h = Math.floor(min / 60);
+        if (h < 24)   return 'hace ' + h + (h === 1 ? ' hora' : ' horas');
+        var d = Math.floor(h / 24);
+        return d === 1 ? 'ayer' : 'hace ' + d + ' días';
     }
 
-    function showFomoToast() {
-        const container = document.getElementById('fomoContainer');
-        if (!container) return;
+    function fomoPausado() {
+        if (document.hidden) return true;
+        if (document.body.classList.contains('form-en-vista')) return true;
+        var popup = document.getElementById('exitPopup');
+        return !!(popup && !popup.hasAttribute('hidden'));
+    }
 
-        const name   = rand(FOMO_NAMES);
-        const city   = rand(FOMO_CITIES);
-        const action = rand(FOMO_ACTIONS);
-        const time   = rand(FOMO_TIMES);
+    function initFomo() {
+        var datos = window.landingFomo;
+        var contenedor = document.getElementById('fomoContainer');
+        if (!contenedor || !datos || !datos.length) return;
 
-        const toast = document.createElement('div');
-        toast.className = 'fomo-toast';
-        toast.innerHTML =
-            '<div class="fomo-toast__icon" aria-hidden="true">🛒</div>' +
-            '<div class="fomo-toast__text">' +
-            '  <strong>' + name + '</strong> de ' + city + '<br>' +
-            '  ' + action +
-            '  <span class="fomo-toast__time">' + time + '</span>' +
-            '</div>';
+        var carga = Date.now();
+        var turno = 0;
 
-        container.innerHTML = '';
-        container.appendChild(toast);
+        function mostrar() {
+            if (turno >= datos.length || turno >= FOMO_MAX_POR_VISITA) return;
+            if (fomoPausado()) { setTimeout(mostrar, 8000); return; }
 
-        // Ocultar después de 6 segundos
-        setTimeout(function () {
-            toast.classList.add('hiding');
+            var d = datos[turno++];
+            var seg = (parseInt(d.s, 10) || 0) + Math.round((Date.now() - carga) / 1000);
+
+            // Los datos son de clientes: se escriben con textContent, nunca como HTML.
+            var toast = document.createElement('div');
+            toast.className = 'fomo-toast';
+
+            var icono = document.createElement('div');
+            icono.className = 'fomo-toast__icon';
+            icono.setAttribute('aria-hidden', 'true');
+            icono.textContent = '🛒';
+
+            var texto = document.createElement('div');
+            texto.className = 'fomo-toast__text';
+            var quien = document.createElement('strong');
+            quien.textContent = d.n;
+            texto.appendChild(quien);
+            if (d.c) texto.appendChild(document.createTextNode(' de ' + d.c));
+            texto.appendChild(document.createElement('br'));
+            texto.appendChild(document.createTextNode('pidió este producto'));
+            var hace = document.createElement('span');
+            hace.className = 'fomo-toast__time';
+            hace.textContent = etiquetaHace(seg);
+            texto.appendChild(hace);
+
+            toast.appendChild(icono);
+            toast.appendChild(texto);
+            contenedor.innerHTML = '';
+            contenedor.appendChild(toast);
+
             setTimeout(function () {
-                if (toast.parentNode) toast.parentNode.removeChild(toast);
-            }, 450);
-        }, 6000);
-    }
+                toast.classList.add('hiding');
+                setTimeout(function () {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 450);
+            }, 6000);
 
-    /* Exponer para que el modal lo dispare al cerrarse */
-    window.dispararFomo = showFomoToast;
+            setTimeout(mostrar, (25 + Math.floor(Math.random() * 16)) * 1000);
+        }
+
+        setTimeout(mostrar, (8 + Math.floor(Math.random() * 8)) * 1000);
+    }
 
     /* ---------- 2. SOCIAL PROOF COUNTER ----------
        Muestra un contador de pedidos cerca del formulario.
@@ -329,6 +350,7 @@ try {
 
     /* ---------- INIT ---------- */
     function init() {
+        initFomo();
         initFormOrderCount();
     }
 

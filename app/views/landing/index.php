@@ -2943,6 +2943,19 @@ $colorBorder     = $cfg['color_border']     ?? null;
     $nombreProducto = $producto['nombre'] ?? 'Producto';
     $pixelId        = $val('pixel_id', fb_pixel_id());
     $tiktokPixelId  = $val('tiktok_pixel_id', tiktok_pixel_id());
+
+    /* Notificaciones "alguien pidió hace X min": SOLO con pedidos reales de este
+       producto (de la landing y los de WhatsApp que se registran en Seguimiento),
+       nombre de pila y municipio. Sin pedidos recientes la lista va vacía y no sale
+       nada. Si la lectura falla, la landing sigue sin ellas: son un adorno. */
+    $fomoEventos = [];
+    if ($showFomo) {
+        try {
+            $fomoEventos = (new FomoPedidos())->recientes((int)($producto['id'] ?? 0), (string)($producto['nombre'] ?? ''));
+        } catch (\Throwable $e) {
+            $fomoEventos = [];
+        }
+    }
     ?>
     <script>
         window.landingSuccess = <?= json_encode($success,        JSON_UNESCAPED_UNICODE) ?>;
@@ -2953,6 +2966,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
         window.landingTrackUrl = <?= json_encode(BASE_URL . '/Landing/track') ?>;
         window.landingPixelId = <?= json_encode($pixelId) ?>;
         window.landingTiktokPixelId = <?= json_encode($tiktokPixelId) ?>;
+        /* Datos de clientes reales. Los flags HEX_* de json_encode escapan los signos menor y mayor que, el ampersand y las
+           comillas: un nombre con una etiqueta de cierre de script no puede cortar este bloque. (Y este comentario no puede
+           llevar esa etiqueta escrita: el navegador cerraría el script justo ahí.) */
+        window.landingFomo = <?= json_encode($fomoEventos, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     </script>
 
     <!-- Analítica propia del embudo (ver public/js/landing-track.js).

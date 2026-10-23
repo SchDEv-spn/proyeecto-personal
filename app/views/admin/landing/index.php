@@ -376,7 +376,7 @@
                         'show_resumen_oferta'   => ['icon' => 'fa-receipt',           'label' => 'Resumen de oferta'],
                         'show_cta_sticky'       => ['icon' => 'fa-mobile-screen',     'label' => 'CTA sticky mobile'],
                         'show_whatsapp_btn'     => ['icon' => 'fa-comment-dots',      'label' => 'Botón WhatsApp flotante'],
-                        'show_fomo'             => ['icon' => 'fa-bell',              'label' => 'Notificaciones FOMO'],
+                        'show_fomo'             => ['icon' => 'fa-bell',              'label' => 'Pedidos recientes (reales)'],
                         'show_exit_popup'       => ['icon' => 'fa-door-open',         'label' => 'Popup de salida'],
                       ];
                       foreach ($fixedToggles as $fname => $fdata):
