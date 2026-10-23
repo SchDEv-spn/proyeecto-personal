@@ -5535,3 +5535,74 @@ div.dataTables_wrapper,
 .sec-toggle-header { cursor: default; }
 .sec-toggle-header:hover { background: transparent; }
 .sec-toggle-title:hover { color: var(--green-dark); }
+
+/* ============================================================
+   Seguimiento: órdenes de Dropi (lista de trabajo + historial)
+   Reutiliza .stats-grid/.stat-card, .dt-filter-bar y table.pedidos-dt;
+   aquí solo va lo propio de esta tabla.
+   ============================================================ */
+.stat-card[data-vista] { cursor: pointer; }
+.stat-card[data-vista].is-active {
+  border-color: var(--green-dark);
+  box-shadow: var(--shadow-md), 0 0 0 2px var(--green-glow);
+}
+
+#tablaOrdenesDropi tbody td { vertical-align: top; }
+#tablaOrdenesDropi small.seg-sub {
+  display: block;
+  color: var(--tx-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+#tablaOrdenesDropi .seg-m { display: none; }          /* resumen extra del celular */
+#tablaOrdenesDropi td:last-child { white-space: nowrap; }
+#tablaOrdenesDropi .seg-ya {
+  display: block;
+  margin-top: var(--sp-2);
+  padding: 4px var(--sp-3);
+  font-size: var(--text-xs);
+}
+
+/* Tablet / portátil estrecho: sin la columna Municipio (la ciudad sigue en el detalle de la fila). */
+@media (min-width: 600px) and (max-width: 1199px) {
+  #tablaOrdenesDropi thead th:nth-child(5),
+  #tablaOrdenesDropi tbody td:nth-child(5) { display: none; }
+}
+
+/* Celular: Cliente + Acción. Estado y tiempo pasan dentro de la celda del cliente
+   (.seg-m) para que no haya que deslizar de lado; Producto y Municipio ya los
+   oculta la regla general de .pedidos-dt (columnas 4 y 5). */
+@media (max-width: 599px) {
+  #tablaOrdenesDropi { table-layout: fixed; }
+  #tablaOrdenesDropi thead th:nth-child(2),
+  #tablaOrdenesDropi tbody td:nth-child(2),
+  #tablaOrdenesDropi thead th:nth-child(3),
+  #tablaOrdenesDropi tbody td:nth-child(3) { display: none; }
+  #tablaOrdenesDropi thead th:nth-child(1) { width: 100%; }
+  #tablaOrdenesDropi thead th:nth-child(6) { width: 7.5rem; }
+  #tablaOrdenesDropi thead th,
+  #tablaOrdenesDropi tbody td { padding-left: var(--sp-2); padding-right: var(--sp-2); }
+  #tablaOrdenesDropi tbody td { white-space: normal; overflow-wrap: anywhere; }
+  #tablaOrdenesDropi .seg-m { display: block; margin-top: 4px; }
+  #tablaOrdenesDropi td:last-child .btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: var(--sp-2);
+    font-size: var(--text-xs);
+    text-align: center;
+    white-space: normal;
+  }
+  #tablaOrdenesDropi .seg-ya { width: 100%; text-align: center; }
+}
+
+/* Tarjetas con cifras cortas (conteos, no pesos): dos por fila también en celular,
+   para que la lista de trabajo quede cerca de la parte de arriba. */
+@media (max-width: 479px) {
+  .stats-grid.stats-grid--compacta { grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+  .stats-grid--compacta > .stat-card { padding: var(--sp-3); }
+  .stats-grid--compacta > .stat-card:nth-child(5) { grid-column: span 2; }
+  .stats-grid--compacta .stat-icon { display: none; }
+}
+
+#tablaOrdenesDropi td:nth-child(3) b { white-space: nowrap; }
+#tablaOrdenesDropi .status-tag { margin: 0 0 2px; }

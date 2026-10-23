@@ -52,10 +52,6 @@ class ContactoManual extends Model
      * recientes) y un ALTER por columna en cada visita saldría caro. El
      * try/catch sigue tragando el 1060 (columna duplicada) por si dos
      * peticiones llegan a la vez.
-     *
-     * Las dropi_* las llena la importación de Dropi (DropiImport): qué orden de
-     * Dropi dio origen al contacto, su estatus tal cual lo escribe Dropi, la
-     * novedad de la transportadora y la hora real en que se hizo el pedido.
      */
     private static bool $columnasListas = false;
     private function asegurarColumnasNuevas(): void
@@ -66,10 +62,6 @@ class ContactoManual extends Model
         $cols = [
             'numero_guia'           => "VARCHAR(50) NOT NULL DEFAULT ''",
             'notificado_oficina_at' => 'TIMESTAMP NULL',
-            'dropi_order_id'        => 'BIGINT UNSIGNED NULL',
-            'dropi_estatus'         => "VARCHAR(60) NOT NULL DEFAULT ''",
-            'dropi_novedad'         => "VARCHAR(255) NOT NULL DEFAULT ''",
-            'dropi_fecha'           => 'DATETIME NULL',
         ];
 
         try {

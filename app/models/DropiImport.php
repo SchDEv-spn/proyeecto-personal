@@ -3,26 +3,31 @@
 /**
  * Importación de órdenes desde la exportación a Excel de Dropi ("Mis órdenes →
  * Descargar"). Es la salida práctica mientras la API de Dropi no devuelva órdenes:
- * el pedido se escribe UNA vez en Dropi y de ahí pasa a Seguimiento con su
- * estatus y su guía.
+ * el pedido se escribe UNA vez en Dropi y de ahí pasa a Seguimiento con su estatus,
+ * su guía y su dinero (valor, costo, flete, comisión, ganancia).
  *
- * Cada orden se guarda como contacto de Seguimiento (contactos_manuales), que es
- * un registro por teléfono: si un cliente tiene dos órdenes se queda la más
- * reciente. Un mismo archivo se puede importar las veces que se quiera: cada
- * orden se reconoce por su ID de Dropi y solo se toca lo que cambió.
+ * Cada orden se guarda en dropi_ordenes (ver DropiOrden), una fila por ID de Dropi.
+ * Se espera que se descargue y suba todos los días un rango amplio (15 días o más):
+ * subir lo mismo de nuevo no duplica nada, solo se actualiza lo que cambió.
  *
  * Reglas que conviene no romper:
- *  - El estado de Seguimiento solo se mueve cuando Dropi cambió el estatus desde la
- *    última importación. Si no, se respeta lo que hizo la vendedora (por ejemplo,
- *    avisar "en oficina" antes de que Dropi lo refleje).
- *  - Nunca se marca a nadie como "avisado" (notificado_oficina_at): eso lo hace el
- *    envío real del mensaje desde Seguimiento.
+ *  - El estado de la orden sale SIEMPRE del estatus de Dropi. Lo que hace la
+ *    vendedora (avisar al cliente) se anota aparte, en las marcas aviso_*_at.
+ *  - Los días "en oficina" se cuentan desde que Dropi registra el paquete ahí. Dropi
+ *    actualiza ese dato una vez al día (hacia las 10 a. m.) y suele fechar el
+ *    movimiento con la hora de su sincronización, no la de la llegada real; por eso
+ *    se toma la fecha del archivo solo si es anterior a la primera vez que el sistema
+ *    vio la orden en oficina.
+ *  - Al guardar una orden por primera vez se recuperan, del registro de mensajes
+ *    (wa_mensajes_log), los avisos que ya se le habían enviado a ese teléfono desde
+ *    la fecha del pedido: así el primer cargue no llena la lista de "por avisar" con
+ *    gente que ya fue avisada con el compositor anterior.
  *  - De la exportación solo se conserva lo que Seguimiento usa. Direcciones,
- *    documentos y correos del archivo no se guardan ni se copian a ningún lado.
+ *    documentos, correos y notas no se guardan.
  */
 class DropiImport extends Model
 {
-    /** Estatus de Dropi (comparados con clave_color) → estado de Seguimiento. */
+    /** Estatus de Dropi (comparados con clave_color) → estado de la orden. NOVEDAD se trata aparte. */
     private const ESTADOS = [
         'guiagenerada'            => 'confirmado',
         'enesperaderutadomestica' => 'confirmado',
@@ -30,19 +35,19 @@ class DropiImport extends Model
         'enbodegatransportadora'  => 'enviado',
         'despachada'              => 'enviado',
         'enreparto'               => 'enviado',
+        'novedad'                 => 'enviado',
         'reclameenoficina'        => 'en_oficina',
         'entregado'               => 'entregado',
         'cancelado'               => 'cancelado',
     ];
 
     public const ETIQUETAS = [
-        'nuevo'      => 'Nuevo',
-        'contactado' => 'Contactado',
         'confirmado' => 'Confirmado',
         'enviado'    => 'Enviado',
         'en_oficina' => 'En oficina',
         'entregado'  => 'Entregado',
         'cancelado'  => 'Cancelado',
+        'otro'       => 'Sin clasificar',
     ];
 
     /** Nombres de departamento que Dropi escribe distinto a la lista de la tienda. */
@@ -56,23 +61,20 @@ class DropiImport extends Model
         'cauca|elbordo' => 'Patía', // El Bordo es la cabecera del municipio de Patía
     ];
 
+    /** Campos que se comparan para saber si una orden cambió desde la última importación. */
+    private const COMPARAR = [
+        'estado', 'estatus', 'guia', 'novedad', 'nombre', 'apellidos', 'telefono', 'municipio', 'departamento',
+        'producto', 'cantidad', 'valor', 'costo_proveedor', 'flete', 'flete_devolucion', 'comision', 'ganancia',
+        'tipo_entrega', 'ultimo_mov', 'motivo_cancelacion',
+    ];
+    private const NUMERICOS = ['cantidad', 'valor', 'costo_proveedor', 'flete', 'flete_devolucion', 'comision', 'ganancia'];
+
     private static ?array $ubicaciones = null;
 
     public function __construct()
     {
         parent::__construct();
-
-        // Crea contactos_manuales y sus columnas dropi_* si todavía no existen.
-        new ContactoManual();
-
-        $this->db->exec("
-            CREATE TABLE IF NOT EXISTS dropi_productos (
-                dropi_product_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
-                dropi_nombre     VARCHAR(190) NOT NULL DEFAULT '',
-                producto_id      INT NULL,
-                updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-        ");
+        new DropiOrden(); // crea las tablas si todavía no existen
     }
 
     /* ─────────────────────────────  Lectura del archivo  ───────────────────────────── */
@@ -118,30 +120,38 @@ class DropiImport extends Model
                 continue;
             }
 
+            // Con productos, cada fila es una línea y el dinero viene por línea; sin productos, una fila por orden.
             $linea = [
-                'pid'      => (string)preg_replace('/\D+/', '', $g('productoid')),
-                'nombre'   => $g('producto'),
-                'variacion'=> $g('variacion'),
-                'cantidad' => isset($cab['cantidad']) ? max(1, (int)$this->numero($g('cantidad'))) : null,
-                // Con productos, "TOTAL DE LA ORDEN" viene por línea; sin productos, la orden es una sola fila.
-                'total'    => $this->numero($g('totaldelaorden') !== '' ? $g('totaldelaorden') : $g('valordecompraenproductos')),
+                'pid'       => (string)preg_replace('/\D+/', '', $g('productoid')),
+                'nombre'    => $g('producto'),
+                'variacion' => $g('variacion'),
+                'cantidad'  => isset($cab['cantidad']) ? max(1, (int)$this->numero($g('cantidad'))) : null,
+                'total'     => $this->numero($g('totaldelaorden') !== '' ? $g('totaldelaorden') : $g('valordecompraenproductos')),
+                'costo'     => $this->numero($g('precioproveedorxcantidad') !== '' ? $g('precioproveedorxcantidad') : $g('totalenpreciosdeproveedor')),
+                'flete'     => $this->numero($g('precioflete')),
+                'flete_dev' => $this->numero($g('costodevolucionflete')),
+                'comision'  => $this->numero($g('comision')),
+                'ganancia'  => $g('ganancia') !== '' ? $this->numero($g('ganancia')) : null,
             ];
 
             if (!isset($porId[$id])) {
                 $solucionada = clave_color($g('fuesolucionadalanovedad')) === 'si';
                 $porId[$id] = [
-                    'id'            => $id,
-                    'fecha'         => $this->fechaHora($g('fecha'), $g('hora')),
-                    'nombre'        => $g('nombrecliente'),
-                    'telefono'      => $telefono,
-                    'guia'          => $g('numeroguia'),
-                    'estatus'       => mb_strtoupper($g('estatus'), 'UTF-8'),
-                    'departamento'  => $g('departamentodestino'),
-                    'ciudad'        => $g('ciudaddestino'),
-                    'transportadora'=> $g('transportadora'),
+                    'id'             => $id,
+                    'fecha'          => $this->fechaHora($g('fecha'), $g('hora')),
+                    'nombre'         => $g('nombrecliente'),
+                    'telefono'       => $telefono,
+                    'guia'           => $g('numeroguia'),
+                    'estatus'        => mb_strtoupper($g('estatus'), 'UTF-8'),
+                    'departamento'   => $g('departamentodestino'),
+                    'ciudad'         => $g('ciudaddestino'),
+                    'transportadora' => $g('transportadora'),
                     // Solo importa la novedad que sigue abierta.
-                    'novedad'       => $solucionada ? '' : mb_substr($g('novedad'), 0, 255),
-                    'lineas'        => [],
+                    'novedad'        => $solucionada ? '' : mb_substr($g('novedad'), 0, 255),
+                    'ultimo_mov'     => mb_substr($g('ultimomovimiento'), 0, 120),
+                    'ultimo_mov_at'  => $this->fechaHora($g('fechadeultimomovimiento'), $g('horadeultimomovimiento')),
+                    'cancelacion'    => mb_substr($g('motivodecancelacion'), 0, 255),
+                    'lineas'         => [],
                 ];
             }
             $porId[$id]['lineas'][] = $linea;
@@ -149,9 +159,16 @@ class DropiImport extends Model
 
         $ordenes = [];
         foreach ($porId as $o) {
-            $o['total']    = array_sum(array_column($o['lineas'], 'total'));
-            $cantidades    = array_column($o['lineas'], 'cantidad');
-            $o['cantidad'] = in_array(null, $cantidades, true) ? null : array_sum($cantidades);
+            $l = $o['lineas'];
+            $o['total']     = array_sum(array_column($l, 'total'));
+            $o['costo']     = array_sum(array_column($l, 'costo'));
+            $o['flete']     = array_sum(array_column($l, 'flete'));
+            $o['flete_dev'] = array_sum(array_column($l, 'flete_dev'));
+            $o['comision']  = array_sum(array_column($l, 'comision'));
+            $ganancias      = array_filter(array_column($l, 'ganancia'), static fn($x) => $x !== null);
+            $o['ganancia']  = $ganancias ? array_sum($ganancias) : null;
+            $cantidades     = array_column($l, 'cantidad');
+            $o['cantidad']  = in_array(null, $cantidades, true) ? null : array_sum($cantidades);
             $ordenes[] = $o;
         }
 
@@ -247,91 +264,72 @@ class DropiImport extends Model
     /* ─────────────────────────────  Vista previa e importación  ───────────────────────────── */
 
     /**
-     * Compara las órdenes con los contactos de Seguimiento. Con $aplicar = false solo
-     * calcula (vista previa); con true además lo escribe, en una transacción. Las dos
-     * rutas usan este mismo código, así que lo que se ve es lo que se guarda.
+     * Compara las órdenes con lo guardado. Con $aplicar = false solo calcula (vista
+     * previa); con true además lo escribe, en una transacción. Las dos rutas usan este
+     * mismo código, así que lo que se ve es lo que se guarda.
      *
      * @return array{
      *   filas: array<int, array>, conteo: array<string,int>, estatus_desconocidos: array<string,int>,
-     *   ubicaciones_sin_reconocer: string[], en_oficina_sin_aviso: array<int, array>,
-     *   novedades: array<int, array>, coinciden_landing: int
+     *   ubicaciones_sin_reconocer: string[], coinciden_landing: int
      * }
      */
-    public function procesar(array $ordenes, bool $aplicar = false): array
+    public function procesar(array $ordenes, bool $aplicar = false, string $archivo = '', string $usuario = ''): array
     {
         $mapa    = $this->mapaProductos(array_keys($this->productosDeDropi($ordenes)));
         $locales = $this->productosLocales();
-        $existentes = $this->contactosPorSufijo();
+        $existentes = $this->ordenesExistentes(array_column($ordenes, 'id'));
         $landing    = $this->telefonosDeLanding();
+        $ahora      = date('Y-m-d H:i:s');
+        $previos    = null; // avisos ya enviados (se carga solo si hay órdenes nuevas)
 
-        // La más reciente de cada teléfono es la que se guarda (un contacto por teléfono).
         usort($ordenes, fn($a, $b) => [(string)$a['fecha'], (int)$a['id']] <=> [(string)$b['fecha'], (int)$b['id']]);
-        $ultimaDe = [];
-        foreach ($ordenes as $i => $o) $ultimaDe[$this->sufijo($o['telefono'])] = $i;
 
         $res = [
-            'filas' => [], 'conteo' => ['nuevo' => 0, 'actualiza' => 0, 'igual' => 0, 'omitida' => 0],
-            'estatus_desconocidos' => [], 'ubicaciones_sin_reconocer' => [],
-            'en_oficina_sin_aviso' => [], 'novedades' => [], 'coinciden_landing' => 0,
+            'filas' => [], 'conteo' => ['nuevo' => 0, 'actualiza' => 0, 'igual' => 0],
+            'estatus_desconocidos' => [], 'ubicaciones_sin_reconocer' => [], 'coinciden_landing' => 0,
         ];
+        $iguales = [];
 
         $inicio = $aplicar && !$this->db->inTransaction();
         if ($inicio) $this->db->beginTransaction();
 
         try {
-            foreach ($ordenes as $i => $o) {
-                $suf = $this->sufijo($o['telefono']);
-                $d   = $this->derivar($o, $mapa, $locales);
-                $fila = [
-                    'id' => $o['id'], 'nombre' => trim($d['nombre'] . ' ' . $d['apellidos']), 'telefono' => $o['telefono'],
-                    'producto' => $d['producto'] !== '' ? $d['producto'] : '—', 'ciudad' => $d['municipio'],
-                    'estatus' => $o['estatus'], 'estado' => '', 'accion' => 'omitida', 'detalle' => '',
-                ];
-
-                if (($ultimaDe[$suf] ?? $i) !== $i) {
-                    $fila['detalle'] = 'Este cliente tiene una orden más reciente en el archivo.';
-                    $this->sumar($res, $fila);
-                    continue;
-                }
+            foreach ($ordenes as $o) {
+                $d  = $this->derivar($o, $mapa, $locales);
+                $ex = $existentes[$o['id']] ?? null;
 
                 if (!$d['ubicacion_ok']) $res['ubicaciones_sin_reconocer'][$d['municipio'] . ' (' . $d['departamento'] . ')'] = true;
-                if (isset($landing[$suf])) $res['coinciden_landing']++;
-
-                $claveEstatus = clave_color($o['estatus']);
-                $estadoDropi  = self::ESTADOS[$claveEstatus] ?? null;
-                if ($estadoDropi === null && $claveEstatus !== 'novedad' && $claveEstatus !== '') {
+                if (isset($landing[$this->sufijo($o['telefono'])])) $res['coinciden_landing']++;
+                if ($d['estado'] === 'otro' && $o['estatus'] !== '') {
                     $res['estatus_desconocidos'][$o['estatus']] = ($res['estatus_desconocidos'][$o['estatus']] ?? 0) + 1;
                 }
 
-                $ex = $existentes[$suf] ?? null;
-                $plan = $this->planear($o, $d, $ex, $estadoDropi);
+                if (!$ex && $previos === null) $previos = $this->avisosPrevios();
+                $plan = $this->planear($o, $d, $ex, $previos ?? [], $ahora);
 
-                $fila['estado'] = $plan['estado'];
-                $fila['accion'] = $plan['accion'];
-                $fila['detalle'] = $plan['detalle'];
-
-                if ($aplicar && in_array($plan['accion'], ['nuevo', 'actualiza'], true)) {
-                    try {
-                        $this->escribir($plan, $o['telefono'], $ex);
-                    } catch (\PDOException $e) {
-                        error_log('[DropiImport] orden ' . $o['id'] . ': ' . $e->getMessage());
-                        $fila['accion']  = 'omitida';
-                        $fila['detalle'] = 'No se pudo guardar esta orden.';
+                if ($aplicar) {
+                    if ($plan['accion'] === 'nuevo' || $plan['accion'] === 'actualiza') {
+                        $this->escribir($plan, $o, $ex, $mapa, $ahora);
+                    } else {
+                        $iguales[] = (int)$ex['id'];
                     }
                 }
 
-                // Listas para actuar al terminar: ¿a quién falta avisarle que su pedido está en oficina?
-                if ($fila['accion'] !== 'omitida') {
-                    $avisado = $ex && !$plan['reiniciar_aviso'] && !empty($ex['notificado_oficina_at']);
-                    if ($plan['estado'] === 'en_oficina' && !$avisado) {
-                        $res['en_oficina_sin_aviso'][] = ['nombre' => $fila['nombre'], 'telefono' => $o['telefono'], 'ciudad' => $d['municipio'], 'producto' => $fila['producto']];
-                    }
-                    if ($d['novedad'] !== '') {
-                        $res['novedades'][] = ['nombre' => $fila['nombre'], 'telefono' => $o['telefono'], 'ciudad' => $d['municipio'], 'novedad' => $d['novedad']];
-                    }
-                }
+                $res['conteo'][$plan['accion']]++;
+                $res['filas'][] = [
+                    'id' => $o['id'], 'nombre' => trim($d['nombre'] . ' ' . $d['apellidos']), 'telefono' => $o['telefono'],
+                    'producto' => ($d['producto'] ?? '') !== '' ? $d['producto'] : '—', 'ciudad' => $d['municipio'],
+                    'estatus' => $o['estatus'], 'estado' => $d['estado'], 'accion' => $plan['accion'], 'detalle' => $plan['detalle'],
+                ];
+            }
 
-                $this->sumar($res, $fila);
+            if ($aplicar) {
+                // Las que no cambiaron también "se vieron" hoy: así se distingue lo vigente de lo que dejó de aparecer.
+                foreach (array_chunk($iguales, 500) as $ids) {
+                    $this->db->prepare('UPDATE dropi_ordenes SET visto_at = ? WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')')
+                        ->execute(array_merge([$ahora], $ids));
+                }
+                (new DropiOrden())->registrarImportacion($usuario, $archivo, count($ordenes), $res['conteo']['nuevo'], $res['conteo']['actualiza'], $res['conteo']['igual']);
             }
 
             if ($inicio) $this->db->commit();
@@ -340,22 +338,16 @@ class DropiImport extends Model
             throw $e;
         }
 
-        // Lo más reciente primero.
-        $res['filas'] = array_reverse($res['filas']);
+        $res['filas'] = array_reverse($res['filas']); // lo más reciente primero
         $res['ubicaciones_sin_reconocer'] = array_keys($res['ubicaciones_sin_reconocer']);
         return $res;
     }
 
-    private function sumar(array &$res, array $fila): void
-    {
-        $res['conteo'][$fila['accion']]++;
-        $res['filas'][] = $fila;
-    }
-
     /**
-     * Lo que quedaría guardado para esta orden: campos de Seguimiento ya resueltos
-     * (producto de la tienda, nombre y apellido, departamento y municipio con el
-     * nombre de la lista de la tienda, tipo de entrega por transportadora).
+     * Lo que quedaría guardado para esta orden: producto de la tienda, nombre y
+     * apellido, departamento y municipio con el nombre de la lista de la tienda,
+     * estado de Seguimiento y tipo de entrega por transportadora. 'producto' y
+     * 'cantidad' son null cuando el archivo no trae productos (así no pisan lo que ya hay).
      */
     private function derivar(array $o, array $mapa, array $locales): array
     {
@@ -371,115 +363,161 @@ class DropiImport extends Model
 
         $transportadora = clave_color($o['transportadora']);
         $tipo = $transportadora === '' ? '' : (strpos($transportadora, 'interrapid') !== false ? 'oficina' : 'domicilio');
+        $estado = self::ESTADOS[clave_color($o['estatus'])] ?? 'otro';
 
         return [
-            'nombre'       => $nombre,
-            'apellidos'    => $apellidos,
-            'producto'     => implode(' + ', array_keys($nombres)),
-            'cantidad'     => $o['cantidad'] !== null ? (string)$o['cantidad'] : '',
-            'precio'       => $o['total'] > 0 ? '$' . number_format($o['total'], 0, ',', '.') : '',
-            'departamento' => $departamento,
-            'municipio'    => $municipio,
-            'ubicacion_ok' => $ubicacionOk,
-            'tipo_entrega' => $tipo,
-            'guia'         => $o['guia'],
-            'novedad'      => $o['novedad'],
+            'nombre'             => $nombre,
+            'apellidos'          => $apellidos,
+            'telefono'           => $o['telefono'],
+            'guia'               => mb_substr($o['guia'], 0, 50),
+            'transportadora'     => mb_substr($o['transportadora'], 0, 40),
+            'tipo_entrega'       => $tipo,
+            'departamento'       => $departamento,
+            'municipio'          => $municipio,
+            'ubicacion_ok'       => $ubicacionOk ? 1 : 0,
+            'estatus'            => mb_substr($o['estatus'], 0, 60),
+            'estado'             => $estado,
+            'ultimo_mov'         => $o['ultimo_mov'],
+            'ultimo_mov_at'      => $o['ultimo_mov_at'],
+            'novedad'            => $o['novedad'],
+            'motivo_cancelacion' => $o['cancelacion'],
+            'producto'           => $nombres ? mb_substr(implode(' + ', array_keys($nombres)), 0, 190) : null,
+            'cantidad'           => $o['cantidad'],
+            'valor'              => $o['total'],
+            'costo_proveedor'    => $o['costo'],
+            'flete'              => $o['flete'],
+            'flete_devolucion'   => $o['flete_dev'],
+            'comision'           => $o['comision'],
+            'ganancia'           => $o['ganancia'],
+            'fecha_pedido'       => $o['fecha'],
+            'ubicacion_ok_bool'  => $ubicacionOk,
         ];
     }
 
     /**
-     * Decide qué hacer con una orden frente al contacto que ya exista con ese teléfono.
+     * Decide qué hacer con una orden frente a lo ya guardado (nueva, cambió o igual)
+     * y qué campos escribir.
      *
-     * @return array{accion: string, estado: string, detalle: string, campos: array<string,mixed>, reiniciar_aviso: bool}
+     * @return array{accion: string, detalle: string, campos: array<string,mixed>, avisos: array<string,string>}
      */
-    private function planear(array $o, array $d, ?array $ex, ?string $estadoDropi): array
+    private function planear(array $o, array $d, ?array $ex, array $previos, string $ahora): array
     {
-        $esNovedad = clave_color($o['estatus']) === 'novedad';
-        $mismaOrden = $ex && (string)($ex['dropi_order_id'] ?? '') === $o['id'];
-        $ordenDistinta = $ex && !empty($ex['dropi_order_id']) && !$mismaOrden;
-
-        // El contacto ya tiene una orden de Dropi más nueva que esta: no se pisa con una vieja.
-        if ($ordenDistinta && $o['fecha'] !== null && !empty($ex['dropi_fecha']) && $o['fecha'] < $ex['dropi_fecha']) {
-            return ['accion' => 'omitida', 'estado' => (string)$ex['estado'], 'detalle' => 'Este cliente ya tiene una orden de Dropi más reciente guardada.', 'campos' => [], 'reiniciar_aviso' => false];
-        }
-
-        // Estado de Seguimiento.
-        if (!$ex || $ordenDistinta) {
-            // Contacto nuevo, o una orden nueva del mismo cliente: el estado viejo era de otro paquete.
-            $estado = $estadoDropi ?? ($esNovedad ? 'enviado' : 'confirmado');
-        } elseif ($mismaOrden) {
-            // Misma orden: solo se mueve si Dropi cambió su estatus desde la última importación.
-            $cambioDropi = clave_color((string)$ex['dropi_estatus']) !== clave_color($o['estatus']);
-            $estado = ($cambioDropi && $estadoDropi !== null) ? $estadoDropi : (string)$ex['estado'];
-        } else {
-            // Contacto de WhatsApp sin orden de Dropi todavía: Dropi sabe más del envío.
-            $estado = $estadoDropi ?? (string)$ex['estado'];
-        }
-
-        // Campos nuevos; lo que Dropi no trae (archivo sin productos, sin transportadora…) no borra lo que ya hay.
-        $campos = ['estado' => $estado];
-        foreach (['nombre', 'apellidos', 'producto', 'cantidad', 'precio', 'municipio', 'departamento', 'tipo_entrega'] as $k) {
-            if ($d[$k] !== '') $campos[$k] = $d[$k];
-        }
-        if ($d['guia'] !== '') $campos['numero_guia'] = $d['guia'];
-        $campos['dropi_order_id'] = $o['id'];
-        $campos['dropi_estatus']  = mb_substr($o['estatus'], 0, 60);
-        $campos['dropi_novedad']  = $d['novedad'];
-        $campos['dropi_fecha']    = $o['fecha'];
+        $campos = $d;
+        unset($campos['ubicacion_ok_bool']);
+        if ($campos['producto'] === null)  unset($campos['producto']);
+        if ($campos['cantidad'] === null)  unset($campos['cantidad']);
+        $campos['estatus_desde'] = $this->estatusDesde($d, $ex, $ahora);
 
         if (!$ex) {
-            return ['accion' => 'nuevo', 'estado' => $estado, 'detalle' => 'Entra como ' . $this->etiqueta($estado) . '.', 'campos' => $campos, 'reiniciar_aviso' => false];
-        }
-
-        // ¿Qué cambia respecto a lo guardado?
-        $cambios = [];
-        if ($estado !== (string)$ex['estado']) {
-            $cambios[] = 'Estado: ' . $this->etiqueta((string)$ex['estado']) . ' → ' . $this->etiqueta($estado);
-        }
-        if (isset($campos['numero_guia']) && $campos['numero_guia'] !== (string)$ex['numero_guia']) {
-            $cambios[] = $ex['numero_guia'] === '' ? 'Guía' : 'Guía nueva';
-        }
-        foreach (['nombre', 'apellidos', 'producto', 'cantidad', 'precio', 'municipio', 'departamento', 'tipo_entrega'] as $k) {
-            if (isset($campos[$k]) && mb_strtolower($campos[$k], 'UTF-8') !== mb_strtolower(trim((string)$ex[$k]), 'UTF-8')) {
-                $cambios[] = 'Datos del cliente';
-                break;
+            // Avisos que ya se le habían enviado a este teléfono desde la fecha del pedido.
+            $avisos = [];
+            $porEstado = $previos[$this->sufijo($o['telefono'])] ?? [];
+            foreach (['enviado' => 'aviso_enviado_at', 'en_oficina' => 'aviso_oficina_at', 'recordatorio_oficina' => 'aviso_recordatorio_at',
+                      'ultimo_aviso_oficina' => 'aviso_ultimo_at', 'entregado' => 'aviso_entregado_at'] as $mensaje => $col) {
+                $cuando = $porEstado[$mensaje] ?? null;
+                if ($cuando !== null && ($o['fecha'] === null || $cuando >= $o['fecha'])) $avisos[$col] = $cuando;
             }
-        }
-        if ($d['novedad'] !== (string)($ex['dropi_novedad'] ?? '')) {
-            $cambios[] = $d['novedad'] !== '' ? 'Novedad' : 'Novedad resuelta';
-        }
-        if (!$mismaOrden) {
-            array_unshift($cambios, $ordenDistinta ? 'Orden nueva de este cliente' : 'Se vincula con su orden de Dropi');
-        } elseif ($o['estatus'] !== (string)$ex['dropi_estatus'] && !$cambios) {
-            $cambios[] = 'Estatus de Dropi: ' . $o['estatus'];
+
+            $detalle = 'Entra como ' . $this->etiqueta($d['estado']);
+            if ($d['estado'] === 'en_oficina') $detalle .= isset($avisos['aviso_oficina_at']) ? ' · ya se le avisó' : ' · por avisar';
+            return ['accion' => 'nuevo', 'detalle' => $detalle . '.', 'campos' => $campos + $avisos, 'avisos' => $avisos];
         }
 
-        if (!$cambios) {
-            return ['accion' => 'igual', 'estado' => $estado, 'detalle' => 'Sin cambios.', 'campos' => [], 'reiniciar_aviso' => false];
+        // Lo que el archivo no trae no borra lo que ya hay (p. ej. una guía escrita desde el compositor).
+        foreach (['guia', 'tipo_entrega', 'transportadora'] as $k) {
+            if ($campos[$k] === '') unset($campos[$k]);
         }
-        return ['accion' => 'actualiza', 'estado' => $estado, 'detalle' => implode(' · ', $cambios), 'campos' => $campos, 'reiniciar_aviso' => $ordenDistinta];
+
+        $cambios = [];
+        if (clave_color((string)$ex['estatus']) !== clave_color($d['estatus'])) {
+            $cambios[] = 'Estatus: ' . ($ex['estatus'] !== '' ? $ex['estatus'] : '—') . ' → ' . ($d['estatus'] !== '' ? $d['estatus'] : '—');
+        } elseif ($d['ultimo_mov'] !== '' && clave_color($d['ultimo_mov']) !== clave_color((string)$ex['ultimo_mov'])) {
+            $cambios[] = 'Movimiento: ' . mb_substr($d['ultimo_mov'], 0, 40);
+        }
+        if ($d['guia'] !== '' && $d['guia'] !== (string)$ex['guia']) $cambios[] = $ex['guia'] === '' ? 'Guía' : 'Guía nueva';
+        if ($d['novedad'] !== (string)$ex['novedad']) $cambios[] = $d['novedad'] !== '' ? 'Novedad' : 'Novedad resuelta';
+        if ($this->difiere($d, $ex, ['nombre', 'apellidos', 'telefono', 'municipio', 'departamento', 'producto', 'cantidad', 'tipo_entrega'])) $cambios[] = 'Datos del cliente';
+        if ($this->difiere($d, $ex, ['valor', 'costo_proveedor', 'flete', 'flete_devolucion', 'comision', 'ganancia'])) $cambios[] = 'Valores';
+
+        if (!$cambios && !$this->difiere($d, $ex, self::COMPARAR)) {
+            return ['accion' => 'igual', 'detalle' => 'Sin cambios.', 'campos' => [], 'avisos' => []];
+        }
+        return ['accion' => 'actualiza', 'detalle' => $cambios ? implode(' · ', $cambios) : 'Datos de Dropi.', 'campos' => $campos, 'avisos' => []];
     }
 
-    private function escribir(array $plan, string $telefono, ?array $ex): void
+    /** ¿Alguno de estos campos del archivo es distinto de lo guardado? (ignora los que el archivo no trae) */
+    private function difiere(array $d, array $ex, array $claves): bool
+    {
+        foreach ($claves as $k) {
+            if (!array_key_exists($k, $d) || $d[$k] === null && !in_array($k, ['ganancia'], true)) continue;
+            $a = $d[$k];
+            $b = $ex[$k] ?? null;
+            if (in_array($k, self::NUMERICOS, true)) {
+                if ($a === null || $b === null) { if ($a !== $b) return true; continue; }
+                if (round((float)$a, 2) !== round((float)$b, 2)) return true;
+            } elseif (mb_strtolower(trim((string)$a), 'UTF-8') !== mb_strtolower(trim((string)$b), 'UTF-8')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Desde cuándo está la orden en su estatus actual. Si el estatus no cambió se
+     * conserva lo guardado. Si cambió (u orden nueva), es ahora, salvo que Dropi
+     * traiga una fecha de movimiento anterior para "reclame en oficina" o "entregado".
+     */
+    private function estatusDesde(array $d, ?array $ex, string $ahora): string
+    {
+        if ($ex && !empty($ex['estatus_desde']) && clave_color((string)$ex['estatus']) === clave_color($d['estatus'])) {
+            return (string)$ex['estatus_desde'];
+        }
+
+        $mov = $d['ultimo_mov_at'];
+        if ($mov !== null && $mov < $ahora) {
+            $clave = clave_color((string)$d['ultimo_mov']);
+            if ($d['estado'] === 'en_oficina' && $clave === 'reclameenoficina') return $mov;
+            if ($d['estado'] === 'entregado' && strpos($clave, 'entregad') === 0) return $mov;
+        }
+        return $ahora;
+    }
+
+    private function escribir(array $plan, array $o, ?array $ex, array $mapa, string $ahora): void
     {
         $campos = $plan['campos'];
 
         if (!$ex) {
-            $campos['telefono']       = $telefono;
-            $campos['usuario_nombre'] = 'Importado de Dropi';
+            $campos['dropi_id']       = $o['id'];
+            $campos['primera_vez_at'] = $ahora;
+            $campos['visto_at']       = $ahora;
             $cols = array_keys($campos);
-            $this->db->prepare(
-                'INSERT INTO contactos_manuales (' . implode(', ', $cols) . ') VALUES (:' . implode(', :', $cols) . ')'
-            )->execute($campos);
-            return;
+            $this->db->prepare('INSERT INTO dropi_ordenes (' . implode(', ', $cols) . ') VALUES (:' . implode(', :', $cols) . ')')->execute($campos);
+            $ordenId = (int)$this->db->lastInsertId();
+        } else {
+            $campos['visto_at'] = $ahora;
+            $sets = [];
+            foreach (array_keys($campos) as $k) $sets[] = "{$k} = :{$k}";
+            $campos['_id'] = (int)$ex['id'];
+            $this->db->prepare('UPDATE dropi_ordenes SET ' . implode(', ', $sets) . ' WHERE id = :_id')->execute($campos);
+            $ordenId = (int)$ex['id'];
         }
 
-        $sets = [];
-        foreach (array_keys($campos) as $k) $sets[] = "{$k} = :{$k}";
-        if ($plan['reiniciar_aviso']) $sets[] = 'notificado_oficina_at = NULL';
-
-        $campos['_id'] = (int)$ex['id'];
-        $this->db->prepare('UPDATE contactos_manuales SET ' . implode(', ', $sets) . ' WHERE id = :_id')->execute($campos);
+        // Las líneas se reemplazan (un archivo sin productos no toca las que ya hay).
+        if (isset($campos['producto'])) {
+            $this->db->prepare('DELETE FROM dropi_orden_lineas WHERE orden_id = ?')->execute([$ordenId]);
+            $ins = $this->db->prepare('
+                INSERT INTO dropi_orden_lineas (orden_id, dropi_product_id, producto, producto_id, variacion, cantidad, total, costo_proveedor)
+                VALUES (:o, :dp, :p, :pid, :v, :c, :t, :k)
+            ');
+            foreach ($o['lineas'] as $l) {
+                if ($l['pid'] === '' && $l['nombre'] === '') continue;
+                $ins->execute([
+                    ':o' => $ordenId, ':dp' => $l['pid'] !== '' ? $l['pid'] : null, ':p' => mb_substr($l['nombre'], 0, 190),
+                    ':pid' => $mapa[$l['pid']] ?? null, ':v' => mb_substr($l['variacion'], 0, 100),
+                    ':c' => (int)($l['cantidad'] ?? 1), ':t' => $l['total'], ':k' => $l['costo'],
+                ]);
+            }
+        }
     }
 
     /* ───────────────────────────  Vista previa entre un paso y otro  ─────────────────────────── */
@@ -528,12 +566,38 @@ class DropiImport extends Model
 
     /* ─────────────────────────────────  Utilidades  ───────────────────────────────── */
 
-    /** Contactos de Seguimiento por los últimos 8 dígitos del teléfono (mismo criterio que buscarPorTelefono). */
-    private function contactosPorSufijo(): array
+    /** @return array<string, array> órdenes ya guardadas, por ID de Dropi (como texto) */
+    private function ordenesExistentes(array $dropiIds): array
     {
         $out = [];
-        foreach ($this->db->query('SELECT * FROM contactos_manuales ORDER BY updated_at ASC, id ASC')->fetchAll(PDO::FETCH_ASSOC) as $c) {
-            $out[$this->sufijo((string)$c['telefono'])] = $c; // el más reciente gana
+        foreach (array_chunk(array_values(array_unique(array_map('strval', $dropiIds))), 500) as $ids) {
+            $stmt = $this->db->prepare('SELECT * FROM dropi_ordenes WHERE dropi_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')');
+            $stmt->execute($ids);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) $out[(string)$r['dropi_id']] = $r;
+        }
+        return $out;
+    }
+
+    /**
+     * Mensajes ya enviados por teléfono, del registro del compositor anterior:
+     * [últimos 8 dígitos][plantilla] = primera vez que se envió.
+     *
+     * @return array<string, array<string, string>>
+     */
+    private function avisosPrevios(): array
+    {
+        $out = [];
+        try {
+            new WaMensajeLog(); // crea la tabla si todavía no existe
+            $q = $this->db->query('SELECT telefono, estado_usado, MIN(created_at) AS cuando FROM wa_mensajes_log GROUP BY telefono, estado_usado');
+            foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $suf = $this->sufijo((string)$r['telefono']);
+                if (!isset($out[$suf][$r['estado_usado']]) || $r['cuando'] < $out[$suf][$r['estado_usado']]) {
+                    $out[$suf][$r['estado_usado']] = (string)$r['cuando'];
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[DropiImport] avisosPrevios: ' . $e->getMessage());
         }
         return $out;
     }

@@ -17,11 +17,215 @@ class AdminPlantillasWaController extends Controller
         // Mismo dataset que usa el formulario de la landing (departamento => [municipios]).
         $ubicaciones = require __DIR__ . '/../data/colombia.php';
 
+        // Órdenes de Dropi: tarjetas de resumen y vista con la que se abre la página.
+        $ordenes    = new DropiOrden();
+        $contadores = $ordenes->contadores();
+        $vista = (string)($_GET['vista'] ?? '');
+        if (!in_array($vista, DropiOrden::VISTAS, true)) {
+            $vista = $contadores['por_avisar'] > 0 ? 'por_avisar'
+                : ($contadores['esperando'] > 0 ? 'esperando'
+                : ($contadores['en_camino'] > 0 ? 'en_camino' : 'todas'));
+        }
+
         $this->view('admin/plantillas_wa/index', [
-            'plantillas'  => $plantillas,
-            'productos'   => $productos,
-            'ubicaciones' => $ubicaciones,
+            'plantillas'        => $plantillas,
+            'productos'         => $productos,
+            'ubicaciones'       => $ubicaciones,
+            'contadores'        => $contadores,
+            'ultimaImportacion' => $ordenes->ultimaImportacion(),
+            'vistaInicial'      => $vista,
         ]);
+    }
+
+    /**
+     * Una página de órdenes de Dropi para la tabla de Seguimiento (DataTables en modo
+     * servidor: el historial puede tener miles de filas). Las celdas salen ya escapadas;
+     * 'datos' lleva lo que necesita el compositor de WhatsApp para armar el mensaje.
+     */
+    public function ordenesDropi()
+    {
+        $this->requireLogin();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $ordenes = new DropiOrden();
+        $pagina = $ordenes->listar([
+            'vista'  => (string)($_GET['vista']  ?? 'todas'),
+            'buscar' => (string)($_GET['buscar'] ?? ''),
+            'desde'  => (string)($_GET['desde']  ?? ''),
+            'hasta'  => (string)($_GET['hasta']  ?? ''),
+        ], (int)($_GET['start'] ?? 0), (int)($_GET['length'] ?? 25));
+
+        $filas = [];
+        $datos = [];
+        foreach ($pagina['filas'] as $o) {
+            [$fila, $dato] = $this->filaOrdenDropi($o);
+            $filas[] = $fila;
+            $datos[(int)$o['id']] = $dato;
+        }
+
+        echo json_encode([
+            'draw'            => (int)($_GET['draw'] ?? 0),
+            'recordsTotal'    => $pagina['total'],
+            'recordsFiltered' => $pagina['filtrado'],
+            'data'            => $filas,
+            'datos'           => $datos,
+            'contadores'      => $ordenes->contadores(),
+        ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        exit;
+    }
+
+    /**
+     * Deja constancia de un mensaje enviado (o de un "ya le avisé" por otro medio) a
+     * una orden de Dropi: marca ese aviso en la orden —que es lo que la saca de
+     * "Por avisar"— y, si hubo mensaje, lo anota en el registro de WhatsApp.
+     */
+    public function registrarAvisoDropi()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        header('Content-Type: application/json; charset=utf-8');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['ok' => false, 'error' => 'Método no permitido']);
+            exit;
+        }
+
+        $id     = (int)($_POST['orden_id'] ?? 0);
+        $estado = trim((string)($_POST['estado'] ?? ''));
+        $guia   = trim((string)($_POST['guia'] ?? ''));
+        $solo   = !empty($_POST['solo_marcar']);
+
+        $plantillas = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'recordatorio_oficina', 'ultimo_aviso_oficina', 'entregado', 'cancelado'];
+        if (!in_array($estado, $plantillas, true)) {
+            echo json_encode(['ok' => false, 'error' => 'Mensaje no reconocido']);
+            exit;
+        }
+
+        $ordenes = new DropiOrden();
+        $orden   = $ordenes->porId($id);
+        if (!$orden || !$ordenes->registrarAviso($id, $estado, $guia)) {
+            echo json_encode(['ok' => false, 'error' => 'No encontré la orden']);
+            exit;
+        }
+
+        if (!$solo) {
+            (new WaMensajeLog())->registrar(
+                (string)$orden['telefono'],
+                trim($orden['nombre'] . ' ' . $orden['apellidos']),
+                $estado,
+                $_SESSION['usuario_nombre'] ?? 'Admin'
+            );
+        }
+
+        echo json_encode(['ok' => true, 'contadores' => $ordenes->contadores()], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    /**
+     * Celdas (HTML ya escapado) y datos del compositor de una orden de la tabla.
+     *
+     * @return array{0: array<string,string>, 1: array<string,mixed>}
+     */
+    private function filaOrdenDropi(array $o): array
+    {
+        $e = static fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+        $dias = static fn(int $n) => $n <= 0 ? 'hoy' : ($n === 1 ? 'ayer' : "hace {$n} días");
+
+        $estado    = (string)$o['estado'];
+        $etiquetas = DropiImport::ETIQUETAS;
+        $siguiente = DropiOrden::siguienteAviso($o);
+        $nombre    = trim($o['nombre'] . ' ' . $o['apellidos']);
+        $diasEstado = (int)$o['dias_estado'];
+        $diasPedido = (int)$o['dias_pedido'];
+
+        // Producto con su variación (color): "Bolso en Cuero · Negro".
+        $producto = [];
+        foreach ($o['lineas'] as $l) {
+            $texto = $e($l['producto']) . ($l['variacion'] !== '' ? ' <small class="seg-sub">' . $e($l['variacion']) . ($l['cantidad'] > 1 ? ' × ' . (int)$l['cantidad'] : '') . '</small>' : '');
+            $producto[] = '<div>' . $texto . '</div>';
+        }
+        $productoHtml = $producto ? implode('', $producto) : $e($o['producto'] !== '' ? $o['producto'] : '—');
+
+        // Cuánto lleva en este estado.
+        if ($estado === 'en_oficina') {
+            $tiempo = $diasEstado <= 0 ? 'Llegó hoy' : $diasEstado . ' día' . ($diasEstado === 1 ? '' : 's') . ' en oficina';
+        } elseif ($estado === 'entregado') {
+            $tiempo = 'Entregado ' . $dias($diasEstado);
+        } elseif ($estado === 'cancelado') {
+            $tiempo = 'Cancelado';
+        } else {
+            $tiempo = 'Pedido ' . $dias($diasPedido);
+        }
+
+        // Último mensaje enviado a esta orden.
+        $avisos = [
+            'aviso_enviado_at' => 'Guía enviada', 'aviso_oficina_at' => 'Avisado que llegó',
+            'aviso_recordatorio_at' => 'Recordatorio enviado', 'aviso_ultimo_at' => 'Última oportunidad enviada',
+            'aviso_entregado_at' => 'Foto pedida',
+        ];
+        $ultimoAviso = null;
+        foreach ($avisos as $col => $texto) {
+            if (!empty($o[$col]) && ($ultimoAviso === null || $o[$col] > $ultimoAviso[0])) $ultimoAviso = [$o[$col], $texto];
+        }
+        if ($ultimoAviso !== null) {
+            $dAviso = (int)floor((strtotime(date('Y-m-d')) - strtotime(substr($ultimoAviso[0], 0, 10))) / 86400);
+            $avisoHtml = '<small class="seg-sub">' . $e($ultimoAviso[1]) . ' ' . $dias($dAviso) . '</small>';
+        } elseif ($estado === 'en_oficina') {
+            $avisoHtml = '<small class="seg-sub" style="color:var(--err);font-weight:700">Sin aviso</small>';
+        } else {
+            $avisoHtml = '';
+        }
+
+        $insignias = '';
+        if ($siguiente && $siguiente['estado'] === 'recordatorio_oficina') $insignias .= ' <span class="status-tag status-contactado">Toca recordatorio</span>';
+        if ($siguiente && $siguiente['estado'] === 'ultimo_aviso_oficina')  $insignias .= ' <span class="status-tag status-cancelado">Última oportunidad</span>';
+        if (!empty($o['sin_actualizar'])) $insignias .= ' <span class="status-tag" style="background:var(--surface-3);color:var(--tx-muted)" title="No apareció en tus últimas descargas de Dropi">Sin actualizar</span>';
+
+        $estadoHtml = '<span class="status-tag status-' . ($estado === 'otro' ? 'contactado' : $e($estado)) . '">' . $e($etiquetas[$estado] ?? $estado) . '</span>'
+            . '<small class="seg-sub">Dropi: ' . $e($o['estatus'] !== '' ? $o['estatus'] : '—') . '</small>'
+            . ($o['novedad'] !== '' ? '<small class="seg-sub" style="color:var(--warn);font-weight:700">Novedad: ' . $e($o['novedad']) . '</small>' : '');
+
+        $lugar = $e($o['municipio']) . ($o['departamento'] !== '' ? ' <small class="seg-sub">' . $e($o['departamento']) . '</small>' : '')
+            . ($o['guia'] !== '' ? '<small class="seg-sub">Guía ' . $e($o['guia']) . '</small>' : '');
+
+        // Botón: el mensaje que toca, o "Mensaje" para abrir el compositor con cualquier plantilla.
+        if ($siguiente) {
+            $accion = '<button type="button" class="btn-primary" data-act="avisar" data-id="' . (int)$o['id'] . '"><i class="fab fa-whatsapp" aria-hidden="true"></i> ' . $e($siguiente['etiqueta']) . '</button>'
+                . '<button type="button" class="btn-ghost seg-ya" data-act="ya" data-id="' . (int)$o['id'] . '" title="Márcalo si ya le avisaste por otro medio">Ya avisé</button>';
+        } else {
+            $accion = '<button type="button" class="btn-primary btn-primary--soft" data-act="avisar" data-id="' . (int)$o['id'] . '"><i class="fab fa-whatsapp" aria-hidden="true"></i> Mensaje</button>';
+        }
+
+        $clienteHtml = '<strong>' . $e($nombre !== '' ? $nombre : 'Sin nombre') . '</strong><small class="seg-sub">' . $e($o['telefono']) . '</small>'
+            . '<span class="seg-m"><small class="seg-sub">' . $e($o['producto']) . ' · ' . $e($o['municipio']) . '</small>'
+            . $estadoHtml . '<small class="seg-sub"><b>' . $e($tiempo) . '</b></small>' . $avisoHtml . $insignias . '</span>';
+
+        $fila = [
+            'cliente'  => $clienteHtml,
+            'estado'   => $estadoHtml . $insignias,
+            'tiempo'   => '<b>' . $e($tiempo) . '</b>' . $avisoHtml,
+            'producto' => $productoHtml,
+            'lugar'    => $lugar,
+            'accion'   => $accion,
+        ];
+
+        $dato = [
+            'ordenId'      => (int)$o['id'],
+            'telefono'     => $o['telefono'],
+            'nombre'       => $o['nombre'],
+            'apellidos'    => $o['apellidos'],
+            'producto'     => $o['producto'],
+            'cantidad'     => (string)max(1, (int)$o['cantidad']),
+            'precio'       => (float)$o['valor'] > 0 ? '$' . number_format((float)$o['valor'], 0, ',', '.') : '',
+            'municipio'    => $o['municipio'],
+            'departamento' => $o['departamento'],
+            'tipoEntrega'  => $o['tipo_entrega'] !== '' ? $o['tipo_entrega'] : 'oficina',
+            'numeroGuia'   => $o['guia'],
+            'estado'       => $siguiente ? $siguiente['estado'] : DropiOrden::plantillaPorDefecto($estado),
+            'siguiente'    => $siguiente ? $siguiente['estado'] : null,
+        ];
+
+        return [$fila, $dato];
     }
 
     /**
@@ -249,6 +453,7 @@ class AdminPlantillasWaController extends Controller
             return;
         }
 
+        $lectura['archivo'] = mb_substr(basename((string)$archivo['name']), 0, 120);
         $_SESSION['dropi_import_token'] = $import->guardarTemporal($lectura);
 
         $productosDropi = $import->productosDeDropi($lectura['ordenes']);
@@ -294,7 +499,7 @@ class AdminPlantillasWaController extends Controller
 
         try {
             $import->guardarMapa($eleccion, $nombres);
-            $resultado = $import->procesar($lectura['ordenes'], true);
+            $resultado = $import->procesar($lectura['ordenes'], true, (string)($lectura['archivo'] ?? ''), (string)($_SESSION['usuario_nombre'] ?? 'Admin'));
         } catch (\Throwable $e) {
             error_log('[importarDropi] ' . $e->getMessage());
             $this->vistaImportarDropi(['paso' => 'subir', 'errores' => [
@@ -307,9 +512,10 @@ class AdminPlantillasWaController extends Controller
         unset($_SESSION['dropi_import_token']);
 
         $this->vistaImportarDropi([
-            'paso'      => 'resultado',
-            'resultado' => $resultado,
-            'omitidas'  => $lectura['omitidas'],
+            'paso'       => 'resultado',
+            'resultado'  => $resultado,
+            'omitidas'   => $lectura['omitidas'],
+            'contadores' => (new DropiOrden())->contadores(),
         ]);
     }
 

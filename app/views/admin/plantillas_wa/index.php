@@ -168,7 +168,7 @@ $estados = [
     <main class="material-main">
         <?php
         $pageTitle    = 'Seguimiento de WhatsApp';
-        $pageSubtitle = 'Compón mensajes y da seguimiento a los pedidos en oficina';
+        $pageSubtitle = 'Tus órdenes de Dropi y a quién avisarle hoy';
         $showRangeFilter = false;
         $showSearch      = false;
         $headerCtas = [[
@@ -182,8 +182,129 @@ $estados = [
 
         <section class="material-content">
 
-            <!-- Compositor de mensajes -->
-            <div class="panel" id="waComposerPanel" style="padding:1.1rem 1.25rem 1.25rem;margin-bottom:1rem;">
+            <?php
+            // ── Órdenes de Dropi: lo que hay que avisar hoy y el historial ──
+            $c = $contadores ?? [];
+            $hayOrdenes = (int)($c['todas'] ?? 0) > 0;
+            $ui = $ultimaImportacion ?? null;
+            $desactualizada = !$ui || (int)$ui['horas'] >= 30;
+            $cuando = '';
+            if ($ui) {
+                $t = strtotime($ui['creado_en']);
+                $cuando = date('Y-m-d', $t) === date('Y-m-d') ? 'hoy a las ' . date('H:i', $t)
+                    : (date('Y-m-d', $t) === date('Y-m-d', strtotime('-1 day')) ? 'ayer a las ' . date('H:i', $t) : date('d/m/Y \a \l\a\s H:i', $t));
+            }
+            $tarjetas = [
+                ['por_avisar', 'Por avisar hoy',      'fa-bell',                 'glow-red',    'Ya llegaron a la oficina'],
+                ['esperando',  'Esperando recogida',  'fa-box-open',             'glow-gold',   null],
+                ['novedad',    'Con novedad',         'fa-triangle-exclamation', 'glow-purple', 'La transportadora reportó algo'],
+                ['en_camino',  'En camino',           'fa-truck',                'glow-blue',   'En preparación o despachados'],
+                ['entregados', 'Entregados',          'fa-circle-check',         'glow-green',  'En tu historial'],
+            ];
+            ?>
+
+            <div id="seguimientoDropi" style="margin-bottom:1rem;">
+                <?php if (!$hayOrdenes): ?>
+                    <div class="panel" style="padding:1.1rem 1.25rem 1.25rem;">
+                        <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;"><i class="fas fa-file-excel" aria-hidden="true"></i> Todavía no has importado órdenes de Dropi</h2>
+                        <p style="font-size:12.5px;color:var(--tx-muted);margin-bottom:.85rem;">
+                            Descarga tus órdenes de Dropi en Excel (15 días o más) y súbelas aquí: verás a quién avisarle que su pedido ya llegó a la oficina,
+                            quién espera recogida y quién tiene novedad, y podrás consultar todo el historial.
+                        </p>
+                        <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" class="btn-primary"><i class="fas fa-file-import"></i> Importar de Dropi</a>
+                    </div>
+                <?php else: ?>
+                    <p style="font-size:12.5px;margin:0 0 .75rem;color:<?= $desactualizada ? 'var(--warn)' : 'var(--tx-muted)' ?>;">
+                        <i class="fas <?= $desactualizada ? 'fa-triangle-exclamation' : 'fa-file-excel' ?>" aria-hidden="true"></i>
+                        <?php if ($ui): ?>
+                            Última importación: <strong><?= htmlspecialchars($cuando) ?></strong> · <?= (int)$ui['ordenes'] ?> órdenes.
+                            <?= $desactualizada ? 'Las listas pueden estar desactualizadas.' : '' ?>
+                        <?php else: ?>
+                            Aún no se registra ninguna importación.
+                        <?php endif; ?>
+                        Dropi actualiza si el paquete llegó a la oficina hacia las 10 a. m.: importa después de esa hora.
+                        <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" style="font-weight:700;">Importar ahora →</a>
+                    </p>
+
+                    <div class="stats-grid stats-grid--compacta" id="segTarjetas">
+                        <?php foreach ($tarjetas as [$vistaT, $titulo, $icono, $glow, $nota]): ?>
+                            <div class="stat-card <?= $glow ?>" role="button" tabindex="0" data-vista="<?= $vistaT ?>">
+                                <div class="stat-info">
+                                    <small><?= $titulo ?></small>
+                                    <h2 data-c="<?= $vistaT ?>"><?= (int)($c[$vistaT] ?? 0) ?></h2>
+                                    <?php if ($vistaT === 'esperando'): ?>
+                                        <span class="target"><b data-c="piden_recordatorio"><?= (int)($c['piden_recordatorio'] ?? 0) ?></b> piden recordatorio</span>
+                                    <?php else: ?>
+                                        <span class="target"><?= $nota ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <i class="fas <?= $icono ?> stat-icon" aria-hidden="true"></i>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <div class="table-container" style="margin-top:1rem;">
+                        <div class="table-header">
+                            <h2>Órdenes de Dropi</h2>
+                        </div>
+
+                        <div class="dt-filter-bar">
+                            <button type="button" class="state-chip" id="segTodas">Todas las órdenes</button>
+
+                            <details class="dtf-wrap" id="segFechaWrap">
+                                <summary class="dtf-btn">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span class="dtf-btn__label" id="segFechaLabel">Todo el historial</span>
+                                    <i class="fas fa-chevron-down dtf-btn__chev"></i>
+                                </summary>
+                                <div class="dtf-panel">
+                                    <button type="button" class="dfd-item is-active" data-rango="todo"><i class="fas fa-infinity"></i> Todo el historial</button>
+                                    <button type="button" class="dfd-item" data-rango="15"><i class="fas fa-calendar-week"></i> Últimos 15 días</button>
+                                    <button type="button" class="dfd-item" data-rango="30"><i class="fas fa-calendar-week"></i> Últimos 30 días</button>
+                                    <button type="button" class="dfd-item" data-rango="mes"><i class="fas fa-calendar-alt"></i> Este mes</button>
+                                    <div class="dfd-divider"></div>
+                                    <div class="dfd-custom">
+                                        <span class="dfd-custom__label"><i class="fas fa-sliders-h"></i> Fecha del pedido</span>
+                                        <form class="dfd-custom__form" id="segFechaForm">
+                                            <input type="date" id="segDesde" max="<?= date('Y-m-d') ?>" aria-label="Desde">
+                                            <input type="date" id="segHasta" max="<?= date('Y-m-d') ?>" aria-label="Hasta">
+                                            <button type="submit">Aplicar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <div class="dt-search-wrap">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="segBuscar" placeholder="Nombre, teléfono, guía, producto, ciudad…" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="dt-table-wrap">
+                            <table id="tablaOrdenesDropi" class="pedidos-dt">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Estado</th>
+                                        <th>Tiempo</th>
+                                        <th>Producto</th>
+                                        <th>Municipio</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Compositor a mano: para clientes que todavía no están en Dropi -->
+            <details class="wa-aparte" style="margin-bottom:1rem;">
+            <summary class="btn-detail" style="cursor:pointer;margin-bottom:.75rem;">
+                <i class="fab fa-whatsapp" aria-hidden="true"></i> Mensaje a mano (cliente que todavía no está en Dropi)
+            </summary>
+            <div class="panel" id="waComposerPanel" style="padding:1.1rem 1.25rem 1.25rem;margin-bottom:0;">
                 <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;">Enviar mensaje por WhatsApp</h2>
                 <p style="font-size:12.5px;color:var(--tx-muted);margin-bottom:.85rem;">
                     Busca por teléfono: si corresponde a un pedido de la landing se autocompletan sus datos.
@@ -262,8 +383,9 @@ $estados = [
                     <button type="button" id="waComponerBtn" class="btn-primary"><i class="fab fa-whatsapp"></i> Componer mensaje</button>
                 </div>
             </div>
+            </details>
 
-            <!-- En oficina esperando recogida -->
+            <!-- En oficina esperando recogida (pedidos de la landing y contactos a mano; las órdenes de Dropi van arriba) -->
             <div class="panel" id="waEnOficinaPanel" style="padding:1.1rem 1.25rem 1.25rem;margin-bottom:1rem;" hidden>
                 <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;">En oficina, esperando recogida</h2>
                 <p style="font-size:12.5px;color:var(--tx-muted);margin-bottom:.85rem;">
@@ -763,6 +885,146 @@ $estados = [
     });
 
     cargarEnOficina();
+})();
+</script>
+<script>
+// Órdenes de Dropi: lista de trabajo (por avisar, esperando recogida, novedad…) e historial.
+// Tabla en modo servidor: el historial puede tener miles de filas.
+(() => {
+    const tabla = document.getElementById('tablaOrdenesDropi');
+    if (!tabla) return; // todavía no hay órdenes importadas
+
+    const BASE = window.BASE_URL || '';
+    const tarjetas  = document.querySelectorAll('#segTarjetas [data-vista]');
+    const chipTodas = document.getElementById('segTodas');
+    const datos     = new Map(); // id de orden → datos para armar el mensaje
+    let vista  = <?= json_encode($vistaInicial ?? 'todas') ?>;
+    let buscar = '', desde = '', hasta = '', temporizador = null;
+
+    const marcarVista = () => {
+        tarjetas.forEach(t => t.classList.toggle('is-active', t.dataset.vista === vista));
+        chipTodas.classList.toggle('is-active', vista === 'todas');
+    };
+
+    const pintarContadores = (c) => {
+        if (!c) return;
+        document.querySelectorAll('#segTarjetas [data-c]').forEach(el => {
+            if (c[el.dataset.c] !== undefined) el.textContent = c[el.dataset.c];
+        });
+    };
+
+    const dt = new DataTable('#tablaOrdenesDropi', {
+        serverSide: true,
+        searching: false,
+        ordering: false,
+        autoWidth: false,
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100], ['10', '25', '50', '100']],
+        ajax: {
+            url: BASE + '/AdminPlantillasWa/ordenesDropi',
+            type: 'GET',
+            data: (d) => { d.vista = vista; d.buscar = buscar; d.desde = desde; d.hasta = hasta; },
+            dataSrc: (json) => {
+                datos.clear();
+                Object.keys(json.datos || {}).forEach(k => datos.set(Number(k), json.datos[k]));
+                pintarContadores(json.contadores);
+                return json.data || [];
+            },
+        },
+        columns: [
+            { data: 'cliente' }, { data: 'estado' }, { data: 'tiempo' },
+            { data: 'producto' }, { data: 'lugar' }, { data: 'accion' },
+        ],
+        language: {
+            lengthMenu:   'Mostrar _MENU_ por página',
+            info:         '_TOTAL_ órdenes',
+            infoEmpty:    'Sin órdenes',
+            infoFiltered: '(de _MAX_ en esta lista)',
+            zeroRecords:  'No hay órdenes que coincidan.',
+            emptyTable:   'No hay órdenes en esta lista.',
+            paginate:     { first: '«', last: '»', next: '›', previous: '‹' },
+        },
+        dom: 't<"dt-bottom"lip>',
+    });
+
+    const recargar = (volverAlInicio = true) => dt.ajax.reload(null, volverAlInicio);
+
+    // ── Tarjetas = listas ──
+    const cambiarVista = (v) => { vista = v; marcarVista(); recargar(); };
+    tarjetas.forEach(t => {
+        t.addEventListener('click', () => cambiarVista(t.dataset.vista));
+        t.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cambiarVista(t.dataset.vista); } });
+    });
+    chipTodas.addEventListener('click', () => cambiarVista('todas'));
+    marcarVista();
+
+    // ── Búsqueda ──
+    document.getElementById('segBuscar').addEventListener('input', (e) => {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(() => { buscar = e.target.value.trim(); recargar(); }, 300);
+    });
+
+    // ── Fecha del pedido ──
+    const fechaWrap  = document.getElementById('segFechaWrap');
+    const fechaLabel = document.getElementById('segFechaLabel');
+    const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const aplicarFecha = (d, h, etiqueta, activo) => {
+        desde = d; hasta = h;
+        fechaLabel.textContent = etiqueta;
+        fechaWrap.classList.toggle('dtf-wrap--active', !!(d || h));
+        fechaWrap.querySelectorAll('.dfd-item').forEach(b => b.classList.toggle('is-active', b.dataset.rango === activo));
+        fechaWrap.open = false;
+        recargar();
+    };
+    fechaWrap.querySelectorAll('.dfd-item').forEach(b => b.addEventListener('click', () => {
+        const hoy = new Date();
+        const r = b.dataset.rango;
+        if (r === 'todo') return aplicarFecha('', '', 'Todo el historial', 'todo');
+        if (r === 'mes')  return aplicarFecha(iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1)), iso(hoy), 'Este mes', 'mes');
+        const ini = new Date(hoy); ini.setDate(ini.getDate() - Number(r));
+        aplicarFecha(iso(ini), iso(hoy), 'Últimos ' + r + ' días', r);
+    }));
+    document.getElementById('segFechaForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const d = document.getElementById('segDesde').value, h = document.getElementById('segHasta').value;
+        if (!d && !h) return;
+        if (d && h && d > h) { document.getElementById('segHasta').focus(); return; }
+        aplicarFecha(d, h, (d || '…') + ' → ' + (h || '…'), '');
+    });
+
+    // ── Acciones de cada fila ──
+    const registrar = (d, estado, guia, soloMarcar) => {
+        const fd = new FormData();
+        fd.append('orden_id', d.ordenId);
+        fd.append('estado', estado);
+        fd.append('guia', guia || '');
+        if (soloMarcar) fd.append('solo_marcar', '1');
+        fd.append('csrf_token', window.__CSRF__ || '');
+        return fetch(BASE + '/AdminPlantillasWa/registrarAvisoDropi', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'fetch' } })
+            .then(r => r.json())
+            .then(j => {
+                if (!j.ok) { alert(j.error || 'No se pudo guardar el aviso.'); return; }
+                pintarContadores(j.contadores);
+                recargar(false);
+            })
+            .catch(() => alert('No se pudo guardar el aviso. Revisa tu conexión.'));
+    };
+
+    tabla.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-act]');
+        if (!btn) return;
+        const d = datos.get(Number(btn.dataset.id));
+        if (!d) return;
+
+        if (btn.dataset.act === 'ya') {
+            if (confirm('¿Marcar que ya le avisaste a este cliente por otro medio?')) registrar(d, d.siguiente, '', true);
+            return;
+        }
+        // Sin "id": el compositor lo usa para pedidos de la landing y aquí no aplica.
+        window.WaPicker.open({ ...d }, {
+            onSend: (mensaje, estado, guia) => { registrar(d, estado, guia, false); },
+        });
+    });
 })();
 </script>
 </body>

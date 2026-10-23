@@ -73,28 +73,29 @@ class FomoPedidos extends Model
             } catch (\Throwable $e) {
                 error_log('[FomoPedidos] whatsapp: ' . $e->getMessage());
             }
+        }
 
-            // 3) Órdenes traídas de la exportación de Dropi: llevan la hora real del
-            //    pedido (dropi_fecha), así que no dependen de que se haya enviado un
-            //    mensaje. Si el cliente también está en el log, el filtro de
-            //    repetidos de abajo (mismo nombre y municipio) deja una sola.
-            try {
-                $stmt = $this->db->prepare(
-                    "SELECT nombre, municipio, TIMESTAMPDIFF(SECOND, dropi_fecha, NOW()) AS seg
-                     FROM contactos_manuales
-                     WHERE dropi_fecha IS NOT NULL
-                       AND dropi_fecha >= NOW() - INTERVAL {$horas} HOUR
-                       AND dropi_fecha <= NOW()
-                       AND estado <> 'cancelado'
-                       AND TRIM(producto) = :producto
-                     ORDER BY dropi_fecha DESC
-                     LIMIT {$max}"
-                );
-                $stmt->execute([':producto' => $productoNombre]);
-                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $f) $filas[] = $f;
-            } catch (\Throwable $e) {
-                error_log('[FomoPedidos] dropi: ' . $e->getMessage());
-            }
+        // 3) Órdenes traídas de la exportación de Dropi (DropiImport): llevan la hora
+        //    real del pedido, así que no dependen de que se haya enviado un mensaje, y
+        //    se emparejan por el producto de la tienda elegido al importar. Si el cliente
+        //    también está en el log de WhatsApp, el filtro de repetidos de abajo (mismo
+        //    nombre y municipio) deja una sola. Antes de la primera importación la tabla
+        //    no existe: eso es normal y no se registra como error.
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT o.nombre, o.municipio, TIMESTAMPDIFF(SECOND, o.fecha_pedido, NOW()) AS seg
+                 FROM dropi_ordenes o
+                 WHERE o.fecha_pedido >= NOW() - INTERVAL {$horas} HOUR
+                   AND o.fecha_pedido <= NOW()
+                   AND o.estado <> 'cancelado'
+                   AND EXISTS (SELECT 1 FROM dropi_orden_lineas l WHERE l.orden_id = o.id AND l.producto_id = :pid)
+                 ORDER BY o.fecha_pedido DESC
+                 LIMIT {$max}"
+            );
+            $stmt->execute([':pid' => $productoId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $f) $filas[] = $f;
+        } catch (\PDOException $e) {
+            if ($e->getCode() !== '42S02') error_log('[FomoPedidos] dropi: ' . $e->getMessage());
         }
 
         usort($filas, fn($a, $b) => (int)$a['seg'] <=> (int)$b['seg']);
