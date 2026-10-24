@@ -472,6 +472,7 @@
                     ['En camino', (e.enviado || 0) + (e.otro || 0), 'rgba(245,158,11,.70)'],
                     ['En oficina', e.en_oficina, 'rgba(251,146,60,.70)'],
                     ['Preparando', e.confirmado, 'rgba(34,197,94,.45)'],
+                    ['Por confirmar', (e.nuevo || 0) + (e.contactado || 0), 'rgba(93,104,255,.55)'],
                     ['Devolución', e.devolucion, 'rgba(176,23,23,.75)'],
                     ['Cancelado', e.cancelado, 'rgba(148,163,184,.75)']
                 ].filter(function (p) { return p[1] > 0; });

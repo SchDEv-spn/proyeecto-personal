@@ -47,7 +47,9 @@ $cuando = static function (?string $fecha): string {
             <p class="help">
                 Todos los canales: landing, WhatsApp y tus vendedoras.
                 <?php if (!empty($dropi['hay_datos'])): ?>
-                    Cuenta los pedidos hechos en el período, según tu última importación (<?= $h($cuando($dropi['ultima_actualizacion'] ?? null)) ?>).
+                    Cuenta los pedidos hechos en el período: los de la landing desde que entran (estén o no ya en Dropi) y
+                    lo demás según tu última importación de Dropi<?= !empty($dropi['hay_dropi']) ? ' (' . $h($cuando($dropi['ultima_actualizacion'] ?? null)) . ')' : '' ?>.
+                    <?php if (empty($dropi['hay_dropi'])): ?><b>Todavía no has importado órdenes de Dropi:</b> por ahora solo se ven los pedidos de la landing.<?php endif; ?>
                 <?php endif; ?>
             </p>
         </div>
@@ -62,8 +64,8 @@ $cuando = static function (?string $fecha): string {
         <div class="panel__body dash-dropi__vacio">
             <i class="fas fa-box-open" aria-hidden="true"></i>
             <div>
-                <strong>Todavía no hay órdenes de Dropi importadas.</strong>
-                <p class="help">Descarga tus órdenes de Dropi y súbelas en Seguimiento. Aquí verás cuánto vendes, cuánto se entrega y cuánto se devuelve, vengan de la landing o de WhatsApp.</p>
+                <strong>Todavía no hay pedidos de la landing ni órdenes de Dropi importadas.</strong>
+                <p class="help">Cuando entren pedidos por la landing los verás aquí. Descarga tus órdenes de Dropi y súbelas en Seguimiento para ver también cuánto vendes por WhatsApp, cuánto se entrega y cuánto se devuelve.</p>
             </div>
         </div>
     </div>
@@ -130,6 +132,9 @@ $cuando = static function (?string $fecha): string {
                 <?php else: ?>
                     <span class="target">Solo <?= $h($nombreCanal[$canalSel]) ?></span>
                 <?php endif; ?>
+                <?php if ($t['canceladas'] > 0): ?>
+                    <span class="target"><?= $plural($t['canceladas'], 'cancelada', 'canceladas') ?> (cuentan como órdenes, no como venta)</span>
+                <?php endif; ?>
                 <span class="target"><?= ($renderTrend)($tr['ordenes'] ?? $flat) ?> vs per. ant.</span>
             </div>
             <i class="fas fa-clipboard-list stat-icon" aria-hidden="true"></i>
@@ -152,8 +157,8 @@ $cuando = static function (?string $fecha): string {
                 <span class="target"><?= $money($t['ganancia']) ?> − <?= $money($t['flete_devolucion']) ?> de fletes de regreso</span>
                 <span class="target"><?= ($renderTrend)($tr['ganancia_neta'] ?? $flat) ?> vs per. ant.</span>
                 <?php if ($t['entregadas_sin_ganancia'] > 0): ?>
-                    <span class="target dash-aviso" title="Dropi no calculó la ganancia de esas órdenes entregadas, así que no suman aquí.">
-                        <?= $plural($t['entregadas_sin_ganancia'], 'entregada sin ganancia', 'entregadas sin ganancia') ?> en Dropi
+                    <span class="target dash-aviso" title="Dropi no calculó la ganancia de esas órdenes entregadas (o todavía no están en Dropi), así que no suman aquí.">
+                        <?= $plural($t['entregadas_sin_ganancia'], 'entregada sin ganancia', 'entregadas sin ganancia') ?> de Dropi
                     </span>
                 <?php endif; ?>
             </div>
@@ -175,7 +180,10 @@ $cuando = static function (?string $fecha): string {
                 <small>En camino</small>
                 <h2><?= number_format($t['en_proceso'], 0, ',', '.') ?></h2>
                 <span class="target"><?= $money($t['valor_en_proceso']) ?> por cobrar</span>
-                <span class="target">Aún sin entregar ni devolver</span>
+                <span class="target">Ya en Dropi, sin entregar ni devolver</span>
+                <?php if ($t['por_confirmar'] > 0): ?>
+                    <span class="target"><b><?= number_format($t['por_confirmar'], 0, ',', '.') ?></b> por confirmar (<?= $money($t['valor_por_confirmar']) ?>)</span>
+                <?php endif; ?>
             </div>
             <i class="fas fa-truck-fast stat-icon" aria-hidden="true"></i>
         </div>
@@ -225,7 +233,7 @@ $cuando = static function (?string $fecha): string {
             $c = $cn[$k];
             $base = max(0, (int)$c['creadas']);
             $principal = [['Creadas', $c['creadas'], 'f-nuevo'], ['Despachadas', $c['despachadas'], 'f-enviado'], ['Entregadas', $c['entregadas'], 'f-entregado']];
-            $resto = [['Devueltas', $c['devoluciones'], 'f-cancelado'], ['Canceladas', $c['canceladas'], 'f-gris'], ['Pendientes', $c['en_proceso'], 'f-contactado']];
+            $resto = [['Devueltas', $c['devoluciones'], 'f-cancelado'], ['Canceladas', $c['canceladas'], 'f-gris'], ['Por confirmar', $c['por_confirmar'], 'f-confirmado'], ['En camino', $c['en_proceso'], 'f-contactado']];
             $fila = static function (array $f) use ($base): string {
                 $p = $base > 0 ? (int)round($f[1] / $base * 100) : 0;
                 return '<div class="funnel-row"><span class="funnel-label">' . htmlspecialchars($f[0]) . '</span>'
@@ -247,14 +255,15 @@ $cuando = static function (?string $fecha): string {
                         <?php foreach ($resto as $f) echo $fila($f); ?>
                     </div>
                     <p class="help dash-nota">
-                        <b>Pendientes</b> son las que aún no se entregan ni se devuelven (preparándose, en camino o esperando recogida).
+                        <b>En camino</b> son las que ya están en Dropi y aún no se entregan ni se devuelven (preparándose, en camino o esperando recogida).
+                        <?php if ($k === 'landing'): ?><b>Por confirmar</b> son pedidos de la landing nuevos o contactados que todavía no pasan a Dropi.<?php endif; ?>
                         De las ya cerradas, se entrega el <b><?= $pct($c['tasa_entrega']) ?></b>.
                     </p>
                 <?php endif; ?>
                 <?php if ($k === 'whatsapp'): ?>
                     <p class="help dash-nota">Empieza cuando la orden se crea en Dropi: las conversaciones que no llegaron a ser orden no se ven aquí.</p>
                 <?php else: ?>
-                    <p class="help dash-nota">Lo que pasa antes de Dropi (nuevo, contactado, confirmado) está en el embudo de la landing, más abajo.</p>
+                    <p class="help dash-nota">El embudo completo de la landing, con cada estado que les pones (nuevo, contactado, confirmado…), sigue más abajo.</p>
                 <?php endif; ?>
             </div>
         </article>
@@ -269,7 +278,7 @@ $cuando = static function (?string $fecha): string {
                 <div class="dash-tabla-wrap">
                     <table class="dash-tabla">
                         <thead>
-                            <tr><th scope="col">Canal</th><th scope="col" class="num">Órdenes</th><th scope="col" class="num dash-opc">Entregadas</th><th scope="col" class="num dash-opc">Devol.</th><th scope="col" class="num">Entrega</th><th scope="col" class="num">Ganancia neta</th></tr>
+                            <tr><th scope="col">Canal</th><th scope="col" class="num">Órdenes</th><th scope="col" class="num dash-opc">Entregadas</th><th scope="col" class="num dash-opc">Devol.</th><th scope="col" class="num dash-opc">Canceladas</th><th scope="col" class="num">Entrega</th><th scope="col" class="num">Ganancia neta</th></tr>
                         </thead>
                         <tbody>
                         <?php foreach ([['landing', 'Landing', 'fa-globe'], ['whatsapp', 'WhatsApp / directo', 'fa-whatsapp']] as [$k, $nombre, $icono]): $c = $cn[$k]; ?>
@@ -278,6 +287,7 @@ $cuando = static function (?string $fecha): string {
                                 <td class="num"><?= number_format($c['ordenes'], 0, ',', '.') ?></td>
                                 <td class="num dash-opc"><?= number_format($c['entregadas'], 0, ',', '.') ?></td>
                                 <td class="num dash-opc"><?= number_format($c['devoluciones'], 0, ',', '.') ?></td>
+                                <td class="num dash-opc"><?= number_format($c['canceladas'], 0, ',', '.') ?></td>
                                 <td class="num"><?= $pct($c['tasa_entrega']) ?></td>
                                 <td class="num"><?= $money($c['ganancia_neta']) ?></td>
                             </tr>
@@ -286,8 +296,9 @@ $cuando = static function (?string $fecha): string {
                     </table>
                 </div>
                 <p class="help dash-nota">
-                    <b>Landing</b> es una orden de Dropi que corresponde a un pedido de tu landing (mismo teléfono en esos días, o el mismo ID de Dropi).
-                    El resto —lo que vendes por WhatsApp o directo— se cuenta como <b>WhatsApp / directo</b>.
+                    <b>Landing</b> es todo pedido que entra por tu landing, esté o no ya en Dropi: mientras sigue nuevo o contactado cuenta como orden
+                    (por confirmar), y cuando lo creas en Dropi (mismo teléfono en esos días, o el mismo ID) pasa a mostrar el estado de Dropi.
+                    También cuentan los cancelados, aparte. Lo demás que hay en Dropi —lo que vendes por WhatsApp o directo— es <b>WhatsApp / directo</b>.
                 </p>
             </div>
         </article>
@@ -348,6 +359,9 @@ $cuando = static function (?string $fecha): string {
                     </div>
                     <?php if (($dropi['productos_extra'] ?? 0) > 0): ?>
                         <p class="help dash-nota">Y <?= $plural((int)$dropi['productos_extra'], 'producto más', 'productos más') ?> con menos órdenes.</p>
+                    <?php endif; ?>
+                    <?php if (array_filter($dropi['producto'], static fn($f) => $f['nombre'] === 'Sin producto')): ?>
+                        <p class="help dash-nota"><b>Sin producto</b> son órdenes de una descarga de Dropi sin productos; sube la descarga <b>“órdenes con productos”</b> para verlas por producto.</p>
                     <?php endif; ?>
                 <?php endif; ?>
             </div>

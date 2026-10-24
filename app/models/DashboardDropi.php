@@ -9,11 +9,21 @@
  * Reglas que conviene no romper:
  *  - Una orden de Dropi se cuenta en el período de su FECHA DE PEDIDO ("de lo que se vendió
  *    en estas fechas, qué se entregó y qué se devolvió"); las recientes siguen en camino.
- *  - Canal: una orden es "landing" si corresponde a un pedido de la landing, y "whatsapp"
- *    (WhatsApp o venta directa) si no. Se reconoce por el ID de Dropi que dejó la API
- *    (pedidos.dropi_order_id) o, si no, por el mismo teléfono (últimos 8 dígitos) y fechas
- *    cercanas. Cada pedido de la landing reclama A LO SUMO UNA orden de Dropi: si el mismo
- *    cliente vuelve a comprar por WhatsApp, esa segunda orden no se le atribuye a la landing.
+ *  - Canal: todo pedido que entra por la landing es "landing", esté o no ya en Dropi; lo demás que
+ *    hay en Dropi (WhatsApp, venta directa) es "whatsapp". Un pedido de la landing se reconoce en
+ *    Dropi por el ID que dejó la API (pedidos.dropi_order_id) o, si no, por el mismo teléfono (últimos
+ *    8 dígitos) y fechas cercanas. Cada pedido de la landing reclama A LO SUMO UNA orden de Dropi: si el
+ *    mismo cliente vuelve a comprar por WhatsApp, esa segunda orden no se le atribuye a la landing.
+ *  - Un pedido de la landing que todavía no está en Dropi cuenta con su propio estado (nuevo, contactado,
+ *    confirmado, cancelado…): los nuevos y contactados son "por confirmar". Cuando ya está en Dropi manda
+ *    el estado de Dropi, pero la fecha sigue siendo la del pedido de la landing.
+V);
+una($s, <<<'V'
+ *  - Las canceladas no cuentan como órdenes ni como venta (sí aparecen como "creadas" en el
+ *    embudo y en la distribución por estado).
+V, <<<'N'
+ *  - Las canceladas cuentan como órdenes (se muestran, y salen aparte como "canceladas"), pero no como
+ *    venta ni como dinero por cobrar.
  *  - La ganancia es la que calcula Dropi y solo existe en las órdenes entregadas. La ganancia
  *    neta le resta el flete de regreso de las devoluciones, que le cobran al dueño.
  *  - Las canceladas no cuentan como órdenes ni como venta (sí aparecen como "creadas" en el
@@ -38,7 +48,9 @@ class DashboardDropi extends Model
     private const MAX_DIAS_POR_SEMANA = 750;
 
     private const ABREVIATURAS_MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-    private const ESTADOS = ['confirmado', 'enviado', 'en_oficina', 'entregado', 'devolucion', 'otro', 'cancelado'];
+    private const ESTADOS = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'devolucion', 'otro', 'cancelado'];
+    /** Lo que se ve de un pedido de la landing que todavía no está en Dropi. */
+    private const ESTADOS_PEDIDO = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
 
     /* ─────────────────────────────  Período  ───────────────────────────── */
 
@@ -123,59 +135,46 @@ class DashboardDropi extends Model
      * transportadora/producto, estados y gráficos; el desglose por canal y los embudos siempre
      * traen los dos canales, para compararlos.
      *
-     * @return array|null  null si no se pudo leer; ['hay_datos' => false] si todavía no se importó nada.
+     * @return array|null  ['hay_datos' => false] si no hay ni órdenes de Dropi ni pedidos de la landing.
      */
     public function resumen(array $periodo, string $canal = 'todos'): ?array
     {
         if (!in_array($canal, self::CANALES, true)) $canal = 'todos';
 
-        try {
-            $hay = $this->db->query('SELECT COUNT(*) AS n, MAX(visto_at) AS ultima FROM dropi_ordenes')->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            if ($e->getCode() === '42S02') return ['hay_datos' => false]; // la tabla se crea en la primera importación
-            throw $e;
-        }
-        if ((int)$hay['n'] === 0) return ['hay_datos' => false];
+        $dropi = $this->contarDropi();
+        if ($dropi['n'] === 0 && $this->contarPedidos() === 0) return ['hay_datos' => false];
 
         $inicio = $periodo['inicio'];
         $fin    = $periodo['fin'];
         $hayPrev = $periodo['prev_inicio'] !== null && $periodo['prev_fin'] !== null && $periodo['prev_inicio'] < $periodo['prev_fin'];
 
-        $actuales  = $this->ordenes($inicio, $fin);
-        $anteriores = $hayPrev ? $this->ordenes($periodo['prev_inicio'], $periodo['prev_fin']) : [];
+        $entradas   = $this->entradas($inicio, $fin);
+        $anteriores = $hayPrev ? $this->entradas($periodo['prev_inicio'], $periodo['prev_fin']) : [];
 
-        // Se clasifican juntas (de la más antigua a la más nueva) para que un pedido de la landing
-        // en el borde entre los dos períodos no lo reclamen dos órdenes.
-        $juntas = array_merge($anteriores, $actuales);
-        usort($juntas, fn($a, $b) => [$a['fecha_pedido'], (int)$a['id']] <=> [$b['fecha_pedido'], (int)$b['id']]);
-        $desdePedidos = ($hayPrev ? $periodo['prev_inicio'] : $inicio);
-        $canales = self::clasificarCanales($juntas, $this->pedidosLanding(
-            (clone $desdePedidos)->modify('-' . (self::VENTANA_ADELANTE / 86400) . ' days'),
-            (clone $fin)->modify('+1 day')
-        ));
+        $filtrar = static fn(array $es): array => $canal === 'todos' ? $es
+            : array_values(array_filter($es, fn($o) => $o['canal'] === $canal));
 
-        $filtrar = static fn(array $os): array => $canal === 'todos' ? $os
-            : array_values(array_filter($os, fn($o) => ($canales[(int)$o['id']] ?? 'whatsapp') === $canal));
-
-        $vista = self::agregar($filtrar($actuales), $canales);   // lo que se ve según el canal elegido
-        $ambos = self::agregar($actuales, $canales);             // comparación entre canales
-        $res = $vista;
+        $res   = self::agregar($filtrar($entradas), []);   // lo que se ve según el canal elegido
+        $ambos = self::agregar($entradas, []);             // comparación entre canales
         $res['canal']   = $ambos['canal'];
         $res['embudos'] = ['landing' => $ambos['canal']['landing'], 'whatsapp' => $ambos['canal']['whatsapp']];
-        $res['anterior'] = $hayPrev ? self::agregar($filtrar($anteriores), null)['total'] : null;
+        $res['anterior'] = $hayPrev ? self::agregar($filtrar($anteriores), [])['total'] : null;
 
         // "Desde siempre" arranca en la primera orden, no en el año 2000.
         $inicioSerie = $inicio;
         if ((int)$inicio->format('Y') < 2001) {
-            $inicioSerie = $actuales ? new DateTime(substr((string)$actuales[0]['fecha_pedido'], 0, 10) . ' 00:00:00', $inicio->getTimezone()) : (clone $fin)->modify('-1 day');
+            $primera = null;
+            foreach ($entradas as $o) if ($primera === null || $o['fecha_pedido'] < $primera) $primera = $o['fecha_pedido'];
+            $inicioSerie = $primera !== null ? new DateTime(substr((string)$primera, 0, 10) . ' 00:00:00', $inicio->getTimezone()) : (clone $fin)->modify('-1 day');
         }
-        $res['serie'] = self::serie($actuales, $canales, $inicioSerie, min($fin, (clone $periodo['ahora'])->modify('+1 second')));
+        $res['serie'] = self::serie($entradas, [], $inicioSerie, min($fin, (clone $periodo['ahora'])->modify('+1 second')));
 
         $res['hay_datos'] = true;
+        $res['hay_dropi'] = $dropi['n'] > 0;
         $res['canal_sel'] = $canal;
         $res['periodo'] = ['rango' => $periodo['rango'], 'etiqueta' => $periodo['etiqueta'], 'desde' => $periodo['desde'], 'hasta' => $periodo['hasta']];
-        $res['total_ordenes_importadas'] = (int)$hay['n'];
-        $res['ultima_actualizacion'] = $hay['ultima'];
+        $res['total_ordenes_importadas'] = $dropi['n'];
+        $res['ultima_actualizacion'] = $dropi['ultima'];
         return $res;
     }
 
@@ -204,19 +203,83 @@ class DashboardDropi extends Model
 
     /* ─────────────────────────────  Lectura  ───────────────────────────── */
 
+    /** @return array{n: int, ultima: ?string}  cuántas órdenes de Dropi hay (0 si la tabla todavía no existe) */
+    private function contarDropi(): array
+    {
+        try {
+            $r = $this->db->query('SELECT COUNT(*) AS n, MAX(visto_at) AS ultima FROM dropi_ordenes')->fetch(PDO::FETCH_ASSOC);
+            return ['n' => (int)$r['n'], 'ultima' => $r['ultima'] ?: null];
+        } catch (PDOException $e) {
+            if ($e->getCode() === '42S02') return ['n' => 0, 'ultima' => null]; // la tabla se crea en la primera importación
+            throw $e;
+        }
+    }
+
+    private function contarPedidos(): int
+    {
+        try {
+            return (int)$this->db->query('SELECT COUNT(*) FROM pedidos')->fetchColumn();
+        } catch (PDOException $e) {
+            error_log('[DashboardDropi] pedidos de la landing: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Las órdenes del período (de Dropi y de la landing) ya unificadas: ver construirEntradas. Se leen
+     * con margen —30 días antes y hasta 15 después— para que el cruce entre pedidos y órdenes sea el
+     * mismo sin importar dónde caiga el borde del período.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function entradas(DateTime $desde, DateTime $hasta): array
+    {
+        $antes = (clone $desde)->modify('-30 days');
+        return self::construirEntradas(
+            $this->pedidosDelPeriodo($desde, $hasta),
+            $this->ordenes($antes, (clone $hasta)->modify('+' . (self::VENTANA_ADELANTE / 86400 + 1) . ' days')),
+            $this->pedidosLanding($antes, (clone $hasta)->modify('+1 day')),
+            $desde,
+            $hasta
+        );
+    }
+
     /** @return array<int, array<string, mixed>> */
     private function ordenes(DateTime $inicio, DateTime $fin): array
     {
-        $stmt = $this->db->prepare('
-            SELECT id, dropi_id, telefono, fecha_pedido, estado, transportadora, producto, valor, ganancia, flete_devolucion
-            FROM dropi_ordenes
-            WHERE fecha_pedido >= :inicio AND fecha_pedido < :fin
-            ORDER BY fecha_pedido, id
-        ');
-        $stmt->execute([':inicio' => $inicio->format('Y-m-d H:i:s'), ':fin' => $fin->format('Y-m-d H:i:s')]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $this->db->prepare('
+                SELECT id, dropi_id, telefono, fecha_pedido, estado, transportadora, producto, valor, ganancia, flete_devolucion
+                FROM dropi_ordenes
+                WHERE fecha_pedido >= :inicio AND fecha_pedido < :fin
+                ORDER BY fecha_pedido, id
+            ');
+            $stmt->execute([':inicio' => $inicio->format('Y-m-d H:i:s'), ':fin' => $fin->format('Y-m-d H:i:s')]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '42S02') return [];
+            throw $e;
+        }
     }
 
+    /** Todos los pedidos que entraron por la landing en el período, en cualquier estado (también los cancelados). */
+    private function pedidosDelPeriodo(DateTime $desde, DateTime $hasta): array
+    {
+        try {
+            $stmt = $this->db->prepare('
+                SELECT p.id, p.telefono, p.created_at, p.estado, p.precio_total, pr.nombre AS producto
+                FROM pedidos p
+                LEFT JOIN productos pr ON pr.id = p.producto_id
+                WHERE p.created_at >= :desde AND p.created_at < :hasta
+                ORDER BY p.created_at, p.id
+            ');
+            $stmt->execute([':desde' => $desde->format('Y-m-d H:i:s'), ':hasta' => $hasta->format('Y-m-d H:i:s')]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('[DashboardDropi] pedidos del período: ' . $e->getMessage());
+            return [];
+        }
+    }
     /** Pedidos de la landing que pueden corresponder a una orden de Dropi (los cancelados no: nunca se escribieron en Dropi). */
     private function pedidosLanding(DateTime $desde, DateTime $hasta): array
     {
@@ -238,16 +301,17 @@ class DashboardDropi extends Model
     /* ─────────────────────────────  Cálculo (puro)  ───────────────────────────── */
 
     /**
-     * Qué órdenes de Dropi vienen de la landing y cuáles no. Las órdenes deben venir de la más
-     * antigua a la más nueva: cada una reclama el primer pedido libre que le corresponde.
+     * Qué pedido de la landing corresponde a cada orden de Dropi. Las órdenes deben venir de la más
+     * antigua a la más nueva: cada una reclama el primer pedido libre que le corresponde, y un pedido
+     * lo reclama una sola orden.
      *
      * @param array<int, array<string, mixed>> $ordenes filas con id, dropi_id, telefono, fecha_pedido
-     * @param array<int, array<string, mixed>> $pedidos  filas con telefono, created_at, dropi_order_id
-     * @return array<int, 'landing'|'whatsapp'>  canal por id de orden
+     * @param array<int, array<string, mixed>> $pedidos  filas con id, telefono, created_at, dropi_order_id
+     * @return array<int, int>  id de pedido por id de orden (solo las órdenes que vienen de la landing)
      */
-    public static function clasificarCanales(array $ordenes, array $pedidos): array
+    public static function emparejar(array $ordenes, array $pedidos): array
     {
-        $canales = [];
+        $pares = [];
         $porDropiId = [];
         $porTelefono = [];
         foreach ($pedidos as $i => $p) {
@@ -264,31 +328,99 @@ class DashboardDropi extends Model
             $did = (string)($o['dropi_id'] ?? '');
             if ($did !== '' && isset($porDropiId[$did]) && !isset($usados[$porDropiId[$did]])) {
                 $usados[$porDropiId[$did]] = true;
-                $canales[(int)$o['id']] = 'landing';
+                $pares[(int)$o['id']] = (int)$pedidos[$porDropiId[$did]]['id'];
             }
         }
 
         // 2) Mismo teléfono y fechas cercanas, de la orden más antigua a la más nueva; cada pedido se usa una sola vez.
         foreach ($ordenes as $o) {
             $id = (int)$o['id'];
-            if (isset($canales[$id])) continue;
-            $canales[$id] = 'whatsapp';
+            if (isset($pares[$id])) continue;
             $t = strtotime((string)$o['fecha_pedido']);
             if ($t === false) continue;
             foreach ($porTelefono[DropiOrden::sufijo((string)$o['telefono'])] ?? [] as $c) {
                 if (isset($usados[$c['i']])) continue;
                 if ($t >= $c['ts'] - self::VENTANA_ATRAS && $t <= $c['ts'] + self::VENTANA_ADELANTE) {
                     $usados[$c['i']] = true;
-                    $canales[$id] = 'landing';
+                    $pares[$id] = (int)$pedidos[$c['i']]['id'];
                     break;
                 }
             }
         }
-        return $canales;
+        return $pares;
     }
 
     /**
-     * Totales y desgloses de una lista de órdenes. Con $canales en null no se hace el desglose por canal.
+     * Qué órdenes de Dropi vienen de la landing y cuáles no.
+     *
+     * @return array<int, 'landing'|'whatsapp'>  canal por id de orden
+     */
+    public static function clasificarCanales(array $ordenes, array $pedidos): array
+    {
+        $pares = self::emparejar($ordenes, $pedidos);
+        $canales = [];
+        foreach ($ordenes as $o) $canales[(int)$o['id']] = isset($pares[(int)$o['id']]) ? 'landing' : 'whatsapp';
+        return $canales;
+    }
+
+    /** Estado con el que se cuenta un pedido de la landing que todavía no está en Dropi. */
+    private static function estadoDePedido(string $estado): string
+    {
+        return in_array($estado, self::ESTADOS_PEDIDO, true) ? $estado : 'nuevo';
+    }
+
+    /**
+     * Las órdenes del período, de todos los canales, listas para sumar:
+     *  - cada pedido de la landing del período (cualquier estado): si ya está en Dropi manda el estado, el
+     *    dinero y la transportadora de Dropi; si no, cuenta con su propio estado y su precio. La fecha es la
+     *    del pedido, esté donde esté la orden de Dropi;
+     *  - cada orden de Dropi del período que NO corresponde a un pedido de la landing: es de WhatsApp.
+     *
+     * @param array $pedidosPeriodo     pedidos de la landing creados en [desde, hasta), en cualquier estado
+     * @param array $ordenes            órdenes de Dropi con margen alrededor del período
+     * @param array $pedidosQueReclaman pedidos (sin los cancelados) con margen, para el cruce
+     * @return array<int, array<string, mixed>>  id, canal, estado, fecha_pedido, valor, ganancia, flete_devolucion, transportadora, producto, en_dropi
+     */
+    public static function construirEntradas(array $pedidosPeriodo, array $ordenes, array $pedidosQueReclaman, DateTime $desde, DateTime $hasta): array
+    {
+        usort($ordenes, fn($a, $b) => [$a['fecha_pedido'], (int)$a['id']] <=> [$b['fecha_pedido'], (int)$b['id']]);
+        $pares = self::emparejar($ordenes, $pedidosQueReclaman);
+        $ordenDe = array_flip($pares); // pedido → orden
+        $porId = [];
+        foreach ($ordenes as $o) $porId[(int)$o['id']] = $o;
+
+        $entrada = static fn(string $id, string $canal, string $estado, $fecha, array $o, string $producto, bool $enDropi): array => [
+            'id' => $id, 'canal' => $canal, 'estado' => $estado, 'fecha_pedido' => (string)$fecha,
+            'valor' => (float)($o['valor'] ?? 0), 'ganancia' => $o['ganancia'] ?? null, 'flete_devolucion' => (float)($o['flete_devolucion'] ?? 0),
+            'transportadora' => (string)($o['transportadora'] ?? ''), 'producto' => $producto, 'en_dropi' => $enDropi,
+        ];
+
+        $entradas = [];
+        foreach ($pedidosPeriodo as $p) {
+            $oid = $ordenDe[(int)$p['id']] ?? null;
+            $o = $oid !== null ? ($porId[$oid] ?? null) : null;
+            if ($o !== null) {
+                $producto = trim((string)$o['producto']) !== '' ? trim((string)$o['producto']) : trim((string)($p['producto'] ?? ''));
+                $entradas[] = $entrada('p' . $p['id'], 'landing', (string)$o['estado'], $p['created_at'], $o, $producto, true);
+            } else {
+                $entradas[] = $entrada('p' . $p['id'], 'landing', self::estadoDePedido((string)$p['estado']), $p['created_at'],
+                    ['valor' => $p['precio_total'] ?? 0], trim((string)($p['producto'] ?? '')), false);
+            }
+        }
+
+        $d = $desde->format('Y-m-d H:i:s');
+        $h = $hasta->format('Y-m-d H:i:s');
+        foreach ($ordenes as $o) {
+            if (isset($pares[(int)$o['id']])) continue; // ya cuenta con su pedido de la landing
+            $f = (string)$o['fecha_pedido'];
+            if ($f < $d || $f >= $h) continue;
+            $entradas[] = $entrada('o' . $o['id'], 'whatsapp', (string)$o['estado'], $f, $o, trim((string)$o['producto']), true);
+        }
+        return $entradas;
+    }
+    /**
+     * Totales y desgloses de una lista de órdenes. Con $canales en null no se hace el desglose por canal; con [] se hace
+     * por el campo "canal" de cada orden (como las que arma construirEntradas) y con un mapa id → canal, por ese mapa.
      *
      * @return array{total: array, canal: array, transportadora: array, producto: array}
      */
@@ -301,7 +433,7 @@ class DashboardDropi extends Model
 
         foreach ($ordenes as $o) {
             self::sumar($total, $o);
-            if ($canales !== null) self::sumar($porCanal[$canales[(int)$o['id']] ?? 'whatsapp'], $o);
+            if ($canales !== null) self::sumar($porCanal[($o['canal'] ?? ($canales[(int)$o['id']] ?? 'whatsapp')) === 'landing' ? 'landing' : 'whatsapp'], $o);
 
             $t = self::nombreTransportadora((string)($o['transportadora'] ?? ''));
             $porTransp[$t] ??= self::vacio();
@@ -315,7 +447,7 @@ class DashboardDropi extends Model
         $lista = static function (array $grupos): array {
             $out = [];
             foreach ($grupos as $nombre => $b) {
-                if ($b['ordenes'] === 0 && $b['canceladas'] === 0) continue;
+                if ($b['ordenes'] === 0) continue;
                 $out[] = ['nombre' => (string)$nombre] + self::derivados($b);
             }
             usort($out, fn($a, $b) => [$b['ordenes'], $b['ganancia_neta']] <=> [$a['ordenes'], $a['ganancia_neta']]);
@@ -333,7 +465,7 @@ class DashboardDropi extends Model
     }
 
     /**
-     * Órdenes y ventas ($) por franja de tiempo y por canal, sin canceladas. La franja se adapta al
+     * Órdenes (con las canceladas) y ventas ($, sin ellas) por franja de tiempo y por canal. La franja se adapta al
      * largo del período: por hora si es de un día, por día hasta ~3 meses, por semana hasta ~2 años y
      * por mes después. No grafica el futuro: termina en $hasta.
      *
@@ -387,13 +519,12 @@ class DashboardDropi extends Model
         }
 
         foreach ($ordenes as $o) {
-            if (($o['estado'] ?? '') === 'cancelado') continue;
             try { $f = new DateTime((string)$o['fecha_pedido']); } catch (Exception $e) { continue; }
             $k = $clave($f);
             if (!isset($indice[$k])) continue;
-            $c = ($canales[(int)$o['id']] ?? 'whatsapp') === 'landing' ? 'landing' : 'whatsapp';
+            $c = ($o['canal'] ?? ($canales[(int)$o['id']] ?? 'whatsapp')) === 'landing' ? 'landing' : 'whatsapp';
             $out[$c]['ordenes'][$indice[$k]]++;
-            $out[$c]['ventas'][$indice[$k]] += (float)($o['valor'] ?? 0);
+            if (($o['estado'] ?? '') !== 'cancelado') $out[$c]['ventas'][$indice[$k]] += (float)($o['valor'] ?? 0);
         }
         return $out;
     }
@@ -412,6 +543,7 @@ class DashboardDropi extends Model
             'entregadas' => 0, 'valor_entregado' => 0.0, 'ganancia' => 0.0, 'entregadas_sin_ganancia' => 0,
             'devoluciones' => 0, 'valor_devuelto' => 0.0, 'flete_devolucion' => 0.0,
             'en_proceso' => 0, 'valor_en_proceso' => 0.0,
+            'por_confirmar' => 0, 'valor_por_confirmar' => 0.0,
             'estados' => array_fill_keys(self::ESTADOS, 0),
         ];
     }
@@ -422,9 +554,9 @@ class DashboardDropi extends Model
         $valor  = (float)($o['valor'] ?? 0);
         $b['estados'][$estado] = ($b['estados'][$estado] ?? 0) + 1;
 
+        $b['ordenes']++;
         if ($estado === 'cancelado') { $b['canceladas']++; return; }
 
-        $b['ordenes']++;
         $b['vendido'] += $valor;
         if ($estado === 'entregado') {
             $b['entregadas']++;
@@ -435,6 +567,10 @@ class DashboardDropi extends Model
             $b['devoluciones']++;
             $b['valor_devuelto'] += $valor;
             $b['flete_devolucion'] += (float)($o['flete_devolucion'] ?? 0);
+        } elseif ($estado === 'nuevo' || $estado === 'contactado') {
+            // Pedido de la landing que todavía no se confirma ni entra a Dropi.
+            $b['por_confirmar']++;
+            $b['valor_por_confirmar'] += $valor;
         } else {
             $b['en_proceso']++;
             $b['valor_en_proceso'] += $valor;
@@ -443,7 +579,7 @@ class DashboardDropi extends Model
 
     /**
      * Agrega lo que sale de los totales: órdenes cerradas, tasas, ganancia neta y los números del embudo
-     * (creadas → despachadas → entregadas, con devueltas, canceladas y las que siguen sin resolver).
+     * (creadas → despachadas → entregadas, con devueltas, canceladas, por confirmar y en camino).
      */
     private static function derivados(array $b): array
     {
@@ -454,7 +590,7 @@ class DashboardDropi extends Model
         $b['ganancia_neta']    = $b['ganancia'] - $b['flete_devolucion'];
 
         $e = $b['estados'];
-        $b['creadas']     = $b['ordenes'] + $b['canceladas'];
+        $b['creadas']     = $b['ordenes'];
         // Salieron de la bodega: todo lo que ya no está solo "confirmado" ni cancelado.
         $b['despachadas'] = $b['entregadas'] + $b['devoluciones'] + $e['enviado'] + $e['en_oficina'] + $e['otro'];
         return $b;
