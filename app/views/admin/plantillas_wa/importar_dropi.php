@@ -49,6 +49,7 @@
         .acc-detalle   { display: block; margin-top: 4px; font-size: var(--text-xs); color: var(--tx-muted); }
 
         .dropi-acciones { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+        .dropi-barra { justify-content: flex-start; margin-top: var(--sp-5); padding: var(--sp-3) 0; }
 
         /* En celular cada fila se vuelve una tarjeta: una tabla ancha obligaría a deslizar de lado. */
         @media (max-width: 640px) {
@@ -172,9 +173,11 @@
                 $maxFilas = 300;
             ?>
 
-                <form method="post" action="<?= BASE_URL ?>/AdminPlantillasWa/importarDropiConfirmar" id="formImportar" class="dropi-pasos">
+                <form method="post" action="<?= BASE_URL ?>/AdminPlantillasWa/importarDropiConfirmar" id="formImportar">
                     <?= csrf_field() ?>
                     <input type="hidden" name="token" value="<?= $e($token) ?>">
+
+                    <div class="dropi-pasos">
 
                     <?= $tarjetasConteo($c, count($omitidas), ['Órdenes nuevas', 'Se actualizan', 'Sin cambios', 'No se importan']) ?>
 
@@ -300,7 +303,11 @@
                         </div>
                     </div>
 
-                    <div class="dropi-acciones">
+                    </div>
+
+                    <?php /* Barra pegada al borde de abajo: con cientos de órdenes el botón no queda al final de un scroll larguísimo.
+                             Va fuera de la cuadrícula .dropi-pasos: un hijo de grid no puede "pegarse" más allá de su propia celda. */ ?>
+                    <div class="dropi-acciones admin-form-actions dropi-barra">
                         <button type="submit" class="btn-primary" id="btnImportar">
                             <i class="fas fa-file-import"></i>
                             Importar <?= $plural($total, 'orden', 'órdenes') ?>
