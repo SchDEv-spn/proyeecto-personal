@@ -80,7 +80,7 @@ $clasesEstado = ['devolucion' => 'cancelado', 'otro' => 'contactado'];
                 <textarea id="consultaMsg<?= $i ?>" class="consulta__mensaje" readonly rows="7"><?= $e($o['mensaje']) ?></textarea>
                 <div class="consulta__acciones">
                     <button type="button" class="btn-primary" data-copiar="consultaMsg<?= $i ?>"><i class="far fa-copy" aria-hidden="true"></i> Copiar mensaje</button>
-                    <a class="btn-detail" href="<?= $e($o['whatsapp'] . rawurlencode($o['mensaje'])) ?>" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp" aria-hidden="true"></i> Abrir en WhatsApp</a>
+                    <a class="btn-detail" href="<?= $e($o['whatsapp']) ?>" <?= strpos($o['whatsapp'], 'https://') === 0 ? 'target="_blank" ' : '' ?>rel="noopener noreferrer"><i class="fab fa-whatsapp" aria-hidden="true"></i> Abrir en WhatsApp Business</a>
                 </div>
             </article>
         <?php endforeach; endif; ?>

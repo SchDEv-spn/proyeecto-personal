@@ -163,6 +163,30 @@ class ConsultaPedidos extends Model
 
     /* ─────────────────────────────  Textos (puros)  ───────────────────────────── */
 
+    /**
+     * Enlace para abrir el chat con el cliente en WhatsApp BUSINESS (las vendedoras lo usan, y un enlace
+     * normal de wa.me abre el WhatsApp personal si el teléfono tiene los dos).
+     *  - Android: enlace "intent" de Chrome que pide la app com.whatsapp.w4b; si no está instalada, cae en wa.me.
+     *  - iPhone: el esquema de WhatsApp Business.
+     *  - Otros (computador): el enlace normal de wa.me, que abre WhatsApp Web o la app de escritorio.
+     * Nadie puede forzar la app desde una página web en un computador; en el celular sí.
+     */
+    public static function enlaceWhatsApp(string $telefono10, string $mensaje, string $userAgent = ''): string
+    {
+        $numero = '57' . preg_replace('/\D+/', '', $telefono10);
+        $texto  = rawurlencode($mensaje);
+        $web    = 'https://wa.me/' . $numero . '?text=' . $texto;
+
+        if (stripos($userAgent, 'Android') !== false) {
+            return 'intent://send?phone=' . $numero . '&text=' . $texto
+                . '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;S.browser_fallback_url=' . rawurlencode($web) . ';end';
+        }
+        if (preg_match('/iPhone|iPad|iPod/i', $userAgent)) {
+            return 'whatsapp-business://send?phone=' . $numero . '&text=' . $texto;
+        }
+        return $web;
+    }
+
     /** El estado en palabras sencillas, para la vendedora. */
     public static function estadoLegible(array $o): string
     {

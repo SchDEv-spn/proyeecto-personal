@@ -55,7 +55,7 @@
                     <a class="panel vend-card<?= $v['activa'] ? '' : ' vend-card--inactiva' ?>" href="<?= BASE_URL ?>/AdminVendedoras/ver/<?= (int)$v['id'] ?>">
                         <div class="panel__head">
                             <h2><i class="fas fa-user-tie" aria-hidden="true"></i> <?= $e($v['nombre']) ?></h2>
-                            <span class="chip"><?= $v['activa'] ? ((float)$v['valor_pedido'] > 0 ? $pesos($v['valor_pedido']) . ' por pedido' : 'Sin valor por pedido') : 'Inactiva' ?></span>
+                            <span class="chip"><?= $v['activa'] ? ((float)$v['valor_pedido'] > 0 ? $pesos($v['valor_pedido']) . ' por unidad' : 'Sin valor por unidad') : 'Inactiva' ?></span>
                         </div>
                         <div class="panel__body">
                             <div class="vend-card__fila vend-card__fila--grande">
@@ -80,9 +80,9 @@
                             <?= csrf_field() ?>
                             <label for="vNombre">Nombre</label>
                             <input id="vNombre" name="nombre" class="form-input" maxlength="100" required placeholder="Vendedora 1 — Nombre">
-                            <label for="vValor">Valor por pedido entregado</label>
+                            <label for="vValor">Valor por unidad entregada</label>
                             <input id="vValor" name="valor_pedido" class="form-input" inputmode="numeric" placeholder="Ej.: 5000" autocomplete="off">
-                            <small class="help">Se le paga ese valor por cada pedido entregado, y el doble si el pedido lleva 2 unidades o más.</small>
+                            <small class="help">Se le paga ese valor por cada unidad de un pedido entregado: con 2 unidades se paga doble, con 3 triple, y así.</small>
                             <button type="submit" class="btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Crear vendedora</button>
                         </form>
                     </div>

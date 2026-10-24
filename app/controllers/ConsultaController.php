@@ -42,7 +42,9 @@ class ConsultaController extends Controller
                 $ordenes = $consulta->buscar($tel);
                 $consulta->registrar($ip, $tel, count($ordenes));
                 $datos['telefono'] = $tel;
-                $datos['ordenes'] = array_map(static function (array $o) use ($tel): array {
+                $agente = mb_substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 300);
+                $datos['ordenes'] = array_map(static function (array $o) use ($tel, $agente): array {
+                    $mensaje = ConsultaPedidos::mensaje($o);
                     return [
                         'producto'  => trim((string)$o['producto']),
                         'cantidad'  => (int)$o['n_lineas'] > 0 ? (int)$o['cantidad'] : null,
@@ -52,8 +54,8 @@ class ConsultaController extends Controller
                         'guia'      => (string)$o['guia'],
                         'transportadora' => (DropiOrden::transportadoraInfo((string)$o['transportadora'])['nombre'] ?? ''),
                         'municipio' => (string)$o['municipio'],
-                        'mensaje'   => ConsultaPedidos::mensaje($o),
-                        'whatsapp'  => 'https://wa.me/57' . $tel . '?text=',
+                        'mensaje'   => $mensaje,
+                        'whatsapp'  => ConsultaPedidos::enlaceWhatsApp($tel, $mensaje, $agente),
                     ];
                 }, $ordenes);
             }

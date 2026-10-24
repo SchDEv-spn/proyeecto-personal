@@ -56,7 +56,7 @@
     <main class="material-main">
         <?php
             $pageTitle    = $vendedora['nombre'];
-            $pageSubtitle = $valorOk ? $pesos($vendedora['valor_pedido']) . ' por pedido entregado · el doble desde 2 unidades' : 'Falta el valor por pedido';
+            $pageSubtitle = $valorOk ? $pesos($vendedora['valor_pedido']) . ' por unidad entregada · 2 unidades se pagan doble, 3 triple…' : 'Falta el valor por unidad';
             $showRangeFilter = false;
             $showSearch      = false;
             $headerCtas = [['href' => BASE_URL . '/AdminVendedoras/index', 'label' => 'Vendedoras', 'class' => 'btn-detail', 'icon' => 'fa-arrow-left']];
@@ -223,7 +223,7 @@
                                             <td><?= $e($fecha($o['fecha_pedido'])) ?> · <?= $o['producto'] !== '' ? $e($o['producto']) : 'Sin producto' ?><small class="vend-sub"><?= $o['guia'] !== '' ? 'Guía ' . $e($o['guia']) : '' ?></small></td>
                                             <td><?= $e($o['telefono']) ?></td>
                                             <td class="num"><?= $cantidadTxt($o) ?></td>
-                                            <td class="num"><?= $pesos($o['comision']) ?><?= $o['comision'] > (float)$vendedora['valor_pedido'] ? ' <small class="vend-sub">doble</small>' : '' ?></td>
+                                            <td class="num"><?= $pesos($o['comision']) ?><?= $o['cantidad_conocida'] && (int)$o['cantidad'] > 1 ? ' <small class="vend-sub">' . (int)$o['cantidad'] . ' × ' . $pesos($vendedora['valor_pedido']) . '</small>' : '' ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                     </tbody>
@@ -232,7 +232,7 @@
                             <?php if ($p['sin_cantidad'] > 0): ?>
                                 <p class="help dash-aviso"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
                                     <?= $plural($p['sin_cantidad'], 'pedido viene', 'pedidos vienen') ?> de una descarga de Dropi sin productos: no sé cuántas unidades llevan y los conté como 1.
-                                    Si alguno llevaba 2 o más, sube la descarga “órdenes con productos” antes de liquidar y se corrige solo.
+                                    Si alguno llevaba más de una unidad, sube la descarga “órdenes con productos” antes de liquidar y se corrige solo.
                                 </p>
                             <?php endif; ?>
                             <div class="vend-acciones">
@@ -241,7 +241,7 @@
                                 <button type="button" class="btn-detail" data-marcar="#vFormLiquidar" data-valor="1">Marcar todos</button>
                                 <button type="button" class="btn-detail" data-marcar="#vFormLiquidar" data-valor="0">Quitar marcas</button>
                             </div>
-                            <?php if (!$valorOk): ?><p class="help dash-aviso">Ponle primero el valor por pedido (abajo, en “Nombre y valor”).</p><?php endif; ?>
+                            <?php if (!$valorOk): ?><p class="help dash-aviso">Ponle primero el valor por unidad (abajo, en “Nombre y valor”).</p><?php endif; ?>
                             <p class="help dash-nota">Al liquidar, cada pedido queda marcado como pagado con lo que se le pagó: no vuelve a aparecer ni se paga dos veces.</p>
                         </form>
                     <?php endif; ?>
@@ -320,7 +320,7 @@
                             <input id="vNombre" name="nombre" class="form-input" maxlength="100" required value="<?= $e($vendedora['nombre']) ?>">
                         </div>
                         <div>
-                            <label for="vValor">Valor por pedido entregado</label>
+                            <label for="vValor">Valor por unidad entregada</label>
                             <input id="vValor" name="valor_pedido" class="form-input" inputmode="numeric" autocomplete="off" value="<?= (int)$vendedora['valor_pedido'] ?>">
                         </div>
                         <label class="vend-check"><input type="checkbox" name="activa" value="1" <?= $vendedora['activa'] ? 'checked' : '' ?>> Activa</label>

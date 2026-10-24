@@ -7,9 +7,9 @@
  * Cómo se trabaja (así lo pidió el dueño):
  *  - Ellas apuntan en un cuaderno solo el teléfono del cliente. El dueño pega esos teléfonos, el sistema
  *    busca la orden de cada uno en Dropi y la deja asignada a esa vendedora (aunque todavía vaya en camino).
- *  - Se les paga un valor fijo POR PEDIDO, solo cuando el pedido está ENTREGADO. Si el pedido lleva dos
- *    unidades o más se paga doble (no más que doble). Un pedido devuelto o cancelado no se paga, y por eso
- *    las devoluciones no se les cobran: simplemente nunca se pagaron.
+ *  - Se les paga un valor fijo por UNIDAD de cada pedido, solo cuando el pedido está ENTREGADO: con dos
+ *    unidades se paga doble, con tres triple, y así sucesivamente. Un pedido devuelto o cancelado no se
+ *    paga, y por eso las devoluciones no se les cobran: simplemente nunca se pagaron.
  *  - La liquidación (normalmente semanal) paga lo entregado y todavía no pagado, y deja marcado en cada orden
  *    en qué liquidación se pagó y cuánto: así nada se paga dos veces.
  *  - Una orden que vino de la landing no es de una vendedora (el canal sale de DashboardDropi).
@@ -18,8 +18,6 @@
  */
 class Vendedora extends Model
 {
-    /** Pedidos de 2 unidades o más pagan este múltiplo del valor por pedido. */
-    public const MULTIPLO_DOS_O_MAS = 2;
     /** De cuántos días atrás se buscan las órdenes de un teléfono. */
     public const DIAS_ATRAS = 120;
     /** Las órdenes recientes (hasta estos días) salen marcadas por defecto al agregarlas. */
@@ -73,10 +71,10 @@ class Vendedora extends Model
 
     /* ─────────────────────────────  Cálculo (puro)  ───────────────────────────── */
 
-    /** 1 para un pedido de una unidad (o de cantidad desconocida); doble desde dos unidades. */
+    /** Cuántas veces se paga el valor por unidad: una por unidad (1 si no se sabe cuántas lleva). */
     public static function multiplo(int $cantidad, bool $cantidadConocida): int
     {
-        return ($cantidadConocida && $cantidad >= 2) ? self::MULTIPLO_DOS_O_MAS : 1;
+        return $cantidadConocida ? max(1, $cantidad) : 1;
     }
 
     public static function comision(float $valorPedido, int $cantidad, bool $cantidadConocida): float
@@ -154,7 +152,7 @@ class Vendedora extends Model
         $nombre = trim(preg_replace('/\s+/u', ' ', $nombre));
         if ($nombre === '') throw new InvalidArgumentException('Escribe el nombre de la vendedora.');
         if (mb_strlen($nombre) > 100) throw new InvalidArgumentException('El nombre es muy largo (máximo 100 letras).');
-        if ($valorPedido < 0 || $valorPedido > self::MAX_VALOR_PEDIDO) throw new InvalidArgumentException('El valor por pedido no es válido.');
+        if ($valorPedido < 0 || $valorPedido > self::MAX_VALOR_PEDIDO) throw new InvalidArgumentException('El valor por unidad no es válido.');
 
         if ($id === null || $id <= 0) {
             $stmt = $this->db->prepare('INSERT INTO vendedoras (nombre, valor_pedido, activa, creado_en) VALUES (:n, :v, :a, NOW())');
@@ -342,14 +340,14 @@ class Vendedora extends Model
      *
      * @param int[] $ordenIds
      * @return array{id: int, ordenes: int, total: float}|null  null si no había nada que pagar
-     * @throws InvalidArgumentException si la vendedora no tiene valor por pedido
+     * @throws InvalidArgumentException si la vendedora no tiene valor por unidad
      */
     public function liquidar(int $vendedoraId, array $ordenIds, string $nota = ''): ?array
     {
         $vendedora = $this->porId($vendedoraId);
         if (!$vendedora) throw new InvalidArgumentException('Esa vendedora no existe.');
         $valor = (float)$vendedora['valor_pedido'];
-        if ($valor <= 0) throw new InvalidArgumentException('Antes de liquidar, ponle a ' . $vendedora['nombre'] . ' el valor que se le paga por pedido.');
+        if ($valor <= 0) throw new InvalidArgumentException('Antes de liquidar, ponle a ' . $vendedora['nombre'] . ' el valor que se le paga por unidad.');
 
         $ids = $this->ids($ordenIds);
         if (!$ids) return null;
