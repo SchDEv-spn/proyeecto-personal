@@ -14,6 +14,8 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
     $activeNav = 'marketing';
 } elseif (strpos($currentPath, '/AdminPlantillasWa/') !== false) {
     $activeNav = 'plantillas';
+} elseif (strpos($currentPath, '/AdminVendedoras/') !== false) {
+    $activeNav = 'vendedoras';
 } elseif (strpos($currentPath, '/AdminPerfil/') !== false) {
     $activeNav = 'perfil';
 } elseif (strpos($currentPath, '/AdminConfiguracion/') !== false) {
@@ -61,6 +63,11 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
         <a href="<?= BASE_URL ?>/AdminPlantillasWa/index" class="<?= $activeNav === 'plantillas' ? 'active' : '' ?>">
             <i class="fab fa-whatsapp"></i>
             <span>Seguimiento</span>
+        </a>
+
+        <a href="<?= BASE_URL ?>/AdminVendedoras/index" class="<?= $activeNav === 'vendedoras' ? 'active' : '' ?>">
+            <i class="fas fa-hand-holding-dollar"></i>
+            <span>Vendedoras</span>
         </a>
 
         <a href="<?= BASE_URL ?>/AdminPerfil/index" class="<?= $activeNav === 'perfil' ? 'active' : '' ?>">

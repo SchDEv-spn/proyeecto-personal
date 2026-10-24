@@ -210,6 +210,10 @@ class DropiOrden extends Model
             'devolucion_causa'  => "VARCHAR(20) NOT NULL DEFAULT ''",
             'devolucion_exenta' => 'TINYINT(1) NOT NULL DEFAULT 0',
             'devolucion_nota'   => "VARCHAR(255) NOT NULL DEFAULT ''",
+            // Vendedoras (ver Vendedora): a quién se le atribuye la orden, en qué liquidación se pagó y cuánto.
+            'vendedora_id'       => 'INT NULL',
+            'liquidacion_id'     => 'INT NULL',
+            'comision_vendedora' => 'DECIMAL(12,2) NULL',
         ];
 
         try {

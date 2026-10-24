@@ -179,6 +179,29 @@ class DashboardDropi extends Model
         return $res;
     }
 
+    /**
+     * Canal de un grupo de órdenes ya leídas (por ejemplo las de un teléfono): busca los pedidos de la
+     * landing que pueden corresponderles y aplica la misma regla del dashboard.
+     *
+     * @param array<int, array<string, mixed>> $ordenes filas con id, dropi_id, telefono, fecha_pedido
+     * @return array<int, 'landing'|'whatsapp'>
+     */
+    public function canalesDe(array $ordenes): array
+    {
+        if (!$ordenes) return [];
+        usort($ordenes, fn($a, $b) => [$a['fecha_pedido'], (int)$a['id']] <=> [$b['fecha_pedido'], (int)$b['id']]);
+        try {
+            $min = new DateTime((string)$ordenes[0]['fecha_pedido']);
+            $max = new DateTime((string)$ordenes[count($ordenes) - 1]['fecha_pedido']);
+        } catch (Exception $e) {
+            return array_fill_keys(array_map('intval', array_column($ordenes, 'id')), 'whatsapp');
+        }
+        return self::clasificarCanales($ordenes, $this->pedidosLanding(
+            (clone $min)->modify('-' . (self::VENTANA_ADELANTE / 86400) . ' days'),
+            (clone $max)->modify('+2 days')
+        ));
+    }
+
     /* ─────────────────────────────  Lectura  ───────────────────────────── */
 
     /** @return array<int, array<string, mixed>> */
