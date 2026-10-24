@@ -299,6 +299,8 @@ class AdminPlantillasWaController extends Controller
 
         $novedadTextos = DropiOrden::novedadTextos($o['novedad_tipo'] !== '' ? $o['novedad_tipo'] : 'otra', (string)$o['municipio'], $precioTxt);
 
+        $transportadora = DropiOrden::transportadoraInfo((string)($o['transportadora'] ?? ''));
+
         $dato = [
             'ordenId'      => (int)$o['id'],
             'telefono'     => $o['telefono'],
@@ -310,6 +312,8 @@ class AdminPlantillasWaController extends Controller
             'municipio'    => $o['municipio'],
             'departamento' => $o['departamento'],
             'tipoEntrega'  => $o['tipo_entrega'] !== '' ? $o['tipo_entrega'] : 'oficina',
+            'transportadora' => $transportadora['nombre'] ?? '',
+            'rastreoUrl'     => $transportadora['rastreo'] ?? '',
             'numeroGuia'   => $o['guia'],
             'estado'       => $siguiente ? $siguiente['estado'] : DropiOrden::plantillaPorDefecto($estado),
             'siguiente'    => $siguiente ? $siguiente['estado'] : null,

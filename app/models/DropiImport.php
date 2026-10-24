@@ -36,10 +36,19 @@ class DropiImport extends Model
         'despachada'              => 'enviado',
         'enreparto'               => 'enviado',
         'novedad'                 => 'enviado',
+        'preparadoparatransportadora' => 'enviado', // ya salió de la bodega rumbo a la transportadora
         'reclameenoficina'        => 'en_oficina',
         'entregado'               => 'entregado',
         'cancelado'               => 'cancelado',
+        'rechazado'               => 'cancelado', // la orden no siguió: se trata como cancelada, no como devolución
     ];
+
+    /**
+     * Estatus que se conocen pero que a propósito no se clasifican: la orden queda como
+     * "Sin clasificar" (se ve en "Todas las órdenes", con el estatus de Dropi debajo) y la
+     * importación no avisa por ellos.
+     */
+    private const ESTATUS_QUIETOS = ['intentodeentrega', 'enreexpedicion'];
 
     public const ETIQUETAS = [
         'confirmado' => 'Confirmado',
@@ -59,7 +68,8 @@ class DropiImport extends Model
 
     /** Municipios que Dropi nombra distinto: "departamento|municipio" (con clave_color) → nombre en la lista de la tienda. */
     private const ALIAS_MUNICIPIO = [
-        'cauca|elbordo' => 'Patía', // El Bordo es la cabecera del municipio de Patía
+        'cauca|elbordo'        => 'Patía', // El Bordo es la cabecera del municipio de Patía
+        'huila|sanjosedeisnos' => 'Isnos',  // Isnos se llama también San José de Isnos
     ];
 
     /** Campos que se comparan para saber si una orden cambió desde la última importación. */
@@ -302,7 +312,7 @@ class DropiImport extends Model
 
                 if (!$d['ubicacion_ok']) $res['ubicaciones_sin_reconocer'][$d['municipio'] . ' (' . $d['departamento'] . ')'] = true;
                 if (isset($landing[$this->sufijo($o['telefono'])])) $res['coinciden_landing']++;
-                if ($d['estado'] === 'otro' && $o['estatus'] !== '') {
+                if ($d['estado'] === 'otro' && $o['estatus'] !== '' && !in_array(clave_color($o['estatus']), self::ESTATUS_QUIETOS, true)) {
                     $res['estatus_desconocidos'][$o['estatus']] = ($res['estatus_desconocidos'][$o['estatus']] ?? 0) + 1;
                 }
 
@@ -733,15 +743,38 @@ class DropiImport extends Model
         }
 
         $mun = null;
-        $kc = clave_color($ciudad);
-        if ($dep !== null && $kc !== '') {
-            $alias = self::ALIAS_MUNICIPIO[clave_color($dep) . '|' . $kc] ?? null;
-            foreach ($ub[$dep] as $m) {
-                if (clave_color($m) === $kc || $m === $alias) { $mun = $m; break; }
+        if ($dep !== null) {
+            $claves = $this->clavesMunicipio($ciudad);
+            foreach ($claves as $kc) {
+                $alias = self::ALIAS_MUNICIPIO[clave_color($dep) . '|' . $kc] ?? null;
+                foreach ($ub[$dep] as $m) {
+                    if (clave_color($m) === $kc || $m === $alias) { $mun = $m; break 2; }
+                }
+            }
+            if ($mun === null) { // "Cartagena" → "Cartagena de Indias", solo si es el único del departamento que empieza así
+                foreach ($claves as $kc) {
+                    $candidatos = array_values(array_filter($ub[$dep], fn($m) => strpos(clave_color($m), $kc . 'de') === 0));
+                    if (count($candidatos) === 1) { $mun = $candidatos[0]; break; }
+                }
             }
         }
 
         $ok = $dep !== null && $mun !== null;
         return [$dep ?? $this->titulo($departamento), $mun ?? $this->titulo($ciudad), $ok];
+    }
+
+    /**
+     * Formas en que se puede buscar un municipio de Dropi en la lista de la tienda, de la más
+     * literal a la más suelta: como viene, sin la marca entre paréntesis ("Granada (M)" es el de
+     * Meta, "Sucre (S)" el de Sucre) y cada parte cuando Dropi junta dos ("La Apartada Y La Frontera").
+     *
+     * @return string[] claves (clave_color)
+     */
+    private function clavesMunicipio(string $ciudad): array
+    {
+        $limpio = trim((string)preg_replace('/\s*\([^)]*\)/u', '', $ciudad));
+        $claves = [clave_color($ciudad), clave_color($limpio)];
+        foreach (preg_split('/\s+y\s+/iu', $limpio) ?: [] as $parte) $claves[] = clave_color($parte);
+        return array_values(array_unique(array_filter($claves, fn($k) => $k !== '')));
     }
 }

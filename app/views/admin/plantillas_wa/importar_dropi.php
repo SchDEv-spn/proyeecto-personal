@@ -195,8 +195,8 @@
                         <div class="dropi-aviso" role="note">
                             <i class="fas fa-location-dot" aria-hidden="true"></i>
                             <div>
-                                No reconocí este municipio en la lista de la tienda: <strong><?= $e(implode(', ', $previa['ubicaciones_sin_reconocer'])) ?></strong>.
-                                Se guarda como lo escribe Dropi.
+                                Estos lugares no están en la lista de municipios de la tienda: <strong><?= $e(implode(', ', $previa['ubicaciones_sin_reconocer'])) ?></strong>.
+                                No hay nada que hacer: se guardan como los escribe Dropi y los mensajes salen igual.
                             </div>
                         </div>
                     <?php endif; ?>

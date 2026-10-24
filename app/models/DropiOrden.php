@@ -65,6 +65,13 @@ class DropiOrden extends Model
         'otra'      => 'Otra',
     ];
 
+    /** Transportadoras que trae Dropi (clave_color del nombre) → cómo se nombra al cliente y dónde rastrea su guía. */
+    private const TRANSPORTADORAS = [
+        'interrapidisimo' => ['Interrapidísimo', 'https://siguetuenvio.interrapidisimo.com/'],
+        'envia'           => ['Envia', 'https://envia.co/'],
+        'coordinadora'    => ['Coordinadora', 'https://coordinadora.com/rastreo/rastreo-de-guia/'],
+    ];
+
     /** Una orden que no aparece en las últimas importaciones se da por "sin actualizar". */
     private const DIAS_SIN_ACTUALIZAR = 3;
 
@@ -657,17 +664,32 @@ class DropiOrden extends Model
         if ($t === '') return '';
 
         $reglas = [
-            'pago'      => '/\b(plata|dinero|efectivo|sin fondos|no tenia para|no alcanz)/',
+            'pago'      => '/\b(plata|dinero|efectivo|sin fondos|no tenia para|no alcanz|no cancela|recaudar|no paga)/',
             'contacto'  => '/\b(ausente|no contesta|no responde|no atiende|sin contacto|telefono|cerrad|nadie (atiende|recibe)|(cliente|destinatario) no (se encuentra|se encontraba|esta))/',
             'direccion' => '/\b(direcc|ubicar|ubicacion|no existe|incomplet|errad|nomenclatura|sin referencia|zona rural|dificil acceso)/',
             'recoger'   => '/\b(bodega|receptoria|recoger|reclamar|oficina)/',
-            'coordinar' => '/\b(coordin|reprogram|agend|cita)/',
-            'rechazo'   => '/\b(rechaz|no quiere|no desea|no acept|desiste|cancel)/',
+            'coordinar' => '/\b(coordin|reprogram|agend|cita|fija fecha|fecha y hora)/',
+            'rechazo'   => '/\b(rechaz|rehus|no quiere|no desea|no acept|desiste|cancel)/',
         ];
         foreach ($reglas as $tipo => $patron) {
             if (preg_match($patron, $t)) return $tipo;
         }
         return 'otra';
+    }
+
+    /**
+     * Nombre y página de rastreo de la transportadora de la orden, para el mensaje al cliente.
+     * Null si no es una que conozcamos: el mensaje cae entonces en el nombre según el tipo de entrega.
+     *
+     * @return array{nombre: string, rastreo: string}|null
+     */
+    public static function transportadoraInfo(string $transportadora): ?array
+    {
+        $k = clave_color($transportadora);
+        foreach (self::TRANSPORTADORAS as $clave => [$nombre, $url]) {
+            if ($k !== '' && strpos($k, $clave) !== false) return ['nombre' => $nombre, 'rastreo' => $url];
+        }
+        return null;
     }
 
     /** Minúsculas, sin tildes y con los signos convertidos en espacios: "DIRECCIÓN NO-EXISTE." → "direccion no existe". */

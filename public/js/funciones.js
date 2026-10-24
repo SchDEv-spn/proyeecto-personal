@@ -1590,8 +1590,14 @@
       ? 'Estate pendiente del teléfono: el mensajero te llamará para la entrega.'
       : 'Te escribimos por aquí apenas llegue a la oficina; no hace falta que vayas antes.';
 
+  // Las órdenes de una descarga de Dropi sin productos no traen el nombre del producto: sin él, "tu pedido de
+  // *X*" pasa a "tu pedido" y "tu *X* haya llegado" a "tu pedido haya llegado", en vez de salir con asteriscos vacíos.
+  const sinProducto = (template) => template
+    .replace(/ de \*{producto}\*/g, '')
+    .replace(/\*{producto}\*/g, 'pedido');
+
   const resolveMsg = (template, data) =>
-    template
+    (data.producto ? template : sinProducto(template))
       .replace(/{nombre}/g,         data.nombre                        || '')
       .replace(/{apellidos}/g,       data.apellidos                     || '')
       .replace(/{producto}/g,        data.producto                      || '')
@@ -1599,8 +1605,9 @@
       .replace(/{precio}/g,          data.precio                        || '')
       .replace(/{municipio}/g,       data.municipio                     || '')
       .replace(/{departamento}/g,    data.departamento                  || '')
-      .replace(/{transportadora}/g,  getTransportadora(data.tipoEntrega))
-      .replace(/{rastreo}/g,         getRastreoUrl(data.tipoEntrega))
+      // Las órdenes de Dropi traen su transportadora real; las demás la deducen del tipo de entrega.
+      .replace(/{transportadora}/g,  data.transportadora || getTransportadora(data.tipoEntrega))
+      .replace(/{rastreo}/g,         data.rastreoUrl     || getRastreoUrl(data.tipoEntrega))
       .replace(/{plazo}/g,           getPlazo(data))
       .replace(/{aviso_llegada}/g,   getAvisoLlegada(data.tipoEntrega))
       .replace(/{novedad_motivo}/g,  data.novedadMotivo   || 'La transportadora nos reportó una novedad con la entrega.')
