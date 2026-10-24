@@ -142,6 +142,28 @@ class AdminPedidosController extends Controller
             'utilidad' => $this->calcTrendPct($totalUtilidad, $prevUtilidad),
         ];
 
+        // Ventas reales: lo que dicen las órdenes de Dropi importadas en Seguimiento, de todos los canales
+        // (la landing, WhatsApp, las vendedoras). Si falla la lectura, el dashboard sale igual sin esa sección.
+        $dropi = null;
+        $dropiSerie = null;
+        try {
+            $dash  = new DashboardDropi();
+            $dropi = $dash->resumen($inicioObj, $finObj, $prevInicioObj, $prevFinObj);
+            if ($dropi && !empty($dropi['hay_datos'])) {
+                $act = $dropi['total'];
+                $ant = $dropi['anterior'];
+                $dropi['tendencias'] = [
+                    'ordenes'       => $this->calcTrendPct((float)$act['ordenes'],         (float)($ant['ordenes'] ?? 0)),
+                    'entregado'     => $this->calcTrendPct((float)$act['valor_entregado'], (float)($ant['valor_entregado'] ?? 0)),
+                    'ganancia_neta' => $this->calcTrendPct((float)$act['ganancia_neta'],   (float)($ant['ganancia_neta'] ?? 0)),
+                ];
+                $dropiSerie = $dash->serieDiaria(30);
+            }
+        } catch (\Throwable $e) {
+            error_log('[AdminPedidos] ventas de Dropi: ' . $e->getMessage());
+            $dropi = null;
+        }
+
         $plantillasWa = (new PlantillaWa())->keyedByEstado();
 
         // Clientes con una devolución anterior (ver DropiOrden): se marcan en el listado para
@@ -167,6 +189,8 @@ class AdminPedidosController extends Controller
             'hasta'            => $hastaStr,
             'tendencias'       => $tendencias,
             'plantillas_wa'    => $plantillasWa,
+            'dropi'            => $dropi,
+            'dropi_serie'      => $dropiSerie,
         ]);
     }
 

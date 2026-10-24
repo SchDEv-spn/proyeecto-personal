@@ -28,6 +28,8 @@
     $hasta           = $hasta           ?? null;
     $tendencias      = $tendencias      ?? [];
     $plantillas_wa   = $plantillas_wa   ?? [];
+    $dropi           = $dropi           ?? null;  // ventas reales de Dropi (null: sin sección)
+    $dropi_serie     = $dropi_serie     ?? null;
     $usuarioNombre   = $_SESSION['usuario_nombre'] ?? 'Admin';
     $usuarioEmail    = $_SESSION['usuario_email'] ?? 'admin@tuempresa.com';
     $showRangeFilter = false; // usamos los botones Hoy/Ayer/Semana/Mes en la tabla
@@ -56,6 +58,11 @@
             <?php require __DIR__ . '/../partials/_header.php'; ?>
 
             <section class="material-content">
+
+                <?php if ($dropi !== null): ?>
+                    <?php require __DIR__ . '/_dropi_resumen.php'; ?>
+                    <h2 class="dash-etiqueta">Landing <small>los pedidos que entran por tu página</small></h2>
+                <?php endif; ?>
 
                 <!-- =========================
                      DASHBOARD (Chart.js)
@@ -417,6 +424,43 @@
 
     <!-- Chart.js -->
     <script src="<?= BASE_URL ?>/public/vendor/chart.umd.min.js"></script>
+
+    <?php if ($dropi !== null && !empty($dropi['hay_datos'])): ?>
+    <script>
+    // Órdenes de Dropi por día (barras apiladas: landing y WhatsApp / directo).
+    (function () {
+        var el = document.getElementById('chartDropiDia');
+        var datos = document.getElementById('dropiSerieDatos');
+        if (!el || !datos || typeof Chart === 'undefined') return;
+        try {
+            var s = JSON.parse(datos.textContent);
+            if (!s) return;
+            new Chart(el, {
+                type: 'bar',
+                data: {
+                    labels: s.dias,
+                    datasets: [
+                        { label: 'Landing', data: s.landing, backgroundColor: 'rgba(93,104,255,.75)', borderRadius: 3, stack: 'ordenes' },
+                        { label: 'WhatsApp / directo', data: s.whatsapp, backgroundColor: 'rgba(34,197,94,.75)', borderRadius: 3, stack: 'ordenes' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10 } }, tooltip: { intersect: false } },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(18,24,40,.08)' }, ticks: { precision: 0 } }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('[Dropi] gráfico por día:', e);
+        }
+    })();
+    </script>
+    <?php endif; ?>
 
     <!-- jQuery (requerido por DataTables CDN) -->
     <script src="<?= BASE_URL ?>/public/vendor/jquery-3.7.1.slim.min.js"></script>

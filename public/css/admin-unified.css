@@ -5664,3 +5664,50 @@ div.dataTables_wrapper,
   #segFechaWrap .dtf-btn__label { flex: 1; text-align: left; }
   .seg-limpiar { justify-content: center; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
 }
+
+/* ============================================================
+   Dashboard: ventas reales de Dropi (todos los canales).
+   Reutiliza .stats-grid/.stat-card, .panel y .chip; aquí solo lo propio.
+   ============================================================ */
+.dash-dropi { display: grid; gap: var(--sp-4); margin-bottom: var(--sp-6); }
+.dash-dropi__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+.dash-dropi__head h2 { font-size: var(--text-lg); font-weight: 800; color: var(--tx); line-height: 1.25; }
+.dash-dropi__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.chip.chip--oscuro { background: var(--green-dark); color: #fff; border-color: var(--green-dark); }
+#dropiTarjetas .stat-info .target { margin-top: var(--sp-1); }
+#dropiTarjetas .stat-info .target:first-of-type { margin-top: var(--sp-2); }
+.dash-aviso { color: var(--gold); font-weight: 700; }
+
+.dash-dropi__grid { display: grid; grid-template-columns: 1fr; gap: var(--sp-4); }
+/* Las tablas tienen 5-6 columnas: solo van de a dos paneles cuando hay ancho de sobra. */
+@media (min-width: 1500px) { .dash-dropi__grid { grid-template-columns: 1fr 1fr; } }
+.dash-grafico { position: relative; height: 260px; }
+
+.dash-tabla-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.dash-tabla { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.dash-tabla th, .dash-tabla td { padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+.dash-tabla thead th {
+  font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--tx-muted);
+  font-weight: 700; white-space: nowrap; border-bottom-color: var(--border-strong);
+}
+.dash-tabla tbody th { font-weight: 600; color: var(--tx); }
+.dash-tabla tbody th i { width: 16px; color: var(--tx-dim); }
+.dash-tabla .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dash-tabla tbody tr:last-child th, .dash-tabla tbody tr:last-child td { border-bottom: none; }
+.dash-tabla .dash-mal { color: var(--red); font-weight: 700; }
+.dash-tabla .dash-vacio { text-align: center; color: var(--tx-muted); padding: var(--sp-4); }
+.dash-nota { margin-top: var(--sp-3); }
+/* En celular las columnas secundarias se esconden: la tabla debe caber sin deslizar de lado. */
+@media (max-width: 599px) {
+  .dash-tabla { font-size: 13px; }
+  .dash-tabla th, .dash-tabla td { padding: var(--sp-2) var(--sp-1); }
+  .dash-tabla .dash-opc { display: none; }
+  .dash-tabla thead th { white-space: normal; letter-spacing: .02em; font-size: 10px; }
+  .dash-tabla tbody th i { display: none; }
+}
+
+.dash-dropi__vacio { display: flex; gap: var(--sp-4); align-items: center; }
+.dash-dropi__vacio > i { font-size: 28px; color: var(--tx-dim); }
+
+.dash-etiqueta { font-size: var(--text-lg); font-weight: 800; color: var(--tx); margin: var(--sp-6) 0 var(--sp-3); line-height: 1.25; }
+.dash-etiqueta small { font-size: var(--text-sm); font-weight: 500; color: var(--tx-muted); margin-left: var(--sp-2); }
