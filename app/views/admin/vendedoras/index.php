@@ -47,8 +47,7 @@
 
         <section class="material-content vend">
 
-            <?= alert_success($ok ?? '') ?>
-            <?= alert_error($errores ?? [], 'No se pudo') ?>
+            <div id="vendAvisos" class="vend-avisos" aria-live="polite"><?= alert_success($ok ?? '') ?><?= alert_error($errores ?? [], 'No se pudo') ?></div>
 
             <div class="vend-grid">
                 <?php foreach ($vendedoras as $v): $r = $resumen[(int)$v['id']] ?? $vacio; ?>
@@ -100,8 +99,8 @@
                     <div class="vend-enlace">
                         <input type="text" id="vEnlace" class="form-input" readonly value="<?= $e($enlace) ?>" aria-label="Enlace de consulta">
                         <button type="button" class="btn-primary" id="vCopiar"><i class="far fa-copy" aria-hidden="true"></i> Copiar</button>
-                        <a class="btn-detail" href="<?= $e($enlace) ?>" target="_blank" rel="noopener"><i class="fas fa-up-right-from-square" aria-hidden="true"></i> Abrir</a>
-                        <form method="post" action="<?= BASE_URL ?>/AdminVendedoras/cambiarEnlace" onsubmit="return confirm('¿Cambiar el enlace? El que tienen guardado dejará de funcionar y tendrás que mandarles el nuevo.');">
+                        <a class="btn-detail" id="vAbrirEnlace" href="<?= $e($enlace) ?>" target="_blank" rel="noopener"><i class="fas fa-up-right-from-square" aria-hidden="true"></i> Abrir</a>
+                        <form method="post" id="vFormEnlace" action="<?= BASE_URL ?>/AdminVendedoras/cambiarEnlace" onsubmit="return confirm('¿Cambiar el enlace? El que tienen guardado dejará de funcionar y tendrás que mandarles el nuevo.');">
                             <?= csrf_field() ?>
                             <button type="submit" class="btn-detail"><i class="fas fa-rotate" aria-hidden="true"></i> Cambiar enlace</button>
                         </form>
@@ -147,6 +146,38 @@
         i.select();
         if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(i.value).then(listo, function () { try { document.execCommand('copy'); listo(); } catch (x) {} });
         else { try { document.execCommand('copy'); listo(); } catch (x) {} }
+    });
+})();
+</script>
+<script>
+(function () {
+    // Cambiar el enlace sin recargar: el campo y el botón "Abrir" se actualizan en su sitio.
+    var f = document.getElementById('vFormEnlace');
+    var avisos = document.getElementById('vendAvisos');
+    if (!f || !window.fetch || !window.FormData) return;
+    f.addEventListener('submit', function (ev) {
+        if (ev.defaultPrevented) return; // el "¿Cambiar el enlace?" se canceló
+        ev.preventDefault();
+        var boton = f.querySelector('button[type="submit"]');
+        var textoBoton = boton ? boton.innerHTML : '';
+        if (boton) { boton.disabled = true; boton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Un momento…'; }
+        window.fetch(f.getAttribute('action'), {
+            method: 'POST', body: new FormData(f), credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'fetch', 'Accept': 'application/json' }
+        }).then(function (r) { return r.json(); }).then(function (j) {
+            if (!j.ok || !j.enlace) throw new Error('respuesta sin enlace');
+            document.getElementById('vEnlace').value = j.enlace;
+            document.getElementById('vAbrirEnlace').setAttribute('href', j.enlace);
+            if (avisos) {
+                avisos.innerHTML = '<div class="admin-alert-success" role="status"><i class="fas fa-circle-check" aria-hidden="true"></i><span></span></div>';
+                var d = avisos.firstChild;
+                d.querySelector('span').textContent = j.mensaje || 'Enlace cambiado.';
+                setTimeout(function () { d.classList.add('is-hiding'); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 400); }, 3000);
+            }
+            if (boton) { boton.disabled = false; boton.innerHTML = textoBoton; }
+        }).catch(function () {
+            f.submit(); // si algo falla se envía el formulario normal
+        });
     });
 })();
 </script>

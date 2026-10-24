@@ -5788,3 +5788,11 @@ a.vend-card { display: block; color: inherit; text-decoration: none; }
 .consulta__mensaje { width: 100%; padding: var(--sp-3); font: inherit; font-size: var(--text-sm); line-height: 1.5; color: var(--tx); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-lg); resize: vertical; }
 .consulta__acciones { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .consulta__pie { text-align: center; }
+
+/* Ventas reales de Dropi: mientras se cambia de período o de canal la sección se atenúa. */
+.dash-dropi { transition: opacity .15s; }
+.dash-dropi.is-cargando { opacity: .55; pointer-events: none; }
+.vend-avisos:empty { display: none; }
+#vendContenido[aria-busy="true"] { opacity: .6; transition: opacity .15s; }
+#dashTarjetas, .table-container { transition: opacity .15s; }
+#dashTarjetas.is-cargando, .table-container.is-cargando { opacity: .55; pointer-events: none; }

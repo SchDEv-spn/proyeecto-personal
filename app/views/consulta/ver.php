@@ -52,39 +52,9 @@ $clasesEstado = ['devolucion' => 'cancelado', 'otro' => 'contactado'];
         <small id="consultaAyuda" class="help">El número completo, con los 10 dígitos.</small>
     </form>
 
-    <?php if ($aviso !== ''): ?>
-        <div class="consulta__aviso" role="alert"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> <?= $e($aviso) ?></div>
-    <?php endif; ?>
-
-    <?php if ($ordenes !== null): ?>
-        <?php if (!$ordenes): ?>
-            <div class="consulta__aviso consulta__aviso--suave" role="status">
-                <i class="fas fa-circle-info" aria-hidden="true"></i>
-                No encontré pedidos con ese número en los últimos <?= (int)ConsultaPedidos::DIAS_ATRAS ?> días. Revisa que esté bien escrito;
-                si el pedido es de hoy, puede que todavía no esté cargado.
-            </div>
-        <?php else: foreach ($ordenes as $i => $o): ?>
-            <article class="consulta__pedido">
-                <div class="consulta__pedido-top">
-                    <strong><?= $o['producto'] !== '' ? $e($o['producto']) : 'Pedido' ?><?= $o['cantidad'] !== null && $o['cantidad'] > 1 ? ' · ' . (int)$o['cantidad'] . ' unidades' : '' ?></strong>
-                    <span class="status-tag status-<?= $e($clasesEstado[$o['estado_clase']] ?? $o['estado_clase']) ?>"><?= $e($o['estado']) ?></span>
-                </div>
-                <p class="consulta__meta">
-                    Pedido del <?= $e($fecha($o['fecha'])) ?>
-                    <?= $o['guia'] !== '' ? ' · Guía <b>' . $e($o['guia']) . '</b>' : ' · Sin guía todavía' ?>
-                    <?= $o['transportadora'] !== '' ? ' · ' . $e($o['transportadora']) : '' ?>
-                    <?= $o['municipio'] !== '' ? ' · ' . $e($o['municipio']) : '' ?>
-                </p>
-
-                <label for="consultaMsg<?= $i ?>">Mensaje para el cliente</label>
-                <textarea id="consultaMsg<?= $i ?>" class="consulta__mensaje" readonly rows="7"><?= $e($o['mensaje']) ?></textarea>
-                <div class="consulta__acciones">
-                    <button type="button" class="btn-primary" data-copiar="consultaMsg<?= $i ?>"><i class="far fa-copy" aria-hidden="true"></i> Copiar mensaje</button>
-                    <a class="btn-detail" href="<?= $e($o['whatsapp']) ?>" <?= strpos($o['whatsapp'], 'https://') === 0 ? 'target="_blank" ' : '' ?>rel="noopener noreferrer"><i class="fab fa-whatsapp" aria-hidden="true"></i> Abrir en WhatsApp Business</a>
-                </div>
-            </article>
-        <?php endforeach; endif; ?>
-    <?php endif; ?>
+    <div id="consultaResultados" class="consulta__resultados" aria-live="polite">
+        <?php require __DIR__ . '/_resultados.php'; ?>
+    </div>
 
     <p class="consulta__pie help">
         <?php if ($actualizado($datosAl) !== ''): ?>Datos de Dropi actualizados <?= $e($actualizado($datosAl)) ?>. <?php endif; ?>
@@ -94,6 +64,41 @@ $clasesEstado = ['devolucion' => 'cancelado', 'otro' => 'contactado'];
 
 <script>
 (function () {
+    // Consultar sin recargar: el resultado se cambia en su sitio y el campo queda listo para otro número.
+    var form = document.querySelector('.consulta__form');
+    var caja = document.getElementById('consultaResultados');
+    if (form && caja && window.fetch && window.FormData) {
+        form.addEventListener('submit', function (ev) {
+            if (ev.defaultPrevented) return;
+            ev.preventDefault();
+            var boton = form.querySelector('button[type="submit"]');
+            var campo = form.querySelector('input[name="telefono"]');
+            var textoBoton = boton ? boton.innerHTML : '';
+            if (boton) { boton.disabled = true; boton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Consultando…'; }
+            caja.setAttribute('aria-busy', 'true');
+            window.fetch(form.getAttribute('action'), {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'fetch', 'Accept': 'application/json' }
+            }).then(function (r) {
+                // 429 (muchas consultas) también trae su aviso en el JSON
+                if (!r.ok && r.status !== 429) throw new Error('HTTP ' + r.status);
+                return r.json();
+            }).then(function (j) {
+                if (typeof j.html !== 'string') throw new Error('respuesta sin resultado');
+                caja.innerHTML = j.html;
+                if (campo) { campo.focus(); campo.select(); }
+                if (caja.scrollIntoView) caja.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }).catch(function () {
+                form.submit(); // sin conexión o respuesta rara: se envía el formulario normal
+            }).then(function () {
+                caja.removeAttribute('aria-busy');
+                if (boton) { boton.disabled = false; boton.innerHTML = textoBoton; }
+            });
+        });
+    }
+
     document.addEventListener('click', function (ev) {
         var b = ev.target.closest ? ev.target.closest('[data-copiar]') : null;
         if (!b) return;

@@ -30,6 +30,9 @@
     $plantillas_wa   = $plantillas_wa   ?? [];
     $dropi           = $dropi           ?? null;  // ventas reales de Dropi (null: sin sección)
     $dropi_serie     = $dropi_serie     ?? null;
+    $pedidos_js      = $pedidos_js      ?? [];
+    $rango_etiqueta  = $rango_etiqueta  ?? 'Fecha';
+    $csv_href        = $csv_href        ?? BASE_URL . '/AdminPedidos/exportarCsv';
     $usuarioNombre   = $_SESSION['usuario_nombre'] ?? 'Admin';
     $usuarioEmail    = $_SESSION['usuario_email'] ?? 'admin@tuempresa.com';
     $showRangeFilter = false; // usamos los botones Hoy/Ayer/Semana/Mes en la tabla
@@ -102,51 +105,8 @@
                 <!-- =========================
                      TARJETAS DE RESUMEN
                      ========================= -->
-                <div class="stats-grid">
-                    <div class="stat-card glow-green">
-                        <div class="stat-info">
-                            <small>Pedidos Totales</small>
-                            <h2 id="kpiPedidos"><?= number_format($total_pedidos, 0, ',', '.') ?></h2>
-                            <span class="target"><?= ($renderTrend)($tendencias['pedidos'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
-                        </div>
-                        <i class="fas fa-clipboard-list stat-icon"></i>
-                    </div>
-
-                    <div class="stat-card glow-red">
-                        <div class="stat-info">
-                            <small>Pedidos Nuevos</small>
-                            <h2 id="kpiNuevos"><?= number_format($pedidos_nuevos, 0, ',', '.') ?></h2>
-                            <span class="target pending">Pendientes de contacto</span>
-                        </div>
-                        <i class="fas fa-bell stat-icon"></i>
-                    </div>
-
-                    <div class="stat-card glow-purple">
-                        <div class="stat-info">
-                            <small>Ventas Totales</small>
-                            <h2 id="kpiVentas">$<?= number_format((float)$total_venta, 0, ',', '.') ?></h2>
-                            <span class="target"><?= ($renderTrend)($tendencias['ventas'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
-                        </div>
-                        <i class="fas fa-dollar-sign stat-icon"></i>
-                    </div>
-
-                    <div class="stat-card glow-blue">
-                        <div class="stat-info">
-                            <small>Utilidad Acumulada</small>
-                            <h2 id="kpiUtilidad">$<?= number_format((float)$total_utilidad, 0, ',', '.') ?></h2>
-                            <span class="target"><?= ($renderTrend)($tendencias['utilidad'] ?? ['dir'=>'flat','label'=>'—']) ?> vs per. ant.</span>
-                        </div>
-                        <i class="fas fa-chart-line stat-icon"></i>
-                    </div>
-
-                    <div class="stat-card glow-gold">
-                        <div class="stat-info">
-                            <small>Ticket Promedio</small>
-                            <h2 id="kpiTicket">$<?= number_format($ticket_promedio ?? 0, 0, ',', '.') ?></h2>
-                            <span class="target">Por pedido (excl. cancelados)</span>
-                        </div>
-                        <i class="fas fa-receipt stat-icon"></i>
-                    </div>
+                <div class="stats-grid" id="dashTarjetas">
+                    <?php require __DIR__ . '/_dash_tarjetas.php'; ?>
                 </div>
 
                 <!-- =========================
@@ -170,15 +130,14 @@
                 <div class="table-container">
                         <div class="table-header">
                             <h2>Pedidos Recientes</h2>
-                            <a href="<?= BASE_URL ?>/AdminPedidos/exportarCsv?rango=<?= htmlspecialchars($rango) ?><?= $rango === 'personalizado' && $desde && $hasta ? '&desde=' . urlencode($desde) . '&hasta=' . urlencode($hasta) : '' ?>"
+                            <a href="<?= htmlspecialchars($csv_href) ?>"
                                class="btn-csv" title="Exportar a CSV">
                                 <i class="fas fa-file-csv"></i> CSV
                             </a>
                         </div>
 
                         <?php
-                        $rangoLabels = ['hoy'=>'Hoy','ayer'=>'Ayer','semana'=>'Esta semana','mes'=>'Este mes','personalizado'=>'Rango personalizado','siempre'=>'Desde siempre'];
-                        $rangoLabel  = $rangoLabels[$rango] ?? 'Fecha';
+                        $rangoLabel  = $rango_etiqueta;
                         $rangoActivo = ($rango !== 'mes');
                         ?>
                         <!-- Barra de filtros unificada -->
@@ -239,11 +198,6 @@
                         </div><!-- /dt-filter-bar -->
 
                         <div id="contenedorPedidos" class="dt-table-wrap">
-                        <?php
-                        $estadosPosibles = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_oficina', 'entregado', 'cancelado'];
-                        $_meses   = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-                        $_tzBogota = new DateTimeZone('America/Bogota');
-                        ?>
                         <table id="tablaPedidos" class="pedidos-dt">
                             <thead>
                                 <tr>
@@ -256,118 +210,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                            <?php foreach ($pedidos as $p): ?>
-                            <?php
-                                $telRaw    = $p['telefono'] ?? '';
-                                $telLimpio = preg_replace('/\D+/', '', $telRaw);
-                                if ($telLimpio !== '') {
-                                    if (strpos($telLimpio, '00') === 0) $telLimpio = substr($telLimpio, 2);
-                                    if (strpos($telLimpio, '57') !== 0) {
-                                        if (strlen($telLimpio) === 11 && $telLimpio[0] === '0') $telLimpio = substr($telLimpio, 1);
-                                        $telLimpio = '57' . $telLimpio;
-                                    }
-                                }
-                                $estadoActual  = $p['estado'] ?? 'nuevo';
-                                $cantidadTotal = max(1, (int)($p['cantidad_total'] ?? 1));
-                                $precioUnit    = (float)($p['precio_venta'] ?? 0);
-                                $precioProvUnit= (float)($p['precio_proveedor'] ?? 0);
-                                $precioTotal   = isset($p['precio_total']) ? (float)$p['precio_total'] : ($precioUnit * $cantidadTotal);
-                                $costoEnvio    = (float)($p['costo_envio'] ?? $p['producto_costo_envio'] ?? 0);
-                                $costoTotal    = ($precioProvUnit * $cantidadTotal) + $costoEnvio;
-                                $utilidadTotal = is_finite($precioTotal - $costoTotal) ? $precioTotal - $costoTotal : 0.0;
-                                $tsCreado      = !empty($p['created_at']) ? strtotime($p['created_at']) : 0;
-                                $createdFmt    = '';
-                                if ($tsCreado) {
-                                    $_dtC = (new DateTime('@' . $tsCreado))->setTimezone($_tzBogota);
-                                    $createdFmt = $_dtC->format('j') . ' ' . $_meses[(int)$_dtC->format('n') - 1] . ' ' . $_dtC->format('Y');
-                                }
-                            ?>
-                                <tr data-pedido-id="<?= htmlspecialchars($p['id'] ?? '') ?>"
-                                    data-estado="<?= htmlspecialchars($estadoActual) ?>"
-                                    data-ts="<?= htmlspecialchars($p['updated_at'] ?? ($p['created_at'] ?? '')) ?>"
-                                    data-created-ts="<?= $tsCreado ?>">
-
-                                    <td data-order="<?= $tsCreado ?>">
-                                        <?= $createdFmt ?: '—' ?>
-                                    </td>
-
-                                    <td>
-                                        <strong><?= htmlspecialchars(trim(($p['nombre'] ?? '') . ' ' . ($p['apellidos'] ?? ''))) ?></strong>
-                                        <br><small class="dt-cell-sub"><?= htmlspecialchars($p['municipio'] ?? '') ?><?= !empty($p['departamento']) ? ', ' . htmlspecialchars($p['departamento']) : '' ?></small>
-                                        <?= riesgo_cliente_chip(($riesgos ?? [])[DropiOrden::sufijo((string)$telRaw)] ?? null) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($p['producto_nombre'] ?? '') ?>
-                                        <small class="dt-cell-sub">(<?= $cantidadTotal ?> <?= $cantidadTotal > 1 ? 'uds' : 'ud' ?><?= !empty($p['color']) ? ' · ' . htmlspecialchars($p['color']) : '' ?>)</small>
-                                    </td>
-
-                                    <td>
-                                        <span class="status-tag status-<?= htmlspecialchars($estadoActual) ?>">
-                                            <?= ucfirst(str_replace('_', ' ', htmlspecialchars($estadoActual))) ?>
-                                        </span>
-                                        <?php
-                                            $dropiOrderId  = $p['dropi_order_id'] ?? null;
-                                            $dropiError    = $p['dropi_sync_error'] ?? null;
-                                        ?>
-                                        <div class="dropi-badge" data-dropi-badge>
-                                            <?php if (!empty($dropiOrderId)): ?>
-                                                <small class="dropi-badge--ok" title="Orden creada en Dropi">
-                                                    <i class="fas fa-check-circle"></i> Dropi #<?= htmlspecialchars((string)$dropiOrderId) ?>
-                                                </small>
-                                            <?php elseif (!empty($dropiError)): ?>
-                                                <small class="dropi-badge--error" title="<?= htmlspecialchars($dropiError) ?>">
-                                                    <i class="fas fa-triangle-exclamation"></i> Dropi: error
-                                                </small>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                        <form action="<?= BASE_URL ?>/AdminPedidos/cambiarEstado" method="POST" class="status-form dt-status-form">
-                                            <?= csrf_field() ?>
-                                            <input type="hidden" name="id" value="<?= htmlspecialchars($p['id'] ?? '') ?>">
-                                            <select name="estado" class="form-select-sm">
-                                                <?php foreach ($estadosPosibles as $est): ?>
-                                                    <option value="<?= htmlspecialchars($est) ?>" <?= $estadoActual === $est ? 'selected' : '' ?>>
-                                                        <?= ucfirst(str_replace('_', ' ', htmlspecialchars($est))) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <button type="submit" class="btn-save-status btn-save-status--sm" title="Guardar estado"><i class="fas fa-check"></i></button>
-                                        </form>
-                                    </td>
-
-                                    <td>
-                                        <div class="dt-actions">
-                                            <?php if ($telLimpio !== ''): ?>
-                                                <button type="button" class="btn-icon-wa js-wa-open"
-                                                        title="WhatsApp"
-                                                        data-id="<?= htmlspecialchars((string)($p['id'] ?? '')) ?>"
-                                                        data-telefono="<?= htmlspecialchars($telRaw) ?>"
-                                                        data-nombre="<?= htmlspecialchars($p['nombre'] ?? '') ?>"
-                                                        data-apellidos="<?= htmlspecialchars($p['apellidos'] ?? '') ?>"
-                                                        data-producto="<?= htmlspecialchars($p['producto_nombre'] ?? '') ?>"
-                                                        data-cantidad="<?= htmlspecialchars((string)$cantidadTotal) ?>"
-                                                        data-precio="<?= htmlspecialchars('$' . number_format($precioTotal, 0, ',', '.')) ?>"
-                                                        data-municipio="<?= htmlspecialchars($p['municipio'] ?? '') ?>"
-                                                        data-departamento="<?= htmlspecialchars($p['departamento'] ?? '') ?>"
-                                                        data-estado="<?= htmlspecialchars($estadoActual) ?>"
-                                                        data-tipo-entrega="<?= htmlspecialchars($p['tipo_entrega'] ?? '') ?>"
-                                                        data-numero-guia="<?= htmlspecialchars($p['numero_guia'] ?? '') ?>">
-                                                    <i class="fab fa-whatsapp"></i>
-                                                </button>
-                                            <?php endif; ?>
-                                            <a href="<?= BASE_URL ?>/AdminPedidos/detalle?id=<?= htmlspecialchars($p['id'] ?? '') ?>"
-                                               class="btn-detail btn-detail--sm js-ver-detalle"
-                                               data-id="<?= htmlspecialchars($p['id'] ?? '') ?>"
-                                               aria-label="Ver detalle del pedido #<?= htmlspecialchars($p['id'] ?? '') ?>">
-                                                <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+                            <?php require __DIR__ . '/_pedidos_filas.php'; ?>
                             </tbody>
                         </table>
                         </div><!-- /contenedorPedidos -->
@@ -403,18 +246,7 @@
 
     <!-- Datos para JS -->
     <script>
-        window.__PEDIDOS__     = <?= json_encode(array_map(fn($p) => [
-            'id'                   => $p['id']                   ?? null,
-            'estado'               => $p['estado']               ?? null,
-            'created_at'           => $p['created_at']           ?? null,
-            'updated_at'           => $p['updated_at']           ?? null,
-            'precio_total'         => $p['precio_total']         ?? null,
-            'precio_venta'         => $p['precio_venta']         ?? null,
-            'precio_proveedor'     => $p['precio_proveedor']     ?? null,
-            'producto_costo_envio' => $p['producto_costo_envio'] ?? null,
-            'cantidad_total'       => $p['cantidad_total']       ?? null,
-            'telefono'             => $p['telefono']             ?? null,
-        ], $pedidos), JSON_UNESCAPED_UNICODE) ?>;
+        window.__PEDIDOS__     = <?= json_encode($pedidos_js, JSON_UNESCAPED_UNICODE) ?>;
         window.__PLANTILLAS__  = <?= json_encode($plantillas_wa, JSON_UNESCAPED_UNICODE) ?>;
         window.__RANGE_INIT__  = <?= json_encode(['hoy'=>'today','ayer'=>'yesterday','semana'=>'week','mes'=>'month','personalizado'=>'custom','siempre'=>'all'][$rango] ?? 'month') ?>;
         window.__RANGE_CUSTOM__ = <?= ($rango === 'personalizado' && $desde && $hasta)
@@ -425,68 +257,9 @@
     <!-- Chart.js -->
     <script src="<?= BASE_URL ?>/public/vendor/chart.umd.min.js"></script>
 
-    <?php if ($dropi !== null && !empty($dropi['hay_datos'])): ?>
-    <script>
-    // Gráficos de Dropi: órdenes y ventas por franja de tiempo (líneas, como los de la landing) y distribución por estado.
-    // El canal elegido (todos / landing / WhatsApp) decide qué líneas se dibujan.
-    (function () {
-        var datosEl = document.getElementById('dropiGraficos');
-        if (!datosEl || typeof Chart === 'undefined') return;
-        try {
-            var d = JSON.parse(datosEl.textContent);
-            var s = d.serie;
-            var VERDE = { borde: '#16a34a', relleno: 'rgba(34,197,94,.14)' };
-            var MORADO = { borde: '#5d68ff', relleno: 'rgba(93,104,255,.14)' };
-
-            var lineas = function (campo) {
-                var out = [];
-                if (d.canal !== 'whatsapp') out.push({ label: 'Landing', data: s.landing[campo], borderColor: MORADO.borde, backgroundColor: MORADO.relleno, fill: true });
-                if (d.canal !== 'landing')  out.push({ label: 'WhatsApp / directo', data: s.whatsapp[campo], borderColor: VERDE.borde, backgroundColor: VERDE.relleno, fill: true });
-                return out.map(function (x) { x.tension = .35; x.pointRadius = 2; x.pointHoverRadius = 4; x.borderWidth = 2; return x; });
-            };
-            var plata = function (v) { var n = Number(v) || 0; return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : (n >= 1e3 ? Math.round(n / 1e3) + 'k' : String(Math.round(n))); };
-            var base = function (extraY) {
-                return {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10 } }, tooltip: { intersect: false } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
-                        y: Object.assign({ beginAtZero: true, grid: { color: 'rgba(18,24,40,.08)' } }, extraY)
-                    }
-                };
-            };
-
-            var cOrdenes = document.getElementById('chartDropiOrdenes');
-            if (cOrdenes) new Chart(cOrdenes, { type: 'line', data: { labels: s.etiquetas, datasets: lineas('ordenes') }, options: base({ ticks: { precision: 0 } }) });
-
-            var cVentas = document.getElementById('chartDropiVentas');
-            if (cVentas) new Chart(cVentas, { type: 'line', data: { labels: s.etiquetas, datasets: lineas('ventas') }, options: base({ ticks: { callback: plata } }) });
-
-            var cEstados = document.getElementById('chartDropiEstados');
-            if (cEstados) {
-                var e = d.estados;
-                var partes = [
-                    ['Entregado', e.entregado, 'rgba(16,185,129,.70)'],
-                    ['En camino', (e.enviado || 0) + (e.otro || 0), 'rgba(245,158,11,.70)'],
-                    ['En oficina', e.en_oficina, 'rgba(251,146,60,.70)'],
-                    ['Preparando', e.confirmado, 'rgba(34,197,94,.45)'],
-                    ['Por confirmar', (e.nuevo || 0) + (e.contactado || 0), 'rgba(93,104,255,.55)'],
-                    ['Devolución', e.devolucion, 'rgba(176,23,23,.75)'],
-                    ['Cancelado', e.cancelado, 'rgba(148,163,184,.75)']
-                ].filter(function (p) { return p[1] > 0; });
-                new Chart(cEstados, {
-                    type: 'doughnut',
-                    data: { labels: partes.map(function (p) { return p[0]; }), datasets: [{ data: partes.map(function (p) { return p[1]; }), backgroundColor: partes.map(function (p) { return p[2]; }), borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10 } } } }
-                });
-            }
-        } catch (err) {
-            console.error('[Dropi] gráficos:', err);
-        }
-    })();
-    </script>
+    <?php if ($dropi !== null): ?>
+    <!-- Ventas reales de Dropi: gráficos y cambio de período/canal sin recargar -->
+    <script src="<?= asset_url('public/js/dashboard-dropi.js') ?>"></script>
     <?php endif; ?>
 
     <!-- jQuery (requerido por DataTables CDN) -->
@@ -496,9 +269,23 @@
     <script>
     // ── Declaraciones hoistadas: disponibles aunque el IIFE de abajo falle ──
 
-    // El servidor sólo entrega los pedidos del rango pedido, así que cambiar de
-    // rango tiene que recargar la página (si sólo filtráramos en el navegador,
-    // los pedidos de meses anteriores nunca se cargarían).
+    var RANGOS_JS = { hoy: 'today', ayer: 'yesterday', semana: 'week', mes: 'month', personalizado: 'custom', siempre: 'all' };
+    var FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+    var cargasRango = 0;
+
+    // Qué rango se está viendo (lo que el servidor entiende: un rango raro cuenta como "mes").
+    function claveRango(params) {
+        var r = params.get('rango') || 'mes';
+        if (!RANGOS_JS.hasOwnProperty(r)) r = 'mes';
+        var d = params.get('desde') || '', h = params.get('hasta') || '';
+        if (r === 'personalizado' && (!FECHA_ISO.test(d) || !FECHA_ISO.test(h) || d > h)) r = 'mes';
+        return r === 'personalizado' ? r + '|' + d + '|' + h : r;
+    }
+    var rangoActual = <?= json_encode($rango === 'personalizado' ? $rango . '|' . $desde . '|' . $hasta : $rango) ?>;
+
+    // Cambiar de rango no recarga la página: el servidor entrega las tarjetas y los pedidos del rango pedido
+    // (no basta filtrar en el navegador: los pedidos de meses anteriores nunca se habrían cargado) y se vuelve a
+    // pintar todo. Si algo falla (sin conexión, sesión vencida), se recarga como antes.
     function cambiarRango(rango, desde, hasta) {
         var qs = 'rango=' + encodeURIComponent(rango);
         if (rango === 'personalizado' && desde && hasta) {
@@ -509,8 +296,84 @@
         ['dropi_rango', 'dropi_desde', 'dropi_hasta', 'dropi_canal'].forEach(function (k) {
             if (actual.has(k)) qs += '&' + k + '=' + encodeURIComponent(actual.get(k));
         });
-        window.location.href = '<?= BASE_URL ?>/AdminPedidos/index?' + qs;
+        var destino = '<?= BASE_URL ?>/AdminPedidos/index?' + qs;
+        if (!window.fetch || !window.URL || !window.__dtTable) { window.location.href = destino; return; }
+        cargarRango(destino, true);
     }
+
+    function cargarRango(destino, apilar) {
+        var url = new URL(destino, window.location.href);
+        var consulta = new URLSearchParams();
+        ['rango', 'desde', 'hasta'].forEach(function (k) { if (url.searchParams.has(k)) consulta.set(k, url.searchParams.get(k)); });
+        var numero = ++cargasRango;
+        var ocupados = [document.getElementById('dashTarjetas'), document.querySelector('.table-container')];
+        ocupados.forEach(function (el) { if (el) { el.classList.add('is-cargando'); el.setAttribute('aria-busy', 'true'); } });
+        window.fetch('<?= BASE_URL ?>/AdminPedidos/vistaRango?' + consulta.toString(), {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'fetch', 'Accept': 'application/json' }
+        }).then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        }).then(function (j) {
+            if (numero !== cargasRango) return; // llegó otra petición después: esta ya no sirve
+            if (!j || typeof j.filas !== 'string' || typeof j.tarjetas !== 'string' || !Array.isArray(j.pedidos)) throw new Error('respuesta incompleta');
+            // primero la dirección: los enlaces de la sección de Dropi se arman a partir de ella
+            if (apilar) window.history.pushState({ rango: 1 }, '', url.pathname + url.search + url.hash);
+            pintarRango(j);
+        }).catch(function () {
+            if (numero === cargasRango) window.location.href = destino;
+        }).then(function () {
+            if (numero !== cargasRango) return;
+            ocupados.forEach(function (el) { if (el) { el.classList.remove('is-cargando'); el.removeAttribute('aria-busy'); } });
+        });
+    }
+
+    // Pinta lo que cambia con el rango: pedidos en memoria, tarjetas, tabla y el filtro de fecha. Los KPIs, los
+    // gráficos, el embudo y el filtro de fecha de la tabla los vuelve a calcular funciones.js con 'range:change'.
+    function pintarRango(j) {
+        // funciones.js guarda esta misma lista, por eso se cambia por dentro y no se reemplaza
+        var lista = window.__PEDIDOS__;
+        lista.length = 0;
+        j.pedidos.forEach(function (p) { lista.push(p); });
+        window.__RANGE_CUSTOM__ = (j.rango === 'personalizado' && j.desde && j.hasta) ? { desde: j.desde, hasta: j.hasta } : null;
+
+        var tarjetas = document.getElementById('dashTarjetas');
+        if (tarjetas) tarjetas.innerHTML = j.tarjetas;
+
+        if (window.__dtTable) window.__dtTable.destroy();
+        document.querySelector('#tablaPedidos tbody').innerHTML = j.filas;
+        crearTabla();
+
+        // Como al abrir la página: sin búsqueda ni estado elegido
+        var buscar = document.getElementById('dtSearchInput');
+        if (buscar) buscar.value = '';
+        document.querySelectorAll('#stateFilterContent .state-chip').forEach(function (c) { c.classList.toggle('is-active', c.dataset.estado === ''); });
+        document.getElementById('estadoWrap').classList.remove('dtf-wrap--active');
+
+        // Filtro de fecha: etiqueta, opción marcada, fechas y enlace del CSV
+        var fecha = document.getElementById('fechaWrap');
+        var etiqueta = fecha.querySelector('.dtf-btn__label');
+        if (etiqueta) etiqueta.textContent = j.etiqueta;
+        fecha.classList.toggle('dtf-wrap--active', j.rango !== 'mes');
+        fecha.open = false;
+        fecha.querySelectorAll('.dfd-item').forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-rango') === j.rango); });
+        document.getElementById('fechaDesde').value = j.desde || '';
+        document.getElementById('fechaHasta').value = j.hasta || '';
+        var csv = document.querySelector('.table-header .btn-csv');
+        if (csv && j.csv) csv.setAttribute('href', j.csv);
+
+        rangoActual = j.rango === 'personalizado' ? j.rango + '|' + j.desde + '|' + j.hasta : j.rango;
+        var codigo = RANGOS_JS[j.rango] || 'month';
+        window.__RANGE_INIT__ = codigo;
+        window.__RANGE_SELECTED = codigo;
+        window.dispatchEvent(new CustomEvent('range:change', { detail: { range: codigo } }));
+        if (window.dropiActualizarEnlaces) window.dropiActualizarEnlaces();
+    }
+
+    // Atrás y adelante del navegador: se muestra el rango de esa dirección (sin recargar, y solo si cambió).
+    window.addEventListener('popstate', function () {
+        if (claveRango(new URLSearchParams(window.location.search)) !== rangoActual) cargarRango(window.location.href, false);
+    });
 
     function cambiarRangoPersonalizado(form) {
         var desde = document.getElementById('fechaDesde').value;
@@ -548,38 +411,45 @@
     }
 
     // ── DataTable ──
+    // Opciones de la tabla de pedidos (se vuelve a crear al cambiar de rango sin recargar)
+    var OPCIONES_TABLA = {
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, 100], ['10', '25', '50', '100']],
+        searching: true,
+        order: [[0, 'desc']],
+        // autoWidth escribe anchos px inline en cada <th> y pisa el
+        // table-layout:fixed del CSS responsive. El layout lo maneja el CSS.
+        autoWidth: false,
+        columnDefs: [
+            { orderable: false, targets: [3, 4, 5] }
+        ],
+        language: {
+            search:          '',
+            searchPlaceholder: 'Buscar nombre, ciudad, producto…',
+            lengthMenu:      'Mostrar _MENU_ por página',
+            info:            '_TOTAL_ pedidos',
+            infoEmpty:       'Sin pedidos',
+            infoFiltered:    '(filtrado de _MAX_)',
+            zeroRecords:     'Sin resultados para este filtro.',
+            emptyTable:      'Sin pedidos en este período.',
+            paginate: { first: '«', last: '»', next: '›', previous: '‹' }
+        },
+        dom: 't<"dt-bottom"ip>',
+        drawCallback: function() {
+            if (typeof initModalWidgets === 'function') initModalWidgets(document.getElementById('tablaPedidos'));
+        }
+    };
+
+    function crearTabla() {
+        var t = new DataTable('#tablaPedidos', OPCIONES_TABLA);
+        window.__dtTable = t;
+        window.__DT_PEDIDOS__ = t;
+        return t;
+    }
+
     try {
         (function () {
-            var table = new DataTable('#tablaPedidos', {
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, 100], ['10', '25', '50', '100']],
-                searching: true,
-                order: [[0, 'desc']],
-                // autoWidth escribe anchos px inline en cada <th> y pisa el
-                // table-layout:fixed del CSS responsive. El layout lo maneja el CSS.
-                autoWidth: false,
-                columnDefs: [
-                    { orderable: false, targets: [3, 4, 5] }
-                ],
-                language: {
-                    search:          '',
-                    searchPlaceholder: 'Buscar nombre, ciudad, producto…',
-                    lengthMenu:      'Mostrar _MENU_ por página',
-                    info:            '_TOTAL_ pedidos',
-                    infoEmpty:       'Sin pedidos',
-                    infoFiltered:    '(filtrado de _MAX_)',
-                    zeroRecords:     'Sin resultados para este filtro.',
-                    emptyTable:      'Sin pedidos en este período.',
-                    paginate: { first: '«', last: '»', next: '›', previous: '‹' }
-                },
-                dom: 't<"dt-bottom"ip>',
-                drawCallback: function() {
-                    if (typeof initModalWidgets === 'function') initModalWidgets(document.getElementById('tablaPedidos'));
-                }
-            });
-
-            window.__dtTable = table;
-            window.__DT_PEDIDOS__ = table;
+            crearTabla();
 
             // Filtro por estado: nTr primero, texto normalizado como fallback
             DataTable.ext.search.push(function (settings, data, dataIndex) {

@@ -7,6 +7,12 @@
  *
  * Variables: $dropi (DashboardDropi::resumen + 'tendencias') y $renderTrend (la define pedidos/index.php).
  */
+if (!isset($renderTrend)) { // la página ya lo define; cuando se pide solo la sección, aquí
+    $renderTrend = static function (array $t): string {
+        if (!isset($t['dir']) || $t['dir'] === 'flat') return '<span class="kpi-trend flat">—</span>';
+        return '<span class="kpi-trend ' . htmlspecialchars($t['dir']) . '">' . ($t['dir'] === 'up' ? '↑' : '↓') . ' ' . htmlspecialchars($t['label'] ?? '') . '</span>';
+    };
+}
 $h      = static fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 $money  = static fn($n) => '$' . number_format((float)$n, 0, ',', '.');
 $pct    = static fn($x) => $x === null ? '—' : round($x * 100) . '%';
@@ -40,7 +46,7 @@ $cuando = static function (?string $fecha): string {
     return 'el ' . date('d/m/Y', $ts) . ' a las ' . $hora;
 };
 ?>
-<section class="dash-dropi" id="ventas-dropi" aria-labelledby="dropiTitulo">
+<section class="dash-dropi" id="ventas-dropi" aria-labelledby="dropiTitulo" data-fragmento="<?= BASE_URL ?>/AdminPedidos/dropiSeccion">
     <div class="dash-dropi__head">
         <div>
             <h2 id="dropiTitulo">Ventas reales · Dropi</h2>

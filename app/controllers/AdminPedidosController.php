@@ -6,6 +6,20 @@ class AdminPedidosController extends Controller
     {
         $this->requireLogin();
 
+        $datos = $this->datosPedidos();
+        // Ventas reales de Dropi (si falla la lectura, el dashboard sale igual sin esa sección).
+        $datos['dropi'] = $this->datosDropi();
+        $datos['plantillas_wa'] = (new PlantillaWa())->keyedByEstado();
+
+        $this->view('admin/pedidos/index', $datos);
+    }
+
+    /**
+     * Los pedidos de la landing del rango pedido (rango, desde, hasta en la dirección), con sus métricas,
+     * tendencias y riesgos. Los usan la página y vistaRango().
+     */
+    private function datosPedidos(): array
+    {
         // ✅ Rango permitido: hoy | ayer | semana | mes | personalizado | siempre
         $rango = $_GET['rango'] ?? 'mes';
         $permitidos = ['hoy', 'ayer', 'semana', 'mes', 'personalizado', 'siempre'];
@@ -142,12 +156,98 @@ class AdminPedidosController extends Controller
             'utilidad' => $this->calcTrendPct($totalUtilidad, $prevUtilidad),
         ];
 
-        // Ventas reales: lo que dicen las órdenes de Dropi importadas en Seguimiento, de todos los canales
-        // (la landing, WhatsApp, las vendedoras). Si falla la lectura, el dashboard sale igual sin esa sección.
-        // Tiene su propio período (dropi_rango: hoy, ayer, semana, mes, mes_pasado, trimestre, siempre,
-        // personalizado) y su propio canal (dropi_canal: todos, landing, whatsapp), distintos del filtro
-        // de los pedidos de la landing de más abajo.
-        $dropi = null;
+        // Clientes con una devolución anterior (ver DropiOrden): se marcan en el listado para
+        // confirmarlos por WhatsApp antes de despachar. Si falla la consulta, el listado sale igual.
+        $riesgos = [];
+        try {
+            $riesgos = (new DropiOrden(false))->riesgoPorTelefonos(array_column($pedidos, 'telefono'));
+        } catch (\Throwable $e) {
+            error_log('[AdminPedidos] riesgo de clientes: ' . $e->getMessage());
+        }
+
+        $etiquetas = ['hoy' => 'Hoy', 'ayer' => 'Ayer', 'semana' => 'Esta semana', 'mes' => 'Este mes', 'personalizado' => 'Rango personalizado', 'siempre' => 'Desde siempre'];
+        $esPersonalizado = $rango === 'personalizado' && $desdeStr && $hastaStr;
+
+        return [
+            'riesgos'          => $riesgos,
+            'pedidos'          => $pedidos,
+            'total_pedidos'    => $totalPedidos,
+            'total_utilidad'   => $totalUtilidad,
+            'total_venta'      => $totalVenta,
+            'total_proveedor'  => $totalProveedor,
+            'pedidos_nuevos'   => $pedidosNuevos,
+            'ticket_promedio'  => $ticketPromedio,
+            'rango'            => $rango,
+            'desde'            => $desdeStr,
+            'hasta'            => $hastaStr,
+            'tendencias'       => $tendencias,
+            'rango_etiqueta'   => $etiquetas[$rango] ?? 'Fecha',
+            'csv_href'         => BASE_URL . '/AdminPedidos/exportarCsv?rango=' . $rango
+                                  . ($esPersonalizado ? '&desde=' . urlencode($desdeStr) . '&hasta=' . urlencode($hastaStr) : ''),
+            // Lo que el JavaScript de la página necesita de cada pedido (gráficos, embudo y tarjetas)
+            'pedidos_js'       => array_map(fn($p) => [
+                'id'                   => $p['id']                   ?? null,
+                'estado'               => $p['estado']               ?? null,
+                'created_at'           => $p['created_at']           ?? null,
+                'updated_at'           => $p['updated_at']           ?? null,
+                'precio_total'         => $p['precio_total']         ?? null,
+                'precio_venta'         => $p['precio_venta']         ?? null,
+                'precio_proveedor'     => $p['precio_proveedor']     ?? null,
+                'producto_costo_envio' => $p['producto_costo_envio'] ?? null,
+                'cantidad_total'       => $p['cantidad_total']       ?? null,
+                'telefono'             => $p['telefono']             ?? null,
+            ], $pedidos),
+        ];
+    }
+
+    /**
+     * Solo lo que cambia al elegir otro rango de fechas (tarjetas, filas de la tabla y pedidos para los gráficos),
+     * para cambiarlo sin recargar el dashboard. Sin sesión responde 401 (no la página de inicio de sesión).
+     */
+    public function vistaRango()
+    {
+        if (empty($_SESSION['usuario_id'])) {
+            http_response_code(401);
+            exit;
+        }
+        try {
+            $datos = $this->datosPedidos();
+        } catch (\Throwable $e) {
+            error_log('[AdminPedidos] vista por rango: ' . $e->getMessage());
+            http_response_code(500);
+            exit;
+        }
+
+        $parcial = function (string $archivo) use ($datos): string {
+            extract($datos);
+            ob_start();
+            require __DIR__ . '/../views/admin/pedidos/' . $archivo;
+            return ob_get_clean();
+        };
+
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        echo json_encode([
+            'rango'    => $datos['rango'],
+            'desde'    => $datos['desde'],
+            'hasta'    => $datos['hasta'],
+            'etiqueta' => $datos['rango_etiqueta'],
+            'csv'      => $datos['csv_href'],
+            'tarjetas' => $parcial('_dash_tarjetas.php'),
+            'filas'    => $parcial('_pedidos_filas.php'),
+            'pedidos'  => $datos['pedidos_js'],
+        ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        exit;
+    }
+
+    /**
+     * Ventas reales: lo que dicen las órdenes de Dropi importadas en Seguimiento y los pedidos de la landing, de
+     * todos los canales. Tiene su propio período (dropi_rango: hoy, ayer, semana, mes, mes_pasado, trimestre,
+     * siempre, personalizado) y su propio canal (dropi_canal: todos, landing, whatsapp), distintos del filtro de
+     * los pedidos de la landing de más abajo. Lee los parámetros de la dirección. null si no se pudo leer.
+     */
+    private function datosDropi(): ?array
+    {
         try {
             $dash    = new DashboardDropi();
             $periodoD = DashboardDropi::periodo(
@@ -169,38 +269,33 @@ class AdminPedidosController extends Controller
                 $dropi['periodo'] = ['rango' => $periodoD['rango'], 'etiqueta' => $periodoD['etiqueta'], 'desde' => $periodoD['desde'], 'hasta' => $periodoD['hasta']];
                 $dropi['canal_sel'] = in_array($canalD, DashboardDropi::CANALES, true) ? $canalD : 'todos';
             }
+            return $dropi;
         } catch (\Throwable $e) {
             error_log('[AdminPedidos] ventas de Dropi: ' . $e->getMessage());
-            $dropi = null;
+            return null;
         }
+    }
 
-        $plantillasWa = (new PlantillaWa())->keyedByEstado();
-
-        // Clientes con una devolución anterior (ver DropiOrden): se marcan en el listado para
-        // confirmarlos por WhatsApp antes de despachar. Si falla la consulta, el listado sale igual.
-        $riesgos = [];
-        try {
-            $riesgos = (new DropiOrden(false))->riesgoPorTelefonos(array_column($pedidos, 'telefono'));
-        } catch (\Throwable $e) {
-            error_log('[AdminPedidos] riesgo de clientes: ' . $e->getMessage());
+    /**
+     * Solo la sección "Ventas reales · Dropi", ya armada, para cambiar de período o de canal sin recargar el
+     * dashboard (public/js/dashboard-dropi.js). Sin sesión responde 401 (no la página de inicio de sesión) para
+     * que el navegador no la pegue en el dashboard.
+     */
+    public function dropiSeccion()
+    {
+        if (empty($_SESSION['usuario_id'])) {
+            http_response_code(401);
+            exit;
         }
-
-        $this->view('admin/pedidos/index', [
-            'riesgos'          => $riesgos,
-            'pedidos'          => $pedidos,
-            'total_pedidos'    => $totalPedidos,
-            'total_utilidad'   => $totalUtilidad,
-            'total_venta'      => $totalVenta,
-            'total_proveedor'  => $totalProveedor,
-            'pedidos_nuevos'   => $pedidosNuevos,
-            'ticket_promedio'  => $ticketPromedio,
-            'rango'            => $rango,
-            'desde'            => $desdeStr,
-            'hasta'            => $hastaStr,
-            'tendencias'       => $tendencias,
-            'plantillas_wa'    => $plantillasWa,
-            'dropi'            => $dropi,
-        ]);
+        $dropi = $this->datosDropi();
+        if ($dropi === null) {
+            http_response_code(500);
+            exit;
+        }
+        header('Content-Type: text/html; charset=utf-8');
+        header('Cache-Control: no-store');
+        require __DIR__ . '/../views/admin/pedidos/_dropi_resumen.php';
+        exit;
     }
 
     private function calcularRangoPrevio(string $rango, DateTime $inicio, ?DateTime $finActual = null): array

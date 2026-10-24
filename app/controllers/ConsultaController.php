@@ -61,6 +61,17 @@ class ConsultaController extends Controller
             }
         }
 
+        // Si se consultó sin recargar (fetch), solo se devuelve el resultado; si no, la página completa.
+        if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch') {
+            header('Content-Type: application/json; charset=utf-8');
+            $aviso = $datos['aviso'];
+            $ordenes = $datos['ordenes'];
+            ob_start();
+            require __DIR__ . '/../views/consulta/_resultados.php';
+            echo json_encode(['html' => ob_get_clean()], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
         $this->view('consulta/ver', $datos);
     }
 }
