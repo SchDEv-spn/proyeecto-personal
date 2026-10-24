@@ -427,36 +427,62 @@
 
     <?php if ($dropi !== null && !empty($dropi['hay_datos'])): ?>
     <script>
-    // Órdenes de Dropi por día (barras apiladas: landing y WhatsApp / directo).
+    // Gráficos de Dropi: órdenes y ventas por franja de tiempo (líneas, como los de la landing) y distribución por estado.
+    // El canal elegido (todos / landing / WhatsApp) decide qué líneas se dibujan.
     (function () {
-        var el = document.getElementById('chartDropiDia');
-        var datos = document.getElementById('dropiSerieDatos');
-        if (!el || !datos || typeof Chart === 'undefined') return;
+        var datosEl = document.getElementById('dropiGraficos');
+        if (!datosEl || typeof Chart === 'undefined') return;
         try {
-            var s = JSON.parse(datos.textContent);
-            if (!s) return;
-            new Chart(el, {
-                type: 'bar',
-                data: {
-                    labels: s.dias,
-                    datasets: [
-                        { label: 'Landing', data: s.landing, backgroundColor: 'rgba(93,104,255,.75)', borderRadius: 3, stack: 'ordenes' },
-                        { label: 'WhatsApp / directo', data: s.whatsapp, backgroundColor: 'rgba(34,197,94,.75)', borderRadius: 3, stack: 'ordenes' }
-                    ]
-                },
-                options: {
+            var d = JSON.parse(datosEl.textContent);
+            var s = d.serie;
+            var VERDE = { borde: '#16a34a', relleno: 'rgba(34,197,94,.14)' };
+            var MORADO = { borde: '#5d68ff', relleno: 'rgba(93,104,255,.14)' };
+
+            var lineas = function (campo) {
+                var out = [];
+                if (d.canal !== 'whatsapp') out.push({ label: 'Landing', data: s.landing[campo], borderColor: MORADO.borde, backgroundColor: MORADO.relleno, fill: true });
+                if (d.canal !== 'landing')  out.push({ label: 'WhatsApp / directo', data: s.whatsapp[campo], borderColor: VERDE.borde, backgroundColor: VERDE.relleno, fill: true });
+                return out.map(function (x) { x.tension = .35; x.pointRadius = 2; x.pointHoverRadius = 4; x.borderWidth = 2; return x; });
+            };
+            var plata = function (v) { var n = Number(v) || 0; return n >= 1e6 ? (Math.round(n / 1e5) / 10) + 'M' : (n >= 1e3 ? Math.round(n / 1e3) + 'k' : String(Math.round(n))); };
+            var base = function (extraY) {
+                return {
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
                     plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10 } }, tooltip: { intersect: false } },
                     scales: {
-                        x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true } },
-                        y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(18,24,40,.08)' }, ticks: { precision: 0 } }
+                        x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
+                        y: Object.assign({ beginAtZero: true, grid: { color: 'rgba(18,24,40,.08)' } }, extraY)
                     }
-                }
-            });
-        } catch (e) {
-            console.error('[Dropi] gráfico por día:', e);
+                };
+            };
+
+            var cOrdenes = document.getElementById('chartDropiOrdenes');
+            if (cOrdenes) new Chart(cOrdenes, { type: 'line', data: { labels: s.etiquetas, datasets: lineas('ordenes') }, options: base({ ticks: { precision: 0 } }) });
+
+            var cVentas = document.getElementById('chartDropiVentas');
+            if (cVentas) new Chart(cVentas, { type: 'line', data: { labels: s.etiquetas, datasets: lineas('ventas') }, options: base({ ticks: { callback: plata } }) });
+
+            var cEstados = document.getElementById('chartDropiEstados');
+            if (cEstados) {
+                var e = d.estados;
+                var partes = [
+                    ['Entregado', e.entregado, 'rgba(16,185,129,.70)'],
+                    ['En camino', (e.enviado || 0) + (e.otro || 0), 'rgba(245,158,11,.70)'],
+                    ['En oficina', e.en_oficina, 'rgba(251,146,60,.70)'],
+                    ['Preparando', e.confirmado, 'rgba(34,197,94,.45)'],
+                    ['Devolución', e.devolucion, 'rgba(176,23,23,.75)'],
+                    ['Cancelado', e.cancelado, 'rgba(148,163,184,.75)']
+                ].filter(function (p) { return p[1] > 0; });
+                new Chart(cEstados, {
+                    type: 'doughnut',
+                    data: { labels: partes.map(function (p) { return p[0]; }), datasets: [{ data: partes.map(function (p) { return p[1]; }), backgroundColor: partes.map(function (p) { return p[2]; }), borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10 } } } }
+                });
+            }
+        } catch (err) {
+            console.error('[Dropi] gráficos:', err);
         }
     })();
     </script>
@@ -477,6 +503,11 @@
         if (rango === 'personalizado' && desde && hasta) {
             qs += '&desde=' + encodeURIComponent(desde) + '&hasta=' + encodeURIComponent(hasta);
         }
+        // El período y el canal de la sección de Dropi no se pierden al cambiar el filtro de la landing.
+        var actual = new URLSearchParams(window.location.search);
+        ['dropi_rango', 'dropi_desde', 'dropi_hasta', 'dropi_canal'].forEach(function (k) {
+            if (actual.has(k)) qs += '&' + k + '=' + encodeURIComponent(actual.get(k));
+        });
         window.location.href = '<?= BASE_URL ?>/AdminPedidos/index?' + qs;
     }
 

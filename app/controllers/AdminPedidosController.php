@@ -144,11 +144,19 @@ class AdminPedidosController extends Controller
 
         // Ventas reales: lo que dicen las órdenes de Dropi importadas en Seguimiento, de todos los canales
         // (la landing, WhatsApp, las vendedoras). Si falla la lectura, el dashboard sale igual sin esa sección.
+        // Tiene su propio período (dropi_rango: hoy, ayer, semana, mes, mes_pasado, trimestre, siempre,
+        // personalizado) y su propio canal (dropi_canal: todos, landing, whatsapp), distintos del filtro
+        // de los pedidos de la landing de más abajo.
         $dropi = null;
-        $dropiSerie = null;
         try {
-            $dash  = new DashboardDropi();
-            $dropi = $dash->resumen($inicioObj, $finObj, $prevInicioObj, $prevFinObj);
+            $dash    = new DashboardDropi();
+            $periodoD = DashboardDropi::periodo(
+                (string)($_GET['dropi_rango'] ?? 'mes'),
+                isset($_GET['dropi_desde']) ? (string)$_GET['dropi_desde'] : null,
+                isset($_GET['dropi_hasta']) ? (string)$_GET['dropi_hasta'] : null
+            );
+            $canalD = (string)($_GET['dropi_canal'] ?? 'todos');
+            $dropi  = $dash->resumen($periodoD, $canalD);
             if ($dropi && !empty($dropi['hay_datos'])) {
                 $act = $dropi['total'];
                 $ant = $dropi['anterior'];
@@ -157,7 +165,9 @@ class AdminPedidosController extends Controller
                     'entregado'     => $this->calcTrendPct((float)$act['valor_entregado'], (float)($ant['valor_entregado'] ?? 0)),
                     'ganancia_neta' => $this->calcTrendPct((float)$act['ganancia_neta'],   (float)($ant['ganancia_neta'] ?? 0)),
                 ];
-                $dropiSerie = $dash->serieDiaria(30);
+            } elseif ($dropi !== null) {
+                $dropi['periodo'] = ['rango' => $periodoD['rango'], 'etiqueta' => $periodoD['etiqueta'], 'desde' => $periodoD['desde'], 'hasta' => $periodoD['hasta']];
+                $dropi['canal_sel'] = in_array($canalD, DashboardDropi::CANALES, true) ? $canalD : 'todos';
             }
         } catch (\Throwable $e) {
             error_log('[AdminPedidos] ventas de Dropi: ' . $e->getMessage());
@@ -190,7 +200,6 @@ class AdminPedidosController extends Controller
             'tendencias'       => $tendencias,
             'plantillas_wa'    => $plantillasWa,
             'dropi'            => $dropi,
-            'dropi_serie'      => $dropiSerie,
         ]);
     }
 

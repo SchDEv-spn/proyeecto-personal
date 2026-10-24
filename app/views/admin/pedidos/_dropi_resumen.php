@@ -2,21 +2,32 @@
 /**
  * Sección "Ventas reales · Dropi" del dashboard: lo que se vendió, entregó y devolvió según las
  * órdenes de Dropi importadas en Seguimiento, de todos los canales (landing, WhatsApp, vendedoras).
+ * Tiene su propio período (dropi_rango) y su propio canal (dropi_canal); se cambian recargando la
+ * página y dejando el filtro de los pedidos de la landing como estaba.
  *
- * Variables: $dropi (DashboardDropi::resumen + 'tendencias'), $dropi_serie, $rango, $desde, $hasta y
- * $renderTrend (la define pedidos/index.php).
+ * Variables: $dropi (DashboardDropi::resumen + 'tendencias') y $renderTrend (la define pedidos/index.php).
  */
 $h      = static fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 $money  = static fn($n) => '$' . number_format((float)$n, 0, ',', '.');
 $pct    = static fn($x) => $x === null ? '—' : round($x * 100) . '%';
 $plural = static fn(int $n, string $uno, string $varios) => number_format($n, 0, ',', '.') . ' ' . ($n === 1 ? $uno : $varios);
 
-$rangoNombres = ['hoy' => 'Hoy', 'ayer' => 'Ayer', 'semana' => 'Esta semana', 'mes' => 'Este mes', 'siempre' => 'Desde siempre'];
-$rangoTxt = ($rango === 'personalizado' && $desde && $hasta)
-    ? date('d/m/Y', strtotime($desde)) . ' → ' . date('d/m/Y', strtotime($hasta))
-    : ($rangoNombres[$rango] ?? 'Este mes');
-
 $importarUrl = BASE_URL . '/AdminPlantillasWa/importarDropi';
+$periodo     = $dropi['periodo'] ?? ['rango' => 'mes', 'etiqueta' => 'Este mes', 'desde' => null, 'hasta' => null];
+$canalSel    = $dropi['canal_sel'] ?? 'todos';
+
+// Los enlaces conservan lo demás de la URL (el filtro de los pedidos de la landing) y vuelven a esta sección.
+$baseGet = $_GET;
+unset($baseGet['url'], $baseGet['dropi_rango'], $baseGet['dropi_desde'], $baseGet['dropi_hasta'], $baseGet['dropi_canal']); // 'url' lo pone el enrutador, no es un filtro
+$enlace = static function (array $cambios) use ($baseGet): string {
+    return BASE_URL . '/AdminPedidos/index?' . http_build_query(array_merge($baseGet, $cambios)) . '#ventas-dropi';
+};
+$conCanal   = $canalSel !== 'todos' ? ['dropi_canal' => $canalSel] : [];
+$conPeriodo = ['dropi_rango' => $periodo['rango']] + ($periodo['rango'] === 'personalizado' ? ['dropi_desde' => $periodo['desde'], 'dropi_hasta' => $periodo['hasta']] : []);
+
+$rangos = ['hoy' => 'Hoy', 'ayer' => 'Ayer', 'semana' => 'Semana', 'mes' => 'Mes', 'mes_pasado' => 'Mes pasado', 'trimestre' => 'Trimestre', 'siempre' => 'Siempre'];
+$canales = ['todos' => 'Todos los canales', 'landing' => 'Landing', 'whatsapp' => 'WhatsApp / directo'];
+$nombreCanal = ['landing' => 'Landing', 'whatsapp' => 'WhatsApp / directo'];
 
 // "hoy a las 10:05", "ayer a las 10:05" o la fecha.
 $cuando = static function (?string $fecha): string {
@@ -29,7 +40,7 @@ $cuando = static function (?string $fecha): string {
     return 'el ' . date('d/m/Y', $ts) . ' a las ' . $hora;
 };
 ?>
-<section class="dash-dropi" aria-labelledby="dropiTitulo">
+<section class="dash-dropi" id="ventas-dropi" aria-labelledby="dropiTitulo">
     <div class="dash-dropi__head">
         <div>
             <h2 id="dropiTitulo">Ventas reales · Dropi</h2>
@@ -41,7 +52,6 @@ $cuando = static function (?string $fecha): string {
             </p>
         </div>
         <div class="dash-dropi__acciones">
-            <?php if (!empty($dropi['hay_datos'])): ?><span class="chip chip--oscuro"><?= $h($rangoTxt) ?></span><?php endif; ?>
             <a href="<?= $importarUrl ?>" class="btn-detail"><i class="fas fa-file-import" aria-hidden="true"></i> Importar órdenes</a>
         </div>
     </div>
@@ -63,14 +73,63 @@ $cuando = static function (?string $fecha): string {
     $cn = $dropi['canal'];
     $tr = $dropi['tendencias'] ?? [];
     $flat = ['dir' => 'flat', 'label' => '—'];
+    $serie = $dropi['serie'];
+    $porPaso = ['hora' => 'hora', 'dia' => 'día', 'semana' => 'semana', 'mes' => 'mes'][$serie['paso']] ?? 'día';
 ?>
+
+    <div class="dash-filtros">
+        <div class="dash-filtros__grupo" role="group" aria-label="Período">
+            <?php foreach ($rangos as $k => $nombre): ?>
+                <a class="state-chip<?= $periodo['rango'] === $k ? ' is-active' : '' ?>" href="<?= $h($enlace(['dropi_rango' => $k] + $conCanal)) ?>"
+                   <?= $periodo['rango'] === $k ? 'aria-current="true"' : '' ?>><?= $h($nombre) ?></a>
+            <?php endforeach; ?>
+
+            <details class="dtf-wrap<?= $periodo['rango'] === 'personalizado' ? ' dtf-wrap--active' : '' ?>" id="dropiFechaWrap">
+                <summary class="dtf-btn">
+                    <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                    <span class="dtf-btn__label"><?= $periodo['rango'] === 'personalizado' ? $h($periodo['etiqueta']) : 'Fechas' ?></span>
+                    <i class="fas fa-chevron-down dtf-btn__chev" aria-hidden="true"></i>
+                </summary>
+                <div class="dtf-panel">
+                    <div class="dfd-custom">
+                        <span class="dfd-custom__label"><i class="fas fa-sliders-h" aria-hidden="true"></i> Fecha del pedido</span>
+                        <form class="dfd-custom__form" method="get" action="<?= BASE_URL ?>/AdminPedidos/index#ventas-dropi">
+                            <?php foreach ($baseGet as $nombre => $valor): if (is_array($valor)) continue; ?>
+                                <input type="hidden" name="<?= $h($nombre) ?>" value="<?= $h($valor) ?>">
+                            <?php endforeach; ?>
+                            <?php if ($canalSel !== 'todos'): ?><input type="hidden" name="dropi_canal" value="<?= $h($canalSel) ?>"><?php endif; ?>
+                            <input type="hidden" name="dropi_rango" value="personalizado">
+                            <input type="date" name="dropi_desde" required max="<?= date('Y-m-d') ?>" value="<?= $h($periodo['desde'] ?? '') ?>" aria-label="Desde">
+                            <input type="date" name="dropi_hasta" required max="<?= date('Y-m-d') ?>" value="<?= $h($periodo['hasta'] ?? '') ?>" aria-label="Hasta">
+                            <button type="submit">Aplicar</button>
+                        </form>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="dash-filtros__grupo" role="group" aria-label="Canal">
+            <?php foreach ($canales as $k => $nombre): ?>
+                <a class="state-chip state-chip--canal<?= $canalSel === $k ? ' is-active' : '' ?>" href="<?= $h($enlace($conPeriodo + ($k !== 'todos' ? ['dropi_canal' => $k] : []))) ?>"
+                   <?= $canalSel === $k ? 'aria-current="true"' : '' ?>><?= $h($nombre) ?></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <p class="dash-resumen-periodo help">
+        Mostrando <b><?= $h($periodo['etiqueta']) ?></b><?= $canalSel !== 'todos' ? ' · solo <b>' . $h($nombreCanal[$canalSel]) . '</b>' : '' ?>.
+    </p>
 
     <div class="stats-grid stats-grid--compacta stats-grid--seis" id="dropiTarjetas">
         <div class="stat-card glow-green">
             <div class="stat-info">
                 <small>Órdenes</small>
                 <h2><?= number_format($t['ordenes'], 0, ',', '.') ?></h2>
-                <span class="target"><?= number_format($cn['landing']['ordenes'], 0, ',', '.') ?> landing · <?= number_format($cn['whatsapp']['ordenes'], 0, ',', '.') ?> WhatsApp</span>
+                <?php if ($canalSel === 'todos'): ?>
+                    <span class="target"><?= number_format($cn['landing']['ordenes'], 0, ',', '.') ?> landing · <?= number_format($cn['whatsapp']['ordenes'], 0, ',', '.') ?> WhatsApp</span>
+                <?php else: ?>
+                    <span class="target">Solo <?= $h($nombreCanal[$canalSel]) ?></span>
+                <?php endif; ?>
                 <span class="target"><?= ($renderTrend)($tr['ordenes'] ?? $flat) ?> vs per. ant.</span>
             </div>
             <i class="fas fa-clipboard-list stat-icon" aria-hidden="true"></i>
@@ -132,6 +191,76 @@ $cuando = static function (?string $fecha): string {
         </div>
     </div>
 
+    <section class="dash-grid" aria-label="Gráficos de Dropi">
+        <article class="panel panel--kpi kpi-purple">
+            <div class="panel__head"><h2>Órdenes por <?= $h($porPaso) ?></h2><span class="chip">Actividad</span></div>
+            <div class="panel__body dash-grafico">
+                <canvas id="chartDropiOrdenes" role="img" aria-label="Órdenes de Dropi por <?= $h($porPaso) ?>, separadas entre landing y WhatsApp"></canvas>
+            </div>
+        </article>
+
+        <article class="panel panel--kpi kpi-cyan">
+            <div class="panel__head"><h2>Ventas por <?= $h($porPaso) ?></h2><span class="chip">COP</span></div>
+            <div class="panel__body dash-grafico">
+                <canvas id="chartDropiVentas" role="img" aria-label="Ventas de Dropi por <?= $h($porPaso) ?> en pesos, separadas entre landing y WhatsApp"></canvas>
+            </div>
+        </article>
+
+        <article class="panel panel--wide">
+            <div class="panel__head"><h2>Distribución por estado</h2><span class="chip">Resumen</span></div>
+            <div class="panel__body panel__body--center">
+                <canvas id="chartDropiEstados" height="160" role="img" aria-label="Órdenes de Dropi por estado"></canvas>
+            </div>
+        </article>
+
+        <script type="application/json" id="dropiGraficos"><?= json_encode([
+            'serie'  => $serie,
+            'canal'  => $canalSel,
+            'estados' => $t['estados'],
+        ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+    </section>
+
+    <div class="dash-embudos">
+        <?php foreach ($nombreCanal as $k => $nombre):
+            $c = $cn[$k];
+            $base = max(0, (int)$c['creadas']);
+            $principal = [['Creadas', $c['creadas'], 'f-nuevo'], ['Despachadas', $c['despachadas'], 'f-enviado'], ['Entregadas', $c['entregadas'], 'f-entregado']];
+            $resto = [['Devueltas', $c['devoluciones'], 'f-cancelado'], ['Canceladas', $c['canceladas'], 'f-gris'], ['Pendientes', $c['en_proceso'], 'f-contactado']];
+            $fila = static function (array $f) use ($base): string {
+                $p = $base > 0 ? (int)round($f[1] / $base * 100) : 0;
+                return '<div class="funnel-row"><span class="funnel-label">' . htmlspecialchars($f[0]) . '</span>'
+                    . '<div class="funnel-bar-track"><div class="funnel-bar-fill ' . $f[2] . '" style="width:' . $p . '%"></div></div>'
+                    . '<span class="funnel-pct">' . $p . '%</span><span class="funnel-count">' . number_format((int)$f[1], 0, ',', '.') . '</span></div>';
+            };
+        ?>
+        <article class="panel">
+            <div class="panel__head"><h2>Embudo de entrega · <?= $h($nombre) ?></h2><span class="chip"><?= $plural($base, 'orden', 'órdenes') ?></span></div>
+            <div class="panel__body">
+                <?php if ($base === 0): ?>
+                    <p class="help dash-vacio-p">Sin órdenes de este canal en el período.</p>
+                <?php else: ?>
+                    <div class="funnel-bars" role="list" aria-label="Embudo de entrega de <?= $h($nombre) ?>">
+                        <?php foreach ($principal as $f) echo $fila($f); ?>
+                    </div>
+                    <p class="help dash-embudo-resto">Y el resto de las órdenes creadas:</p>
+                    <div class="funnel-bars">
+                        <?php foreach ($resto as $f) echo $fila($f); ?>
+                    </div>
+                    <p class="help dash-nota">
+                        <b>Pendientes</b> son las que aún no se entregan ni se devuelven (preparándose, en camino o esperando recogida).
+                        De las ya cerradas, se entrega el <b><?= $pct($c['tasa_entrega']) ?></b>.
+                    </p>
+                <?php endif; ?>
+                <?php if ($k === 'whatsapp'): ?>
+                    <p class="help dash-nota">Empieza cuando la orden se crea en Dropi: las conversaciones que no llegaron a ser orden no se ven aquí.</p>
+                <?php else: ?>
+                    <p class="help dash-nota">Lo que pasa antes de Dropi (nuevo, contactado, confirmado) está en el embudo de la landing, más abajo.</p>
+                <?php endif; ?>
+            </div>
+        </article>
+        <?php endforeach; ?>
+    </div>
+
     <div class="dash-dropi__grid">
 
         <article class="panel">
@@ -160,14 +289,6 @@ $cuando = static function (?string $fecha): string {
                     <b>Landing</b> es una orden de Dropi que corresponde a un pedido de tu landing (mismo teléfono en esos días, o el mismo ID de Dropi).
                     El resto —lo que vendes por WhatsApp o directo— se cuenta como <b>WhatsApp / directo</b>.
                 </p>
-            </div>
-        </article>
-
-        <article class="panel">
-            <div class="panel__head"><h2>Órdenes por día</h2><span class="chip">Últimos 30 días</span></div>
-            <div class="panel__body dash-grafico">
-                <canvas id="chartDropiDia" role="img" aria-label="Órdenes de Dropi por día en los últimos 30 días, separadas entre landing y WhatsApp"></canvas>
-                <script type="application/json" id="dropiSerieDatos"><?= json_encode($dropi_serie ?? null, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
             </div>
         </article>
 

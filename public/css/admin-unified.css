@@ -5711,3 +5711,20 @@ div.dataTables_wrapper,
 
 .dash-etiqueta { font-size: var(--text-lg); font-weight: 800; color: var(--tx); margin: var(--sp-6) 0 var(--sp-3); line-height: 1.25; }
 .dash-etiqueta small { font-size: var(--text-sm); font-weight: 500; color: var(--tx-muted); margin-left: var(--sp-2); }
+
+/* Dashboard de Dropi: filtros de período y canal, gráficos y embudos por canal. */
+.dash-filtros { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3) var(--sp-5); }
+.dash-filtros__grupo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+a.state-chip { text-decoration: none; }
+.dash-resumen-periodo { margin: calc(var(--sp-2) * -1) 0 0; }
+.dash-dropi > .dash-grid { margin-top: var(--sp-1); }
+.dash-embudos { display: grid; grid-template-columns: 1fr; gap: var(--sp-4); }
+@media (min-width: 900px) { .dash-embudos { grid-template-columns: 1fr 1fr; } }
+.dash-embudos .funnel-row { grid-template-columns: 96px 1fr 40px 48px; }
+.dash-embudos .funnel-bar-track { height: 9px; }
+.dash-embudo-resto { margin: var(--sp-4) 0 var(--sp-2); }
+.dash-vacio-p { padding: var(--sp-3) 0; }
+.f-gris { background: #94A3B8; }
+@media (max-width: 599px) {
+  #dropiFechaWrap .dtf-panel { left: 0; right: auto; }
+}
