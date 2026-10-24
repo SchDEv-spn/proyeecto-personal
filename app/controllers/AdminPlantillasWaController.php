@@ -51,6 +51,8 @@ class AdminPlantillasWaController extends Controller
             'buscar' => (string)($_GET['buscar'] ?? ''),
             'desde'  => (string)($_GET['desde']  ?? ''),
             'hasta'  => (string)($_GET['hasta']  ?? ''),
+            'estatus'        => (string)($_GET['estatus']        ?? ''),
+            'transportadora' => (string)($_GET['transportadora'] ?? ''),
         ], (int)($_GET['start'] ?? 0), (int)($_GET['length'] ?? 25));
 
         $filas = [];
@@ -68,6 +70,7 @@ class AdminPlantillasWaController extends Controller
             'data'            => $filas,
             'datos'           => $datos,
             'contadores'      => $ordenes->contadores(),
+            'opciones'        => $pagina['opciones'],
         ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
         exit;
     }

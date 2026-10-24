@@ -153,7 +153,28 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                         </div>
 
                         <div class="dt-filter-bar">
-                            <button type="button" class="state-chip" id="segTodas">Todas las órdenes</button>
+                            <?php /* Las opciones de estos dos desplegables las llena el JS con lo que haya en las órdenes (y cuántas). */ ?>
+                            <details class="dtf-wrap" id="segEstatusWrap">
+                                <summary class="dtf-btn">
+                                    <i class="fas fa-flag"></i>
+                                    <span class="dtf-btn__label" id="segEstatusLabel">Estado en Dropi</span>
+                                    <i class="fas fa-chevron-down dtf-btn__chev"></i>
+                                </summary>
+                                <div class="dtf-panel" id="segEstatusPanel">
+                                    <button type="button" class="dfd-item is-active" data-valor=""><i class="fas fa-list"></i> Todos los estados</button>
+                                </div>
+                            </details>
+
+                            <details class="dtf-wrap" id="segTranspWrap">
+                                <summary class="dtf-btn">
+                                    <i class="fas fa-truck-fast"></i>
+                                    <span class="dtf-btn__label" id="segTranspLabel">Transportadora</span>
+                                    <i class="fas fa-chevron-down dtf-btn__chev"></i>
+                                </summary>
+                                <div class="dtf-panel" id="segTranspPanel">
+                                    <button type="button" class="dfd-item is-active" data-valor=""><i class="fas fa-list"></i> Todas las transportadoras</button>
+                                </div>
+                            </details>
 
                             <details class="dtf-wrap" id="segFechaWrap">
                                 <summary class="dtf-btn">
@@ -177,6 +198,8 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                                     </div>
                                 </div>
                             </details>
+
+                            <button type="button" class="state-chip seg-limpiar" id="segLimpiar" hidden><i class="fas fa-xmark" aria-hidden="true"></i> Limpiar filtros</button>
 
                             <div class="dt-search-wrap">
                                 <i class="fas fa-search"></i>
@@ -224,15 +247,17 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
 
     const BASE = window.BASE_URL || '';
     const tarjetas  = document.querySelectorAll('#segTarjetas [data-vista]');
-    const chipTodas = document.getElementById('segTodas');
+    const btnLimpiar = document.getElementById('segLimpiar');
     const datos     = new Map(); // id de orden → datos para armar el mensaje
     let vista  = <?= json_encode($vistaInicial ?? 'todas') ?>;
-    let buscar = '', desde = '', hasta = '', temporizador = null;
+    let buscar = '', desde = '', hasta = '', estatus = '', transp = '', temporizador = null;
 
     const marcarVista = () => {
         tarjetas.forEach(t => t.classList.toggle('is-active', t.dataset.vista === vista));
-        chipTodas.classList.toggle('is-active', vista === 'todas');
     };
+
+    // "Limpiar filtros" solo aparece cuando hay algo filtrado: es la forma de volver a ver todas las órdenes.
+    const hayFiltros = () => vista !== 'todas' || !!(estatus || transp || buscar || desde || hasta);
 
     const pintarContadores = (c) => {
         if (!c) return;
@@ -252,11 +277,12 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
         ajax: {
             url: BASE + '/AdminPlantillasWa/ordenesDropi',
             type: 'GET',
-            data: (d) => { d.vista = vista; d.buscar = buscar; d.desde = desde; d.hasta = hasta; },
+            data: (d) => { d.vista = vista; d.buscar = buscar; d.desde = desde; d.hasta = hasta; d.estatus = estatus; d.transportadora = transp; },
             dataSrc: (json) => {
                 datos.clear();
                 Object.keys(json.datos || {}).forEach(k => datos.set(Number(k), json.datos[k]));
                 pintarContadores(json.contadores);
+                pintarOpciones(json.opciones);
                 return json.data || [];
             },
         },
@@ -277,7 +303,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
         dom: 't<"dt-bottom"lip>',
     });
 
-    const recargar = (volverAlInicio = true) => dt.ajax.reload(null, volverAlInicio);
+    const recargar = (volverAlInicio = true) => { btnLimpiar.hidden = !hayFiltros(); return dt.ajax.reload(null, volverAlInicio); };
 
     // ── Tarjetas = listas ──
     const cambiarVista = (v) => { vista = v; marcarVista(); recargar(); };
@@ -285,8 +311,63 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
         t.addEventListener('click', () => cambiarVista(t.dataset.vista));
         t.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cambiarVista(t.dataset.vista); } });
     });
-    chipTodas.addEventListener('click', () => cambiarVista('todas'));
     marcarVista();
+    btnLimpiar.hidden = !hayFiltros();
+
+    // ── Estado en Dropi y transportadora ──
+    // Las opciones salen de las órdenes mismas, con cuántas hay de cada una dentro de lo que ya se filtró
+    // (el servidor las cuenta sin aplicar el propio filtro, para poder cambiar de una a otra).
+    const desplegables = {
+        estatus: { wrap: document.getElementById('segEstatusWrap'), panel: document.getElementById('segEstatusPanel'), label: document.getElementById('segEstatusLabel'), vacio: 'Estado en Dropi', todos: 'Todos los estados' },
+        transportadora: { wrap: document.getElementById('segTranspWrap'), panel: document.getElementById('segTranspPanel'), label: document.getElementById('segTranspLabel'), vacio: 'Transportadora', todos: 'Todas las transportadoras' },
+    };
+    const elegido = (clave) => clave === 'estatus' ? estatus : transp;
+    const nombres = { estatus: {}, transportadora: {} }; // valor → rótulo ya visto, para la opción elegida que se queda en 0
+
+    const itemOpcion = (icono, texto, n, valor, activo) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'dfd-item' + (activo ? ' is-active' : '');
+        b.dataset.valor = valor;
+        const i = document.createElement('i'); i.className = 'fas ' + icono; i.setAttribute('aria-hidden', 'true');
+        const t = document.createElement('span'); t.textContent = texto;
+        b.append(i, t);
+        if (n !== null) { const c = document.createElement('span'); c.className = 'seg-opcion-n'; c.textContent = n; b.append(c); }
+        return b;
+    };
+
+    function pintarOpciones(op) {
+        if (!op) return;
+        Object.keys(desplegables).forEach((clave) => {
+            const d = desplegables[clave];
+            const sel = elegido(clave);
+            const lista = (op[clave] || []).slice();
+            // La opción elegida se queda en la lista aunque en esta vista ya no tenga órdenes.
+            lista.forEach(o => { nombres[clave][o.valor] = o.etiqueta; });
+            if (sel && !lista.some(o => o.valor === sel)) lista.push({ valor: sel, etiqueta: nombres[clave][sel] || sel, n: 0 });
+            d.panel.replaceChildren(itemOpcion('fa-list', d.todos, null, '', sel === ''));
+            lista.forEach(o => d.panel.append(itemOpcion('fa-circle', o.etiqueta, o.n, o.valor, o.valor === sel)));
+            const actual = lista.find(o => o.valor === sel);
+            d.label.textContent = sel ? (clave === 'estatus' ? 'Estado: ' : '') + (actual ? actual.etiqueta : sel) : d.vacio;
+            d.wrap.classList.toggle('dtf-wrap--active', sel !== '');
+        });
+    }
+
+    Object.keys(desplegables).forEach((clave) => {
+        const d = desplegables[clave];
+        d.panel.addEventListener('click', (e) => {
+            const b = e.target.closest('.dfd-item');
+            if (!b) return;
+            if (clave === 'estatus') estatus = b.dataset.valor; else transp = b.dataset.valor;
+            d.wrap.open = false;
+            recargar();
+        });
+    });
+
+    // Un desplegable abierto se cierra al hacer clic fuera.
+    document.addEventListener('click', (e) => {
+        document.querySelectorAll('#segEstatusWrap[open], #segTranspWrap[open], #segFechaWrap[open]').forEach((w) => { if (!w.contains(e.target)) w.open = false; });
+    });
 
     // ── Búsqueda ──
     document.getElementById('segBuscar').addEventListener('input', (e) => {
@@ -298,11 +379,14 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     const fechaWrap  = document.getElementById('segFechaWrap');
     const fechaLabel = document.getElementById('segFechaLabel');
     const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    const aplicarFecha = (d, h, etiqueta, activo) => {
+    const ponerFecha = (d, h, etiqueta, activo) => {
         desde = d; hasta = h;
         fechaLabel.textContent = etiqueta;
         fechaWrap.classList.toggle('dtf-wrap--active', !!(d || h));
         fechaWrap.querySelectorAll('.dfd-item').forEach(b => b.classList.toggle('is-active', b.dataset.rango === activo));
+    };
+    const aplicarFecha = (d, h, etiqueta, activo) => {
+        ponerFecha(d, h, etiqueta, activo);
         fechaWrap.open = false;
         recargar();
     };
@@ -320,6 +404,17 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
         if (!d && !h) return;
         if (d && h && d > h) { document.getElementById('segHasta').focus(); return; }
         aplicarFecha(d, h, (d || '…') + ' → ' + (h || '…'), '');
+    });
+
+    // ── Limpiar filtros: vuelve a "todas las órdenes", sin estado, transportadora, búsqueda ni fecha ──
+    btnLimpiar.addEventListener('click', () => {
+        vista = 'todas'; estatus = ''; transp = ''; buscar = '';
+        document.getElementById('segBuscar').value = '';
+        document.getElementById('segDesde').value = '';
+        document.getElementById('segHasta').value = '';
+        ponerFecha('', '', 'Todo el historial', 'todo');
+        marcarVista();
+        recargar();
     });
 
     // ── Acciones de cada fila ──

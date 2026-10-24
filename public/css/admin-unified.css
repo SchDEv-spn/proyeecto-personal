@@ -5646,3 +5646,21 @@ div.dataTables_wrapper,
 @media (min-width: 720px) { .dropi-prod { grid-template-columns: 1fr minmax(280px, 440px); align-items: center; gap: var(--sp-4); } }
 .dropi-prod__nombre { font-weight: 700; font-size: var(--text-sm); overflow-wrap: anywhere; }
 .dropi-prod__meta   { font-size: var(--text-xs); color: var(--tx-muted); }
+
+/* Seguimiento: filtros de estado de Dropi y transportadora (reutilizan .dtf-wrap/.dfd-item del filtro de fecha). */
+#segEstatusPanel, #segTranspPanel { min-width: 240px; max-height: min(60vh, 420px); overflow-y: auto; }
+#segEstatusWrap .dtf-btn__label, #segTranspWrap .dtf-btn__label { max-width: 230px; overflow: hidden; text-overflow: ellipsis; }
+#segEstatusPanel .dfd-item i.fa-circle, #segTranspPanel .dfd-item i.fa-circle { font-size: 5px; }
+.seg-opcion-n { margin-left: auto; padding-left: var(--sp-4); font-size: var(--text-xs); font-weight: 700; color: var(--tx-muted); }
+.dfd-item.is-active .seg-opcion-n { color: var(--green-dark); }
+.seg-limpiar { gap: var(--sp-1); color: var(--red); border-color: var(--red); }
+.seg-limpiar:hover { background: var(--red); border-color: var(--red); color: #fff; }
+.seg-limpiar[hidden] { display: none; }
+@media (max-width: 599px) {
+  #segTranspWrap .dtf-panel { left: auto; right: 0; }
+  #segEstatusWrap .dtf-btn, #segTranspWrap .dtf-btn, #segFechaWrap .dtf-btn { width: 100%; justify-content: space-between; }
+  #segEstatusWrap .dtf-btn__label, #segTranspWrap .dtf-btn__label { max-width: none; flex: 1; text-align: left; white-space: nowrap; }
+  #segFechaWrap, .seg-limpiar { grid-column: 1 / -1; }
+  #segFechaWrap .dtf-btn__label { flex: 1; text-align: left; }
+  .seg-limpiar { justify-content: center; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
+}

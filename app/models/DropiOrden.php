@@ -852,7 +852,19 @@ class DropiOrden extends Model
             $params[':hasta'] = $f['hasta'] . ' 23:59:59';
         }
 
-        $condicion = $base . ($where ? ' AND ' . implode(' AND ', $where) : '');
+        // Estatus de Dropi y transportadora: cada filtro se arma aparte para poder contar las opciones del otro sin aplicarlo.
+        $estatus = trim((string)($f['estatus'] ?? ''));
+        $transp  = trim((string)($f['transportadora'] ?? ''));
+        $filtroEstatus = $estatus !== '' ? ['o.estatus = :estatus', [':estatus' => $estatus]] : null;
+        $filtroTransp  = $transp  !== '' ? ['o.transportadora = :transp', [':transp' => $transp]] : null;
+        $comunes = $base . ($where ? ' AND ' . implode(' AND ', $where) : '');
+
+        $condicion = $comunes;
+        foreach ([$filtroEstatus, $filtroTransp] as $fl) {
+            if ($fl === null) continue;
+            $condicion .= ' AND ' . $fl[0];
+            $params += $fl[1];
+        }
 
         $total = (int)$this->db->query("SELECT COUNT(*) FROM dropi_ordenes o WHERE {$base}")->fetchColumn();
         $stmt = $this->db->prepare("SELECT COUNT(*) FROM dropi_ordenes o WHERE {$condicion}");
@@ -897,7 +909,39 @@ class DropiOrden extends Model
         }
         unset($o);
 
-        return ['total' => $total, 'filtrado' => $filtrado, 'filas' => $filas];
+        $paramsComunes = array_diff_key($params, [':estatus' => 1, ':transp' => 1]);
+        $opciones = [
+            'estatus'        => $this->opcionesDe('estatus', $comunes . ($filtroTransp ? ' AND ' . $filtroTransp[0] : ''), $paramsComunes + ($filtroTransp[1] ?? [])),
+            'transportadora' => $this->opcionesDe('transportadora', $comunes . ($filtroEstatus ? ' AND ' . $filtroEstatus[0] : ''), $paramsComunes + ($filtroEstatus[1] ?? [])),
+        ];
+
+        return ['total' => $total, 'filtrado' => $filtrado, 'filas' => $filas, 'opciones' => $opciones];
+    }
+
+    /**
+     * Valores de una columna (estatus de Dropi o transportadora) con cuántas órdenes tiene cada uno dentro
+     * de la lista actual. Se calcula SIN el filtro de esa misma columna: así se ve a qué otro valor se puede
+     * pasar, y la opción elegida sigue en la lista aunque ya no tenga órdenes ahí.
+     *
+     * @param 'estatus'|'transportadora' $columna
+     * @return array<int, array{valor: string, etiqueta: string, n: int}>
+     */
+    private function opcionesDe(string $columna, string $condicion, array $params): array
+    {
+        $col = $columna === 'estatus' ? 'o.estatus' : 'o.transportadora';
+        $stmt = $this->db->prepare("SELECT {$col} AS valor, COUNT(*) AS n FROM dropi_ordenes o WHERE {$condicion} AND {$col} <> '' GROUP BY {$col} ORDER BY n DESC, {$col}");
+        $stmt->execute($params);
+
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $valor = (string)$r['valor'];
+            $etiqueta = $columna === 'transportadora'
+                ? (self::transportadoraInfo($valor)['nombre'] ?? null)
+                : null;
+            $etiqueta ??= mb_strtoupper(mb_substr($valor, 0, 1, 'UTF-8'), 'UTF-8') . mb_strtolower(mb_substr($valor, 1, null, 'UTF-8'), 'UTF-8');
+            $out[] = ['valor' => $valor, 'etiqueta' => $etiqueta, 'n' => (int)$r['n']];
+        }
+        return $out;
     }
 
     public function porId(int $id): ?array
