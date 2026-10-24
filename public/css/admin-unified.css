@@ -5636,3 +5636,13 @@ div.dataTables_wrapper,
   #tablaClientesRiesgo tbody td { padding-left: var(--sp-2); padding-right: var(--sp-2); }
   #tablaClientesRiesgo tbody td { white-space: normal; overflow-wrap: anywhere; vertical-align: top; }
 }
+
+/* Emparejar productos de Dropi con los de la tienda (pantalla de importar y panel de Seguimiento). */
+.dropi-prod {
+  display: grid; grid-template-columns: 1fr; gap: var(--sp-2);
+  padding: var(--sp-3) 0; border-bottom: 1px solid var(--border);
+}
+.dropi-prod:last-child { border-bottom: none; }
+@media (min-width: 720px) { .dropi-prod { grid-template-columns: 1fr minmax(280px, 440px); align-items: center; gap: var(--sp-4); } }
+.dropi-prod__nombre { font-weight: 700; font-size: var(--text-sm); overflow-wrap: anywhere; }
+.dropi-prod__meta   { font-size: var(--text-xs); color: var(--tx-muted); }

@@ -247,7 +247,8 @@ class DropiImport extends Model
         $stmt = $this->db->prepare("
             INSERT INTO dropi_productos (dropi_product_id, dropi_nombre, producto_id)
             VALUES (:id, :nombre, :pid)
-            ON DUPLICATE KEY UPDATE dropi_nombre = VALUES(dropi_nombre), producto_id = VALUES(producto_id)
+            ON DUPLICATE KEY UPDATE dropi_nombre = VALUES(dropi_nombre), producto_id = VALUES(producto_id),
+                                    sin_equivalente = IF(VALUES(producto_id) IS NULL, sin_equivalente, 0)
         ");
         foreach ($nombres as $dropiId => $nombre) {
             $dropiId = (string)preg_replace('/\D+/', '', (string)$dropiId);

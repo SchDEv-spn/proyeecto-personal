@@ -156,6 +156,7 @@ class DropiOrden extends Model
                 dropi_product_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
                 dropi_nombre     VARCHAR(190) NOT NULL DEFAULT '',
                 producto_id      INT NULL,
+                sin_equivalente  TINYINT(1) NOT NULL DEFAULT 0,
                 updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
@@ -218,6 +219,148 @@ class DropiOrden extends Model
                 // 1060 = la columna ya existe (otra petición la acaba de añadir).
             }
         }
+
+        // dropi_productos: "no lo tengo en mi tienda" (para que el aviso de emparejar no insista).
+        try {
+            $mapa = array_column($this->db->query('SHOW COLUMNS FROM dropi_productos')->fetchAll(PDO::FETCH_ASSOC), 'Field');
+            if (!in_array('sin_equivalente', $mapa, true)) {
+                $this->db->exec('ALTER TABLE dropi_productos ADD COLUMN sin_equivalente TINYINT(1) NOT NULL DEFAULT 0 AFTER producto_id');
+            }
+        } catch (\PDOException $e) {
+            // la tabla se acaba de crear con la columna, o la agregó otra petición
+        }
+    }
+
+    /* ─────────────────  Productos de Dropi ↔ productos de la tienda  ───────────────── */
+
+    /**
+     * Los productos de la tienda para elegir, con los activos primero.
+     *
+     * @return array<int, array{id: int|string, nombre: string, slug: string, activo: int|string}>
+     */
+    public function productosTienda(): array
+    {
+        return $this->db->query("SELECT id, nombre, COALESCE(slug, '') AS slug, activo FROM productos ORDER BY activo DESC, nombre")->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Productos de Dropi que llegaron en alguna orden y todavía no se emparejan con uno de la
+     * tienda (y que el dueño no marcó como "no lo tengo en mi tienda").
+     *
+     * @return array<int, array{id: string, nombre: string, ordenes: int}>
+     */
+    public function productosSinEmparejar(): array
+    {
+        $filas = $this->db->query("
+            SELECT l.dropi_product_id AS id, MAX(l.producto) AS nombre, COUNT(DISTINCT l.orden_id) AS ordenes
+            FROM dropi_orden_lineas l
+            LEFT JOIN dropi_productos m ON m.dropi_product_id = l.dropi_product_id
+            WHERE l.dropi_product_id IS NOT NULL AND l.producto_id IS NULL AND COALESCE(m.sin_equivalente, 0) = 0
+            GROUP BY l.dropi_product_id
+            ORDER BY ordenes DESC, nombre
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(static fn($r) => ['id' => (string)$r['id'], 'nombre' => (string)$r['nombre'], 'ordenes' => (int)$r['ordenes']], $filas);
+    }
+
+    /**
+     * Dice a qué producto de la tienda corresponde un producto de Dropi (o que no lo tiene) y lo
+     * aplica de una vez a todas las órdenes ya importadas —sus líneas y el nombre que se muestra—
+     * además de guardarlo para las próximas importaciones. No toca productos.dropi_product_id:
+     * con él puesto, los pedidos de la landing se enviarían solos a Dropi.
+     *
+     * @param int|null $productoId  producto de la tienda; null = "no lo tengo en mi tienda"
+     * @return bool  false si ese producto de Dropi no tiene órdenes o el producto de la tienda no existe
+     */
+    public function emparejarProducto(string $dropiId, ?int $productoId): bool
+    {
+        $dropiId = (string)preg_replace('/\D+/', '', $dropiId);
+        if ($dropiId === '') return false;
+
+        $stmt = $this->db->prepare('SELECT COUNT(*), MAX(producto) FROM dropi_orden_lineas WHERE dropi_product_id = ?');
+        $stmt->execute([$dropiId]);
+        [$lineas, $nombre] = $stmt->fetch(PDO::FETCH_NUM);
+        if ((int)$lineas === 0) return false;
+
+        if ($productoId !== null) {
+            $stmt = $this->db->prepare('SELECT 1 FROM productos WHERE id = ?');
+            $stmt->execute([$productoId]);
+            if (!$stmt->fetchColumn()) return false;
+        }
+
+        $propia = !$this->db->inTransaction();
+        if ($propia) $this->db->beginTransaction();
+        try {
+            $this->db->prepare("
+                INSERT INTO dropi_productos (dropi_product_id, dropi_nombre, producto_id, sin_equivalente)
+                VALUES (:id, :nombre, :pid, :sin)
+                ON DUPLICATE KEY UPDATE dropi_nombre = VALUES(dropi_nombre), producto_id = VALUES(producto_id), sin_equivalente = VALUES(sin_equivalente)
+            ")->execute([':id' => $dropiId, ':nombre' => mb_substr((string)$nombre, 0, 190), ':pid' => $productoId, ':sin' => $productoId === null ? 1 : 0]);
+
+            $this->db->prepare('UPDATE dropi_orden_lineas SET producto_id = :pid WHERE dropi_product_id = :id')
+                ->execute([':pid' => $productoId, ':id' => $dropiId]);
+
+            // El nombre que se muestra en cada orden: el de la tienda si hay emparejamiento, si no el de Dropi.
+            $this->db->prepare("
+                UPDATE dropi_ordenes o
+                SET o.producto = COALESCE(LEFT((
+                        SELECT GROUP_CONCAT(DISTINCT COALESCE(p.nombre, l.producto) SEPARATOR ' + ')
+                        FROM dropi_orden_lineas l LEFT JOIN productos p ON p.id = l.producto_id
+                        WHERE l.orden_id = o.id
+                    ), 190), o.producto)
+                WHERE o.id IN (SELECT orden_id FROM dropi_orden_lineas WHERE dropi_product_id = :id)
+            ")->execute([':id' => $dropiId]);
+
+            if ($propia) $this->db->commit();
+        } catch (\Throwable $e) {
+            if ($propia && $this->db->inTransaction()) $this->db->rollBack();
+            throw $e;
+        }
+        return true;
+    }
+
+    /**
+     * El producto de la tienda que más se parece a uno de Dropi, o null si no hay uno claro. Compara
+     * las palabras del nombre de Dropi con las del nombre Y de la dirección web de cada producto
+     * ("WEIXIER TURBULAR TM" ↔ "Bolso en Cuero", cuya dirección es bolso-turbular), y solo cuentan
+     * las palabras que identifican a UN producto de la tienda: "bolso", "reloj" o "cuero" sirven para
+     * varios y no deciden nada. Si hay empate no se adivina. Es una sugerencia: el dueño confirma.
+     *
+     * @param array<int, array{id: int|string, nombre: string, slug?: string}> $tienda
+     */
+    public static function sugerirProducto(string $nombreDropi, array $tienda): ?int
+    {
+        $palabras = static function (string $texto): array {
+            $out = [];
+            foreach (explode(' ', self::textoPlano($texto)) as $p) {
+                // "B0LSO" → "bolso": un cero dentro de una palabra casi siempre es una "o" mal escrita
+                if (preg_match('/[a-z]/', $p) && strpos($p, '0') !== false) $p = str_replace('0', 'o', $p);
+                if (strlen($p) >= 4 && !ctype_digit($p)) $out[$p] = true;
+            }
+            return array_keys($out);
+        };
+
+        $porProducto = [];
+        $frecuencia  = [];
+        foreach ($tienda as $p) {
+            $ps = $palabras($p['nombre'] . ' ' . str_replace('-', ' ', (string)($p['slug'] ?? '')));
+            $porProducto[(int)$p['id']] = $ps;
+            foreach ($ps as $w) $frecuencia[$w] = ($frecuencia[$w] ?? 0) + 1;
+        }
+
+        $dropi = $palabras($nombreDropi);
+        $puntos = [];
+        foreach ($porProducto as $id => $ps) {
+            foreach (array_intersect($dropi, $ps) as $w) {
+                if ($frecuencia[$w] === 1) $puntos[$id] = ($puntos[$id] ?? 0) + 1;
+            }
+        }
+        if (!$puntos) return null;
+
+        arsort($puntos);
+        $valores = array_values($puntos);
+        if (count($valores) > 1 && $valores[0] === $valores[1]) return null;
+        return (int)array_key_first($puntos);
     }
 
     /* ───────────────────────────  Qué mensaje toca enviar  ─────────────────────────── */

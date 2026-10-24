@@ -93,6 +93,41 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                         <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" style="font-weight:700;">Importar ahora →</a>
                     </p>
 
+                    <?php if (!empty($sinEmparejar)): $h = static fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); ?>
+                    <details class="panel" id="segEmparejar" open style="margin-bottom:var(--sp-4);">
+                        <summary class="panel__head" style="cursor:pointer;">
+                            <h2><i class="fas fa-link" aria-hidden="true"></i> Emparejar productos de Dropi con los tuyos (<span data-pend><?= count($sinEmparejar) ?></span>)</h2>
+                        </summary>
+                        <div class="panel__body">
+                            <small class="help" style="display:block;margin-bottom:var(--sp-2)">
+                                Elige cuál de tus productos es cada uno de Dropi. Las órdenes pasan a mostrar el nombre de tu producto (también las que ya importaste)
+                                y las notificaciones de pedidos recientes de la landing las cuentan. Se guarda y no te lo vuelve a preguntar.
+                                Si dice <b>sugerido</b>, es por el parecido del nombre: confírmalo. Si todavía no tienes ese producto, elige "No lo tengo en mi tienda".
+                            </small>
+                            <?php foreach ($sinEmparejar as $s): ?>
+                                <div class="dropi-prod" data-dropi="<?= $h($s['id']) ?>">
+                                    <div>
+                                        <div class="dropi-prod__nombre"><?= $h($s['nombre']) ?></div>
+                                        <div class="dropi-prod__meta">ID en Dropi <?= $h($s['id']) ?> · <?= (int)$s['ordenes'] ?> <?= (int)$s['ordenes'] === 1 ? 'orden' : 'órdenes' ?></div>
+                                    </div>
+                                    <div style="display:flex;gap:var(--sp-2);align-items:center;">
+                                        <select class="form-select" style="flex:1;min-width:0" aria-label="Producto de tu tienda para <?= $h($s['nombre']) ?>">
+                                            <option value="">Elige tu producto…</option>
+                                            <?php foreach ($productosTienda as $pt): $sug = $s['sugerido'] === (int)$pt['id']; ?>
+                                                <option value="<?= (int)$pt['id'] ?>" <?= $sug ? 'selected' : '' ?>>
+                                                    <?= $h($pt['nombre']) ?><?= (int)$pt['activo'] ? '' : ' (inactivo)' ?><?= $sug ? ' — sugerido' : '' ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                            <option value="ninguno">No lo tengo en mi tienda</option>
+                                        </select>
+                                        <button type="button" class="btn-primary" data-act="emparejar">Guardar</button>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </details>
+                    <?php endif; ?>
+
                     <div class="stats-grid stats-grid--compacta stats-grid--seis" id="segTarjetas">
                         <?php foreach ($tarjetas as [$vistaT, $titulo, $icono, $glow, $nota]): ?>
                             <div class="stat-card <?= $glow ?>" role="button" tabindex="0" data-vista="<?= $vistaT ?>">
@@ -304,6 +339,34 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
             })
             .catch(() => alert('No se pudo guardar el aviso. Revisa tu conexión.'));
     };
+
+    // ── Emparejar un producto de Dropi con uno de la tienda ──
+    const panelEmparejar = document.getElementById('segEmparejar');
+    if (panelEmparejar) {
+        panelEmparejar.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-act="emparejar"]');
+            if (!btn) return;
+            const fila = btn.closest('.dropi-prod');
+            const sel  = fila.querySelector('select');
+            if (!sel.value) { sel.focus(); alert('Elige tu producto, o "No lo tengo en mi tienda".'); return; }
+
+            const fd = new FormData();
+            fd.append('dropi_id', fila.dataset.dropi);
+            fd.append('producto_id', sel.value);
+            fd.append('csrf_token', window.__CSRF__ || '');
+            btn.disabled = true;
+            fetch(BASE + '/AdminPlantillasWa/emparejarProducto', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'fetch' } })
+                .then(r => r.json())
+                .then(j => {
+                    if (!j.ok) { alert(j.error || 'No se pudo guardar.'); btn.disabled = false; return; }
+                    fila.remove();
+                    if (j.pendientes > 0) panelEmparejar.querySelector('[data-pend]').textContent = j.pendientes;
+                    else panelEmparejar.remove();
+                    recargar(false);   // la tabla muestra ya el nombre de tu producto
+                })
+                .catch(() => { alert('No se pudo guardar. Revisa tu conexión.'); btn.disabled = false; });
+        });
+    }
 
     tabla.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-act]');

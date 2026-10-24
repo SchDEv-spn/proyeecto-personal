@@ -26,15 +26,6 @@
         .dropi-aviso--warn { background: #FFFBEB; border-color: #FCD34D; }
         .dropi-aviso--warn i { color: #B45309; }
 
-        .dropi-prod {
-            display: grid; grid-template-columns: 1fr; gap: var(--sp-2);
-            padding: var(--sp-3) 0; border-bottom: 1px solid var(--border);
-        }
-        .dropi-prod:last-child { border-bottom: none; }
-        @media (min-width: 720px) { .dropi-prod { grid-template-columns: 1fr minmax(240px, 340px); align-items: center; gap: var(--sp-4); } }
-        .dropi-prod__nombre { font-weight: 700; font-size: var(--text-sm); overflow-wrap: anywhere; }
-        .dropi-prod__meta   { font-size: var(--text-xs); color: var(--tx-muted); }
-
         .dropi-tabla-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .dropi-tabla { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
         .dropi-tabla th {
@@ -239,9 +230,10 @@
                                 <small class="help" style="display:block;margin-bottom:var(--sp-2)">
                                     Con esto las órdenes entran con el nombre de tu producto (así lo reconocen los mensajes y las
                                     notificaciones de pedidos recientes). Se guarda y no te lo vuelvo a preguntar.
-                                    Si el producto todavía no está en tu tienda, déjalo en “ninguno”: se usa el nombre de Dropi.
+                                    Si dice <b>sugerido</b>, es por el parecido del nombre: confírmalo. Si el producto todavía no está en tu tienda, déjalo en
+                                    “ninguno”: se usa el nombre de Dropi y después te lo recuerdo en Seguimiento.
                                 </small>
-                                <?php foreach ($productosDropi as $dropiId => $p): $sel = $mapa[$dropiId] ?? null; ?>
+                                <?php foreach ($productosDropi as $dropiId => $p): $sel = $mapa[$dropiId] ?? null; $sugerido = $sel === null ? ($sugerencias[$dropiId] ?? null) : null; ?>
                                     <div class="dropi-prod">
                                         <div>
                                             <div class="dropi-prod__nombre"><?= $e($p['nombre']) ?></div>
@@ -251,8 +243,8 @@
                                                 aria-label="Producto de tu tienda para <?= $e($p['nombre']) ?>">
                                             <option value="0">— Ninguno: dejo el nombre de Dropi —</option>
                                             <?php foreach ($locales as $lid => $l): ?>
-                                                <option value="<?= (int)$lid ?>" <?= $sel === $lid ? 'selected' : '' ?>>
-                                                    <?= $e($l['nombre']) ?><?= $l['activo'] ? '' : ' (inactivo)' ?>
+                                                <option value="<?= (int)$lid ?>" <?= ($sel === $lid || $sugerido === $lid) ? 'selected' : '' ?>>
+                                                    <?= $e($l['nombre']) ?><?= $l['activo'] ? '' : ' (inactivo)' ?><?= $sugerido === $lid ? ' — sugerido' : '' ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>

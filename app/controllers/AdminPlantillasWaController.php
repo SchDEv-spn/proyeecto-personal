@@ -19,7 +19,15 @@ class AdminPlantillasWaController extends Controller
                 : ($contadores['en_camino'] > 0 ? 'en_camino' : 'todas'));
         }
 
+        // Productos de Dropi que aún no se emparejan con uno de la tienda (con una sugerencia por el nombre).
+        $sinEmparejar    = $ordenes->productosSinEmparejar();
+        $productosTienda = $sinEmparejar ? $ordenes->productosTienda() : [];
+        foreach ($sinEmparejar as &$s) $s['sugerido'] = DropiOrden::sugerirProducto($s['nombre'], $productosTienda);
+        unset($s);
+
         $this->view('admin/plantillas_wa/index', [
+            'sinEmparejar'      => $sinEmparejar,
+            'productosTienda'   => $productosTienda,
             'plantillas'        => $plantillas,
             'contadores'        => $contadores,
             'ultimaImportacion' => $ordenes->ultimaImportacion(),
@@ -62,6 +70,28 @@ class AdminPlantillasWaController extends Controller
             'contadores'      => $ordenes->contadores(),
         ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
         exit;
+    }
+
+    /**
+     * Dice a qué producto de la tienda corresponde un producto de Dropi (o que no lo tiene) y lo
+     * aplica a todas las órdenes ya importadas. producto_id: el id del producto, o "ninguno".
+     */
+    public function emparejarProducto()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        $this->soloPost();
+
+        $eleccion = (string)($_POST['producto_id'] ?? '');
+        if ($eleccion === 'ninguno')                            $pid = null;
+        elseif (ctype_digit($eleccion) && (int)$eleccion > 0)   $pid = (int)$eleccion;
+        else $this->responderJson(['ok' => false, 'error' => 'Elige tu producto, o "No lo tengo en mi tienda".']);
+
+        $ordenes = new DropiOrden();
+        if (!$ordenes->emparejarProducto((string)($_POST['dropi_id'] ?? ''), $pid)) {
+            $this->responderJson(['ok' => false, 'error' => 'No encontré ese producto de Dropi o ese producto de tu tienda.']);
+        }
+        $this->responderJson(['ok' => true, 'pendientes' => count($ordenes->productosSinEmparejar())]);
     }
 
     /**
@@ -341,14 +371,16 @@ class AdminPlantillasWaController extends Controller
         $_SESSION['dropi_import_token'] = $import->guardarTemporal($lectura);
 
         $productosDropi = $import->productosDeDropi($lectura['ordenes']);
+        $mapaProductos  = $import->mapaProductos(array_keys($productosDropi));
         $this->vistaImportarDropi([
             'paso'           => 'previa',
             'token'          => $_SESSION['dropi_import_token'],
             'previa'         => $import->procesar($lectura['ordenes'], false),
             'omitidas'       => $lectura['omitidas'],
             'productosDropi' => $productosDropi,
-            'mapa'           => $import->mapaProductos(array_keys($productosDropi)),
+            'mapa'           => $mapaProductos,
             'locales'        => $import->productosLocales(),
+            'sugerencias'    => $this->sugerenciasDeProductos($productosDropi, $mapaProductos),
             'nombreArchivo'  => mb_substr(basename((string)$archivo['name']), 0, 80),
         ]);
     }
@@ -401,6 +433,28 @@ class AdminPlantillasWaController extends Controller
             'omitidas'   => $lectura['omitidas'],
             'contadores' => (new DropiOrden())->contadores(),
         ]);
+    }
+
+    /**
+     * Para los productos de Dropi que todavía no se emparejan: cuál de la tienda se parece (ver
+     * DropiOrden::sugerirProducto). Llega preseleccionado en la vista previa; el dueño lo confirma.
+     *
+     * @param  array<string, array{nombre: string}> $productosDropi
+     * @param  array<string, ?int>                  $mapa
+     * @return array<string, int>
+     */
+    private function sugerenciasDeProductos(array $productosDropi, array $mapa): array
+    {
+        $pendientes = array_filter($productosDropi, static fn($p, $id) => ($mapa[$id] ?? null) === null, ARRAY_FILTER_USE_BOTH);
+        if (!$pendientes) return [];
+
+        $tienda = (new DropiOrden())->productosTienda();
+        $out = [];
+        foreach ($pendientes as $id => $p) {
+            $sugerido = DropiOrden::sugerirProducto($p['nombre'], $tienda);
+            if ($sugerido !== null) $out[$id] = $sugerido;
+        }
+        return $out;
     }
 
     /** @return string|null  mensaje de error, o null si el archivo es utilizable */
