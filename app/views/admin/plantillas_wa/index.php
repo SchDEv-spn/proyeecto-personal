@@ -199,6 +199,11 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                                 </div>
                             </details>
 
+                            <button type="button" class="state-chip seg-pendientes" id="segPendientes" aria-pressed="false"
+                                    title="Muestra solo a quienes todavía les falta un mensaje: cada orden sale de la lista cuando le avisas">
+                                <i class="fas fa-bell" aria-hidden="true"></i> Faltan por avisar <span class="seg-opcion-n" id="segPendientesN">0</span>
+                            </button>
+
                             <button type="button" class="state-chip seg-limpiar" id="segLimpiar" hidden><i class="fas fa-xmark" aria-hidden="true"></i> Limpiar filtros</button>
 
                             <div class="dt-search-wrap">
@@ -250,14 +255,14 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     const btnLimpiar = document.getElementById('segLimpiar');
     const datos     = new Map(); // id de orden → datos para armar el mensaje
     let vista  = <?= json_encode($vistaInicial ?? 'todas') ?>;
-    let buscar = '', desde = '', hasta = '', estatus = '', transp = '', temporizador = null;
+    let buscar = '', desde = '', hasta = '', estatus = '', transp = '', pendientes = false, temporizador = null;
 
     const marcarVista = () => {
         tarjetas.forEach(t => t.classList.toggle('is-active', t.dataset.vista === vista));
     };
 
     // "Limpiar filtros" solo aparece cuando hay algo filtrado: es la forma de volver a ver todas las órdenes.
-    const hayFiltros = () => vista !== 'todas' || !!(estatus || transp || buscar || desde || hasta);
+    const hayFiltros = () => vista !== 'todas' || pendientes || !!(estatus || transp || buscar || desde || hasta);
 
     const pintarContadores = (c) => {
         if (!c) return;
@@ -277,7 +282,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
         ajax: {
             url: BASE + '/AdminPlantillasWa/ordenesDropi',
             type: 'GET',
-            data: (d) => { d.vista = vista; d.buscar = buscar; d.desde = desde; d.hasta = hasta; d.estatus = estatus; d.transportadora = transp; },
+            data: (d) => { d.vista = vista; d.buscar = buscar; d.desde = desde; d.hasta = hasta; d.estatus = estatus; d.transportadora = transp; d.aviso = pendientes ? 'pendiente' : ''; },
             dataSrc: (json) => {
                 datos.clear();
                 Object.keys(json.datos || {}).forEach(k => datos.set(Number(k), json.datos[k]));
@@ -338,6 +343,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
 
     function pintarOpciones(op) {
         if (!op) return;
+        if (op.avisos) document.getElementById('segPendientesN').textContent = op.avisos.pendientes;
         Object.keys(desplegables).forEach((clave) => {
             const d = desplegables[clave];
             const sel = elegido(clave);
@@ -368,6 +374,11 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     document.addEventListener('click', (e) => {
         document.querySelectorAll('#segEstatusWrap[open], #segTranspWrap[open], #segFechaWrap[open]').forEach((w) => { if (!w.contains(e.target)) w.open = false; });
     });
+
+    // ── Faltan por avisar: solo las órdenes con un mensaje pendiente; al avisar una, sale de la lista ──
+    const btnPendientes = document.getElementById('segPendientes');
+    const marcarPendientes = () => { btnPendientes.classList.toggle('is-active', pendientes); btnPendientes.setAttribute('aria-pressed', pendientes ? 'true' : 'false'); };
+    btnPendientes.addEventListener('click', () => { pendientes = !pendientes; marcarPendientes(); recargar(); });
 
     // ── Búsqueda ──
     document.getElementById('segBuscar').addEventListener('input', (e) => {
@@ -408,7 +419,8 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
 
     // ── Limpiar filtros: vuelve a "todas las órdenes", sin estado, transportadora, búsqueda ni fecha ──
     btnLimpiar.addEventListener('click', () => {
-        vista = 'todas'; estatus = ''; transp = ''; buscar = '';
+        vista = 'todas'; estatus = ''; transp = ''; buscar = ''; pendientes = false;
+        marcarPendientes();
         document.getElementById('segBuscar').value = '';
         document.getElementById('segDesde').value = '';
         document.getElementById('segHasta').value = '';

@@ -53,6 +53,7 @@ class AdminPlantillasWaController extends Controller
             'hasta'  => (string)($_GET['hasta']  ?? ''),
             'estatus'        => (string)($_GET['estatus']        ?? ''),
             'transportadora' => (string)($_GET['transportadora'] ?? ''),
+            'aviso'          => (string)($_GET['aviso']          ?? ''),
         ], (int)($_GET['start'] ?? 0), (int)($_GET['length'] ?? 25));
 
         $filas = [];

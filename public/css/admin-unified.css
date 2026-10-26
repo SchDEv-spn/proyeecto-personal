@@ -5656,13 +5656,15 @@ div.dataTables_wrapper,
 .seg-limpiar { gap: var(--sp-1); color: var(--red); border-color: var(--red); }
 .seg-limpiar:hover { background: var(--red); border-color: var(--red); color: #fff; }
 .seg-limpiar[hidden] { display: none; }
+.seg-pendientes { gap: var(--sp-1); }
+.seg-pendientes .seg-opcion-n { margin-left: var(--sp-1); padding-left: 0; color: inherit; }
 @media (max-width: 599px) {
   #segTranspWrap .dtf-panel { left: auto; right: 0; }
   #segEstatusWrap .dtf-btn, #segTranspWrap .dtf-btn, #segFechaWrap .dtf-btn { width: 100%; justify-content: space-between; }
   #segEstatusWrap .dtf-btn__label, #segTranspWrap .dtf-btn__label { max-width: none; flex: 1; text-align: left; white-space: nowrap; }
-  #segFechaWrap, .seg-limpiar { grid-column: 1 / -1; }
+  #segFechaWrap, .seg-limpiar, .seg-pendientes { grid-column: 1 / -1; }
   #segFechaWrap .dtf-btn__label { flex: 1; text-align: left; }
-  .seg-limpiar { justify-content: center; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
+  .seg-limpiar, .seg-pendientes { justify-content: center; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
 }
 
 /* ============================================================

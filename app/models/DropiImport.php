@@ -29,7 +29,7 @@ class DropiImport extends Model
 {
     /** Estatus de Dropi (comparados con clave_color) → estado de la orden. NOVEDAD se trata aparte. */
     private const ESTADOS = [
-        'guiagenerada'            => 'confirmado',
+        'guiagenerada'            => 'enviado',   // con la guía hecha la transportadora ya va por el paquete: no queda nada por hacer en la bodega
         'enesperaderutadomestica' => 'confirmado',
         'enprocesamiento'         => 'confirmado',
         'enbodegatransportadora'  => 'enviado',

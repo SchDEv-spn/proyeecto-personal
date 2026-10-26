@@ -194,6 +194,25 @@ class DropiOrden extends Model
         ");
 
         $this->agregarColumnasNuevas();
+        $this->corregirGuiaGenerada();
+    }
+
+    /**
+     * "Guía generada" de Dropi pasó de "Confirmado" a "Enviado" (la transportadora ya va por el paquete). Las
+     * órdenes que se importaron antes siguen con el estado viejo hasta la próxima importación: aquí se pasan de una
+     * vez. Idempotente (cuando no queda ninguna con el estado viejo no toca nada) y respeta los avisos ya hechos.
+     */
+    private function corregirGuiaGenerada(): void
+    {
+        try {
+            $this->db->exec("
+                UPDATE dropi_ordenes SET estado = 'enviado'
+                WHERE estado = 'confirmado'
+                  AND REPLACE(REPLACE(REPLACE(LOWER(estatus), ' ', ''), '_', ''), '-', '') = 'guiagenerada'
+            ");
+        } catch (\PDOException $e) {
+            error_log('[DropiOrden] guía generada → enviado: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -425,7 +444,7 @@ class DropiOrden extends Model
                     return ['estado' => 'en_reparto', 'etiqueta' => 'Avisar que llega hoy', 'urgente' => true];
                 }
                 return $hay('aviso_enviado_at') ? null
-                    : ['estado' => 'enviado', 'etiqueta' => 'Enviar la guía', 'urgente' => false];
+                    : ['estado' => 'enviado', 'etiqueta' => 'Notificar que salió', 'urgente' => false];
 
             case 'entregado':
                 // Solo las recién entregadas: al cargar meses viejos no debe pedirse foto de todo.
@@ -434,6 +453,34 @@ class DropiOrden extends Model
                     : null;
         }
         return null;
+    }
+
+    /**
+     * La misma regla de siguienteAviso() escrita en SQL: las órdenes a las que todavía les toca un mensaje (las que
+     * traen el botón verde). Sirve para filtrar y contar "Faltan por avisar" en el servidor; si cambia una de las dos,
+     * hay que cambiar la otra (test_pendientes.php las compara orden por orden). Solo cuenta las órdenes vigentes
+     * (vistas en las últimas importaciones): de las demás no se sabe en qué van.
+     *
+     * @param string $a      alias de dropi_ordenes en la consulta
+     * @param string $vigente condición de "vigente" ya armada para ese alias ('1 = 1' si no hay corte)
+     */
+    private static function sqlPendiente(string $a, string $vigente): string
+    {
+        $cerrados = "'" . implode("', '", self::ESTADOS_CERRADOS) . "'";
+        $dias     = "COALESCE(DATEDIFF(CURDATE(), DATE({$a}.estatus_desde)), 0)";
+        $enReparto = "REPLACE(REPLACE(REPLACE(LOWER({$a}.estatus), ' ', ''), '_', ''), '-', '') = 'enreparto'";
+        $previo   = "DATE(GREATEST({$a}.aviso_oficina_at, COALESCE({$a}.aviso_recordatorio_at, {$a}.aviso_oficina_at)))";
+
+        return "({$vigente} AND (
+            (TRIM({$a}.novedad) <> '' AND {$a}.estado NOT IN ({$cerrados}) AND {$a}.aviso_novedad_at IS NULL)
+            OR ({$a}.estado = 'en_oficina' AND (
+                   {$a}.aviso_oficina_at IS NULL
+                OR ({$dias} >= " . self::DIAS_ULTIMO_AVISO . " AND {$a}.aviso_ultimo_at IS NULL AND {$previo} < CURDATE())
+                OR ({$dias} >= " . self::DIAS_RECORDATORIO . " AND {$a}.aviso_recordatorio_at IS NULL AND {$a}.aviso_ultimo_at IS NULL AND DATE({$a}.aviso_oficina_at) < CURDATE())
+            ))
+            OR ({$a}.estado = 'enviado' AND ({$a}.aviso_enviado_at IS NULL OR ({$enReparto} AND {$a}.aviso_reparto_at IS NULL)))
+            OR ({$a}.estado = 'entregado' AND {$a}.aviso_entregado_at IS NULL AND {$dias} <= 7)
+        ))";
     }
 
     /** Plantilla que se abre por defecto cuando no hay un aviso pendiente. */
@@ -818,7 +865,8 @@ class DropiOrden extends Model
     /**
      * Una página de órdenes de una vista, con búsqueda y rango de fechas (de pedido).
      *
-     * @param array{vista?: string, buscar?: string, desde?: string, hasta?: string} $f
+     * @param array{vista?: string, buscar?: string, desde?: string, hasta?: string, estatus?: string, transportadora?: string, aviso?: string} $f
+     *        aviso = 'pendiente': solo las que todavía tienen un mensaje por enviar (ver sqlPendiente)
      * @return array{total: int, filtrado: int, filas: array<int, array>}
      */
     public function listar(array $f, int $desde, int $cuantas): array
@@ -870,6 +918,15 @@ class DropiOrden extends Model
             $params += $fl[1];
         }
 
+        // "Faltan por avisar": solo las que todavía tienen un mensaje pendiente. Se cuentan también sin ese filtro,
+        // para mostrar cuántas son dentro de lo que ya se filtró.
+        $pendiente = self::sqlPendiente('o', $vig);
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM dropi_ordenes o WHERE {$condicion} AND {$pendiente}");
+        $stmt->execute($params);
+        $faltanAvisar = (int)$stmt->fetchColumn();
+        $soloPendientes = ($f['aviso'] ?? '') === 'pendiente';
+        if ($soloPendientes) $condicion .= ' AND ' . $pendiente;
+
         $total = (int)$this->db->query("SELECT COUNT(*) FROM dropi_ordenes o WHERE {$base}")->fetchColumn();
         $stmt = $this->db->prepare("SELECT COUNT(*) FROM dropi_ordenes o WHERE {$condicion}");
         $stmt->execute($params);
@@ -914,7 +971,10 @@ class DropiOrden extends Model
         unset($o);
 
         $paramsComunes = array_diff_key($params, [':estatus' => 1, ':transp' => 1]);
+        // Las opciones cuentan lo que se vería al elegirlas: con "Faltan por avisar" puesto, solo las pendientes.
+        $comunes .= $soloPendientes ? ' AND ' . $pendiente : '';
         $opciones = [
+            'avisos'         => ['pendientes' => $faltanAvisar],
             'estatus'        => $this->opcionesDe('estatus', $comunes . ($filtroTransp ? ' AND ' . $filtroTransp[0] : ''), $paramsComunes + ($filtroTransp[1] ?? [])),
             'transportadora' => $this->opcionesDe('transportadora', $comunes . ($filtroEstatus ? ' AND ' . $filtroEstatus[0] : ''), $paramsComunes + ($filtroEstatus[1] ?? [])),
         ];
