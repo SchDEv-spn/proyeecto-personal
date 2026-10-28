@@ -409,7 +409,8 @@ class DropiOrden extends Model
      * avisó (Interrapidísimo devuelve a los 5 días hábiles de la llegada) y nunca el
      * mismo día que el aviso anterior.
      *
-     * En camino: si va en reparto y no se le ha dicho que hoy llega, eso; si no, la guía.
+     * En camino: si va en reparto y no se le ha dicho que hoy llega, eso; si no, la guía. La guía también se avisa
+     * cuando la orden va en procesamiento o en espera de ruta (Confirmado) y ya la tiene.
      *
      * @return array{estado: string, etiqueta: string, urgente: bool}|null
      */
@@ -445,6 +446,13 @@ class DropiOrden extends Model
                 }
                 return $hay('aviso_enviado_at') ? null
                     : ['estado' => 'enviado', 'etiqueta' => 'Notificar que salió', 'urgente' => false];
+
+            case 'confirmado':
+                // Ya tiene guía (la transportadora la generó y la orden va en procesamiento o en espera de ruta) y todavía no
+                // se le ha enviado al cliente: pasa también cuando se demoró en avisar y el estatus de Dropi ya avanzó.
+                return (trim((string)($o['guia'] ?? '')) !== '' && !$hay('aviso_enviado_at'))
+                    ? ['estado' => 'enviado', 'etiqueta' => 'Notificar que salió', 'urgente' => false]
+                    : null;
 
             case 'entregado':
                 // Solo las recién entregadas: al cargar meses viejos no debe pedirse foto de todo.
@@ -491,6 +499,7 @@ class DropiOrden extends Model
                 OR ({$dias} >= " . self::DIAS_RECORDATORIO . " AND {$a}.aviso_recordatorio_at IS NULL AND {$a}.aviso_ultimo_at IS NULL AND DATE({$a}.aviso_oficina_at) < CURDATE())
             ))
             OR ({$a}.estado = 'enviado' AND ({$a}.aviso_enviado_at IS NULL OR ({$enReparto} AND {$a}.aviso_reparto_at IS NULL)))
+            OR ({$a}.estado = 'confirmado' AND TRIM({$a}.guia) <> '' AND {$a}.aviso_enviado_at IS NULL)
         ))";
     }
 
@@ -839,7 +848,7 @@ class DropiOrden extends Model
         $vigO = $corte !== null ? 'o.visto_at >= ' . $this->db->quote($corte) : '1 = 1';
         $avisos = [];
         $q = $this->db->query("
-            SELECT o.estado, o.estatus, o.novedad, o.aviso_enviado_at, o.aviso_reparto_at, o.aviso_novedad_at, o.aviso_oficina_at,
+            SELECT o.estado, o.estatus, o.novedad, o.guia, o.aviso_enviado_at, o.aviso_reparto_at, o.aviso_novedad_at, o.aviso_oficina_at,
                    o.aviso_recordatorio_at, o.aviso_ultimo_at, o.aviso_entregado_at,
                    DATEDIFF(CURDATE(), DATE(o.estatus_desde)) AS dias_estado
             FROM dropi_ordenes o

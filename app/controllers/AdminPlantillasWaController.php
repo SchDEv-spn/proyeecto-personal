@@ -259,6 +259,9 @@ class AdminPlantillasWaController extends Controller
             $avisoHtml = '<small class="seg-sub">' . $e($ultimoAviso[1]) . ' ' . $dias($dAviso) . '</small>';
         } elseif ($estado === 'en_oficina') {
             $avisoHtml = '<small class="seg-sub" style="color:var(--red);font-weight:700">Sin aviso</small>';
+        } elseif (in_array($estado, ['confirmado', 'enviado'], true) && trim((string)$o['guia']) !== '') {
+            // Tiene guía y todavía no se le ha enviado al cliente: que se note en cualquier lista.
+            $avisoHtml = '<small class="seg-sub" style="color:var(--red);font-weight:700">Guía sin enviar</small>';
         } else {
             $avisoHtml = '';
         }
