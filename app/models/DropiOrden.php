@@ -503,6 +503,21 @@ class DropiOrden extends Model
         ))";
     }
 
+    /**
+     * Cuántas órdenes faltan por avisar (la cola de "Por avisar hoy"): el globito de "Seguimiento" en el menú, que sale
+     * en todas las pantallas del panel. Dos consultas livianas; si la tabla todavía no existe devuelve 0.
+     */
+    public function contarPorAvisar(): int
+    {
+        try {
+            $corte = $this->corteVigente();
+            $vig   = $corte !== null ? 'o.visto_at >= ' . $this->db->quote($corte) : '1 = 1';
+            return (int)$this->db->query('SELECT COUNT(*) FROM dropi_ordenes o WHERE ' . self::sqlPendiente('o', $vig))->fetchColumn();
+        } catch (\PDOException $e) {
+            return 0;
+        }
+    }
+
     /** Plantilla que se abre por defecto cuando no hay un aviso pendiente. */
     public static function plantillaPorDefecto(string $estado): string
     {
@@ -1085,6 +1100,37 @@ class DropiOrden extends Model
         if (!$sets) return true;
 
         return $this->db->prepare('UPDATE dropi_ordenes SET ' . implode(', ', $sets) . ' WHERE id = :id')->execute($params);
+    }
+
+    /**
+     * "Ya avisé a todos" de un día de la cola: marca como avisadas, SIN enviar ningún mensaje, las órdenes de ese día
+     * (el día desde el que toca avisarles, como en los títulos de la cola) dentro de la lista filtrada que se está viendo.
+     * Cada una se marca con el aviso que le tocaba. Solo funciona sobre la cola de avisos ("Por avisar hoy" o "Faltan por
+     * avisar"); en cualquier otra lista no marca nada, para que no se pueda marcar de golpe lo que no está pendiente.
+     *
+     * @param array{vista?: string, aviso?: string, buscar?: string, desde?: string, hasta?: string, estatus?: string, transportadora?: string} $f
+     * @return int cuántas órdenes se marcaron
+     */
+    public function marcarAvisadosDelDia(array $f, string $dia): int
+    {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dia)) return 0;
+        if (($f['vista'] ?? '') !== 'por_avisar' && ($f['aviso'] ?? '') !== 'pendiente') return 0;
+
+        // Primero se juntan todas (marcarlas cambia la lista y movería las páginas), después se marcan.
+        $paraMarcar = [];
+        for ($desde = 0; $desde < 5000; $desde += 200) {
+            $pagina = $this->listar($f, $desde, 200);
+            foreach ($pagina['filas'] as $o) {
+                $aviso = self::avisoDeCola($o);
+                if ($aviso !== null && substr((string)$o['estatus_desde'], 0, 10) === $dia) $paraMarcar[(int)$o['id']] = $aviso['estado'];
+            }
+            if (count($pagina['filas']) < 200) break;
+        }
+        $marcadas = 0;
+        foreach ($paraMarcar as $id => $estado) {
+            if ($this->registrarAviso($id, $estado)) $marcadas++;
+        }
+        return $marcadas;
     }
 
     /* ─────────────────────────────  Importaciones  ───────────────────────────── */

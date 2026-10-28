@@ -147,6 +147,30 @@ class AdminPlantillasWaController extends Controller
         exit;
     }
 
+    /**
+     * "Ya avisé a todos los de este día" (título de cada día de la cola): los marca como avisados sin enviar mensajes.
+     * Recibe el día y los mismos filtros de la lista que se está viendo.
+     */
+    public function marcarAvisadosDia()
+    {
+        $this->requireLogin();
+        $this->requireCsrf();
+        $this->soloPost();
+
+        $ordenes = new DropiOrden();
+        $n = $ordenes->marcarAvisadosDelDia([
+            'vista'          => (string)($_POST['vista'] ?? ''),
+            'aviso'          => (string)($_POST['aviso'] ?? ''),
+            'buscar'         => (string)($_POST['buscar'] ?? ''),
+            'desde'          => (string)($_POST['desde'] ?? ''),
+            'hasta'          => (string)($_POST['hasta'] ?? ''),
+            'estatus'        => (string)($_POST['estatus'] ?? ''),
+            'transportadora' => (string)($_POST['transportadora'] ?? ''),
+        ], (string)($_POST['dia'] ?? ''));
+
+        $this->responderJson(['ok' => true, 'marcadas' => $n, 'contadores' => $ordenes->contadores()]);
+    }
+
     /* ───────────────  Clientes con devolución  ───────────────
      *
      * Quien devuelve un pedido le cuesta el flete de regreso al dueño. Cada devolución

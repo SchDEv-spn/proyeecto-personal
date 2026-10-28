@@ -23,6 +23,10 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
 } else {
     $activeNav = '';
 }
+
+// Globito de "Seguimiento": cuántos clientes faltan por avisar (si la consulta falla, simplemente no sale).
+$porAvisarMenu = 0;
+try { $porAvisarMenu = (new DropiOrden(false))->contarPorAvisar(); } catch (\Throwable $e) {}
 ?>
 
 <aside class="material-sidebar">
@@ -63,6 +67,7 @@ if (strpos($currentPath, '/AdminProductos/') !== false) {
         <a href="<?= BASE_URL ?>/AdminPlantillasWa/index" class="<?= $activeNav === 'plantillas' ? 'active' : '' ?>">
             <i class="fab fa-whatsapp"></i>
             <span>Seguimiento</span>
+            <span class="sidebar-badge" data-seg-badge title="Clientes que faltan por avisar"<?= $porAvisarMenu > 0 ? '' : ' hidden' ?>><?= (int)$porAvisarMenu ?></span>
         </a>
 
         <a href="<?= BASE_URL ?>/AdminVendedoras/index" class="<?= $activeNav === 'vendedoras' ? 'active' : '' ?>">

@@ -212,6 +212,13 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                             </div>
                         </div>
 
+                        <?php /* Solo en la cola de avisos: arrancar a avisar y seguir con el siguiente sin buscarlo en la lista. */ ?>
+                        <div class="seg-cola" id="segCola" hidden>
+                            <button type="button" class="btn-primary" id="segEmpezar"><i class="fab fa-whatsapp" aria-hidden="true"></i> Empezar a avisar</button>
+                            <label class="seg-cola__siguiente"><input type="checkbox" id="segSiguiente" checked> Al avisar a uno, abrir el siguiente</label>
+                            <span class="seg-cola__listo" id="segListo" role="status" hidden><i class="fas fa-circle-check" aria-hidden="true"></i> Listo: ya no queda nadie por avisar.</span>
+                        </div>
+
                         <div class="dt-table-wrap">
                             <table id="tablaOrdenesDropi" class="pedidos-dt">
                                 <thead>
@@ -254,6 +261,8 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     const tarjetas  = document.querySelectorAll('#segTarjetas [data-vista]');
     const btnLimpiar = document.getElementById('segLimpiar');
     const btnPendientes = document.getElementById('segPendientes');
+    const cola = document.getElementById('segCola'), btnEmpezar = document.getElementById('segEmpezar');
+    const chkSiguiente = document.getElementById('segSiguiente'), msgListo = document.getElementById('segListo');
     const datos     = new Map(); // id de orden → datos para armar el mensaje
     let diasCola = null, hoySrv = ''; // en la cola de avisos: cuántas órdenes hay por día, y qué día es hoy para el servidor
     let vista  = <?= json_encode($vistaInicial ?? 'todas') ?>;
@@ -270,6 +279,9 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
 
     const pintarContadores = (c) => {
         if (!c) return;
+        // El globito de "Seguimiento" en el menú se actualiza solo al ir avisando.
+        const globo = document.querySelector('[data-seg-badge]');
+        if (globo && c.por_avisar !== undefined) { globo.textContent = c.por_avisar; globo.hidden = !c.por_avisar; }
         document.querySelectorAll('#segTarjetas [data-c]').forEach(el => {
             if (c[el.dataset.c] === undefined) return;
             el.textContent = el.dataset.fmt === 'pesos' ? '$' + Number(c[el.dataset.c]).toLocaleString('es-CO') : c[el.dataset.c];
@@ -305,11 +317,31 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
             const t = document.createElement('span'); t.className = 'seg-grupo__t'; t.textContent = e.titulo;
             const d = document.createElement('span'); d.className = 'seg-grupo__d'; d.textContent = e.detalle;
             const c = document.createElement('span'); c.className = 'seg-grupo__n'; c.textContent = n + ' por avisar';
-            td.append(t, d, c);
+            const acc = document.createElement('span'); acc.className = 'seg-grupo__acciones';
+            acc.append(c);
+            if (clave) {
+                const ya = document.createElement('button');
+                ya.type = 'button'; ya.className = 'btn-ghost seg-grupo__ya'; ya.dataset.act = 'dia'; ya.dataset.dia = clave; ya.dataset.n = n;
+                ya.title = 'Márcalos como avisados sin enviar mensajes (si ya les escribiste por otro medio)';
+                ya.textContent = 'Ya avisé a todos';
+                acc.append(ya);
+            }
+            td.append(t, d, acc);
             tr.append(td);
             fila.parentNode.insertBefore(tr, fila);
         });
     };
+
+    // Barra de la cola ("Empezar a avisar" y "abrir el siguiente"): solo se ve en la cola de avisos y si queda alguien.
+    const enCola = () => vista === 'por_avisar' || pendientes;
+    const primeraPendiente = () => {
+        for (const b of tabla.querySelectorAll('tbody tr:not(.seg-grupo) button[data-act="avisar"]')) {
+            const d = datos.get(Number(b.dataset.id));
+            if (d && d.siguiente) return d;
+        }
+        return null;
+    };
+    const actualizarCola = () => { cola.hidden = !(enCola() && primeraPendiente()) && msgListo.hidden; };
 
     const dt = new DataTable('#tablaOrdenesDropi', {
         serverSide: true,
@@ -347,7 +379,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
             paginate:     { first: '«', last: '»', next: '›', previous: '‹' },
         },
         dom: 't<"dt-bottom"lip>',
-        drawCallback: function () { agruparPorDia(this.api()); },
+        drawCallback: function () { agruparPorDia(this.api()); actualizarCola(); },
     });
 
     const recargar = (volverAlInicio = true) => { btnLimpiar.hidden = !hayFiltros(); return dt.ajax.reload(null, volverAlInicio); };
@@ -471,7 +503,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     });
 
     // ── Acciones de cada fila ──
-    const registrar = (d, estado, guia, soloMarcar) => {
+    const registrar = (d, estado, guia, soloMarcar, seguir) => {
         const fd = new FormData();
         fd.append('orden_id', d.ordenId);
         fd.append('estado', estado);
@@ -484,8 +516,46 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
                 if (!j.ok) { alert(j.error || 'No se pudo guardar el aviso.'); return; }
                 pintarContadores(j.contadores);
                 recargar(false);
+                if (seguir) dt.one('draw.dt', siguienteDeLaCola);   // cuando la lista ya se actualizó, abre el mensaje del siguiente
             })
             .catch(() => alert('No se pudo guardar el aviso. Revisa tu conexión.'));
+    };
+
+    // Abre el mensaje de una orden; al enviarlo se anota y, en la cola con "abrir el siguiente" puesto, sigue con la que toque.
+    const abrirAviso = (d) => {
+        // Sin "id": el compositor lo usa para pedidos de la landing y aquí no aplica.
+        window.WaPicker.open({ ...d }, {
+            onSend: (mensaje, estado, guia) => { registrar(d, estado, guia, false, enCola() && chkSiguiente.checked); },
+        });
+    };
+    function siguienteDeLaCola() {
+        const d = primeraPendiente();
+        if (d) { abrirAviso(d); return; }
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));   // cierra el último mensaje
+        msgListo.hidden = false; cola.hidden = false;
+        setTimeout(() => { msgListo.hidden = true; actualizarCola(); }, 8000);
+    }
+    try { chkSiguiente.checked = window.localStorage.getItem('segSiguiente') !== '0'; } catch (e) { /* sin almacenamiento: queda marcado */ }
+    chkSiguiente.addEventListener('change', () => { try { window.localStorage.setItem('segSiguiente', chkSiguiente.checked ? '1' : '0'); } catch (e) { /* nada */ } });
+    btnEmpezar.addEventListener('click', () => { msgListo.hidden = true; const d = primeraPendiente(); if (d) abrirAviso(d); });
+
+    // "Ya avisé a todos" de un día: los marca sin enviar mensajes (los mismos filtros de la lista que se está viendo).
+    const marcarDia = (dia, n) => {
+        const e = etiquetaDia(dia);
+        if (!confirm('¿Marcar como avisadas las ' + n + ' de "' + e.titulo + '"? No se envía ningún mensaje: solo se anotan como avisadas (úsalo si ya les escribiste por otro medio).')) return;
+        const fd = new FormData();
+        fd.append('dia', dia); fd.append('vista', vista); fd.append('aviso', pendientes ? 'pendiente' : '');
+        fd.append('buscar', buscar); fd.append('desde', desde); fd.append('hasta', hasta);
+        fd.append('estatus', estatus); fd.append('transportadora', transp);
+        fd.append('csrf_token', window.__CSRF__ || '');
+        return fetch(BASE + '/AdminPlantillasWa/marcarAvisadosDia', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'fetch' } })
+            .then(r => r.json())
+            .then(j => {
+                if (!j.ok) { alert(j.error || 'No se pudo marcar.'); return; }
+                pintarContadores(j.contadores);
+                recargar(false);
+            })
+            .catch(() => alert('No se pudo marcar. Revisa tu conexión.'));
     };
 
     // ── Emparejar un producto de Dropi con uno de la tienda ──
@@ -519,6 +589,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     tabla.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-act]');
         if (!btn) return;
+        if (btn.dataset.act === 'dia') { marcarDia(btn.dataset.dia, Number(btn.dataset.n)); return; }
         const d = datos.get(Number(btn.dataset.id));
         if (!d) return;
 
@@ -526,10 +597,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
             if (confirm('¿Marcar que ya le avisaste a este cliente por otro medio?')) registrar(d, d.siguiente, '', true);
             return;
         }
-        // Sin "id": el compositor lo usa para pedidos de la landing y aquí no aplica.
-        window.WaPicker.open({ ...d }, {
-            onSend: (mensaje, estado, guia) => { registrar(d, estado, guia, false); },
-        });
+        abrirAviso(d);
     });
 })();
 </script>
