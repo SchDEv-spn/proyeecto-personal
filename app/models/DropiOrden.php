@@ -456,10 +456,22 @@ class DropiOrden extends Model
     }
 
     /**
-     * La misma regla de siguienteAviso() escrita en SQL: las órdenes a las que todavía les toca un mensaje (las que
-     * traen el botón verde). Sirve para filtrar y contar "Faltan por avisar" en el servidor; si cambia una de las dos,
-     * hay que cambiar la otra (test_pendientes.php las compara orden por orden). Solo cuenta las órdenes vigentes
-     * (vistas en las últimas importaciones): de las demás no se sabe en qué van.
+     * El aviso que falta según la cola de "Por avisar hoy": lo mismo que siguienteAviso(), salvo "Pedir foto" (pedirle la
+     * foto a quien ya recibió es opcional y no es un aviso del envío: seguiría llenando la cola de entregadas de la semana).
+     *
+     * @return array{estado: string, etiqueta: string, urgente: bool}|null
+     */
+    public static function avisoDeCola(array $o, ?string $hoy = null): ?array
+    {
+        if (($o['estado'] ?? '') === 'entregado') return null;
+        return self::siguienteAviso($o, $hoy);
+    }
+
+    /**
+     * La misma regla de avisoDeCola() escrita en SQL: las órdenes a las que todavía les toca un mensaje del envío (guía,
+     * llegada a la oficina, reparto, novedad, recordatorios). Es lo que filtra y cuenta "Por avisar hoy" y "Faltan por
+     * avisar" en el servidor; si cambia una de las dos, hay que cambiar la otra (test_pendientes.php las compara orden
+     * por orden). Solo cuenta las órdenes vigentes (vistas en las últimas importaciones): de las demás no se sabe en qué van.
      *
      * @param string $a      alias de dropi_ordenes en la consulta
      * @param string $vigente condición de "vigente" ya armada para ese alias ('1 = 1' si no hay corte)
@@ -479,7 +491,6 @@ class DropiOrden extends Model
                 OR ({$dias} >= " . self::DIAS_RECORDATORIO . " AND {$a}.aviso_recordatorio_at IS NULL AND {$a}.aviso_ultimo_at IS NULL AND DATE({$a}.aviso_oficina_at) < CURDATE())
             ))
             OR ({$a}.estado = 'enviado' AND ({$a}.aviso_enviado_at IS NULL OR ({$enReparto} AND {$a}.aviso_reparto_at IS NULL)))
-            OR ({$a}.estado = 'entregado' AND {$a}.aviso_entregado_at IS NULL AND {$dias} <= 7)
         ))";
     }
 
@@ -800,7 +811,10 @@ class DropiOrden extends Model
     /**
      * Cuántas órdenes hay en cada vista (las tarjetas de Seguimiento).
      *
-     * @return array{por_avisar: int, esperando: int, piden_recordatorio: int, novedad: int,
+     * "por_avisar" cuenta todo lo que falta avisar (ver avisoDeCola) y "avisos" lo separa por tipo de aviso
+     * (enviado = guía por notificar, en_reparto, en_oficina, novedad, recordatorio_oficina, ultimo_aviso_oficina).
+     *
+     * @return array{por_avisar: int, avisos: array<string,int>, esperando: int, piden_recordatorio: int, novedad: int,
      *               en_camino: int, entregados: int, devoluciones: int, costo_devoluciones: float,
      *               todas: int, primera_orden: ?string}
      */
@@ -811,7 +825,6 @@ class DropiOrden extends Model
 
         $r = $this->db->query("
             SELECT COUNT(*) AS todas,
-                   COALESCE(SUM(estado = 'en_oficina' AND aviso_oficina_at IS NULL AND {$vig}), 0)      AS por_avisar,
                    COALESCE(SUM(estado = 'en_oficina' AND aviso_oficina_at IS NOT NULL AND {$vig}), 0)  AS esperando,
                    COALESCE(SUM(novedad <> '' AND estado NOT IN ('entregado', 'cancelado', 'devolucion') AND {$vig}), 0) AS novedad,
                    COALESCE(SUM(estado IN ('confirmado', 'enviado') AND {$vig}), 0)                     AS en_camino,
@@ -822,21 +835,27 @@ class DropiOrden extends Model
             FROM dropi_ordenes
         ")->fetch(PDO::FETCH_ASSOC);
 
-        // De los que esperan en la oficina, a cuántos ya les toca recordatorio o última oportunidad.
-        $piden = 0;
+        // Lo que falta avisar (la cola de "Por avisar hoy"), con cuántos hay de cada tipo de aviso.
+        $vigO = $corte !== null ? 'o.visto_at >= ' . $this->db->quote($corte) : '1 = 1';
+        $avisos = [];
         $q = $this->db->query("
-            SELECT estado, estatus, novedad, aviso_oficina_at, aviso_recordatorio_at, aviso_ultimo_at, aviso_novedad_at,
-                   DATEDIFF(CURDATE(), DATE(estatus_desde)) AS dias_estado
-            FROM dropi_ordenes
-            WHERE estado = 'en_oficina' AND aviso_oficina_at IS NOT NULL AND {$vig}
-        ");
+            SELECT o.estado, o.estatus, o.novedad, o.aviso_enviado_at, o.aviso_reparto_at, o.aviso_novedad_at, o.aviso_oficina_at,
+                   o.aviso_recordatorio_at, o.aviso_ultimo_at, o.aviso_entregado_at,
+                   DATEDIFF(CURDATE(), DATE(o.estatus_desde)) AS dias_estado
+            FROM dropi_ordenes o
+            WHERE " . self::sqlPendiente('o', $vigO));
+        $porAvisar = 0;
         foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $o) {
-            $toca = self::siguienteAviso($o);
-            if ($toca !== null && in_array($toca['estado'], ['recordatorio_oficina', 'ultimo_aviso_oficina'], true)) $piden++;
+            $porAvisar++;
+            $toca = self::avisoDeCola($o);
+            if ($toca !== null) $avisos[$toca['estado']] = ($avisos[$toca['estado']] ?? 0) + 1;
         }
+        // De los que esperan en la oficina, a cuántos ya les toca recordatorio o última oportunidad.
+        $piden = ($avisos['recordatorio_oficina'] ?? 0) + ($avisos['ultimo_aviso_oficina'] ?? 0);
 
         return [
-            'por_avisar'         => (int)$r['por_avisar'],
+            'por_avisar'         => $porAvisar,
+            'avisos'             => $avisos,
             'esperando'          => (int)$r['esperando'],
             'piden_recordatorio' => $piden,
             'novedad'            => (int)$r['novedad'],
@@ -867,7 +886,8 @@ class DropiOrden extends Model
      *
      * @param array{vista?: string, buscar?: string, desde?: string, hasta?: string, estatus?: string, transportadora?: string, aviso?: string} $f
      *        aviso = 'pendiente': solo las que todavía tienen un mensaje por enviar (ver sqlPendiente)
-     * @return array{total: int, filtrado: int, filas: array<int, array>}
+     * @return array{total: int, filtrado: int, filas: array<int, array>, opciones: array, dias: ?array<string,int>}
+     *         dias: cuántas órdenes hay cada día en la cola de avisos (null fuera de la cola)
      */
     public function listar(array $f, int $desde, int $cuantas): array
     {
@@ -875,8 +895,12 @@ class DropiOrden extends Model
         $corte = $this->corteVigente();
         $vig   = $corte !== null ? 'o.visto_at >= ' . $this->db->quote($corte) : '1 = 1';
 
+        // La cola de avisos (tarjeta "Por avisar hoy" y el botón "Faltan por avisar") va por día —desde cuándo toca avisar
+        // (el día en que el estatus de Dropi llegó al de ahora)—, de los más atrasados a los de hoy.
+        $ordenCola = 'DATE(o.estatus_desde) ASC, o.fecha_pedido ASC, o.id ASC';
+
         [$base, $orden] = [
-            'por_avisar' => ["o.estado = 'en_oficina' AND o.aviso_oficina_at IS NULL AND {$vig}", 'o.estatus_desde ASC, o.id ASC'],
+            'por_avisar' => [self::sqlPendiente('o', $vig), $ordenCola],
             'esperando'  => ["o.estado = 'en_oficina' AND o.aviso_oficina_at IS NOT NULL AND {$vig}", 'o.estatus_desde ASC, o.id ASC'],
             'novedad'    => ["o.novedad <> '' AND o.estado NOT IN ('entregado', 'cancelado', 'devolucion') AND {$vig}", 'o.ultimo_mov_at DESC, o.id DESC'],
             'en_camino'  => ["o.estado IN ('confirmado', 'enviado') AND {$vig}", 'o.fecha_pedido ASC, o.id ASC'],
@@ -926,6 +950,8 @@ class DropiOrden extends Model
         $faltanAvisar = (int)$stmt->fetchColumn();
         $soloPendientes = ($f['aviso'] ?? '') === 'pendiente';
         if ($soloPendientes) $condicion .= ' AND ' . $pendiente;
+        $cola = $vista === 'por_avisar' || $soloPendientes;
+        if ($cola) $orden = $ordenCola;
 
         $total = (int)$this->db->query("SELECT COUNT(*) FROM dropi_ordenes o WHERE {$base}")->fetchColumn();
         $stmt = $this->db->prepare("SELECT COUNT(*) FROM dropi_ordenes o WHERE {$condicion}");
@@ -970,6 +996,15 @@ class DropiOrden extends Model
         }
         unset($o);
 
+        // En la cola: cuántas hay cada día (en toda la lista, no solo en la página), para los títulos de cada grupo.
+        $dias = null;
+        if ($cola) {
+            $stmt = $this->db->prepare("SELECT DATE(o.estatus_desde) AS d, COUNT(*) AS n FROM dropi_ordenes o WHERE {$condicion} GROUP BY d");
+            $stmt->execute($params);
+            $dias = [];
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) $dias[(string)($r['d'] ?? '')] = (int)$r['n'];
+        }
+
         $paramsComunes = array_diff_key($params, [':estatus' => 1, ':transp' => 1]);
         // Las opciones cuentan lo que se vería al elegirlas: con "Faltan por avisar" puesto, solo las pendientes.
         $comunes .= $soloPendientes ? ' AND ' . $pendiente : '';
@@ -979,7 +1014,7 @@ class DropiOrden extends Model
             'transportadora' => $this->opcionesDe('transportadora', $comunes . ($filtroEstatus ? ' AND ' . $filtroEstatus[0] : ''), $paramsComunes + ($filtroEstatus[1] ?? [])),
         ];
 
-        return ['total' => $total, 'filtrado' => $filtrado, 'filas' => $filas, 'opciones' => $opciones];
+        return ['total' => $total, 'filtrado' => $filtrado, 'filas' => $filas, 'opciones' => $opciones, 'dias' => $dias];
     }
 
     /**

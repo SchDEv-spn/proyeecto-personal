@@ -329,20 +329,35 @@
                     <div class="panel__body">
                         <?= $tarjetasConteo($c, count($omitidas), ['Órdenes nuevas', 'Actualizadas', 'Sin cambios', 'No importadas']) ?>
 
+                        <?php
+                        // Qué falta avisar y de qué tipo (la cola de "Por avisar hoy").
+                        $av = $cn['avisos'] ?? [];
+                        $tipos = [
+                            ['enviado',              'una guía por notificar', 'guías por notificar'],
+                            ['en_reparto',           'uno que llega hoy',      'que llegan hoy'],
+                            ['en_oficina',           'uno que llegó a la oficina', 'que llegaron a la oficina'],
+                            ['novedad',              'una novedad',            'novedades'],
+                            ['recordatorio_oficina', 'un recordatorio',        'recordatorios'],
+                            ['ultimo_aviso_oficina', 'una última oportunidad', 'últimas oportunidades'],
+                        ];
+                        $partes = [];
+                        foreach ($tipos as [$k, $uno, $varios]) {
+                            $n = (int)($av[$k] ?? 0);
+                            if ($n > 0) $partes[] = '<strong>' . ($n === 1 ? $uno : $n . ' ' . $varios) . '</strong>';
+                        }
+                        ?>
                         <p style="margin:var(--sp-4) 0 var(--sp-3);font-size:var(--text-sm);color:var(--tx)">
                             <?php if ((int)($cn['por_avisar'] ?? 0) > 0): ?>
-                                Hay <strong><?= $plural((int)$cn['por_avisar'], 'cliente', 'clientes') ?></strong> a quienes avisarle que su pedido ya llegó a la oficina.
+                                Faltan por avisar <strong><?= $plural((int)$cn['por_avisar'], 'cliente', 'clientes') ?></strong>: <?= implode(', ', $partes) ?>.
+                                Los ves agrupados por día, los más atrasados primero.
                             <?php else: ?>
-                                No hay clientes pendientes de avisar que su pedido llegó a la oficina.
-                            <?php endif; ?>
-                            <?php if ((int)($cn['piden_recordatorio'] ?? 0) > 0): ?>
-                                Y <strong><?= (int)$cn['piden_recordatorio'] ?></strong> <?= (int)$cn['piden_recordatorio'] === 1 ? 'espera' : 'esperan' ?> recogida y ya <?= (int)$cn['piden_recordatorio'] === 1 ? 'toca' : 'tocan' ?> recordatorio.
+                                No hay clientes pendientes de avisar: ya les escribiste a todos.
                             <?php endif; ?>
                         </p>
 
                         <div class="dropi-acciones">
                             <?php if ((int)($cn['por_avisar'] ?? 0) > 0): ?>
-                                <a href="<?= BASE_URL ?>/AdminPlantillasWa/index?vista=por_avisar" class="btn-primary"><i class="fab fa-whatsapp"></i> Ver los <?= (int)$cn['por_avisar'] ?> por avisar</a>
+                                <a href="<?= BASE_URL ?>/AdminPlantillasWa/index?vista=por_avisar" class="btn-primary"><i class="fab fa-whatsapp"></i> Avisar ahora (<?= (int)$cn['por_avisar'] ?>)</a>
                             <?php endif; ?>
                             <?php if ((int)($cn['piden_recordatorio'] ?? 0) > 0): ?>
                                 <a href="<?= BASE_URL ?>/AdminPlantillasWa/index?vista=esperando" class="btn-primary btn-primary--soft"><i class="fas fa-box-open"></i> Ver quién espera recogida</a>

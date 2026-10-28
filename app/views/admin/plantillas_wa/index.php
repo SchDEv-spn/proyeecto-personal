@@ -61,7 +61,7 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                     : (date('Y-m-d', $t) === date('Y-m-d', strtotime('-1 day')) ? 'ayer a las ' . date('H:i', $t) : date('d/m/Y \a \l\a\s H:i', $t));
             }
             $tarjetas = [
-                ['por_avisar', 'Por avisar hoy',      'fa-bell',                 'glow-red',    'Ya llegaron a la oficina'],
+                ['por_avisar', 'Por avisar hoy',      'fa-bell',                 'glow-red',    'Guías, llegadas y novedades'],
                 ['esperando',  'Esperando recogida',  'fa-box-open',             'glow-gold',   null],
                 ['novedad',    'Con novedad',         'fa-triangle-exclamation', 'glow-purple', 'La transportadora reportó algo'],
                 ['en_camino',  'En camino',           'fa-truck',                'glow-blue',   'En preparación o despachados'],
@@ -253,12 +253,16 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     const BASE = window.BASE_URL || '';
     const tarjetas  = document.querySelectorAll('#segTarjetas [data-vista]');
     const btnLimpiar = document.getElementById('segLimpiar');
+    const btnPendientes = document.getElementById('segPendientes');
     const datos     = new Map(); // id de orden → datos para armar el mensaje
+    let diasCola = null, hoySrv = ''; // en la cola de avisos: cuántas órdenes hay por día, y qué día es hoy para el servidor
     let vista  = <?= json_encode($vistaInicial ?? 'todas') ?>;
     let buscar = '', desde = '', hasta = '', estatus = '', transp = '', pendientes = false, temporizador = null;
 
     const marcarVista = () => {
         tarjetas.forEach(t => t.classList.toggle('is-active', t.dataset.vista === vista));
+        // En "Por avisar hoy" ya se ve solo lo pendiente: el botón "Faltan por avisar" sobra.
+        btnPendientes.hidden = vista === 'por_avisar';
     };
 
     // "Limpiar filtros" solo aparece cuando hay algo filtrado: es la forma de volver a ver todas las órdenes.
@@ -269,6 +273,41 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
         document.querySelectorAll('#segTarjetas [data-c]').forEach(el => {
             if (c[el.dataset.c] === undefined) return;
             el.textContent = el.dataset.fmt === 'pesos' ? '$' + Number(c[el.dataset.c]).toLocaleString('es-CO') : c[el.dataset.c];
+        });
+    };
+
+    // La cola de avisos ("Por avisar hoy" y "Faltan por avisar") sale agrupada por día: desde cuándo toca avisar a cada uno
+    // (el día en que su estatus llegó al de ahora), los más atrasados primero. Cada grupo lleva su título con el total.
+    const etiquetaDia = (clave) => {
+        if (!clave) return { titulo: 'Sin fecha', detalle: '', atrasado: false };
+        const dia = new Date(clave + 'T00:00:00');
+        const hoy = new Date((hoySrv || clave) + 'T00:00:00');
+        const dif = Math.round((hoy - dia) / 86400000);
+        return {
+            titulo: dif <= 0 ? 'Hoy' : (dif === 1 ? 'Ayer' : 'Hace ' + dif + ' días'),
+            detalle: dia.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }),
+            atrasado: dif > 0,
+        };
+    };
+    const agruparPorDia = (api) => {
+        tabla.querySelectorAll('tbody tr.seg-grupo').forEach(t => t.remove());
+        if (!diasCola) return;
+        let previo = null;
+        api.rows({ page: 'current' }).every(function () {
+            const fila = this.node(), clave = (this.data() || {}).dia || '';
+            if (!fila || clave === previo) return;
+            previo = clave;
+            const e = etiquetaDia(clave), n = diasCola[clave] || 0;
+            const tr = document.createElement('tr');
+            tr.className = 'seg-grupo' + (e.atrasado ? ' seg-grupo--atrasado' : '');
+            const td = document.createElement('td');
+            td.colSpan = 6;
+            const t = document.createElement('span'); t.className = 'seg-grupo__t'; t.textContent = e.titulo;
+            const d = document.createElement('span'); d.className = 'seg-grupo__d'; d.textContent = e.detalle;
+            const c = document.createElement('span'); c.className = 'seg-grupo__n'; c.textContent = n + ' por avisar';
+            td.append(t, d, c);
+            tr.append(td);
+            fila.parentNode.insertBefore(tr, fila);
         });
     };
 
@@ -286,6 +325,8 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
             dataSrc: (json) => {
                 datos.clear();
                 Object.keys(json.datos || {}).forEach(k => datos.set(Number(k), json.datos[k]));
+                diasCola = json.dias || null;
+                hoySrv = json.hoy || '';
                 pintarContadores(json.contadores);
                 pintarOpciones(json.opciones);
                 return json.data || [];
@@ -306,6 +347,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
             paginate:     { first: '«', last: '»', next: '›', previous: '‹' },
         },
         dom: 't<"dt-bottom"lip>',
+        drawCallback: function () { agruparPorDia(this.api()); },
     });
 
     const recargar = (volverAlInicio = true) => { btnLimpiar.hidden = !hayFiltros(); return dt.ajax.reload(null, volverAlInicio); };
@@ -376,7 +418,6 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     });
 
     // ── Faltan por avisar: solo las órdenes con un mensaje pendiente; al avisar una, sale de la lista ──
-    const btnPendientes = document.getElementById('segPendientes');
     const marcarPendientes = () => { btnPendientes.classList.toggle('is-active', pendientes); btnPendientes.setAttribute('aria-pressed', pendientes ? 'true' : 'false'); };
     btnPendientes.addEventListener('click', () => { pendientes = !pendientes; marcarPendientes(); recargar(); });
 

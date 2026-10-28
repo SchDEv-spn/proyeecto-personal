@@ -72,6 +72,8 @@ class AdminPlantillasWaController extends Controller
             'datos'           => $datos,
             'contadores'      => $ordenes->contadores(),
             'opciones'        => $pagina['opciones'],
+            'dias'            => $pagina['dias'],   // solo en la cola de avisos: cuántas órdenes por día
+            'hoy'             => date('Y-m-d'),
         ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
         exit;
     }
@@ -293,6 +295,7 @@ class AdminPlantillasWaController extends Controller
             . $estadoHtml . '<small class="seg-sub"><b>' . $e($tiempo) . '</b></small>' . $avisoHtml . $insignias . '</span>';
 
         $fila = [
+            'dia'      => $o['estatus_desde'] ? substr((string)$o['estatus_desde'], 0, 10) : '',   // para agrupar la cola por día
             'cliente'  => $clienteHtml,
             'estado'   => $estadoHtml . $insignias,
             'tiempo'   => '<b>' . $e($tiempo) . '</b>' . $avisoHtml,
