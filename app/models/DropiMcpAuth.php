@@ -54,13 +54,13 @@ class DropiMcpAuth
     {
         if ($this->settings->hasKey('dropi_mcp_client_id')) return ['ok' => true];
 
-        $resp = $this->post(self::REGISTER_URL, [
+        $resp = $this->postJson(self::REGISTER_URL, [
             'redirect_uris'              => [$redirectUri],
             'token_endpoint_auth_method' => 'none', // cliente público (PKCE); sin client_secret
             'grant_types'                => ['authorization_code', 'refresh_token'],
             'response_types'             => ['code'],
             'client_name'                => 'Tienda MVC — Seguimiento Dropi',
-        ], []);
+        ]);
 
         if (!$resp['ok'] || empty($resp['body']['client_id'])) {
             return ['ok' => false, 'error' => $resp['error'] ?? 'Dropi no devolvió un client_id al registrar la integración.'];
@@ -127,7 +127,7 @@ class DropiMcpAuth
             'redirect_uri'  => $redirectUri,
             'client_id'     => $this->settings->get('dropi_mcp_client_id'),
             'code_verifier' => $verifier,
-        ], []);
+        ]);
 
         return $this->guardarTokens($resp);
     }
@@ -157,7 +157,7 @@ class DropiMcpAuth
             'grant_type'    => 'refresh_token',
             'refresh_token' => $refresh,
             'client_id'     => $this->settings->get('dropi_mcp_client_id'),
-        ], []);
+        ]);
 
         $guardado = $this->guardarTokens($resp);
         if (!$guardado['ok']) return $guardado;
@@ -187,7 +187,20 @@ class DropiMcpAuth
      * @param string[]            $headersExtra
      * @return array{ok:bool, body?:array, error?:string}
      */
-    private function post(string $url, array $campos, array $headersExtra): array
+    /** application/x-www-form-urlencoded — lo que espera /oauth/token (RFC 6749). */
+    private function post(string $url, array $campos): array
+    {
+        return $this->enviar($url, http_build_query($campos), 'application/x-www-form-urlencoded');
+    }
+
+    /** application/json — lo que espera /oauth/register (RFC 7591): sus campos son arrays
+     *  (redirect_uris, grant_types…), que no tienen una forma válida como formulario. */
+    private function postJson(string $url, array $campos): array
+    {
+        return $this->enviar($url, json_encode($campos, JSON_UNESCAPED_SLASHES), 'application/json');
+    }
+
+    private function enviar(string $url, string $cuerpo, string $contentType): array
     {
         if (!function_exists('curl_init')) {
             return ['ok' => false, 'error' => 'cURL no disponible en este servidor.'];
@@ -196,12 +209,12 @@ class DropiMcpAuth
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => http_build_query($campos),
+            CURLOPT_POSTFIELDS     => $cuerpo,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => array_merge([
-                'Content-Type: application/x-www-form-urlencoded',
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: ' . $contentType,
                 'Accept: application/json',
-            ], $headersExtra),
+            ],
             CURLOPT_TIMEOUT        => 20,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => true,
