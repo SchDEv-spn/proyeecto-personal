@@ -99,20 +99,22 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                     <?php /* div, no <p>: adentro va un <form> (botón Desconectar), y un <p> no puede
                              contener un <form> — el navegador lo cerraba antes de tiempo y partía
                              el mensaje de abajo a su propia línea. */ ?>
-                    <div style="font-size:12.5px;margin:0 0 .85rem;color:var(--tx-muted);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+                    <div class="dropi-mcp-estado<?= !empty($mcpConectado) ? ' dropi-mcp-estado--on' : '' ?>">
                         <?php if (!empty($mcpConectado)): ?>
-                            <i class="fas fa-bolt" style="color:var(--green-mid)" aria-hidden="true"></i>
-                            <span>Guías en vivo: <strong style="color:var(--green-mid)">conectado</strong> — estatus y guía se refrescan solos varias veces al día, sin esperar el Excel.</span>
-                            <button type="button" class="btn-ghost" id="btnMcpProbar" style="padding:2px 10px;font-size:12px;">Actualizar ahora</button>
-                            <form method="POST" action="<?= BASE_URL ?>/AdminDropiMcp/desconectar" style="display:inline-flex;margin:0;" onsubmit="return confirm('¿Desconectar la actualización automática de guías?');">
-                                <?= csrf_field() ?>
-                                <button type="submit" class="btn-ghost" style="padding:2px 10px;font-size:12px;">Desconectar</button>
-                            </form>
-                            <span id="mcpProbarMsg"></span>
+                            <i class="fas fa-bolt dropi-mcp-estado__icon" aria-hidden="true"></i>
+                            <span class="dropi-mcp-estado__texto">Guías en vivo: <span class="dropi-mcp-estado__on">conectado</span> — estatus y guía se refrescan solos varias veces al día, sin esperar el Excel.</span>
+                            <div class="dropi-mcp-estado__btns">
+                                <button type="button" class="btn-ghost" id="btnMcpProbar">Actualizar ahora</button>
+                                <form method="POST" action="<?= BASE_URL ?>/AdminDropiMcp/desconectar" onsubmit="return confirm('¿Desconectar la actualización automática de guías?');">
+                                    <?= csrf_field() ?>
+                                    <button type="submit" class="btn-ghost">Desconectar</button>
+                                </form>
+                                <span id="mcpProbarMsg" class="dropi-mcp-estado__msg"></span>
+                            </div>
                         <?php else: ?>
-                            <i class="fas fa-plug-circle-exclamation" aria-hidden="true"></i>
-                            <span>Las guías solo se actualizan al importar el Excel.</span>
-                            <a href="<?= BASE_URL ?>/AdminDropiMcp/conectar" style="font-weight:700;">Conectar actualización automática (varias veces al día) →</a>
+                            <i class="fas fa-plug-circle-exclamation dropi-mcp-estado__icon" aria-hidden="true"></i>
+                            <span class="dropi-mcp-estado__texto">Las guías solo se actualizan al importar el Excel.</span>
+                            <a href="<?= BASE_URL ?>/AdminDropiMcp/conectar" class="btn-ghost">Conectar actualización automática →</a>
                         <?php endif; ?>
                     </div>
 
@@ -615,7 +617,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
         btnMcpProbar.addEventListener('click', () => {
             const msg = document.getElementById('mcpProbarMsg');
             btnMcpProbar.disabled = true;
-            msg.style.color = '';
+            msg.classList.remove('dropi-mcp-estado__msg--ok', 'dropi-mcp-estado__msg--error');
             msg.textContent = 'Consultando Dropi…';
 
             const fd = new FormData();
@@ -624,12 +626,12 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
                 .then(r => r.json())
                 .then(j => {
                     btnMcpProbar.disabled = false;
-                    if (!j.ok) { msg.style.color = 'var(--red)'; msg.textContent = j.error || 'No se pudo actualizar.'; return; }
-                    msg.style.color = 'var(--green-mid)';
+                    if (!j.ok) { msg.classList.add('dropi-mcp-estado__msg--error'); msg.textContent = j.error || 'No se pudo actualizar.'; return; }
+                    msg.classList.add('dropi-mcp-estado__msg--ok');
                     msg.textContent = `${j.actualizadas} actualizada(s), ${j.iguales} sin cambios.`;
                     if (j.actualizadas > 0) setTimeout(() => location.reload(), 900);
                 })
-                .catch(() => { btnMcpProbar.disabled = false; msg.style.color = 'var(--red)'; msg.textContent = 'Error de red.'; });
+                .catch(() => { btnMcpProbar.disabled = false; msg.classList.add('dropi-mcp-estado__msg--error'); msg.textContent = 'Error de red.'; });
         });
     }
 
