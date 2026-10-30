@@ -31,6 +31,7 @@ class AdminPlantillasWaController extends Controller
             'plantillas'        => $plantillas,
             'contadores'        => $contadores,
             'ultimaImportacion' => $ordenes->ultimaImportacion(),
+            'mcpUltima'         => $ordenes->ultimaActualizacionMcp(),
             'vistaInicial'      => $vista,
             'mcpConectado'      => (new DropiMcpAuth())->conectado(),
             'mcpError'          => $_SESSION['admin_dropi_mcp_error']   ?? null,

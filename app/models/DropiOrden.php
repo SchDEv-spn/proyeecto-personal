@@ -1146,12 +1146,29 @@ class DropiOrden extends Model
         ]);
     }
 
-    /** @return array{creado_en: string, usuario: string, archivo: string, ordenes: int, horas: int}|null */
+    /**
+     * Solo importaciones de Excel: el refresco por MCP (actualizarImportacion con
+     * archivo='via-mcp', ver abajo) queda aparte — si se mezclaran acá, "Actualizar
+     * ahora" del MCP taparía la fecha real del último Excel y escondería el aviso de
+     * "puede estar desactualizado" aunque el Excel sí lleve días viejo.
+     *
+     * @return array{creado_en: string, usuario: string, archivo: string, ordenes: int, horas: int}|null
+     */
     public function ultimaImportacion(): ?array
     {
         $r = $this->db->query("
             SELECT creado_en, usuario, archivo, ordenes, TIMESTAMPDIFF(HOUR, creado_en, NOW()) AS horas
-            FROM dropi_importaciones ORDER BY id DESC LIMIT 1
+            FROM dropi_importaciones WHERE archivo <> 'via-mcp' ORDER BY id DESC LIMIT 1
+        ")->fetch(PDO::FETCH_ASSOC);
+        return $r ?: null;
+    }
+
+    /** La contraparte de ultimaImportacion() para el refresco por MCP ("Actualizar ahora" / cron). */
+    public function ultimaActualizacionMcp(): ?array
+    {
+        $r = $this->db->query("
+            SELECT creado_en, ordenes, actualizadas, TIMESTAMPDIFF(HOUR, creado_en, NOW()) AS horas
+            FROM dropi_importaciones WHERE archivo = 'via-mcp' ORDER BY id DESC LIMIT 1
         ")->fetch(PDO::FETCH_ASSOC);
         return $r ?: null;
     }

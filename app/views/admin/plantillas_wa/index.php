@@ -60,6 +60,13 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                 $cuando = date('Y-m-d', $t) === date('Y-m-d') ? 'hoy a las ' . date('H:i', $t)
                     : (date('Y-m-d', $t) === date('Y-m-d', strtotime('-1 day')) ? 'ayer a las ' . date('H:i', $t) : date('d/m/Y \a \l\a\s H:i', $t));
             }
+            $mu = $mcpUltima ?? null;
+            $mcpCuando = '';
+            if ($mu) {
+                $t = strtotime($mu['creado_en']);
+                $mcpCuando = date('Y-m-d', $t) === date('Y-m-d') ? 'hoy a las ' . date('H:i', $t)
+                    : (date('Y-m-d', $t) === date('Y-m-d', strtotime('-1 day')) ? 'ayer a las ' . date('H:i', $t) : date('d/m/Y \a \l\a\s H:i', $t));
+            }
             $tarjetas = [
                 ['por_avisar', 'Por avisar hoy',      'fa-bell',                 'glow-red',    'Guías, llegadas y novedades'],
                 ['esperando',  'Esperando recogida',  'fa-box-open',             'glow-gold',   null],
@@ -113,6 +120,7 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                                     <?= csrf_field() ?>
                                     <button type="submit" class="btn-danger btn-danger--sm"><i class="fas fa-plug-circle-xmark"></i> Desconectar</button>
                                 </form>
+                                <span id="mcpUltimaTxt" class="dropi-mcp-estado__msg" style="color:var(--tx-muted);font-weight:400;"><?= $mu ? 'Última actualización: ' . htmlspecialchars($mcpCuando) : 'Todavía no le has dado actualizar.' ?></span>
                                 <span id="mcpProbarMsg" class="dropi-mcp-estado__msg"></span>
                             </div>
                         <?php else: ?>
@@ -620,6 +628,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     if (btnMcpProbar) {
         btnMcpProbar.addEventListener('click', () => {
             const msg = document.getElementById('mcpProbarMsg');
+            const ultima = document.getElementById('mcpUltimaTxt');
             btnMcpProbar.disabled = true;
             msg.classList.remove('dropi-mcp-estado__msg--ok', 'dropi-mcp-estado__msg--error');
             msg.textContent = 'Consultando Dropi…';
@@ -633,6 +642,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
                     if (!j.ok) { msg.classList.add('dropi-mcp-estado__msg--error'); msg.textContent = j.error || 'No se pudo actualizar.'; return; }
                     msg.classList.add('dropi-mcp-estado__msg--ok');
                     msg.textContent = `${j.actualizadas} actualizada(s), ${j.iguales} sin cambios.`;
+                    if (ultima) ultima.textContent = 'Última actualización: justo ahora';
                     if (j.actualizadas > 0) setTimeout(() => location.reload(), 900);
                 })
                 .catch(() => { btnMcpProbar.disabled = false; msg.classList.add('dropi-mcp-estado__msg--error'); msg.textContent = 'Error de red.'; });
