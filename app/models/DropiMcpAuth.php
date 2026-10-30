@@ -100,6 +100,10 @@ class DropiMcpAuth
             'state'                 => $state,
             'code_challenge'        => $challenge,
             'code_challenge_method' => 'S256',
+            // RFC 8707 — le dice al servidor de autorización PARA QUÉ recurso es el
+            // token. Sin esto, Dropi lo emite sin ese "público" y mcp.dropi.co lo
+            // rechaza aunque el login haya sido exitoso (visto en producción).
+            'resource'              => self::SERVER_URL,
         ]);
 
         return ['ok' => true, 'url' => self::AUTHORIZE_URL . '?' . $qs];
@@ -127,6 +131,7 @@ class DropiMcpAuth
             'redirect_uri'  => $redirectUri,
             'client_id'     => $this->settings->get('dropi_mcp_client_id'),
             'code_verifier' => $verifier,
+            'resource'      => self::SERVER_URL,
         ]);
 
         return $this->guardarTokens($resp);
@@ -157,6 +162,7 @@ class DropiMcpAuth
             'grant_type'    => 'refresh_token',
             'refresh_token' => $refresh,
             'client_id'     => $this->settings->get('dropi_mcp_client_id'),
+            'resource'      => self::SERVER_URL,
         ]);
 
         $guardado = $this->guardarTokens($resp);
