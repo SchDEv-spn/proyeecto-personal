@@ -32,7 +32,11 @@ class AdminPlantillasWaController extends Controller
             'contadores'        => $contadores,
             'ultimaImportacion' => $ordenes->ultimaImportacion(),
             'vistaInicial'      => $vista,
+            'mcpConectado'      => (new DropiMcpAuth())->conectado(),
+            'mcpError'          => $_SESSION['admin_dropi_mcp_error']   ?? null,
+            'mcpSuccess'        => $_SESSION['admin_dropi_mcp_success'] ?? null,
         ]);
+        unset($_SESSION['admin_dropi_mcp_error'], $_SESSION['admin_dropi_mcp_success']);
     }
 
     /**

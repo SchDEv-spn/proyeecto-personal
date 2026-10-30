@@ -93,6 +93,26 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                         <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" style="font-weight:700;">Importar ahora →</a>
                     </p>
 
+                    <?= !empty($mcpSuccess) ? alert_success($mcpSuccess) : '' ?>
+                    <?= !empty($mcpError) ? alert_error([$mcpError], 'Dropi (actualización automática)') : '' ?>
+
+                    <p style="font-size:12.5px;margin:0 0 .85rem;color:var(--tx-muted);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+                        <?php if (!empty($mcpConectado)): ?>
+                            <i class="fas fa-bolt" style="color:var(--green-mid)" aria-hidden="true"></i>
+                            Guías en vivo: <strong style="color:var(--green-mid)">conectado</strong> — estatus y guía se refrescan solos varias veces al día, sin esperar el Excel.
+                            <button type="button" class="btn-ghost" id="btnMcpProbar" style="padding:2px 10px;font-size:12px;">Actualizar ahora</button>
+                            <form method="POST" action="<?= BASE_URL ?>/AdminDropiMcp/desconectar" style="display:inline-flex" onsubmit="return confirm('¿Desconectar la actualización automática de guías?');">
+                                <?= csrf_field() ?>
+                                <button type="submit" class="btn-ghost" style="padding:2px 10px;font-size:12px;">Desconectar</button>
+                            </form>
+                            <span id="mcpProbarMsg"></span>
+                        <?php else: ?>
+                            <i class="fas fa-plug-circle-exclamation" aria-hidden="true"></i>
+                            Las guías solo se actualizan al importar el Excel.
+                            <a href="<?= BASE_URL ?>/AdminDropiMcp/conectar" style="font-weight:700;">Conectar actualización automática (varias veces al día) →</a>
+                        <?php endif; ?>
+                    </p>
+
                     <?php if (!empty($sinEmparejar)): $h = static fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); ?>
                     <details class="panel" id="segEmparejar" open style="margin-bottom:var(--sp-4);">
                         <summary class="panel__head" style="cursor:pointer;">
@@ -583,6 +603,30 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
                     recargar(false);   // la tabla muestra ya el nombre de tu producto
                 })
                 .catch(() => { alert('No se pudo guardar. Revisa tu conexión.'); btn.disabled = false; });
+        });
+    }
+
+    // ── Actualización automática de guías (MCP): "Actualizar ahora" ──
+    const btnMcpProbar = document.getElementById('btnMcpProbar');
+    if (btnMcpProbar) {
+        btnMcpProbar.addEventListener('click', () => {
+            const msg = document.getElementById('mcpProbarMsg');
+            btnMcpProbar.disabled = true;
+            msg.style.color = '';
+            msg.textContent = 'Consultando Dropi…';
+
+            const fd = new FormData();
+            fd.append('csrf_token', window.__CSRF__ || '');
+            fetch(BASE + '/AdminDropiMcp/probar', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'fetch' } })
+                .then(r => r.json())
+                .then(j => {
+                    btnMcpProbar.disabled = false;
+                    if (!j.ok) { msg.style.color = 'var(--red)'; msg.textContent = j.error || 'No se pudo actualizar.'; return; }
+                    msg.style.color = 'var(--green-mid)';
+                    msg.textContent = `${j.actualizadas} actualizada(s), ${j.iguales} sin cambios.`;
+                    if (j.actualizadas > 0) setTimeout(() => location.reload(), 900);
+                })
+                .catch(() => { btnMcpProbar.disabled = false; msg.style.color = 'var(--red)'; msg.textContent = 'Error de red.'; });
         });
     }
 

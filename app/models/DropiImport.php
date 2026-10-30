@@ -375,10 +375,7 @@ class DropiImport extends Model
 
         $transportadora = clave_color($o['transportadora']);
         $tipo = $transportadora === '' ? '' : (strpos($transportadora, 'interrapid') !== false ? 'oficina' : 'domicilio');
-        // Devolución: cualquier estatus de Dropi con esa raíz ("DEVOLUCION", "EN DEVOLUCION", "DEVUELTO"…).
-        // Esas sí le cobran el flete de regreso al dueño, así que se guardan como estado propio.
-        $claveEstatus = clave_color($o['estatus']);
-        $estado = self::ESTADOS[$claveEstatus] ?? (preg_match('/devol|devuelt/', $claveEstatus) ? 'devolucion' : 'otro');
+        $estado = self::estadoDesdeEstatus($o['estatus']);
 
         // Novedad: la que reporta Dropi y, si no hay, el último movimiento cuando cuenta algo del cliente
         // (no tenía el dinero, no contestó, la dirección no existe). Lo demás del movimiento
@@ -492,6 +489,21 @@ class DropiImport extends Model
             }
         }
         return false;
+    }
+
+    /**
+     * El estado propio (Seguimiento) que corresponde a un estatus de Dropi, con la
+     * misma regla para el Excel y para el refresco por API/MCP (ver DropiOrden::
+     * actualizarEstadoDesdeMcp) — una sola fuente de verdad para no desalinearlas.
+     *
+     * Devolución: cualquier estatus de Dropi con esa raíz ("DEVOLUCION", "EN
+     * DEVOLUCION", "DEVUELTO"…). Esas sí le cobran el flete de regreso al dueño,
+     * así que se guardan como estado propio.
+     */
+    public static function estadoDesdeEstatus(string $estatus): string
+    {
+        $clave = clave_color($estatus);
+        return self::ESTADOS[$clave] ?? (preg_match('/devol|devuelt/', $clave) ? 'devolucion' : 'otro');
     }
 
     /**

@@ -1155,4 +1155,56 @@ class DropiOrden extends Model
         ")->fetch(PDO::FETCH_ASSOC);
         return $r ?: null;
     }
+
+    /* ─────────────────────────  Refresco rápido por MCP (cron_dropi_mcp_sync.php)  ───────────────────────── */
+
+    /**
+     * Pone al día estatus/estado/guía de UNA orden ya existente, a partir de lo que
+     * trae el MCP de Dropi (list_orders / get_order). A propósito actualiza solo estos
+     * tres campos: el MCP no trae novedad, último movimiento ni departamento, así que
+     * tocar esos campos con datos ausentes los dejaría vacíos — siguen viniendo del
+     * Excel diario (ver DropiImport), que es la fuente completa.
+     *
+     * Una orden que el sistema todavía no conoce (no la trajo ningún Excel) se omite:
+     * entra con todos sus datos cuando corresponda, por el importador normal.
+     *
+     * @return string 'actualizada'|'igual'|'omitida'
+     */
+    public function actualizarEstadoDesdeMcp(string $dropiId, string $estatus, string $guia): string
+    {
+        $stmt = $this->db->prepare('SELECT id, estatus, guia, estatus_desde FROM dropi_ordenes WHERE dropi_id = ? LIMIT 1');
+        $stmt->execute([$dropiId]);
+        $ex = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$ex) return 'omitida';
+
+        $estatus = mb_substr(trim($estatus), 0, 60);
+        $guia    = mb_substr(trim($guia), 0, 50);
+        $cambioEstatus = $estatus !== '' && clave_color($estatus) !== clave_color((string)$ex['estatus']);
+        $cambioGuia    = $guia !== '' && $guia !== (string)$ex['guia'];
+
+        $ahora = date('Y-m-d H:i:s');
+        if (!$cambioEstatus && !$cambioGuia) {
+            $this->db->prepare('UPDATE dropi_ordenes SET visto_at = :v WHERE id = :id')
+                ->execute([':v' => $ahora, ':id' => $ex['id']]);
+            return 'igual';
+        }
+
+        $campos = [':visto' => $ahora, ':id' => $ex['id']];
+        $sets = ['visto_at = :visto'];
+        if ($cambioEstatus) {
+            $sets[] = 'estatus = :estatus';
+            $sets[] = 'estado = :estado';
+            $sets[] = 'estatus_desde = :desde';
+            $campos[':estatus'] = $estatus;
+            $campos[':estado']  = DropiImport::estadoDesdeEstatus($estatus);
+            $campos[':desde']   = $ahora;
+        }
+        if ($cambioGuia) {
+            $sets[] = 'guia = :guia';
+            $campos[':guia'] = $guia;
+        }
+
+        $this->db->prepare('UPDATE dropi_ordenes SET ' . implode(', ', $sets) . ' WHERE id = :id')->execute($campos);
+        return 'actualizada';
+    }
 }

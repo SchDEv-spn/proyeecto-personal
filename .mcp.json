@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "dropi-mcp": {
+      "type": "http",
+      "url": "https://mcp.dropi.co/mcp"
+    }
+  }
+}
