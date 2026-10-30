@@ -15,7 +15,7 @@
 class DropiMcpSync
 {
     private const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-    private const MODELO = 'claude-opus-5-5';
+    private const MODELO = 'claude-sonnet-5-5';
 
     /** Cuántos días hacia atrás se consultan. Las órdenes viejas ya están cerradas: el Excel diario las cubre. */
     private const DIAS_VENTANA = 5;
