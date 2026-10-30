@@ -1264,23 +1264,31 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
 .dropi-token-msg--ok    { color: var(--green); }
 .dropi-token-msg--error { color: var(--red); }
 
-/* Botón que se ve como los links en negrita de las líneas de estado de Seguimiento
-   ("Importar ahora →"): mismo texto, mismo peso, sin caja — para acciones que no
-   pueden ser un <a> (disparan JS, o van dentro de un <form> de POST). */
-.btn-as-link {
-  display: inline;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  background: none;
-  font: inherit;
+/* .btn-danger: mismo molde que .btn-primary (el botón verde de todo el panel),
+   en rojo — para la acción contraria ("Desconectar", "Eliminar"…). */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-5);
+  background: var(--red);
+  color: #fff;
+  font-size: var(--text-sm);
   font-weight: 700;
-  color: inherit;
+  border: none;
+  border-radius: var(--r-md);
   cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+  transition: filter var(--t);
 }
-.btn-as-link:hover,
-.btn-as-link:focus-visible { text-decoration: underline; }
-.btn-as-link--red { color: var(--red); }
+.btn-danger:hover { filter: brightness(0.88); }
+
+/* Versión compacta de .btn-primary / .btn-danger para ir en línea con texto
+   (p. ej. junto a "Última importación…" en Seguimiento), sin perder el relleno
+   de color — solo más chicos que el tamaño estándar de formulario. */
+.btn-primary--sm,
+.btn-danger--sm { padding: 4px var(--sp-3); font-size: var(--text-xs); box-shadow: none; }
 
 .dropi-mcp-estado__msg { font-weight: 700; }
 .dropi-mcp-estado__msg--ok    { color: var(--green-mid); }

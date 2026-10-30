@@ -98,22 +98,27 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
 
                     <?php /* div, no <p>: adentro va un <form> (botón Desconectar), y un <p> no puede
                              contener un <form> — el navegador lo cerraba antes de tiempo y partía
-                             el mensaje de abajo a su propia línea. Mismo estilo inline que la línea
-                             de "Última importación" de arriba: sin caja, para no romper la seguidilla. */ ?>
-                    <div style="font-size:12.5px;margin:0 0 .75rem;color:var(--tx-muted);">
+                             el mensaje de abajo a su propia línea. El texto va con el mismo estilo
+                             que "Última importación" de arriba; los botones sí son botones de
+                             verdad (.btn-primary / .btn-danger, como el resto del panel). */ ?>
+                    <div style="font-size:12.5px;margin:0 0 .85rem;color:var(--tx-muted);">
                         <?php if (!empty($mcpConectado)): ?>
-                            <i class="fas fa-bolt" style="color:var(--green-mid)" aria-hidden="true"></i>
-                            Guías en vivo: <strong style="color:var(--green-mid)">conectado</strong> — estatus y guía se refrescan solos varias veces al día, sin esperar el Excel.
-                            <button type="button" class="btn-as-link" id="btnMcpProbar">Actualizar ahora</button>
-                            · <form method="POST" action="<?= BASE_URL ?>/AdminDropiMcp/desconectar" style="display:inline" onsubmit="return confirm('¿Desconectar la actualización automática de guías?');">
-                                <?= csrf_field() ?>
-                                <button type="submit" class="btn-as-link btn-as-link--red">Desconectar</button>
-                            </form>
-                            <span id="mcpProbarMsg" class="dropi-mcp-estado__msg"></span>
+                            <p style="margin:0 0 .4rem;">
+                                <i class="fas fa-bolt" style="color:var(--green-mid)" aria-hidden="true"></i>
+                                Guías en vivo: <strong style="color:var(--green-mid)">conectado</strong> — estatus y guía se refrescan solos varias veces al día, sin esperar el Excel.
+                            </p>
+                            <div style="display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;">
+                                <button type="button" class="btn-primary btn-primary--sm" id="btnMcpProbar"><i class="fas fa-rotate"></i> Actualizar ahora</button>
+                                <form method="POST" action="<?= BASE_URL ?>/AdminDropiMcp/desconectar" style="margin:0;" onsubmit="return confirm('¿Desconectar la actualización automática de guías?');">
+                                    <?= csrf_field() ?>
+                                    <button type="submit" class="btn-danger btn-danger--sm"><i class="fas fa-plug-circle-xmark"></i> Desconectar</button>
+                                </form>
+                                <span id="mcpProbarMsg" class="dropi-mcp-estado__msg"></span>
+                            </div>
                         <?php else: ?>
                             <i class="fas fa-plug-circle-exclamation" aria-hidden="true"></i>
                             Las guías solo se actualizan al importar el Excel.
-                            <a href="<?= BASE_URL ?>/AdminDropiMcp/conectar" style="font-weight:700;">Conectar actualización automática →</a>
+                            <a href="<?= BASE_URL ?>/AdminDropiMcp/conectar" class="btn-primary btn-primary--sm" style="margin-left:var(--sp-2);"><i class="fas fa-bolt"></i> Conectar actualización automática</a>
                         <?php endif; ?>
                     </div>
 
