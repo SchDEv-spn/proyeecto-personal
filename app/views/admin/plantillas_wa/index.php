@@ -96,22 +96,25 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                     <?= !empty($mcpSuccess) ? alert_success($mcpSuccess) : '' ?>
                     <?= !empty($mcpError) ? alert_error([$mcpError], 'Dropi (actualización automática)') : '' ?>
 
-                    <p style="font-size:12.5px;margin:0 0 .85rem;color:var(--tx-muted);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+                    <?php /* div, no <p>: adentro va un <form> (botón Desconectar), y un <p> no puede
+                             contener un <form> — el navegador lo cerraba antes de tiempo y partía
+                             el mensaje de abajo a su propia línea. */ ?>
+                    <div style="font-size:12.5px;margin:0 0 .85rem;color:var(--tx-muted);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
                         <?php if (!empty($mcpConectado)): ?>
                             <i class="fas fa-bolt" style="color:var(--green-mid)" aria-hidden="true"></i>
-                            Guías en vivo: <strong style="color:var(--green-mid)">conectado</strong> — estatus y guía se refrescan solos varias veces al día, sin esperar el Excel.
+                            <span>Guías en vivo: <strong style="color:var(--green-mid)">conectado</strong> — estatus y guía se refrescan solos varias veces al día, sin esperar el Excel.</span>
                             <button type="button" class="btn-ghost" id="btnMcpProbar" style="padding:2px 10px;font-size:12px;">Actualizar ahora</button>
-                            <form method="POST" action="<?= BASE_URL ?>/AdminDropiMcp/desconectar" style="display:inline-flex" onsubmit="return confirm('¿Desconectar la actualización automática de guías?');">
+                            <form method="POST" action="<?= BASE_URL ?>/AdminDropiMcp/desconectar" style="display:inline-flex;margin:0;" onsubmit="return confirm('¿Desconectar la actualización automática de guías?');">
                                 <?= csrf_field() ?>
                                 <button type="submit" class="btn-ghost" style="padding:2px 10px;font-size:12px;">Desconectar</button>
                             </form>
                             <span id="mcpProbarMsg"></span>
                         <?php else: ?>
                             <i class="fas fa-plug-circle-exclamation" aria-hidden="true"></i>
-                            Las guías solo se actualizan al importar el Excel.
+                            <span>Las guías solo se actualizan al importar el Excel.</span>
                             <a href="<?= BASE_URL ?>/AdminDropiMcp/conectar" style="font-weight:700;">Conectar actualización automática (varias veces al día) →</a>
                         <?php endif; ?>
-                    </p>
+                    </div>
 
                     <?php if (!empty($sinEmparejar)): $h = static fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); ?>
                     <details class="panel" id="segEmparejar" open style="margin-bottom:var(--sp-4);">
