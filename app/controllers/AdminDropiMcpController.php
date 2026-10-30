@@ -14,9 +14,17 @@ class AdminDropiMcpController extends Controller
         }
     }
 
+    /**
+     * BASE_URL es solo el prefijo de ruta (vacío en producción, "/tienda_mvc" en
+     * local — ver index.php) — Dropi exige un redirect_uri absoluto (con esquema y
+     * host), igual que cualquier servidor OAuth. Se arma con el host de la propia
+     * petición, mismo criterio que es_entorno_local().
+     */
     private function redirectUri(): string
     {
-        return BASE_URL . '/AdminDropiMcp/callback';
+        $esquema = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = (string)($_SERVER['HTTP_HOST'] ?? '');
+        return $esquema . '://' . $host . BASE_URL . '/AdminDropiMcp/callback';
     }
 
     private function volver(): void
