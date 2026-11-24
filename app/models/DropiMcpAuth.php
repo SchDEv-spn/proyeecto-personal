@@ -5,56 +5,120 @@
  * el refresco de guías (cron_dropi_mcp_sync.php) pueda llamarlo sin depender de una
  * sesión de Claude Code ni de un humano presente.
  *
- * Metadatos descubiertos (no hay documentación pública, así que quedan fijos aquí en
- * vez de hacer el descubrimiento en caliente en cada corrida):
+ * Los endpoints se DESCUBREN en cada uso (RFC 9728 → RFC 8414) en vez de quedar fijos:
+ * Dropi mudó su servidor de autorización de integrations.dropi.co a mcp.dropi.co sin
+ * avisar (2026-11) y el refresco empezó a fallar con "missing or invalid forwarded
+ * host". Si el descubrimiento falla se usan los valores de ABAJO (los de hoy).
  *   - recurso protegido:    https://mcp.dropi.co/mcp
- *   - servidor autorización: https://integrations.dropi.co
- *   - authorize:  https://oauth.dropi.co/oauth/authorize
- *   - token:      https://integrations.dropi.co/oauth/token
- *   - registro:   https://integrations.dropi.co/oauth/register  (RFC 7591, dinámico)
+ *   - servidor autorización: https://mcp.dropi.co
+ *   - authorize:  https://mcp.dropi.co/login/authorize
+ *   - token:      https://mcp.dropi.co/oauth/token
+ *   - registro:   https://mcp.dropi.co/oauth/register  (RFC 7591, dinámico)
  *
  * Todo queda en app_settings (mismo lugar que claude_api_key / dropi_api_token):
  * dropi_mcp_client_id, dropi_mcp_client_secret, dropi_mcp_access_token,
- * dropi_mcp_refresh_token, dropi_mcp_expires_at.
+ * dropi_mcp_refresh_token, dropi_mcp_expires_at y dropi_mcp_issuer — el servidor de
+ * autorización ante el que se registró el cliente y se emitieron los tokens: si Dropi
+ * cambia de servidor, ese cliente y esos tokens ya no sirven y hay que reconectar.
  */
 class DropiMcpAuth
 {
     public const SERVER_URL = 'https://mcp.dropi.co/mcp';
 
-    private const AUTHORIZE_URL = 'https://oauth.dropi.co/oauth/authorize';
-    private const TOKEN_URL     = 'https://integrations.dropi.co/oauth/token';
-    private const REGISTER_URL  = 'https://integrations.dropi.co/oauth/register';
+    private const RECURSO_METADATA_URL = 'https://mcp.dropi.co/.well-known/oauth-protected-resource/mcp';
+
+    private const SERVIDOR_POR_DEFECTO = [
+        'issuer'    => 'https://mcp.dropi.co',
+        'authorize' => 'https://mcp.dropi.co/login/authorize',
+        'token'     => 'https://mcp.dropi.co/oauth/token',
+        'register'  => 'https://mcp.dropi.co/oauth/register',
+        'scope'     => 'mcp',
+    ];
 
     private AppSettings $settings;
+
+    /** @var array{issuer:string, authorize:string, token:string, register:string, scope:string}|null */
+    private ?array $servidor = null;
 
     public function __construct()
     {
         $this->settings = new AppSettings();
     }
 
+    /**
+     * Sin dropi_mcp_issuer la conexión es de antes de la mudanza de Dropi (tokens de un
+     * servidor que ya no responde): se muestra como desconectada para que el panel
+     * ofrezca "Conectar" en vez de un "conectado" que solo da error.
+     */
     public function conectado(): bool
     {
-        return $this->settings->hasKey('dropi_mcp_refresh_token');
+        return $this->settings->hasKey('dropi_mcp_refresh_token') && $this->settings->hasKey('dropi_mcp_issuer');
     }
 
     public function desconectar(): void
     {
-        foreach (['dropi_mcp_client_id', 'dropi_mcp_client_secret', 'dropi_mcp_access_token', 'dropi_mcp_refresh_token', 'dropi_mcp_expires_at'] as $k) {
+        foreach (['dropi_mcp_client_id', 'dropi_mcp_client_secret', 'dropi_mcp_access_token', 'dropi_mcp_refresh_token', 'dropi_mcp_expires_at', 'dropi_mcp_issuer'] as $k) {
             $this->settings->set($k, null);
         }
     }
 
     /**
+     * Endpoints vigentes del servidor de autorización de Dropi. Un valor que no sea
+     * https o que no sea de dropi.co se ignora (no mandar el código ni los tokens a
+     * un host que un metadato cualquiera nos señale).
+     *
+     * @return array{issuer:string, authorize:string, token:string, register:string, scope:string}
+     */
+    private function servidor(): array
+    {
+        if ($this->servidor !== null) return $this->servidor;
+
+        $srv = self::SERVIDOR_POR_DEFECTO;
+
+        $recurso = $this->enviar(self::RECURSO_METADATA_URL, null, '');
+        if ($recurso['ok']) {
+            $scopes = array_filter((array)($recurso['body']['scopes_supported'] ?? []), 'is_string');
+            if ($scopes) $srv['scope'] = implode(' ', $scopes);
+
+            $issuer = $recurso['body']['authorization_servers'][0] ?? null;
+            if (is_string($issuer) && $this->esUrlDropi($issuer)) {
+                $srv['issuer'] = rtrim($issuer, '/');
+                $meta = $this->enviar($srv['issuer'] . '/.well-known/oauth-authorization-server', null, '');
+                if ($meta['ok']) {
+                    foreach (['authorize' => 'authorization_endpoint', 'token' => 'token_endpoint', 'register' => 'registration_endpoint'] as $k => $campo) {
+                        $url = $meta['body'][$campo] ?? null;
+                        if (is_string($url) && $this->esUrlDropi($url)) $srv[$k] = $url;
+                    }
+                }
+            }
+        }
+
+        return $this->servidor = $srv;
+    }
+
+    private function esUrlDropi(string $url): bool
+    {
+        $p = parse_url($url);
+        $host = strtolower((string)($p['host'] ?? ''));
+        return ($p['scheme'] ?? '') === 'https' && ($host === 'dropi.co' || substr($host, -9) === '.dropi.co');
+    }
+
+    /**
      * Da de alta esta instalación como cliente OAuth ante Dropi (una sola vez; queda
-     * guardado). RFC 7591: sin credenciales previas, solo la URL de retorno.
+     * guardado). RFC 7591: sin credenciales previas, solo la URL de retorno. Un cliente
+     * registrado ante OTRO servidor (Dropi se mudó) se descarta y se registra de nuevo.
      *
      * @return array{ok:bool, error?:string}
      */
     private function registrarCliente(string $redirectUri): array
     {
-        if ($this->settings->hasKey('dropi_mcp_client_id')) return ['ok' => true];
+        $srv = $this->servidor();
+        if ($this->settings->hasKey('dropi_mcp_client_id') && $this->settings->get('dropi_mcp_issuer') === $srv['issuer']) {
+            return ['ok' => true];
+        }
+        $this->desconectar();
 
-        $resp = $this->postJson(self::REGISTER_URL, [
+        $resp = $this->postJson($srv['register'], [
             'redirect_uris'              => [$redirectUri],
             'token_endpoint_auth_method' => 'none', // cliente público (PKCE); sin client_secret
             'grant_types'                => ['authorization_code', 'refresh_token'],
@@ -67,6 +131,7 @@ class DropiMcpAuth
         }
 
         $this->settings->set('dropi_mcp_client_id', (string)$resp['body']['client_id']);
+        $this->settings->set('dropi_mcp_issuer', $srv['issuer']);
         if (!empty($resp['body']['client_secret'])) {
             $this->settings->set('dropi_mcp_client_secret', (string)$resp['body']['client_secret']);
         }
@@ -96,7 +161,7 @@ class DropiMcpAuth
             'response_type'         => 'code',
             'client_id'             => $this->settings->get('dropi_mcp_client_id'),
             'redirect_uri'          => $redirectUri,
-            'scope'                 => 'mcp',
+            'scope'                 => $this->servidor()['scope'],
             'state'                 => $state,
             'code_challenge'        => $challenge,
             'code_challenge_method' => 'S256',
@@ -106,7 +171,7 @@ class DropiMcpAuth
             'resource'              => self::SERVER_URL,
         ]);
 
-        return ['ok' => true, 'url' => self::AUTHORIZE_URL . '?' . $qs];
+        return ['ok' => true, 'url' => $this->servidor()['authorize'] . '?' . $qs];
     }
 
     /**
@@ -125,7 +190,7 @@ class DropiMcpAuth
             return ['ok' => false, 'error' => 'Se perdió la sesión de autorización. Intentá conectar de nuevo.'];
         }
 
-        $resp = $this->post(self::TOKEN_URL, [
+        $resp = $this->post($this->servidor()['token'], [
             'grant_type'    => 'authorization_code',
             'code'          => $code,
             'redirect_uri'  => $redirectUri,
@@ -158,12 +223,22 @@ class DropiMcpAuth
             return ['ok' => false, 'error' => 'Dropi (MCP) no está conectado — entrá al panel y conectalo.'];
         }
 
-        $resp = $this->post(self::TOKEN_URL, [
+        $srv = $this->servidor();
+        if ($this->settings->get('dropi_mcp_issuer') !== $srv['issuer']) {
+            return ['ok' => false, 'error' => 'Dropi cambió su servidor de autorización y la conexión anterior ya no sirve — reconectá la actualización automática desde Seguimiento (si ves "Desconectar", tocalo primero).'];
+        }
+
+        $resp = $this->post($srv['token'], [
             'grant_type'    => 'refresh_token',
             'refresh_token' => $refresh,
             'client_id'     => $this->settings->get('dropi_mcp_client_id'),
             'resource'      => self::SERVER_URL,
         ]);
+
+        // invalid_grant = refresh_token vencido o revocado: no se arregla reintentando.
+        if (!$resp['ok'] && ($resp['body']['error'] ?? '') === 'invalid_grant') {
+            return ['ok' => false, 'error' => 'Dropi ya no acepta la conexión (venció o fue revocada) — en Seguimiento tocá "Desconectar" y volvé a conectar.'];
+        }
 
         $guardado = $this->guardarTokens($resp);
         if (!$guardado['ok']) return $guardado;
@@ -206,7 +281,8 @@ class DropiMcpAuth
         return $this->enviar($url, json_encode($campos, JSON_UNESCAPED_SLASHES), 'application/json');
     }
 
-    private function enviar(string $url, string $cuerpo, string $contentType): array
+    /** Con $cuerpo null es un GET (descubrimiento de metadatos). */
+    private function enviar(string $url, ?string $cuerpo, string $contentType): array
     {
         if (!function_exists('curl_init')) {
             return ['ok' => false, 'error' => 'cURL no disponible en este servidor.'];
@@ -214,18 +290,19 @@ class DropiMcpAuth
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $cuerpo,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: ' . $contentType,
+            CURLOPT_HTTPHEADER     => array_filter([
+                $cuerpo === null ? null : 'Content-Type: ' . $contentType,
                 'Accept: application/json',
-            ],
+            ]),
             CURLOPT_TIMEOUT        => 20,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
         ]);
+        if ($cuerpo !== null) {
+            curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $cuerpo]);
+        }
 
         $raw = curl_exec($ch);
         $err = curl_error($ch);
