@@ -37,6 +37,9 @@ class DropiImport extends Model
         'enreparto'               => 'enviado',
         'novedad'                 => 'enviado',
         'preparadoparatransportadora' => 'enviado', // ya salió de la bodega rumbo a la transportadora
+        'enbodegaorigen'          => 'enviado',   // apenas sale de la ciudad de origen (p. ej. Valledupar): sigue siendo un paquete en camino
+        'enterminaldestino'       => 'enviado',   // ya está en la bodega de la ciudad de destino, a punto de pasar a reparto
+        'novedadsolucionada'      => 'enviado',   // la novedad se resolvió y el paquete sigue su camino (no es 'novedad': no lleva el aviso urgente)
         'reclameenoficina'        => 'en_oficina',
         'entregado'               => 'entregado',
         'cancelado'               => 'cancelado',
@@ -126,7 +129,7 @@ class DropiImport extends Model
             if ($id === '') continue; // fila suelta (totales, notas…)
 
             $telefono = $this->normalizarTelefono($g('telefono'));
-            if (strlen($telefono) < 7) {
+            if (!$this->telefonoValido($g('telefono'))) {
                 $omitidas[$id] = ['id' => $id, 'motivo' => 'No trae un teléfono válido.'];
                 continue;
             }
@@ -285,7 +288,7 @@ class DropiImport extends Model
      *   ubicaciones_sin_reconocer: string[], coinciden_landing: int
      * }
      */
-    public function procesar(array $ordenes, bool $aplicar = false, string $archivo = '', string $usuario = ''): array
+    public function procesar(array $ordenes, bool $aplicar = false, string $archivo = '', string $usuario = '', bool $registrar = true): array
     {
         $mapa    = $this->mapaProductos(array_keys($this->productosDeDropi($ordenes)));
         $locales = $this->productosLocales();
@@ -341,7 +344,9 @@ class DropiImport extends Model
                     $this->db->prepare('UPDATE dropi_ordenes SET visto_at = ? WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')')
                         ->execute(array_merge([$ahora], $ids));
                 }
-                (new DropiOrden())->registrarImportacion($usuario, $archivo, count($ordenes), $res['conteo']['nuevo'], $res['conteo']['actualiza'], $res['conteo']['igual']);
+                if ($registrar) {
+                    (new DropiOrden())->registrarImportacion($usuario, $archivo, count($ordenes), $res['conteo']['nuevo'], $res['conteo']['actualiza'], $res['conteo']['igual']);
+                }
             }
 
             if ($inicio) $this->db->commit();
@@ -353,6 +358,83 @@ class DropiImport extends Model
         $res['filas'] = array_reverse($res['filas']); // lo más reciente primero
         $res['ubicaciones_sin_reconocer'] = array_keys($res['ubicaciones_sin_reconocer']);
         return $res;
+    }
+
+    /**
+     * Arma una orden con la misma forma que leerArchivo() a partir de lo que trae el MCP de
+     * Dropi: la fila de list_orders y el detalle de get_order (los productos). Solo sirve para
+     * órdenes NUEVAS: lo que el MCP no trae (novedad, último movimiento, costo, flete, comisión,
+     * ganancia) queda vacío, y sobre una orden ya guardada eso se leería como "se resolvió" o
+     * "vale 0". El Excel lo completa después, sin duplicar la orden.
+     *
+     * @param  array<string,string> $fila     order_id, status, customer_name, customer_phone, city, total, shipping_company, created_at, tracking_code
+     * @param  array<string,mixed>  $detalle  get_order: items[] con product_id, product_name, qty, subtotal
+     * @return array|null null si la orden no trae un teléfono válido (no hay a quién avisar)
+     */
+    public function ordenDesdeMcp(array $fila, array $detalle): ?array
+    {
+        $id = (string)preg_replace('/\D+/', '', (string)($fila['order_id'] ?? ''));
+        if ($id === '' || !$this->telefonoValido((string)($fila['customer_phone'] ?? ''))) return null;
+        $telefono = $this->normalizarTelefono((string)$fila['customer_phone']);
+
+        $lineas = [];
+        foreach ((array)($detalle['items'] ?? []) as $it) {
+            $lineas[] = [
+                'pid'       => (string)preg_replace('/\D+/', '', (string)($it['product_id'] ?? '')),
+                'nombre'    => (string)($it['product_name'] ?? ''),
+                'variacion' => '',
+                'cantidad'  => max(1, (int)$this->numero((string)($it['qty'] ?? '1'))),
+                'total'     => $this->numero((string)($it['subtotal'] ?? '0')),
+                'costo' => 0.0, 'flete' => 0.0, 'flete_dev' => 0.0, 'comision' => 0.0, 'ganancia' => null,
+            ];
+        }
+
+        $fecha = null;
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2})?)/', (string)($fila['created_at'] ?? ''), $m)) {
+            $fecha = $m[1] . ' ' . (strlen($m[2]) === 5 ? $m[2] . ':00' : $m[2]);
+        }
+
+        $ciudad = (string)($fila['city'] ?? '');
+        return [
+            'id'             => $id,
+            'fecha'          => $fecha,
+            'nombre'         => (string)($fila['customer_name'] ?? ''),
+            'telefono'       => $telefono,
+            'guia'           => (string)($fila['tracking_code'] ?? ''),
+            'estatus'        => mb_strtoupper((string)($fila['status'] ?? ''), 'UTF-8'),
+            'departamento'   => $this->departamentoDeMunicipio($ciudad),
+            'ciudad'         => $ciudad,
+            'transportadora' => (string)($fila['shipping_company'] ?? ''),
+            // El MCP no dice cuál es la novedad: se anota una genérica para que no pase desapercibida (ver DropiOrden::NOVEDAD_SIN_DETALLE).
+            'novedad'        => clave_color((string)($fila['status'] ?? '')) === 'novedad' ? DropiOrden::NOVEDAD_SIN_DETALLE : '',
+            'ultimo_mov'     => '',
+            'ultimo_mov_at'  => null,
+            'cancelacion'    => '',
+            'lineas'         => $lineas,
+            'total'          => $this->numero((string)($fila['total'] ?? '0')),
+            'costo' => 0.0, 'flete' => 0.0, 'flete_dev' => 0.0, 'comision' => 0.0, 'ganancia' => null,
+            'cantidad'       => $lineas ? array_sum(array_column($lineas, 'cantidad')) : null,
+        ];
+    }
+
+    /**
+     * El MCP trae la ciudad pero no el departamento. Se deduce solo si ese municipio está en
+     * UN único departamento de la lista de la tienda ("Medellín" sí; "Granada", "La Florida" o
+     * "Sucre" existen en varios y no se adivinan: quedan vacíos hasta que llegue el Excel).
+     */
+    private function departamentoDeMunicipio(string $ciudad): string
+    {
+        self::$ubicaciones ??= require __DIR__ . '/../data/colombia.php';
+        $claves = $this->clavesMunicipio($ciudad);
+        if (!$claves) return '';
+
+        $encontrados = [];
+        foreach (self::$ubicaciones as $dep => $municipios) {
+            foreach ($municipios as $m) {
+                if (in_array(clave_color($m), $claves, true)) { $encontrados[$dep] = true; break; }
+            }
+        }
+        return count($encontrados) === 1 ? (string)array_key_first($encontrados) : '';
     }
 
     /**
@@ -504,6 +586,12 @@ class DropiImport extends Model
     {
         $clave = clave_color($estatus);
         return self::ESTADOS[$clave] ?? (preg_match('/devol|devuelt/', $clave) ? 'devolucion' : 'otro');
+    }
+
+    /** ¿Un estatus que Seguimiento no sabe clasificar (y que no se dejó quieto a propósito)? Es lo que la vista previa del Excel avisa. */
+    public static function estatusSinClasificar(string $estatus): bool
+    {
+        return trim($estatus) !== '' && self::estadoDesdeEstatus($estatus) === 'otro' && !in_array(clave_color($estatus), self::ESTATUS_QUIETOS, true);
     }
 
     /**
@@ -662,6 +750,12 @@ class DropiImport extends Model
     private function sufijo(string $telefono): string
     {
         return substr((string)preg_replace('/\D+/', '', $telefono), -8);
+    }
+
+    /** ¿Hay a quién avisar? Una orden sin teléfono utilizable no se importa (Excel ni MCP). */
+    public function telefonoValido(string $raw): bool
+    {
+        return strlen($this->normalizarTelefono($raw)) >= 7;
     }
 
     /** Solo dígitos y sin el prefijo de país (mismo criterio que LandingController::normalizarTelefono). */

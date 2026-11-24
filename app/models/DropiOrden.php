@@ -54,6 +54,9 @@ class DropiOrden extends Model
         'indeterminada' => 'Causa sin determinar',
     ];
 
+    /** Novedad que se anota cuando el MCP ve el estatus NOVEDAD pero no trae el motivo (solo el Excel lo trae). */
+    public const NOVEDAD_SIN_DETALLE = 'Novedad reportada por la transportadora (el motivo llega con el Excel)';
+
     /** Tipos de novedad y cómo se llaman en pantalla. */
     public const NOVEDAD_ETIQUETAS = [
         'direccion' => 'Dirección',
@@ -1176,20 +1179,37 @@ class DropiOrden extends Model
     /* ─────────────────────────  Refresco rápido por MCP (cron_dropi_mcp_sync.php)  ───────────────────────── */
 
     /**
+     * De estos IDs de Dropi, los que ya están guardados.
+     *
+     * @param  string[] $dropiIds
+     * @return array<string,true>
+     */
+    public function idsExistentes(array $dropiIds): array
+    {
+        $out = [];
+        foreach (array_chunk(array_values(array_unique(array_map('strval', $dropiIds))), 500) as $ids) {
+            $stmt = $this->db->prepare('SELECT dropi_id FROM dropi_ordenes WHERE dropi_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')');
+            $stmt->execute($ids);
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $id) $out[(string)$id] = true;
+        }
+        return $out;
+    }
+
+    /**
      * Pone al día estatus/estado/guía de UNA orden ya existente, a partir de lo que
      * trae el MCP de Dropi (list_orders / get_order). A propósito actualiza solo estos
      * tres campos: el MCP no trae novedad, último movimiento ni departamento, así que
      * tocar esos campos con datos ausentes los dejaría vacíos — siguen viniendo del
-     * Excel diario (ver DropiImport), que es la fuente completa.
+     * Excel (ver DropiImport), que es la fuente completa.
      *
-     * Una orden que el sistema todavía no conoce (no la trajo ningún Excel) se omite:
-     * entra con todos sus datos cuando corresponda, por el importador normal.
+     * Una orden que el sistema todavía no conoce se omite aquí: DropiMcpSync la crea
+     * aparte con DropiImport::ordenDesdeMcp() + procesar().
      *
      * @return string 'actualizada'|'igual'|'omitida'
      */
     public function actualizarEstadoDesdeMcp(string $dropiId, string $estatus, string $guia): string
     {
-        $stmt = $this->db->prepare('SELECT id, estatus, guia, estatus_desde FROM dropi_ordenes WHERE dropi_id = ? LIMIT 1');
+        $stmt = $this->db->prepare('SELECT id, estatus, guia, estatus_desde, novedad FROM dropi_ordenes WHERE dropi_id = ? LIMIT 1');
         $stmt->execute([$dropiId]);
         $ex = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$ex) return 'omitida';
@@ -1215,6 +1235,20 @@ class DropiOrden extends Model
             $campos[':estatus'] = $estatus;
             $campos[':estado']  = DropiImport::estadoDesdeEstatus($estatus);
             $campos[':desde']   = $ahora;
+
+            // El MCP dice que hay novedad pero no cuál. La tarjeta "Con novedad" y el aviso urgente
+            // salen del texto de la novedad, así que sin esto una novedad nueva pasaría desapercibida
+            // hasta el próximo Excel. Se deja una genérica (tipo "otra"); el Excel la reemplaza por el motivo real.
+            if (clave_color($estatus) === 'novedad' && trim((string)$ex['novedad']) === '') {
+                $sets[] = 'novedad = :novedad';
+                $sets[] = "novedad_tipo = 'otra'";
+                $sets[] = 'aviso_novedad_at = NULL';
+                $campos[':novedad'] = self::NOVEDAD_SIN_DETALLE;
+            } elseif (clave_color($estatus) !== 'novedad' && (string)$ex['novedad'] === self::NOVEDAD_SIN_DETALLE) {
+                // Salió de NOVEDAD y seguía la genérica (nunca llegó el motivo real): ya no hay novedad abierta.
+                $sets[] = "novedad = ''";
+                $sets[] = "novedad_tipo = ''";
+            }
         }
         if ($cambioGuia) {
             $sets[] = 'guia = :guia';

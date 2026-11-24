@@ -53,7 +53,10 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
             $c = $contadores ?? [];
             $hayOrdenes = (int)($c['todas'] ?? 0) > 0;
             $ui = $ultimaImportacion ?? null;
-            $desactualizada = !$ui || (int)$ui['horas'] >= 30;
+            // Con la conexión en vivo al día las listas están vigentes aunque el Excel tenga días:
+            // el Excel solo completa novedades y valores.
+            $mcpAlDia = !empty($mcpConectado) && !empty($mcpUltima) && (int)$mcpUltima['horas'] < 30;
+            $desactualizada = !$mcpAlDia && (!$ui || (int)$ui['horas'] >= 30);
             $cuando = '';
             if ($ui) {
                 $t = strtotime($ui['creado_en']);
@@ -77,29 +80,11 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
             ];
             ?>
 
-            <div id="seguimientoDropi" style="margin-bottom:1rem;">
-                <?php if (!$hayOrdenes): ?>
-                    <div class="panel" style="padding:1.1rem 1.25rem 1.25rem;">
-                        <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;"><i class="fas fa-file-excel" aria-hidden="true"></i> Todavía no has importado órdenes de Dropi</h2>
-                        <p style="font-size:12.5px;color:var(--tx-muted);margin-bottom:.85rem;">
-                            Descarga tus órdenes de Dropi en Excel (15 días o más) y súbelas aquí: verás a quién avisarle que su pedido ya llegó a la oficina,
-                            quién espera recogida y quién tiene novedad, y podrás consultar todo el historial.
-                        </p>
-                        <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" class="btn-primary"><i class="fas fa-file-import"></i> Importar de Dropi</a>
-                    </div>
-                <?php else: ?>
-                    <p style="font-size:12.5px;margin:0 0 .75rem;color:<?= $desactualizada ? 'var(--gold)' : 'var(--tx-muted)' ?>;">
-                        <i class="fas <?= $desactualizada ? 'fa-triangle-exclamation' : 'fa-file-excel' ?>" aria-hidden="true"></i>
-                        <?php if ($ui): ?>
-                            Última importación: <strong><?= htmlspecialchars($cuando) ?></strong> · <?= (int)$ui['ordenes'] ?> órdenes.
-                            <?= $desactualizada ? 'Las listas pueden estar desactualizadas.' : '' ?>
-                        <?php else: ?>
-                            Aún no se registra ninguna importación.
-                        <?php endif; ?>
-                        Dropi actualiza si el paquete llegó a la oficina hacia las 10 a. m.: importa después de esa hora.
-                        <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" style="font-weight:700;">Importar ahora →</a>
-                    </p>
-
+            <?php
+            // Conexión en vivo con Dropi: se muestra igual con o sin órdenes (es justo con la lista vacía
+            // cuando sirve: "Actualizar ahora" trae las órdenes sin pasar por el Excel).
+            ob_start();
+            ?>
                     <?= !empty($mcpSuccess) ? alert_success($mcpSuccess) : '' ?>
                     <?= !empty($mcpError) ? alert_error([$mcpError], 'Dropi (actualización automática)') : '' ?>
 
@@ -112,7 +97,7 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                         <?php if (!empty($mcpConectado)): ?>
                             <p style="margin:0 0 .4rem;">
                                 <i class="fas fa-bolt" style="color:var(--green-mid)" aria-hidden="true"></i>
-                                Guías en vivo: <strong style="color:var(--green-mid)">conectado</strong> — estatus y guía se refrescan solos varias veces al día, sin esperar el Excel.
+                                Dropi en vivo: <strong style="color:var(--green-mid)">conectado</strong> — las órdenes nuevas entran solas y el estatus y la guía se refrescan varias veces al día, sin esperar el Excel.
                             </p>
                             <div style="display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;">
                                 <button type="button" class="btn-primary btn-primary--sm" id="btnMcpProbar"><i class="fas fa-rotate"></i> Actualizar ahora</button>
@@ -125,10 +110,41 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                             </div>
                         <?php else: ?>
                             <i class="fas fa-plug-circle-exclamation" aria-hidden="true"></i>
-                            Las guías solo se actualizan al importar el Excel.
+                            Sin la actualización en vivo, las órdenes y las guías solo entran al importar el Excel.
                             <a href="<?= BASE_URL ?>/AdminDropiMcp/conectar" class="btn-primary btn-primary--sm" style="margin-left:var(--sp-2);"><i class="fas fa-bolt"></i> Conectar actualización automática</a>
                         <?php endif; ?>
                     </div>
+            <?php $bloqueMcp = ob_get_clean(); ?>
+
+            <div id="seguimientoDropi" style="margin-bottom:1rem;">
+                <?php if (!$hayOrdenes): ?>
+                    <div class="panel" style="padding:1.1rem 1.25rem 1.25rem;">
+                        <h2 style="font-size:13px;font-weight:700;margin-bottom:.4rem;"><i class="fas fa-file-excel" aria-hidden="true"></i> Todavía no hay órdenes de Dropi</h2>
+                        <p style="font-size:12.5px;color:var(--tx-muted);margin-bottom:.85rem;">
+                            Conecta la actualización en vivo para traerlas directo de Dropi, o descarga tus órdenes en Excel (30 días) y súbelas aquí: verás a quién avisarle que su pedido ya llegó a la oficina,
+                            quién espera recogida y quién tiene novedad, y podrás consultar todo el historial.
+                        </p>
+                        <?= $bloqueMcp ?>
+                        <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" class="btn-primary"><i class="fas fa-file-import"></i> Importar Excel de Dropi</a>
+                    </div>
+                <?php else: ?>
+                    <p style="font-size:12.5px;margin:0 0 .75rem;color:<?= $desactualizada ? 'var(--gold)' : 'var(--tx-muted)' ?>;">
+                        <i class="fas <?= $desactualizada ? 'fa-triangle-exclamation' : 'fa-file-excel' ?>" aria-hidden="true"></i>
+                        <?php if ($ui): ?>
+                            Última importación de Excel: <strong><?= htmlspecialchars($cuando) ?></strong> · <?= (int)$ui['ordenes'] ?> órdenes.
+                            <?= $desactualizada ? 'Las listas pueden estar desactualizadas.' : '' ?>
+                        <?php else: ?>
+                            Aún no se registra ninguna importación de Excel.
+                        <?php endif; ?>
+                        <?php if ($mcpAlDia): ?>
+                            El Excel completa lo que la actualización en vivo no trae: el motivo de las novedades y los valores (costo, flete, ganancia).
+                        <?php else: ?>
+                            Dropi actualiza si el paquete llegó a la oficina hacia las 10 a. m.: importa después de esa hora.
+                        <?php endif; ?>
+                        <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" style="font-weight:700;">Importar Excel →</a>
+                    </p>
+
+                    <?= $bloqueMcp ?>
 
                     <?php if (!empty($sinEmparejar)): $h = static fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); ?>
                     <details class="panel" id="segEmparejar" open style="margin-bottom:var(--sp-4);">
@@ -641,9 +657,14 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
                     btnMcpProbar.disabled = false;
                     if (!j.ok) { msg.classList.add('dropi-mcp-estado__msg--error'); msg.textContent = j.error || 'No se pudo actualizar.'; return; }
                     msg.classList.add('dropi-mcp-estado__msg--ok');
-                    msg.textContent = `${j.actualizadas} actualizada(s), ${j.iguales} sin cambios.`;
+                    msg.textContent = `${j.nuevas || 0} nueva(s), ${j.actualizadas} actualizada(s), ${j.iguales} sin cambios.`
+                        + (j.pendientes > 0 ? ` Faltan ${j.pendientes} por traer: vuelve a darle actualizar.` : '');
+                    const raros = Object.keys(j.sin_clasificar || {});
+                    if (raros.length) {
+                        msg.textContent += ` Estatus que no conozco (quedan "Sin clasificar"): ${raros.map(k => `${k} (${j.sin_clasificar[k]})`).join(', ')}.`;
+                    }
                     if (ultima) ultima.textContent = 'Última actualización: justo ahora';
-                    if (j.actualizadas > 0) setTimeout(() => location.reload(), 900);
+                    if (j.actualizadas > 0 || j.nuevas > 0) setTimeout(() => location.reload(), 900);
                 })
                 .catch(() => { btnMcpProbar.disabled = false; msg.classList.add('dropi-mcp-estado__msg--error'); msg.textContent = 'Error de red.'; });
         });

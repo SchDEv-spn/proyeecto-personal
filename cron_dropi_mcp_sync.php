@@ -2,9 +2,9 @@
 /**
  * CRON — Refresco rápido de guías de Dropi vía MCP
  * =============================================================
- * Llama a DropiMcpSync::ejecutar(): le pide a Claude que consulte list_orders en
- * Dropi (conector MCP) y pone al día estatus/guía de las órdenes ya conocidas, sin
- * esperar la importación diaria del Excel. Pensado para correr cada 2-3 horas.
+ * Llama a DropiMcpSync::ejecutar(): consulta Dropi directo por su conector MCP, crea
+ * las órdenes nuevas de los últimos 30 días y pone al día estatus/guía de las que ya
+ * están, sin esperar el Excel. Pensado para correr cada 2-3 horas.
  *
  * Programar en el cron de Hostinger (hPanel → Avanzado → Cron Jobs):
  *   php /home/<usuario>/public_html/cron_dropi_mcp_sync.php
@@ -42,9 +42,14 @@ if (!$resultado['ok']) {
 }
 
 echo sprintf(
-    "[dropi-mcp-sync] %d orden(es) revisadas — %d actualizada(s), %d sin cambios, %d omitida(s) (no estaban importadas).\n",
+    "[dropi-mcp-sync] %d orden(es) revisadas — %d nueva(s), %d actualizada(s), %d sin cambios, %d omitida(s) (sin teléfono válido), %d pendiente(s) para la próxima.\n",
     $resultado['total'],
+    $resultado['nuevas'],
     $resultado['actualizadas'],
     $resultado['iguales'],
-    $resultado['omitidas']
+    $resultado['omitidas'],
+    $resultado['pendientes']
 );
+if ($resultado['sin_clasificar']) {
+    echo '[dropi-mcp-sync] Estatus sin clasificar: ' . json_encode($resultado['sin_clasificar'], JSON_UNESCAPED_UNICODE) . "\n";
+}

@@ -1,150 +1,157 @@
 <?php
 
 /**
- * Refresco rápido de Seguimiento vía el conector MCP de Dropi: le pide a la API de
- * Claude que llame list_orders en Dropi y devuelva estatus + guía de las órdenes
- * recientes, y los aplica con DropiOrden::actualizarEstadoDesdeMcp() — solo esos dos
- * campos, nunca novedad/dinero/departamento (eso sigue viniendo del Excel diario,
- * ver DropiImport). Pensado para correr seguido (cron_dropi_mcp_sync.php) y detectar
- * "llegó a oficina" / "sale hoy" sin esperar a la importación de la mañana.
+ * "Actualizar ahora" de Seguimiento (y cron_dropi_mcp_sync.php): trae de Dropi, por su
+ * conector MCP, las órdenes de los últimos 30 días y
+ *   - a las que YA están guardadas les pone al día estatus y guía (DropiOrden::
+ *     actualizarEstadoDesdeMcp — solo esos dos campos, nunca novedad/dinero/departamento);
+ *   - a las NUEVAS las crea con lo que el MCP trae (DropiImport::ordenDesdeMcp + procesar,
+ *     las mismas reglas del Excel: estado, avisos ya enviados, producto de la tienda…).
+ * Así no hace falta subir el Excel todos los días. El Excel sigue siendo la fuente completa:
+ * trae lo que el MCP no (texto de la novedad, último movimiento, costo/flete/comisión/
+ * ganancia, departamento) y al subirlo completa estas órdenes sin duplicarlas.
  *
- * Usa el conector MCP de la API de mensajes de Claude (beta mcp-client-2025-11-20):
- * https://platform.claude.com — Anthropic resuelve las llamadas a list_orders del
- * lado del servidor, nosotros solo leemos el texto final.
+ * Llama a Dropi directo (DropiMcpCliente), sin un modelo de lenguaje en medio: los nombres
+ * y teléfonos de los clientes llegan tal cual.
  */
 class DropiMcpSync
 {
-    private const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-    private const MODELO = 'claude-sonnet-5-5';
+    /** Los mismos ~30 días que se descargan del Excel: cualquier orden con entrega pendiente cabe. */
+    private const DIAS_VENTANA = 30;
 
-    /** Cuántos días hacia atrás se consultan. Las órdenes viejas ya están cerradas: el Excel diario las cubre. */
-    private const DIAS_VENTANA = 5;
+    private const POR_PAGINA = 100;
+    private const MAX_PAGINAS = 20;
 
     /**
-     * @return array{ok: bool, error?: string, total?: int, actualizadas?: int, iguales?: int, omitidas?: int}
+     * Tope de órdenes nuevas por corrida: cada una es una consulta get_order (~0,6 s) y el botón corre dentro
+     * de una petición web con su límite de tiempo. El resto entra en la siguiente corrida.
      */
-    public function ejecutar(): array
+    private const MAX_NUEVAS = 30;
+
+    /**
+     * @return array{ok: bool, error?: string, total?: int, nuevas?: int, actualizadas?: int, iguales?: int, omitidas?: int, pendientes?: int, sin_clasificar?: array<string,int>}
+     */
+    public function ejecutar(?DropiMcpCliente $cliente = null): array
     {
-        $claveClaude = (new AppSettings())->get('claude_api_key');
-        if (!$claveClaude) {
-            return ['ok' => false, 'error' => 'Falta configurar la API key de Claude (Marketing IA → conectar Claude).'];
+        set_time_limit(280);
+
+        if ($cliente === null) {
+            $tok = (new DropiMcpAuth())->tokenVigente();
+            if (!$tok['ok']) return ['ok' => false, 'error' => $tok['error']];
+            $cliente = new DropiMcpCliente($tok['token']);
         }
 
-        $auth = new DropiMcpAuth();
-        $tok = $auth->tokenVigente();
-        if (!$tok['ok']) {
-            return ['ok' => false, 'error' => $tok['error']];
-        }
-
-        $resp = $this->llamarClaude($claveClaude, $tok['token']);
-        if (!$resp['ok']) return $resp;
+        $lista = $this->traerOrdenes($cliente);
+        if (!$lista['ok']) return $lista;
+        $filas = $lista['ordenes'];
 
         $ordenModel = new DropiOrden();
+        $existentes = $ordenModel->idsExistentes(array_keys($filas));
+
         $conteo = ['actualizadas' => 0, 'iguales' => 0, 'omitidas' => 0];
-        foreach ($resp['ordenes'] as $o) {
-            $id = (string)preg_replace('/\D+/', '', (string)($o['order_id'] ?? ''));
-            if ($id === '') continue;
-
-            $resultado = $ordenModel->actualizarEstadoDesdeMcp($id, (string)($o['status'] ?? ''), (string)($o['tracking_code'] ?? ''));
-            $conteo[$resultado === 'actualizada' ? 'actualizadas' : ($resultado === 'igual' ? 'iguales' : 'omitidas')]++;
+        $nuevasFilas = [];
+        foreach ($filas as $id => $f) {
+            if (isset($existentes[$id])) {
+                $r = $ordenModel->actualizarEstadoDesdeMcp($id, (string)($f['status'] ?? ''), (string)($f['tracking_code'] ?? ''));
+                $conteo[$r === 'actualizada' ? 'actualizadas' : ($r === 'igual' ? 'iguales' : 'omitidas')]++;
+            } else {
+                $nuevasFilas[$id] = $f;
+            }
         }
 
-        $total = count($resp['ordenes']);
+        $nuevas = $this->crearNuevas($cliente, $nuevasFilas, $conteo['omitidas']);
+        if (!$nuevas['ok']) return $nuevas;
+
+        $total = count($filas);
         if ($total > 0) {
-            $ordenModel->registrarImportacion('cron-mcp', 'via-mcp', $total, 0, $conteo['actualizadas'], $conteo['iguales']);
+            $ordenModel->registrarImportacion('cron-mcp', 'via-mcp', $total, $nuevas['creadas'], $conteo['actualizadas'], $conteo['iguales']);
         }
 
-        return ['ok' => true, 'total' => $total] + $conteo;
+        // Sin vista previa (como la del Excel), los estatus que Seguimiento no conoce se avisan aquí: esas órdenes
+        // quedan "Sin clasificar" y fuera de las listas de avisos hasta que se decida qué estado les toca.
+        $sinClasificar = [];
+        foreach ($filas as $f) {
+            $st = mb_strtoupper(trim((string)($f['status'] ?? '')), 'UTF-8');
+            if (DropiImport::estatusSinClasificar($st)) $sinClasificar[$st] = ($sinClasificar[$st] ?? 0) + 1;
+        }
+
+        return ['ok' => true, 'total' => $total, 'nuevas' => $nuevas['creadas'], 'pendientes' => $nuevas['pendientes'], 'sin_clasificar' => $sinClasificar] + $conteo;
     }
 
     /**
-     * @return array{ok: bool, error?: string, ordenes?: array<int, array{order_id:string,status:string,tracking_code:string}>}
+     * Todas las órdenes de la ventana, páginas de 100 hasta agotarlas.
+     *
+     * @return array{ok: bool, error?: string, ordenes?: array<string, array<string,string>>}  indexadas por ID de Dropi
      */
-    private function llamarClaude(string $claveClaude, string $tokenMcp): array
+    private function traerOrdenes(DropiMcpCliente $cliente): array
     {
         $desde = date('Y-m-d', strtotime('-' . self::DIAS_VENTANA . ' days'));
-        $hasta = date('Y-m-d');
-
-        $instrucciones = <<<TXT
-        Usá la herramienta list_orders del MCP de Dropi para traer TODAS las órdenes
-        con fecha entre {$desde} y {$hasta} (parámetros from="{$desde}", until="{$hasta}").
-        Pedí páginas de 100 (result_number=100) y seguí pidiendo la siguiente página
-        (incrementando start) mientras la página devuelta venga llena, hasta agotarlas.
-
-        Cuando tengas todas, respondé ÚNICA Y EXCLUSIVAMENTE con un JSON array (sin
-        texto antes ni después, sin bloque de código) donde cada elemento sea
-        {"order_id": "...", "status": "...", "tracking_code": "..."} tomados tal cual
-        de cada orden (tracking_code "" si la orden no trae guía todavía). No agregues
-        ni inventes campos. No expliques nada, no hagas resumen: solo el JSON.
-        TXT;
-
-        $payload = json_encode([
-            'model'      => self::MODELO,
-            'max_tokens' => 20000,
-            'output_config' => ['effort' => 'low'],
-            'mcp_servers' => [[
-                'type'                => 'url',
-                'url'                 => DropiMcpAuth::SERVER_URL,
-                'name'                => 'dropi-mcp',
-                'authorization_token' => $tokenMcp,
-            ]],
-            'tools'    => [['type' => 'mcp_toolset', 'mcp_server_name' => 'dropi-mcp']],
-            'messages' => [['role' => 'user', 'content' => $instrucciones]],
-        ], JSON_UNESCAPED_UNICODE);
-
-        set_time_limit(280);
-
-        $ch = curl_init(self::ANTHROPIC_URL);
-        curl_setopt_array($ch, [
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: application/json',
-                'x-api-key: ' . $claveClaude,
-                'anthropic-version: 2023-06-01',
-                'anthropic-beta: mcp-client-2025-11-20',
-            ],
-            CURLOPT_CONNECTTIMEOUT => 15,
-            CURLOPT_TIMEOUT        => 260,
-        ]);
-
-        $raw = curl_exec($ch);
-        $http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err = curl_error($ch);
-        curl_close($ch);
-
-        if ($raw === false) {
-            return ['ok' => false, 'error' => 'No se pudo conectar con Claude: ' . $err];
-        }
-
-        $data = json_decode($raw, true);
-        if ($http !== 200 || !is_array($data)) {
-            error_log('[DropiMcpSync] HTTP ' . $http . ': ' . substr((string)$raw, 0, 800));
-            return ['ok' => false, 'error' => is_array($data) ? ($data['error']['message'] ?? ('HTTP ' . $http)) : ('Respuesta inesperada (HTTP ' . $http . ')')];
-        }
-
-        $texto = '';
-        foreach ($data['content'] ?? [] as $bloque) {
-            if (($bloque['type'] ?? '') === 'text') $texto .= (string)($bloque['text'] ?? '');
-        }
-
-        $inicio = strpos($texto, '[');
-        $fin = strrpos($texto, ']');
-        if ($inicio === false || $fin === false || $fin < $inicio) {
-            error_log('[DropiMcpSync] sin JSON en la respuesta: ' . substr($texto, 0, 500));
-            return ['ok' => false, 'error' => 'Claude no devolvió la lista en el formato esperado.'];
-        }
-
-        $lista = json_decode(substr($texto, $inicio, $fin - $inicio + 1), true);
-        if (!is_array($lista)) {
-            return ['ok' => false, 'error' => 'No se pudo leer el JSON devuelto por Claude.'];
-        }
+        $hasta = date('Y-m-d', strtotime('+1 day')); // mañana: no depender de la zona horaria del servidor
 
         $ordenes = [];
-        foreach ($lista as $o) {
-            if (is_array($o) && !empty($o['order_id'])) $ordenes[] = $o;
+        for ($pagina = 0; $pagina < self::MAX_PAGINAS; $pagina++) {
+            $r = $cliente->llamar('list_orders', [
+                'from' => $desde, 'until' => $hasta,
+                'result_number' => self::POR_PAGINA, 'start' => $pagina * self::POR_PAGINA,
+            ]);
+            if (!$r['ok']) return $r;
+
+            $items = (array)($r['datos']['items'] ?? []);
+            foreach ($items as $it) {
+                $id = (string)preg_replace('/\D+/', '', (string)($it['order_id'] ?? ''));
+                if ($id !== '') $ordenes[$id] = $it;
+            }
+            if (count($items) < self::POR_PAGINA) break;
         }
         return ['ok' => true, 'ordenes' => $ordenes];
+    }
+
+    /**
+     * Crea las órdenes que todavía no están guardadas: pide el detalle (productos) de cada una
+     * y las pasa por el mismo importador del Excel. Una que no trae teléfono válido (no hay a
+     * quién avisar) se cuenta como omitida; una cuyo detalle falló o pasa del tope queda
+     * pendiente para la siguiente corrida.
+     *
+     * @param  array<string, array<string,string>> $filas
+     * @return array{ok: bool, error?: string, creadas?: int, pendientes?: int}
+     */
+    private function crearNuevas(DropiMcpCliente $cliente, array $filas, int &$omitidas): array
+    {
+        if (!$filas) return ['ok' => true, 'creadas' => 0, 'pendientes' => 0];
+
+        // Las más recientes primero: si hay que dejar algunas para la siguiente corrida, que sean las más viejas.
+        uasort($filas, fn($a, $b) => strcmp((string)($b['created_at'] ?? ''), (string)($a['created_at'] ?? '')));
+
+        $import = new DropiImport();
+        $armadas = [];
+        $pendientes = 0;
+        foreach ($filas as $id => $f) {
+            if (!$import->telefonoValido((string)($f['customer_phone'] ?? ''))) { $omitidas++; continue; }
+            if (count($armadas) >= self::MAX_NUEVAS) { $pendientes++; continue; }
+
+            $d = $cliente->llamar('get_order', ['id' => (string)$id]);
+            if (!$d['ok']) {
+                // Si ni la primera responde, es la conexión y no esa orden: que se vea el error.
+                if (!$armadas && $pendientes === 0 && $this->esFalloDeConexion($d['error'] ?? '')) return $d;
+                $pendientes++;
+                continue;
+            }
+
+            $o = $import->ordenDesdeMcp($f, $d['datos']);
+            if ($o === null) { $omitidas++; continue; }
+            $armadas[] = $o;
+        }
+
+        $creadas = 0;
+        if ($armadas) {
+            $res = $import->procesar($armadas, true, 'via-mcp', 'cron-mcp', false);
+            $creadas = (int)$res['conteo']['nuevo'];
+        }
+        return ['ok' => true, 'creadas' => $creadas, 'pendientes' => $pendientes];
+    }
+
+    private function esFalloDeConexion(string $error): bool
+    {
+        return strpos($error, 'No se pudo conectar') !== false || strpos($error, 'HTTP 401') !== false;
     }
 }
