@@ -738,6 +738,139 @@ body.form-en-vista .wa-float-btn {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   SELECTOR DE COLOR EN TIRA
+   Con 2 o más colores y todos con foto, el selector deja de ser una cuadrícula
+   de tarjetas (foto + nombre, ~215px en un celular de 390px) y pasa a ser UNA
+   fila de fotos pequeñas, con el nombre del color elegido en una línea debajo
+   (.color-row__elegido). Son los mismos <button class="color-pill">, así que el
+   valor, la cantidad, el precio, el pixel y el embudo no se enteran.
+   Con 5 o más colores la tira se desliza: se ven 4 y media (la mitad de la
+   siguiente invita a deslizar). La foto grande de arriba se achica a 200px: el
+   selector ya muestra cada color y ella solo confirma el elegido.
+   ══════════════════════════════════════════════════════════════ */
+/* Dos clases a propósito: la regla base .color-foto (max-width 280px) está más abajo en este archivo y
+   con una sola clase ganaría por orden. */
+.color-foto.color-foto--compacta {
+    max-width: 200px;
+    margin-bottom: 10px;
+}
+
+.color-row .color-pills-wrap--tira {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    position: relative;               /* centrarEnTira() mide offsetLeft contra esta caja */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    padding: 5px 4px 6px;             /* sitio para el aro de la elegida, que sobresale 3px */
+}
+
+.color-row .color-pills-wrap--tira::-webkit-scrollbar { display: none; }
+
+/* Centrada cuando cabe; si desborda, los márgenes automáticos se anulan y se desliza desde el inicio. */
+.color-row .color-pills-wrap--tira .color-pill:first-child { margin-left: auto; }
+.color-row .color-pills-wrap--tira .color-pill:last-child  { margin-right: auto; }
+
+.color-row .color-pills-wrap--tira .color-pill {
+    flex: 0 0 56px;
+    display: block;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    gap: 0;
+    border-width: 2px;
+    border-radius: 12px;
+    scroll-snap-align: center;
+}
+
+.color-row .color-pills-wrap--tira-larga .color-pill {
+    flex-basis: calc((100% - 36px) / 4.5);
+}
+
+@media (min-width: 560px) {
+    /* Pantalla ancha: caben todas, sin deslizar. */
+    .color-row .color-pills-wrap--tira-larga .color-pill { flex-basis: 56px; }
+}
+
+/* La foto, cuadrada y con el alto reservado por el padding (los WebViews viejos no conocen aspect-ratio). */
+.color-pills-wrap--tira .color-pill__thumb {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.color-pills-wrap--tira .color-pill__foto {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.color-pills-wrap--tira .color-pill__tono { display: none; }
+
+/* El nombre no se ve en la tira (lo dice la línea de abajo), pero lo siguen leyendo los lectores de pantalla. */
+.color-pills-wrap--tira .color-pill__nombre {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Elegida: aro dorado y una marca en la esquina (no se apoya solo en el color del aro). */
+.color-pills-wrap--tira .color-pill.is-selected {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent);
+}
+
+.color-pills-wrap--tira .color-pill.is-selected::after {
+    content: '\2713';
+    top: 3px;
+    right: 3px;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gold);
+    color: #1b1305;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.color-row__elegido {
+    margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 1.3;
+    text-align: center;
+    color: var(--cream-muted);
+}
+
+.color-row__elegido-lbl { margin-right: 4px; }
+
+.color-row__elegido-nombre {
+    font-weight: 600;
+    color: var(--cream-dim);
+}
+
+.color-row__elegido.is-elegido .color-row__elegido-nombre {
+    font-weight: 700;
+    color: var(--gold);
+}
+
+/* ══════════════════════════════════════════════════════════════
    CABECERA DE BLOQUE EN UNA SOLA LÍNEA
    El icono iba encima del título y cada bloque gastaba ~100px antes de su
    primer campo. Con el icono al lado, el bloque arranca ~45px antes y sigue

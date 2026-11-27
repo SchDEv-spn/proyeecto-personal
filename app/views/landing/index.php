@@ -871,20 +871,14 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     $thumbSlots = max($thumbSlots, min(3, count($cv['images']) - 1));
                 }
 
-                // Colores que solo tienen 1 foto: se listan como miniaturas fijas
-                // (funcionan como selector rápido de color, independiente del color activo)
-                $singleImgColors = [];
-                foreach ($colorVariants as $cIdx => $cv) {
-                    if (count($cv['images']) === 1) {
-                        $singleImgColors[] = [
-                            'idx'  => $cIdx,
-                            'img'  => $cv['images'][0],
-                            'name' => $cv['name'],
-                            'hex'  => $cv['hex'],
-                        ];
-                    }
-                }
+                // Selector de color: una miniatura por color (su primera foto) bajo la foto
+                // grande, y el nombre del color elegido sobre la foto. Reemplaza a las
+                // pastillas de texto, que se llevaban ~130px de pantalla en el celular (con
+                // nombres largos cada pastilla se parte en 2-3 líneas). Con un solo color
+                // no hay nada que elegir.
+                $selectorColor = count($colorVariants) >= 2;
             } else {
+                $selectorColor = false;
                 // Sin variantes: usa las fotos del editor (con fallback)
                 $gallery = !empty($galleryPaths) ? $galleryPaths : [
                     BASE_URL . '/public/img/producto/uso-1.png',
@@ -897,33 +891,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 $thumbSlots = count($thumbImgs);
             }
             ?>
-
-            <?php if (!empty($colorVariants)): ?>
-            <div class="gallery-color-pills" role="group" aria-label="Colores disponibles">
-                <span class="gallery-color-pills__label">Color:</span>
-                <?php /* Con exactamente 6 colores las pastillas van 3 + 3 (ver style.css,
-                         "SEIS COLORES"); con 1 a 5 conservan el reparto de siempre. */ ?>
-                <div class="gallery-color-pills__row<?= count($colorVariants) === 6 ? ' gallery-color-pills__row--trios' : '' ?>">
-                    <?php foreach ($colorVariants as $cIdx => $cv): ?>
-                    <button
-                        type="button"
-                        class="gallery-color-pill <?= $cIdx === 0 ? 'is-active' : '' ?>"
-                        data-color-idx="<?= $cIdx ?>"
-                        data-color-images="<?= htmlspecialchars(json_encode($cv['images'], JSON_UNESCAPED_UNICODE)) ?>"
-                        aria-pressed="<?= $cIdx === 0 ? 'true' : 'false' ?>"
-                        aria-label="<?= htmlspecialchars($cv['name']) ?>"
-                        title="<?= htmlspecialchars($cv['name']) ?>"
-                        style="--cv-color:<?= htmlspecialchars($cv['hex']) ?>">
-                        <!-- El punto muestra el color real de la variante. Antes
-                             era un radio button genérico: el comprador leía el
-                             nombre pero no veía el color, teniendo el dato a mano. -->
-                        <span class="gallery-color-pill__swatch" aria-hidden="true"></span>
-                        <span class="gallery-color-pill__name"><?= htmlspecialchars($cv['name']) ?></span>
-                    </button>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
 
             <div class="product-gallery" data-product-gallery>
                 <?php // Cada casilla lleva <img> y <video>; el JS (galleryPintar) muestra el que toque según la extensión. ?>
@@ -940,6 +907,15 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         muted loop playsinline
                         preload="metadata"
                         aria-label="Video principal del producto"></video>
+                    <?php if ($selectorColor): ?>
+                    <?php /* El nombre del color que se está viendo, sobre la esquina de la foto: no suma
+                             altura a la página y cambia al tocar una miniatura de color. */ ?>
+                    <figcaption class="gallery-color-caption" aria-live="polite" style="--cv-color:<?= htmlspecialchars($colorVariants[0]['hex']) ?>">
+                        <span class="gallery-color-caption__dot" aria-hidden="true"></span>
+                        <span class="gallery-color-caption__lbl">Color</span>
+                        <strong class="gallery-color-caption__name"><?= htmlspecialchars($colorVariants[0]['name']) ?></strong>
+                    </figcaption>
+                    <?php endif; ?>
                 </figure>
 
                 <?php if ($thumbSlots > 0): ?>
@@ -970,38 +946,39 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 <?php endif; ?>
             </div>
 
-            <?php if (!empty($singleImgColors)): ?>
-            <?php /* Con 5 o 6 colores la miniatura del color que ya se ve en grande se oculta
-                     (CSS, "CINCO O SEIS COLORES"): foto grande + las otras 4 o 5, sin repetir y
-                     siempre en una fila (con 5 de 64px la quinta caía sola a una segunda fila en
-                     pantallas angostas). Con 1 a 4 colores la fila queda como siempre. */ ?>
-            <div class="gallery-color-thumbs<?= in_array(count($colorVariants), [5, 6], true) ? ' gallery-color-thumbs--otros' : '' ?>" role="group" aria-label="Otros colores disponibles">
-                <?php foreach ($singleImgColors as $sc): ?>
+            <?php if ($selectorColor): ?>
+            <?php /* El selector de color: una miniatura por color (la primera foto de cada uno), la del
+                     color activo con aro. Va todo en UNA fila bajo la foto (encoge un poco si hace
+                     falta). Cada botón lleva las fotos de su color para pintarlas al tocarlo. */ ?>
+            <div class="gallery-color-thumbs" role="group" aria-label="Elige el color">
+                <?php foreach ($colorVariants as $cIdx => $cv): ?>
                 <button
                     type="button"
-                    class="gallery-color-thumb <?= $sc['idx'] === 0 ? 'is-active' : '' ?>"
-                    
-                    data-color-idx="<?= $sc['idx'] ?>"
-                    aria-label="Color <?= htmlspecialchars($sc['name']) ?>"
-                    title="<?= htmlspecialchars($sc['name']) ?>"
-                    style="--cv-color:<?= htmlspecialchars($sc['hex']) ?>">
-                    <?php if (es_video($sc['img'])): ?>
-                    <video src="<?= htmlspecialchars($sc['img']) ?>#t=0.1" muted playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+                    class="gallery-color-thumb<?= $cIdx === 0 ? ' is-active' : '' ?>"
+                    data-color-idx="<?= $cIdx ?>"
+                    data-color-images="<?= htmlspecialchars(json_encode($cv['images'], JSON_UNESCAPED_UNICODE)) ?>"
+                    aria-pressed="<?= $cIdx === 0 ? 'true' : 'false' ?>"
+                    aria-label="Color <?= htmlspecialchars($cv['name']) ?>"
+                    title="<?= htmlspecialchars($cv['name']) ?>"
+                    style="--cv-color:<?= htmlspecialchars($cv['hex']) ?>">
+                    <?php if (es_video($cv['images'][0])): ?>
+                    <video src="<?= htmlspecialchars($cv['images'][0]) ?>#t=0.1" muted playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
                     <?php else: ?>
-                    <img src="<?= htmlspecialchars($sc['img']) ?>" alt="Color <?= htmlspecialchars($sc['name']) ?>" loading="lazy" decoding="async">
+                    <img src="<?= htmlspecialchars($cv['images'][0]) ?>" alt="" loading="lazy" decoding="async">
                     <?php endif; ?>
                 </button>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
 
-            <?php if (!empty($colorVariants)): ?>
+            <?php if ($selectorColor): ?>
             <script>
             (function () {
-                var pills   = document.querySelectorAll('.gallery-color-pill');
                 var thumbs  = document.querySelectorAll('.gallery-color-thumb');
                 var gallery = document.querySelector('[data-product-gallery]');
-                if (!gallery || (!pills.length && !thumbs.length)) return;
+                var capNombre = document.querySelector('.gallery-color-caption__name');
+                var capEtiqueta = document.querySelector('.gallery-color-caption');
+                if (!gallery || !thumbs.length) return;
 
                 function applyImages(images) {
                     var mainBox   = gallery.querySelector('.product-gallery__main');
@@ -1028,17 +1005,20 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 }
 
                 function selectColor(idx) {
-                    var pill  = document.querySelector('.gallery-color-pill[data-color-idx="' + idx + '"]');
                     var thumb = document.querySelector('.gallery-color-thumb[data-color-idx="' + idx + '"]');
-                    if (!pill) return;
+                    if (!thumb) return;
 
-                    pills.forEach(function (p) { p.classList.remove('is-active'); p.setAttribute('aria-pressed', 'false'); });
-                    thumbs.forEach(function (t) { t.classList.remove('is-active'); });
-                    pill.classList.add('is-active');
-                    pill.setAttribute('aria-pressed', 'true');
-                    if (thumb) thumb.classList.add('is-active');
+                    thumbs.forEach(function (t) {
+                        var activa = (t === thumb);
+                        t.classList.toggle('is-active', activa);
+                        t.setAttribute('aria-pressed', activa ? 'true' : 'false');
+                    });
 
-                    var images = JSON.parse(pill.getAttribute('data-color-images') || '[]');
+                    /* El nombre del color sobre la foto y el punto con su tono real. */
+                    if (capNombre) capNombre.textContent = thumb.getAttribute('title') || '';
+                    if (capEtiqueta) capEtiqueta.style.setProperty('--cv-color', thumb.style.getPropertyValue('--cv-color') || '');
+
+                    var images = JSON.parse(thumb.getAttribute('data-color-images') || '[]');
                     applyImages(images);
                 }
 
@@ -1054,12 +1034,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     } catch (e) { /* el aviso es un extra: la galería sigue igual */ }
                 }
 
-                pills.forEach(function (pill) {
-                    pill.addEventListener('click', function () {
-                        selectColor(pill.getAttribute('data-color-idx'));
-                        avisarColor(pill);
-                    });
-                });
                 thumbs.forEach(function (thumb) {
                     thumb.addEventListener('click', function () {
                         selectColor(thumb.getAttribute('data-color-idx'));
@@ -1908,34 +1882,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <div class="form-step is-active" data-step="1">
 
                         <?php if ($hasColors): ?>
-                        <!-- Con colores: pills visuales -->
-                        <?php /* La foto del producto, grande, es el punto de partida de la
-                                 compra: al elegir un color pasa a ser la de ese color (y vuelve
-                                 a esta si el color no tiene foto). Solo en productos con
-                                 colores. Sin JS se queda la foto del producto, que ya sirve. */
-                        $fotoProducto = !empty($producto['imagen_principal'])
-                            ? $producto['imagen_principal']
-                            : ($heroMediaType === 'imagen' && !empty($heroMediaPath) ? $heroMediaPath : BASE_URL . '/public/img/producto/uso-1.png');
-                        ?>
-                        <figure class="color-foto" id="colorFoto">
-                            <img id="colorFotoImg" class="color-foto__img"
-                                 src="<?= htmlspecialchars($fotoProducto) ?>"
-                                 alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>"
-                                 width="280" height="280" loading="lazy" decoding="async">
-                        </figure>
-
-                        <?php /* Sin subtítulo: el título ya pregunta, y debajo venía
-                                 además "Elige el color:" — tres veces la misma
-                                 instrucción seguida. La pregunta vive en el
-                                 encabezado del bloque y nada más. */ ?>
-                        <div class="form-step__head">
-                            <div class="step-emoji" aria-hidden="true"><?= $micoPaint ?></div>
-                            <h3 class="form-step__title">¿Cuál color te gusta?</h3>
-                        </div>
-
-                        <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
-                        <input type="hidden" id="cantidad_total" name="cantidad_total" value="1">
-
+                        <!-- Con colores: selector visual de color (la foto grande, el título y los
+                             campos ocultos se dibujan más abajo, después de calcular qué colores
+                             tienen foto: de eso depende el tamaño de la foto) -->
                         <?php
                         /* Las pastillas de color son <button> que sin JavaScript no hacen
                            nada, y el <select> que de verdad viaja en el POST estaba
@@ -2006,7 +1955,44 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             if ($_f !== '') $coloresConFoto++;
                         }
                         $mezclaColores = $coloresConFoto > 0 && $coloresConFoto < count($colores);
+
+                        /* Selector en TIRA: con 2 o más colores y TODOS con foto, el selector es una fila
+                           de fotos pequeñas (deslizable si son 5 o más) y el nombre del color elegido va
+                           en UNA línea debajo, en lugar de las tarjetas de dos columnas con foto y nombre
+                           (~215px en un celular de 390px, más los 280px de la foto grande). Si algún
+                           color no tiene foto, se conservan las tarjetas de siempre: una tira con huecos
+                           de texto no se entendería. */
+                        $modoTira  = count($colores) >= 2 && $coloresConFoto === count($colores);
+                        $tiraLarga = $modoTira && count($colores) >= 5;
+
+                        /* La foto del producto, grande, es el punto de partida de la compra: al elegir
+                           un color pasa a ser la de ese color (y vuelve a esta si el color no tiene
+                           foto). Solo en productos con colores. Sin JS se queda la foto del producto,
+                           que ya sirve. En modo tira se dibuja más chica (200px): el selector ya
+                           muestra cada color y la foto grande solo confirma el elegido. */
+                        $fotoProducto = !empty($producto['imagen_principal'])
+                            ? $producto['imagen_principal']
+                            : ($heroMediaType === 'imagen' && !empty($heroMediaPath) ? $heroMediaPath : BASE_URL . '/public/img/producto/uso-1.png');
                         ?>
+                        <figure class="color-foto<?= $modoTira ? ' color-foto--compacta' : '' ?>" id="colorFoto">
+                            <img id="colorFotoImg" class="color-foto__img"
+                                 src="<?= htmlspecialchars($fotoProducto) ?>"
+                                 alt="<?= htmlspecialchars($producto['nombre'] ?? 'Producto') ?>"
+                                 width="280" height="280" loading="lazy" decoding="async">
+                        </figure>
+
+                        <?php /* Sin subtítulo: el título ya pregunta, y debajo venía
+                                 además "Elige el color:" — tres veces la misma
+                                 instrucción seguida. La pregunta vive en el
+                                 encabezado del bloque y nada más. */ ?>
+                        <div class="form-step__head">
+                            <div class="step-emoji" aria-hidden="true"><?= $micoPaint ?></div>
+                            <h3 class="form-step__title">¿Cuál color te gusta?</h3>
+                        </div>
+
+                        <input type="hidden" name="pricing_mode" id="pricingMode" value="individual">
+                        <input type="hidden" id="cantidad_total" name="cantidad_total" value="1">
+
                         <div id="colorRowsWrap">
                             <?php foreach ($oldColores as $_i => $_colorSel):
                                 $_colorSel = (string)$_colorSel;
@@ -2014,7 +2000,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                 if ($_cantSel < 1 || $_cantSel > 5) $_cantSel = 1;
                             ?>
                             <div class="color-row" data-row="<?= (int)$_i ?>">
-                                <div class="color-pills-wrap<?= $mezclaColores ? ' color-pills-wrap--mixto' : '' ?>" role="group" aria-label="Colores disponibles" style="display:none;">
+                                <div class="color-pills-wrap<?= $mezclaColores ? ' color-pills-wrap--mixto' : '' ?><?= $modoTira ? ' color-pills-wrap--tira' : '' ?><?= $tiraLarga ? ' color-pills-wrap--tira-larga' : '' ?>" role="group" aria-label="Colores disponibles" style="display:none;">
                                     <?php foreach ($colores as $c):
                                         $_foto  = $tarjetaColor[$c]['foto'] ?? '';
                                         $_tono  = $tarjetaColor[$c]['tono'] ?? '';
@@ -2038,6 +2024,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                     </button>
                                     <?php endforeach; ?>
                                 </div>
+
+                                <?php if ($modoTira): ?>
+                                <?php /* El nombre del color elegido, en una línea bajo la tira: las fotos pequeñas
+                                         no llevan texto, y esto es lo que le dice al comprador qué está pidiendo.
+                                         Lo escribe initColorRow()/elegirPill(); sin JS no se ve (los selects
+                                         nativos de abajo hacen de selector). */ ?>
+                                <p class="color-row__elegido<?= $_colorSel !== '' ? ' is-elegido' : '' ?>" style="display:none;" aria-live="polite"
+                                   data-vacio="Toca una foto para elegir">
+                                    <span class="color-row__elegido-lbl">Color:</span>
+                                    <strong class="color-row__elegido-nombre"><?= $_colorSel !== '' ? htmlspecialchars($_colorSel) : 'Toca una foto para elegir' ?></strong>
+                                </p>
+                                <?php endif; ?>
 
                                 <!-- Controles nativos: los unicos que funcionan sin JS.
                                      initColorRow() los esconde en cuanto monta las pastillas. -->
@@ -2713,6 +2711,23 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 if (nativo)    nativo.style.display = 'none';
                 if (pillsWrap) pillsWrap.style.display = '';
 
+                /* Modo tira: la línea con el nombre del color elegido (las fotos pequeñas no llevan
+                   texto). Con 5 o más colores la tira se desliza, y la foto elegida se centra sin
+                   mover la página (por eso no se usa scrollIntoView: llevaría al comprador hasta
+                   el formulario cuando eligió color desde la galería). */
+                var elegido = row.querySelector('.color-row__elegido');
+                if (elegido) elegido.style.display = '';
+                var escribirElegido = function (nombre) {
+                    if (!elegido) return;
+                    var n = elegido.querySelector('.color-row__elegido-nombre');
+                    if (n) n.textContent = nombre || elegido.getAttribute('data-vacio') || '';
+                    if (nombre) elegido.classList.add('is-elegido'); else elegido.classList.remove('is-elegido');
+                };
+                var centrarEnTira = function (pill) {
+                    if (!pillsWrap || !pill || pillsWrap.scrollWidth <= pillsWrap.clientWidth + 1) return;
+                    pillsWrap.scrollLeft = Math.max(0, pill.offsetLeft - (pillsWrap.clientWidth - pill.offsetWidth) / 2);
+                };
+
                 /* Elegir una pastilla vive en una función aparte para que el color
                    que el comprador ya tocó en la galería pueda dejarla marcada sin
                    simular un clic: un clic de mentira dispararía AddToCart del
@@ -2726,6 +2741,8 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     pill.classList.add('is-selected');
                     pill.setAttribute('aria-pressed', 'true');
                     if (cSel) cSel.value = pill.dataset.color;
+                    escribirElegido(pill.dataset.color);
+                    centrarEnTira(pill);
                     if (qtyWrap) qtyWrap.style.display = '';
                     var addBtn = document.getElementById('addColorRowBtn');
                     if (addBtn) addBtn.style.display = '';
@@ -2749,6 +2766,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     var addBtnIni = document.getElementById('addColorRowBtn');
                     if (addBtnIni) addBtnIni.style.display = '';
                 }
+                /* La línea del nombre parte de lo que la fila ya trae (vacía en una fila nueva). */
+                escribirElegido(cSel && cSel.value ? cSel.value : '');
+                centrarEnTira(row.querySelector('.color-pill.is-selected'));
 
                 var btnMinus = row.querySelector('.qty-btn[data-action="minus"]');
                 var btnPlus  = row.querySelector('.qty-btn[data-action="plus"]');
