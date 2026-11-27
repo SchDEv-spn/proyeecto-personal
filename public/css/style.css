@@ -4600,12 +4600,18 @@ img[loading="lazy"].loaded {
     font-weight: 800 !important;
 }
 
-/* ── HERO IMAGE BADGE — reposicionado ─────────────────────── */
+/* ── HERO IMAGE BADGE — centrada en el borde inferior del video ──
+   Iba pegada a la esquina derecha (right: 12px). Con el video a ancho completo
+   y el botón de sonido arriba a la derecha, las dos piezas quedaban del mismo
+   lado y la de abajo descuadrada respecto al video: centrada es el único punto
+   que no depende del ancho. Va a 12px del borde (era 16): los rótulos quemados
+   en los videos verticales suelen ir centrados en el tercio inferior, y cada
+   píxel hacia abajo es un píxel menos de choque con ellos. */
 .hero-image-badge {
-    bottom: 16px !important;
-    left: auto !important;
-    right: 12px !important;
-    transform: none !important;
+    bottom: 12px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
     /* Misma superficie que .hero-trust-badge: va sobre la foto, no sobre
        el fondo del tema. Ver el comentario allí. */
     background: var(--pill-photo-bg, rgba(10,10,10,0.82)) !important;
