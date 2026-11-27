@@ -7642,26 +7642,8 @@ section.container,
     font-size: var(--fs-card-title);
 }
 
-.csm-wa {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: #25d366;
-    color: #fff;
-}
-
-.csm-wa svg {
-    width: 24px;
-    height: 24px;
-    fill: currentColor;
-}
-
-/* El botón mide lo que mide su texto (no crece): el precio y el WhatsApp tienen que
-   caber siempre a su lado. A 14px una frase de 21 letras ocupa ~170px con su relleno. */
+/* El botón mide lo que mide su texto (no crece): foto y precio tienen que caber
+   siempre a su lado. A 14px una frase de 21 letras ocupa ~170px con su relleno. */
 .csm-cta {
     flex: 0 1 auto;
     max-width: none;
@@ -7677,19 +7659,47 @@ section.container,
     flex: 1 1 auto;
 }
 
-/* En pantallas angostas (360px) la foto del producto cede su sitio al precio. */
-@media (max-width: 380px) {
-    .csm-thumb { display: none; }
+/* ── WhatsApp flotante: pestaña en el lateral derecho ─────────────
+   Dentro de la barra de compra apretaba el precio y el botón; flotando como un
+   círculo suelto tapaba texto y carruseles. Ahora es media píldora pegada al borde
+   derecho: cubre menos contenido, no se mete en la columna de lectura y queda al
+   alcance del pulgar. Va justo sobre la barra de compra y baja a la esquina cuando
+   ésta se esconde (el formulario la aparta del todo: ver order-modal.css). */
+.wa-float-btn {
+    right: 0;
+    bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+    width: 46px;
+    height: 46px;
+    border-radius: 23px 0 0 23px;
+    box-shadow: -2px 4px 16px rgba(0, 0, 0, 0.38);
+    transition: bottom 0.35s ease, opacity 0.3s ease, transform 0.3s ease, background 0.2s ease;
+}
+
+.wa-float-btn svg {
+    width: 26px;
+    height: 26px;
+}
+
+/* La pestaña no crece al pasar el dedo/ratón: saldría del borde. */
+.wa-float-btn:hover {
+    transform: none;
+    box-shadow: -2px 4px 20px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 1023px) {
+    body.sticky-cta-oculto .wa-float-btn,
+    .wa-float-btn.wa-float-btn--sin-barra {
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    }
 }
 
 @media (min-width: 1024px) {
-    .csm-wa { display: none; }
-}
-
-/* El botón flotante de WhatsApp: solo en pantallas grandes cuando existe la
-   barra de compra (en celular vive dentro de ella). Sin barra, flota como siempre. */
-@media (max-width: 1023px) {
-    .wa-float-btn--escritorio { display: none; }
+    .wa-float-btn {
+        bottom: 28px;
+        width: 52px;
+        height: 52px;
+        border-radius: 26px 0 0 26px;
+    }
 }
 
 /* ── Pasos "Así de simple": columna en celular ───────────────────
@@ -7874,4 +7884,235 @@ section.container,
 .section-cta p,
 .porque-card__body p {
     line-height: var(--lh-body);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   RITMO Y ALINEACIÓN — una sola medida de aire y una sola regla
+   ══════════════════════════════════════════════════════════════
+   ESPACIO. Cinco medidas, cada una con un oficio (antes había diez
+   distintas: entre títulos y contenido 10, 16, 24 y 32; entre tarjetas
+   10, 12, 14 y 16; y el aire entre secciones iba de 68 a 653px porque una
+   caja sin cerrar metía la página entera dentro de la sección del precio):
+
+       8   dentro de una pieza: filas compactas, antetítulo → título
+       16  entre tarjetas hermanas, y el margen lateral de la página
+       24  cabecera de sección → su contenido
+       32  contenido → bloque del botón de sección
+       48  arriba y abajo de cada sección (96 entre el contenido de dos)
+
+   ALINEACIÓN. Una regla, dos mitades:
+
+       CENTRADO   lo que se MIRA de un vistazo: la cabecera de cada sección
+                  (antetítulo, título, frase de apoyo), el héroe, el precio y
+                  la oferta, las cifras, el sello de garantía, el regalo y el
+                  bloque "frase + botón".
+       IZQUIERDA  lo que se LEE: todo texto dentro de una tarjeta o lista
+                  (beneficios, características, pasos, comparación, para
+                  quién, testimonios, preguntas) y todo el formulario salvo
+                  su cabecera. Un párrafo de más de tres líneas nunca va
+                  centrado: la segunda línea de uno centrado no tiene dónde
+                  empezar y el ojo la pierde.
+   ══════════════════════════════════════════════════════════════ */
+:root {
+    --gutter: 16px;
+    --gap-in: 8px;
+    --gap-cards: 16px;
+    --gap-head: 24px;
+    --gap-cta: 32px;
+    --card-gap: var(--gap-cards);
+}
+
+/* ── Márgenes laterales: todo a 16px del borde ────────────────── */
+.price-box-section,
+.regalo-section {
+    padding-inline: var(--gutter);
+}
+
+.offer-anchor {
+    width: calc(100% - 2 * var(--gutter));
+    max-width: 680px;
+}
+
+/* El panel gris de "beneficios" metía una tarjeta dentro de otra y dejaba
+   las fotos a 26px del borde mientras todo lo demás va a 16. Sin panel, las
+   fotos se alinean con el resto y ganan ancho (173px cada una). */
+.benefit-cards-outer {
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+/* ── Aire entre secciones: 48 arriba y 48 abajo, sin excepciones ─ */
+header.container,
+.hero {
+    padding-bottom: var(--section-y) !important;
+}
+
+.garantia-banner {
+    padding-block: var(--section-y);
+}
+
+/* La oferta y el formulario también son bloques de la misma serie: 96 entre
+   el contenido de uno y el del siguiente. El formulario pone su aire como
+   margen (no como relleno) para que el salto del botón "Pedir" siga cayendo
+   en su borde, con el título a la vista. */
+.offer-anchor {
+    margin-block: var(--section-y) 0;
+}
+
+#form-pedido {
+    margin-top: calc(2 * var(--section-y) - 8px);
+}
+
+/* ── Cabecera de sección → contenido: 8 / 8 / 24 ──────────────── */
+.section-eyebrow {
+    margin-bottom: var(--gap-in) !important;
+}
+
+.section-title,
+.benefit-cards-outer .section-title {
+    margin-top: 0;
+    margin-bottom: var(--gap-head) !important;
+}
+
+/* Con frase de apoyo debajo, el título se le pega y es la frase la que
+   separa de lo que sigue. */
+.section-title:has(+ .subtitle) {
+    margin-bottom: var(--gap-in) !important;
+}
+
+.section-title + .subtitle,
+.subtitle {
+    margin-top: 0 !important;
+    margin-bottom: var(--gap-head) !important;
+}
+
+/* ── Bloque del botón de sección: 32 + línea + 32 + frase + 16 + botón ── */
+.section-cta {
+    margin-top: var(--gap-cta) !important;
+    padding-top: var(--gap-cta) !important;
+}
+
+/* ── Entre tarjetas hermanas: 16. Filas compactas: 8 ─────────── */
+.benefit-cards-list,
+.authority-grid,
+.caract-track,
+.steps-grid,
+.para-quien-grid,
+.radio-group--cards,
+.radio-group--cards-lg {
+    gap: var(--gap-cards);
+}
+
+.accordion,
+.porque-benefits-grid,
+.hero-trust-row {
+    gap: var(--gap-in);
+}
+
+/* ── Relleno de tarjeta: 20 para las de lectura, 12/16 para las
+   fichas de una o dos líneas, 24 arriba y abajo para las cifras ─── */
+.step-card {
+    padding: var(--card-pad) !important;
+    column-gap: 12px;
+}
+
+.garantia-card {
+    gap: 12px;
+}
+
+.authority-stat {
+    gap: var(--gap-in);
+}
+
+/* Aire escondido dentro de las secciones: se sumaba al de la sección y dejaba
+   más hueco (y más desigual) que el resto. La tabla de comparación traía 32px
+   arriba y 28 abajo (124px hasta la siguiente sección en vez de 96); el bloque de
+   "¿Por qué confiar?" llevaba otros 40px de relleno propio arriba y abajo (88 +
+   88 en vez de 48 + 48); y la lista de "Es para ti" cerraba con 24px de más
+   dentro de su tarjeta. */
+.comparison-table {
+    margin: 0;
+}
+
+.authority-section > .container {
+    padding-block: 0;
+}
+
+.para-quien-list {
+    margin-bottom: 0;
+}
+
+.hero-trust-item,
+.porque-benefit-card {
+    padding: 12px 16px;
+}
+
+/* 12 a los lados (no 16): con el hueco de 16 entre fichas, "pedidos entregados"
+   dejaba de caber en una línea. */
+.authority-stat {
+    padding: 24px 12px !important;
+}
+
+.porque-card__body {
+    padding: var(--card-pad);
+}
+
+/* Con 20px de relleno el total cabe en una línea y la etiqueta se pegaba a la
+   cifra ("…llegue$89.000"): el hueco mínimo entre las dos lo pone el gap. */
+.order-summary__row--total {
+    gap: 12px;
+}
+
+.garantia-inner {
+    padding: 24px 20px !important;
+}
+
+.order-summary {
+    padding: var(--card-pad);
+}
+
+/* ── Alineación: lo que se lee, a la izquierda ─────────────────── */
+.benefit-card-h__text {
+    text-align: left;
+    padding: 14px 14px 16px;
+}
+
+/* Las tarjetas de entrega se diseñaron con el texto a la izquierda
+   (align-items: flex-start), pero la regla de las tarjetas de color, con más
+   peso, las dejaba centradas. */
+.radio-group--cards-lg .radio-card--lg {
+    align-items: flex-start;
+    text-align: left;
+}
+
+/* ── Alineación: lo que se mira, centrado y equilibrado ──────────
+   text-wrap: balance reparte las líneas de un titular para que no quede una
+   palabra sola en la última; pretty hace lo mismo con los párrafos. Si el
+   navegador no lo entiende, el texto sigue igual que antes. */
+.section-title,
+.section-eyebrow,
+.subtitle,
+.section-cta p,
+.garantia-inner h2,
+.garantia-desc,
+.regalo-label,
+.offer-anchor__product,
+.hero h1,
+.porque-card__title {
+    text-wrap: balance;
+}
+
+.benefit-card-h__text,
+.caract-text,
+.porque-card__tagline,
+.testimonios-ticker__text,
+.wa-ticker__text,
+.accordion-body,
+.step-card p,
+.para-quien-card li,
+.comparison-col li {
+    text-wrap: pretty;
 }

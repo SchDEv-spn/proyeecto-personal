@@ -834,7 +834,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <span id="heroCountdown" class="countdown-digits" data-minutes="<?= $countdownMinutes ?>">--:--</span>
                 </div>
             </div>
-
+        <?php /* Faltaba este </section>: la caja de precio se quedaba abierta y las 13 secciones de abajo
+                 quedaban DENTRO de ella (11.792px de alto, y toda la página heredaba su animación de
+                 entrada). Cada sección es ahora una caja propia y se espacia igual. */ ?>
+        </section>
         <?php endif; $sections['price_box'] = ob_get_clean(); ?>
 
         <?php ob_start(); if ($showBenefits): ?>
@@ -2331,7 +2334,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                             <p class="field-hint" id="nombreHint">Es para la guía del envío</p>
                         </div>
                         <div class="form-group">
-                            <label for="telefono" class="form-label-lg"><?= $micoPhone ?> Tu número de WhatsApp</label>
+                            <label for="telefono" class="form-label-lg">Tu número de WhatsApp</label>
                             <?php /* Sin maxlength: con él, un "+57 300 123 4567" pegado o
                                      autocompletado se cortaba a 10 caracteres ANTES de que el
                                      JS pudiera limpiarlo y quedaba inválido. Ahora se pega
@@ -3013,17 +3016,6 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
             </div>
         </div>
-        <?php if ($showWhatsappBtn): ?>
-        <?php /* En celular el WhatsApp vive dentro de la barra, junto al botón de compra, y no flota encima del
-                 contenido (tapaba texto, tarjetas y carruseles). El flotante queda para pantallas grandes. */ ?>
-        <a href="https://wa.me/<?= urlencode($waPhone) ?>?text=Hola%2C%20me%20interesa%20el%20producto%20y%20tengo%20una%20consulta."
-           class="csm-wa" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.557 4.116 1.526 5.845L.057 23.998l6.304-1.658A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.793 9.793 0 01-4.997-1.367l-.356-.212-3.745.985.993-3.644-.232-.373A9.79 9.79 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
-                </svg>
-        </a>
-        <?php endif; ?>
         <a href="#form-pedido" class="btn-primary csm-cta">
             <?= htmlspecialchars($ctaStickyMobileText) ?>
         </a>
@@ -3091,11 +3083,12 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <script src="<?= asset_url('public/js/order-submit.js') ?>" defer></script>
     <script src="<?= asset_url('public/js/funcionesLandin.js') ?>" defer></script>
 
-    <!-- Botón WhatsApp flotante -->
+    <!-- Botón WhatsApp flotante: pestaña pegada al borde derecho, sobre la barra de compra
+         (si no hay barra, baja a la esquina: wa-float-btn--sin-barra) -->
     <?php if ($showWhatsappBtn): ?>
     <aside aria-label="Contacto directo">
     <a href="https://wa.me/<?= urlencode($waPhone) ?>?text=Hola%2C%20me%20interesa%20el%20producto%20y%20tengo%20una%20consulta."
-       class="wa-float-btn<?= $showCtaSticky ? ' wa-float-btn--escritorio' : '' ?>" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp">
+       class="wa-float-btn<?= $showCtaSticky ? '' : ' wa-float-btn--sin-barra' ?>" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
             <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.557 4.116 1.526 5.845L.057 23.998l6.304-1.658A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.793 9.793 0 01-4.997-1.367l-.356-.212-3.745.985.993-3.644-.232-.373A9.79 9.79 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>

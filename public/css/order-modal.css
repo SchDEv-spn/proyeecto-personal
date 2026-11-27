@@ -1025,11 +1025,18 @@ body.form-en-vista .wa-float-btn {
     line-height: var(--lh-title);
 }
 
-/* Los tres pasos se titulan igual: centrados con su icono. El tercero ("¿A nombre
-   de quién va el pedido?") se partía en dos líneas y la segunda salía pegada a
-   la izquierda. */
+/* Regla de alineación (ver "RITMO Y ALINEACIÓN" en style.css): la cabecera del
+   formulario va centrada, como la de toda sección, pero el formulario en sí se
+   LEE y se rellena de izquierda a derecha. Los títulos de los tres pasos van con
+   su icono a la izquierda, sobre las etiquetas y campos que presentan: antes
+   iban centrados sobre etiquetas a la izquierda, y el tercero ("¿A nombre de
+   quién va el pedido?") se partía en dos con la segunda línea pegada al borde. */
+.pedido-section .form-step__head {
+    justify-content: flex-start;
+}
+
 .pedido-section .form-step__head .form-step__title {
-    text-align: center;
+    text-align: left;
 }
 
 .pedido-section .order-modal-product-bar__name {
