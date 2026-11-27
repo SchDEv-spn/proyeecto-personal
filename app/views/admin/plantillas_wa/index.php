@@ -181,6 +181,20 @@ $usuarioEmail  = $_SESSION['usuario_email']  ?? '';
                     </details>
                     <?php endif; ?>
 
+                    <?php /* Novedades que el MCP vio pero cuyo motivo no trae (solo el Excel lo trae): se avisa para no dejarlas pasar. */
+                    $novSinMotivo = (int)($c['novedad_sin_motivo'] ?? 0); ?>
+                    <div id="segNovSinMotivo" <?= $novSinMotivo > 0 ? '' : 'hidden' ?>>
+                    <div class="panel" style="padding:.7rem 1rem;margin-bottom:var(--sp-4);display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;">
+                        <i class="fas fa-triangle-exclamation" style="color:var(--gold)" aria-hidden="true"></i>
+                        <div style="flex:1;min-width:240px;font-size:12.5px;color:var(--tx-muted);">
+                            <strong id="segNovSinMotivoTxt" style="color:var(--tx)"><?= $novSinMotivo === 1 ? 'Tienes 1 novedad sin motivo.' : 'Tienes ' . $novSinMotivo . ' novedades sin motivo.' ?></strong>
+                            Al escribirles eliges qué pasó (no encontraron la dirección, se rehusó a recibir…) y sale el mensaje que corresponde; o sube el Excel de hoy y el motivo se completa solo.
+                        </div>
+                        <button type="button" class="btn-primary btn-primary--sm" id="segNovSinMotivoVer"><i class="fas fa-triangle-exclamation"></i> Ver novedades</button>
+                        <a href="<?= BASE_URL ?>/AdminPlantillasWa/importarDropi" class="btn-ghost" style="font-weight:700;">Importar Excel →</a>
+                    </div>
+                    </div>
+
                     <div class="stats-grid stats-grid--compacta stats-grid--seis" id="segTarjetas">
                         <?php foreach ($tarjetas as [$vistaT, $titulo, $icono, $glow, $nota]): ?>
                             <div class="stat-card <?= $glow ?>" role="button" tabindex="0" data-vista="<?= $vistaT ?>">
@@ -339,6 +353,13 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
             if (c[el.dataset.c] === undefined) return;
             el.textContent = el.dataset.fmt === 'pesos' ? '$' + Number(c[el.dataset.c]).toLocaleString('es-CO') : c[el.dataset.c];
         });
+        // Aviso de "novedades sin motivo": se oculta solo cuando ya no queda ninguna.
+        const avisoNov = document.getElementById('segNovSinMotivo');
+        if (avisoNov && c.novedad_sin_motivo !== undefined) {
+            const n = Number(c.novedad_sin_motivo) || 0;
+            avisoNov.hidden = n === 0;
+            document.getElementById('segNovSinMotivoTxt').textContent = n === 1 ? 'Tienes 1 novedad sin motivo.' : 'Tienes ' + n + ' novedades sin motivo.';
+        }
     };
 
     // La cola de avisos ("Por avisar hoy" y "Faltan por avisar") sale agrupada por día: desde cuándo toca avisar a cada uno
@@ -543,6 +564,13 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
         aplicarFecha(d, h, (d || '…') + ' → ' + (h || '…'), '');
     });
 
+    // "Ver novedades" del aviso de arriba: lo mismo que tocar la tarjeta "Con novedad".
+    const btnVerNov = document.getElementById('segNovSinMotivoVer');
+    if (btnVerNov) btnVerNov.addEventListener('click', () => {
+        const tarjeta = document.querySelector('#segTarjetas [data-vista="novedad"]');
+        if (tarjeta) tarjeta.click();
+    });
+
     // ── Limpiar filtros: vuelve a "todas las órdenes", sin estado, transportadora, búsqueda ni fecha ──
     btnLimpiar.addEventListener('click', () => {
         vista = 'todas'; estatus = ''; transp = ''; buscar = ''; pendientes = false;
@@ -556,11 +584,12 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     });
 
     // ── Acciones de cada fila ──
-    const registrar = (d, estado, guia, soloMarcar, seguir) => {
+    const registrar = (d, estado, guia, soloMarcar, seguir, novedadTipo) => {
         const fd = new FormData();
         fd.append('orden_id', d.ordenId);
         fd.append('estado', estado);
         fd.append('guia', guia || '');
+        if (novedadTipo) fd.append('novedad_tipo', novedadTipo);   // el motivo que se eligió al escribir por la novedad
         if (soloMarcar) fd.append('solo_marcar', '1');
         fd.append('csrf_token', window.__CSRF__ || '');
         return fetch(BASE + '/AdminPlantillasWa/registrarAvisoDropi', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'fetch' } })
@@ -578,7 +607,7 @@ window.__PLANTILLAS__ = <?= json_encode($plantillas, JSON_UNESCAPED_UNICODE | JS
     const abrirAviso = (d) => {
         // Sin "id": el compositor lo usa para pedidos de la landing y aquí no aplica.
         window.WaPicker.open({ ...d }, {
-            onSend: (mensaje, estado, guia) => { registrar(d, estado, guia, false, enCola() && chkSiguiente.checked); },
+            onSend: (mensaje, estado, guia, novedadTipo) => { registrar(d, estado, guia, false, enCola() && chkSiguiente.checked, novedadTipo); },
         });
     };
     function siguienteDeLaCola() {

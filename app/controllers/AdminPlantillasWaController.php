@@ -125,6 +125,7 @@ class AdminPlantillasWaController extends Controller
         $estado = trim((string)($_POST['estado'] ?? ''));
         $guia   = trim((string)($_POST['guia'] ?? ''));
         $solo   = !empty($_POST['solo_marcar']);
+        $tipoNovedad = trim((string)($_POST['novedad_tipo'] ?? ''));
 
         $plantillas = ['nuevo', 'contactado', 'confirmado', 'enviado', 'en_reparto', 'en_oficina', 'recordatorio_oficina', 'ultimo_aviso_oficina', 'novedad', 'entregado', 'cancelado'];
         if (!in_array($estado, $plantillas, true)) {
@@ -134,7 +135,7 @@ class AdminPlantillasWaController extends Controller
 
         $ordenes = new DropiOrden();
         $orden   = $ordenes->porId($id);
-        if (!$orden || !$ordenes->registrarAviso($id, $estado, $guia)) {
+        if (!$orden || !$ordenes->registrarAviso($id, $estado, $guia, $tipoNovedad)) {
             echo json_encode(['ok' => false, 'error' => 'No encontré la orden']);
             exit;
         }
@@ -361,6 +362,11 @@ class AdminPlantillasWaController extends Controller
             'novedadMotivo'   => $novedadTextos['motivo'],
             'novedadPeticion' => $novedadTextos['peticion'],
         ];
+        // Con novedad, el mensaje deja elegir el motivo (las órdenes del MCP no lo traen): la tarjeta lleva las opciones ya armadas.
+        if ($o['novedad'] !== '') {
+            $dato['novedadTipo']     = $o['novedad_tipo'] !== '' ? $o['novedad_tipo'] : 'otra';
+            $dato['novedadOpciones'] = DropiOrden::novedadOpciones((string)$o['municipio'], $precioTxt);
+        }
 
         return [$fila, $dato];
     }

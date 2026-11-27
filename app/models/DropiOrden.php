@@ -818,12 +818,38 @@ class DropiOrden extends Model
                 return ['motivo' => "Tu pedido quedó para recoger en la bodega u oficina de la transportadora{$aqui}.",
                         'peticion' => "Pasa a recogerlo con tu cédula o el número de guía.{$cobro} ¿Cuándo vas a poder ir?"];
             case 'rechazo':
-                return ['motivo' => 'Nos reportaron que el pedido no fue recibido.',
-                        'peticion' => '¿Nos cuentas qué pasó? Si todavía lo quieres, lo volvemos a enviar.'];
+                return ['motivo' => 'Nos reportaron que no recibiste tu pedido cuando llegó la entrega.',
+                        'peticion' => "¿Nos cuentas cuál fue el motivo por el que no lo recibiste? Queremos ayudarte. Si todavía lo quieres, te lo volvemos a enviar: dinos qué día te queda bien para entregártelo.{$cobro}"];
             default:
                 return ['motivo' => 'La transportadora nos reportó una novedad con la entrega.',
                         'peticion' => '¿Nos ayudas respondiendo este mensaje? Cuéntanos cuándo estás disponible y cómo te pueden ubicar mejor.'];
         }
+    }
+
+    /**
+     * Los motivos entre los que se elige al escribir por una novedad cuando no se sabe cuál es (las
+     * órdenes que entran por el MCP no traen el motivo), en el orden en que se usan: las dos más
+     * comunes primero. Cada uno lleva su etiqueta y los dos textos del mensaje ya armados para la orden.
+     *
+     * @return array<int, array{tipo: string, etiqueta: string, motivo: string, peticion: string}>
+     */
+    public static function novedadOpciones(string $municipio = '', string $precio = ''): array
+    {
+        $etiquetas = [
+            'direccion' => 'No encontraron la dirección',
+            'rechazo'   => 'Se rehusó a recibir',
+            'contacto'  => 'No contestó',
+            'coordinar' => 'Coordinar entrega',
+            'pago'      => 'Sin el efectivo',
+            'recoger'   => 'Recoger en bodega',
+            'otra'      => 'No sé el motivo',
+        ];
+        $out = [];
+        foreach ($etiquetas as $tipo => $etiqueta) {
+            $t = self::novedadTextos($tipo, $municipio, $precio);
+            $out[] = ['tipo' => $tipo, 'etiqueta' => $etiqueta, 'motivo' => $t['motivo'], 'peticion' => $t['peticion']];
+        }
+        return $out;
     }
 
     /* ───────────────────────────────  Consultas  ─────────────────────────────── */
@@ -841,7 +867,7 @@ class DropiOrden extends Model
      * "por_avisar" cuenta todo lo que falta avisar (ver avisoDeCola) y "avisos" lo separa por tipo de aviso
      * (enviado = guía por notificar, en_reparto, en_oficina, novedad, recordatorio_oficina, ultimo_aviso_oficina).
      *
-     * @return array{por_avisar: int, avisos: array<string,int>, esperando: int, piden_recordatorio: int, novedad: int,
+     * @return array{por_avisar: int, avisos: array<string,int>, esperando: int, piden_recordatorio: int, novedad: int, novedad_sin_motivo: int,
      *               en_camino: int, entregados: int, devoluciones: int, costo_devoluciones: float,
      *               todas: int, primera_orden: ?string}
      */
@@ -850,10 +876,12 @@ class DropiOrden extends Model
         $corte = $this->corteVigente();
         $vig   = $corte !== null ? 'visto_at >= ' . $this->db->quote($corte) : '1 = 1';
 
+        $generica = $this->db->quote(self::NOVEDAD_SIN_DETALLE);
         $r = $this->db->query("
             SELECT COUNT(*) AS todas,
                    COALESCE(SUM(estado = 'en_oficina' AND aviso_oficina_at IS NOT NULL AND {$vig}), 0)  AS esperando,
                    COALESCE(SUM(novedad <> '' AND estado NOT IN ('entregado', 'cancelado', 'devolucion') AND {$vig}), 0) AS novedad,
+                   COALESCE(SUM(novedad = {$generica} AND aviso_novedad_at IS NULL AND estado NOT IN ('entregado', 'cancelado', 'devolucion') AND {$vig}), 0) AS novedad_sin_motivo,
                    COALESCE(SUM(estado IN ('confirmado', 'enviado') AND {$vig}), 0)                     AS en_camino,
                    COALESCE(SUM(estado = 'entregado'), 0)                                               AS entregados,
                    COALESCE(SUM(estado = 'devolucion'), 0)                                              AS devoluciones,
@@ -886,6 +914,7 @@ class DropiOrden extends Model
             'esperando'          => (int)$r['esperando'],
             'piden_recordatorio' => $piden,
             'novedad'            => (int)$r['novedad'],
+            'novedad_sin_motivo' => (int)$r['novedad_sin_motivo'],
             'en_camino'          => (int)$r['en_camino'],
             'entregados'         => (int)$r['entregados'],
             'devoluciones'       => (int)$r['devoluciones'],
@@ -1084,9 +1113,12 @@ class DropiOrden extends Model
      * Anota que el cliente de esta orden ya recibió un mensaje (o que la vendedora
      * lo avisó por otro medio), y guarda la guía si se escribió una nueva.
      *
+     * Si el aviso es el de novedad y quien escribió eligió el motivo (porque el MCP no lo trae), ese tipo
+     * queda guardado en la orden: la tarjeta lo muestra y, si luego se devuelve, la causa sale bien.
+     *
      * @return bool  false si la orden no existe
      */
-    public function registrarAviso(int $id, string $estado, string $guia = ''): bool
+    public function registrarAviso(int $id, string $estado, string $guia = '', string $novedadTipo = ''): bool
     {
         if (!$this->porId($id)) return false;
 
@@ -1094,6 +1126,10 @@ class DropiOrden extends Model
         $params = [':id' => $id];
         if (isset(self::COLUMNA_AVISO[$estado])) {
             $sets[] = self::COLUMNA_AVISO[$estado] . ' = NOW()';
+        }
+        if ($estado === 'novedad' && isset(self::NOVEDAD_ETIQUETAS[$novedadTipo])) {
+            $sets[] = 'novedad_tipo = :nt';
+            $params[':nt'] = $novedadTipo;
         }
         $guia = mb_substr((string)preg_replace('/[^A-Za-z0-9\-]/', '', $guia), 0, 50);
         if ($guia !== '') {

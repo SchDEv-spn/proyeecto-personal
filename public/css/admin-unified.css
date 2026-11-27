@@ -1624,6 +1624,24 @@ body.sidebar-open .material-sidebar { transform: translateX(0); box-shadow: var(
 }
 .wa-emoji-chip:hover { border-color: var(--green-dark); background: var(--surface-3, var(--surface-2)); }
 
+/* Motivo de la novedad: las opciones para escoger cuál fue (mismo aspecto que las pestañas de arriba). */
+.wa-motivo { display: flex; flex-direction: column; gap: var(--sp-2); }
+.wa-motivo[hidden] { display: none; }
+.wa-motivo__chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.wa-motivo-chip {
+  padding: 5px var(--sp-3);
+  border-radius: var(--r-full);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--tx-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--t), border-color var(--t), color var(--t);
+}
+.wa-motivo-chip:hover { border-color: var(--green-dark); color: var(--green-dark); }
+.wa-motivo-chip.is-active { background: var(--green-dark); border-color: var(--green-dark); color: #fff; }
+
 .wa-picker-foot {
   padding: var(--sp-4) var(--sp-5);
   border-top: 1px solid var(--border);

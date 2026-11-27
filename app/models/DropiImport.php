@@ -545,7 +545,9 @@ class DropiImport extends Model
         if ($d['guia'] !== '' && $d['guia'] !== (string)$ex['guia']) $cambios[] = $ex['guia'] === '' ? 'Guía' : 'Guía nueva';
         if ($d['novedad'] !== (string)$ex['novedad']) {
             $cambios[] = $d['novedad'] !== '' ? 'Novedad' : 'Novedad resuelta';
-            $campos['aviso_novedad_at'] = null; // la novedad cambió: el aviso anterior ya no corresponde
+            // Del texto genérico del MCP al motivo real es la MISMA novedad (ya se pudo avisar eligiendo el motivo a mano): no se vuelve a pedir el aviso.
+            $mismaNovedad = (string)$ex['novedad'] === DropiOrden::NOVEDAD_SIN_DETALLE && $d['novedad'] !== '';
+            if (!$mismaNovedad) $campos['aviso_novedad_at'] = null; // la novedad cambió: el aviso anterior ya no corresponde
         }
         if ($this->difiere($d, $ex, ['nombre', 'apellidos', 'telefono', 'municipio', 'departamento', 'producto', 'cantidad', 'tipo_entrega'])) $cambios[] = 'Datos del cliente';
         if ($this->difiere($d, $ex, ['valor', 'costo_proveedor', 'flete', 'flete_devolucion', 'comision', 'ganancia'])) $cambios[] = 'Valores';

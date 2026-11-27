@@ -1658,6 +1658,19 @@
     let   initialMsg   = resolveMsg(getTemplate(data.estado), data);
     if (guiaGuardada) initialMsg = initialMsg.replace(/{guia}/g, guiaGuardada);
 
+    // Novedad: las órdenes que entran por el MCP no traen el motivo, así que se elige aquí cuál fue
+    // (dirección, se rehusó…) y el mensaje cambia a ese. data.novedadOpciones solo viene en órdenes con novedad.
+    const opcionesNovedad = Array.isArray(data.novedadOpciones) ? data.novedadOpciones : [];
+    let   tipoNovedad     = data.novedadTipo || 'otra';
+    let   datos           = data;   // los datos con el motivo elegido; los demás mensajes usan lo mismo
+    const motivoHtml = opcionesNovedad.length ? `
+          <div class="wa-motivo" id="waMotivo"${data.estado === 'novedad' ? '' : ' hidden'}>
+            <label>¿Qué pasó con la entrega?</label>
+            <div class="wa-motivo__chips">${opcionesNovedad.map(o =>
+              `<button type="button" class="wa-motivo-chip${o.tipo === tipoNovedad ? ' is-active' : ''}" data-tipo="${o.tipo}">${o.etiqueta}</button>`
+            ).join('')}</div>
+          </div>` : '';
+
     overlay.innerHTML = `
       <div class="wa-picker-card" role="dialog" aria-modal="true" aria-label="Mensaje WhatsApp">
         <div class="wa-picker-head">
@@ -1665,7 +1678,7 @@
           <button class="wa-picker-close" type="button" aria-label="Cerrar">&times;</button>
         </div>
         <div class="wa-picker-tabs">${tabsHtml}</div>
-        <div class="wa-picker-body">
+        <div class="wa-picker-body">${motivoHtml}
           <div class="wa-guia-row">
             <label for="waGuiaInput">Número de guía</label>
             <input type="text" id="waGuiaInput" placeholder="Ej: 114015565557" inputmode="numeric">
@@ -1759,14 +1772,31 @@
         overlay.querySelectorAll('.wa-tab').forEach(t => t.classList.remove('is-active'));
         tab.classList.add('is-active');
         estadoActivo = tab.dataset.e;
-        ta.value = resolveMsg(getTemplate(estadoActivo), data);
+        ta.value = resolveMsg(getTemplate(estadoActivo), datos);
+        if (guiaActual) ta.value = ta.value.replace(/{guia}/g, guiaActual);
+        const motivoEl = overlay.querySelector('#waMotivo');
+        if (motivoEl) motivoEl.hidden = estadoActivo !== 'novedad';
+        updateSendUrl();
+      });
+    });
+
+    // Elegir el motivo de la novedad cambia las dos frases del mensaje (qué pasó y qué se le pide al cliente).
+    overlay.querySelectorAll('.wa-motivo-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const op = opcionesNovedad.find(o => o.tipo === chip.dataset.tipo);
+        if (!op) return;
+        overlay.querySelectorAll('.wa-motivo-chip').forEach(c => c.classList.toggle('is-active', c === chip));
+        tipoNovedad = op.tipo;
+        datos = { ...data, novedadMotivo: op.motivo, novedadPeticion: op.peticion };
+        ta.value = resolveMsg(getTemplate('novedad'), datos);
         if (guiaActual) ta.value = ta.value.replace(/{guia}/g, guiaActual);
         updateSendUrl();
       });
     });
 
     if (typeof opts.onSend === 'function') {
-      sendBtn.addEventListener('click', () => opts.onSend(mensajeParaEnviar(), estadoActivo, guiaActual));
+      // El cuarto dato (el motivo elegido) solo va con el mensaje de novedad.
+      sendBtn.addEventListener('click', () => opts.onSend(mensajeParaEnviar(), estadoActivo, guiaActual, estadoActivo === 'novedad' ? tipoNovedad : ''));
     }
 
     // Si es un pedido real de la landing (trae id), sincroniza su estado y
