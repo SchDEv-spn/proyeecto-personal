@@ -1534,8 +1534,11 @@
                         $isOn        = (int)($config[$showField] ?? 1);
                         $parentField = $ctaParents[$ctaKey] ?? null;
                         $parentOn    = $parentField === null ? true : (int)($config[$parentField] ?? 1) === 1;
+                        // La landing pide la compra pocas veces y en el momento justo: estos cinco botones
+                        // ya no se pintan (ver "Ritmo de botones" en app/views/landing/index.php).
+                        $retirado    = in_array($ctaKey, ['benefits', 'testimonials', 'como_funciona', 'comparison', 'para_quien'], true);
                       ?>
-                      <div class="mini-card<?= $parentOn ? '' : ' mini-card--inactiva' ?>">
+                      <div class="mini-card<?= ($parentOn && !$retirado) ? '' : ' mini-card--inactiva' ?>">
                         <div class="mini-card-title">
                           <span><i class="fas <?= $ctaData['icon'] ?>"></i> <?= $ctaData['label'] ?></span>
                           <label class="toggle-label" style="margin:0;">
@@ -1546,7 +1549,12 @@
                             <span class="toggle-track"><span class="toggle-thumb"></span></span>
                           </label>
                         </div>
-                        <?php if (!$parentOn): ?>
+                        <?php if ($retirado): ?>
+                        <p class="cta-huerfano">
+                          <i class="fas fa-eye-slash" aria-hidden="true"></i>
+                          Este botón ya no se muestra: la landing pide la compra pocas veces (galería, "¿Por qué?", testimonios de WhatsApp y preguntas) para verse más premium.
+                        </p>
+                        <?php elseif (!$parentOn): ?>
                         <p class="cta-huerfano">
                           <i class="fas fa-eye-slash" aria-hidden="true"></i>
                           Su sección está oculta, así que este CTA no aparece en la landing aunque esté activado.
@@ -1560,7 +1568,7 @@
                           </div>
                           <?php endif; ?>
                           <div class="admin-form-group <?= empty($ctaData['has_text']) ? 'admin-form-group--full' : '' ?>">
-                            <label for="cta_<?= $ctaKey ?>_button">Botón <span style="font-weight:400;text-transform:none;opacity:.6">(≤5 palabras)</span></label>
+                            <label for="cta_<?= $ctaKey ?>_button">Botón <span style="font-weight:400;text-transform:none;opacity:.6">(frase corta de hasta 8 palabras, sin flechas ni emojis)</span></label>
                             <input type="text" id="cta_<?= $ctaKey ?>_button" name="cta_<?= $ctaKey ?>_button" maxlength="40" data-counter
                               value="<?= htmlspecialchars($config['cta_' . $ctaKey . '_button'] ?? $ctaData['btn_default']) ?>">
                           </div>

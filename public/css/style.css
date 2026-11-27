@@ -12,6 +12,7 @@
 
 /* ── TOKENS DE DISEÑO ─────────────────────────────────────── */
 :root {
+  --wa-link: #25d366; /* enlace a WhatsApp: verde de marca; los temas claros lo oscurecen para que se lea */
   /* ── Vars configurables desde el admin (con fallback dark luxury) ── */
   --primary-color:    #c9a84c;
   --secondary-color:  #007bff;
@@ -444,6 +445,7 @@
    Si alguien "corrige" esto poniendo un verde claro porque se llama
    light, vuelve el fallo entero. */
 [data-theme="salud"] {
+  --wa-link:          #11743f;
   --primary-color:    #0d6b51;
   --secondary-color:  #094a39;
   --accent-color:     #094a39;
@@ -533,6 +535,7 @@
    Igual que en salud, el acento "light" es el rosa PROFUNDO. Sobre
    blanco, el #e8a4b8 de blanc-luxe daba 1,81:1. */
 [data-theme="belleza"] {
+  --wa-link:          #11743f;
   --primary-color:    #a8305a;
   --secondary-color:  #7d1f42;
   --accent-color:     #7d1f42;
@@ -7380,4 +7383,495 @@ img[loading="lazy"].loaded {
         width: 14px;
         height: 14px;
     }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   CAPA DE ARMONÍA — una sola escala para toda la landing
+   ══════════════════════════════════════════════════════════════
+   La página había crecido por capas y cada una traía su propia medida:
+   25 tamaños de letra (con decimales como 12.16 y 17.6), 16 interlineados,
+   27 espaciados entre letras, radios de 6, 10, 12, 16, 20, 22 y 100px, doce
+   botones con seis alturas y un botón de compra final en otra tipografía.
+   Cada decisión era razonable sola; juntas se leen como una plantilla.
+
+   Aquí se fija la escala y se alinean los componentes a ella. Los valores
+   salen de los tokens de abajo: para cambiar el carácter de toda la página
+   se cambia un token, no cuarenta reglas.
+
+   Escala de texto:  12 etiquetas · 13 apoyo · 14 descripción · 16 lectura y
+   botones · 18 título de tarjeta · 26 título de sección. Nada por debajo de
+   12px (en un celular con sol, 10-11px no se lee).
+   El formulario tiene su continuación al final de order-modal.css, porque
+   esa hoja carga después de ésta y ganaría los empates.
+   ══════════════════════════════════════════════════════════════ */
+:root {
+    --fs-micro: 12px;
+    --fs-small: 13px;
+    --fs-text: 14px;
+    --fs-body: 16px;
+    --fs-card-title: 18px;
+    --fs-card-h2: 22px;
+    --fs-h2: 26px;
+
+    --lh-title: 1.2;
+    --lh-ui: 1.35;
+    --lh-body: 1.6;
+
+    --track-label: 0.14em;
+
+    --radius-field: 12px;
+    --radius-tile: 10px;
+
+    --section-y: 48px;
+
+    /* Los botones hablan en frase, no a gritos. Para volver a las mayúsculas:
+       --btn-transform: uppercase. */
+    --btn-transform: none;
+}
+
+/* Todo control hereda la tipografía de la página. Los <button> traen Arial
+   del navegador y no la heredan solos: el botón de compra final, el de
+   volumen del video y las miniaturas estaban en otra letra. */
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
+body {
+    line-height: var(--lh-body);
+}
+
+h1, h2, h3, h4 {
+    line-height: var(--lh-title);
+}
+
+/* ── Piso de lectura: nada por debajo de 12px ─────────────────── */
+.wa-ticker__check,
+.wa-ticker__time,
+.price-label,
+.price-box .save,
+.hero-image-badge,
+.form-carriers__label,
+.testimonios-ticker__name {
+    font-size: var(--fs-micro);
+}
+
+.testimonios-ticker__text,
+.wa-ticker__text,
+.wa-ticker__name,
+.wa-ticker__stars,
+.testimonios-ticker__stars {
+    font-size: var(--fs-small);
+}
+
+.caract-text {
+    font-size: var(--fs-text);
+}
+
+/* ── Antetítulo: la etiqueta dorada que abre cada sección ──────── */
+.section-eyebrow {
+    font-size: var(--fs-micro);
+    letter-spacing: var(--track-label);
+    line-height: 1.2;
+}
+
+/* ── Título de sección ─────────────────────────────────────────── */
+.section-title {
+    font-size: var(--fs-h2) !important;
+    line-height: var(--lh-title);
+}
+
+/* ── Título de tarjeta: UNO solo (Oswald 18px) ───────────────────
+   Había cuatro: Oswald 16, Montserrat 17.6, Montserrat 16/600 y un H2
+   Montserrat 800 a la izquierda. */
+.caract-title,
+.step-card h3,
+.para-quien-card h3,
+.garantia-card h2,
+.garantia-card h3 {
+    font-family: var(--font-display);
+    font-size: var(--fs-card-title) !important;
+    font-weight: 700 !important;
+    line-height: 1.25;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* El H2 de la tarjeta "¿Por qué te encantará?": mismo carácter de título
+   (Oswald 700), un punto menos que el de sección porque vive dentro de una
+   tarjeta. Antes era Montserrat 800 a 18,4px, el único título que no se
+   parecía a ningún otro. */
+.porque-card__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-card-h2);
+    font-weight: 700;
+    line-height: var(--lh-title);
+    letter-spacing: 0;
+}
+
+/* ── Esquinas: 16 para tarjetas, 12 para campos, 10 para fichas ── */
+.benefit-cards-outer,
+.comparison-col,
+.countdown,
+.porque-card,
+.order-summary,
+.radio-card,
+.regalo-img,
+.price-preview-strip,
+.product-gallery__main {
+    border-radius: var(--card-radius);
+}
+
+.gallery-color-thumb {
+    border-radius: var(--radius-tile);
+}
+
+/* ── Ritmo vertical: el mismo aire entre secciones ───────────────
+   Era 40px casi siempre, 56 en comparación y 64 en características.
+   Solo el eje vertical: el lateral lo pone cada contenedor. */
+section.container,
+.testimonios-ticker-section,
+.wa-testimonios-section,
+.authority-section {
+    padding-block: var(--section-y);
+}
+
+.comparison-section {
+    padding-inline: var(--space-md);
+}
+
+/* ── Botón de acción: UNA forma ───────────────────────────────────
+   Doce botones con seis alturas y cinco anchos, dos pegados a los bordes
+   de la pantalla, uno partido en tres líneas en una columna de 130px, y un
+   brillo que cruzaba cada botón cada cuatro segundos junto con un latido
+   de sombra permanente: diez botones parpadeando a la vez es lo que más
+   "plantilla de oferta" se siente. Ahora: píldora de una altura, relleno
+   sólido con una pizca de degradado, sombra quieta, texto en frase. */
+.btn-primary {
+    font-family: var(--font-body);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+    text-transform: var(--btn-transform);
+    padding: 14px 28px;
+    min-height: 56px;
+    background: linear-gradient(180deg, var(--cta-soft) 0%, var(--cta) 100%);
+    box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--cta) 55%, transparent);
+    animation: none;
+}
+
+.btn-primary::before {
+    display: none;
+}
+
+@media (hover: hover) {
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.05);
+    }
+}
+
+.btn-cta-section {
+    font-size: var(--fs-body) !important;
+    padding: 14px 28px !important;
+    width: 100%;
+    max-width: 420px;
+    min-width: 0 !important;
+    display: flex !important;
+    margin-inline: auto;
+}
+
+/* La frase de apoyo sobre el botón de sección: un solo tamaño (lectura). */
+.section-cta p {
+    font-size: var(--fs-body) !important;
+    line-height: var(--lh-body) !important;
+}
+
+/* ── Barra de anuncios: delgada y fuera de la pantalla al bajar ───
+   Era fija y de 66px: con la barra de compra de abajo y el botón de
+   WhatsApp, tres piezas tapaban el 17% de un celular. Ahora ocupa ~38px,
+   va en el flujo y se va con el desplazamiento. */
+.announcement-bar {
+    position: relative;
+    padding: 10px var(--space-md);
+}
+
+.announcement-bar + *,
+.announcement-bar + header {
+    margin-top: 0;
+}
+
+.announcement-bar__item {
+    font-size: var(--fs-micro);
+    letter-spacing: 0.1em;
+}
+
+#form-pedido {
+    scroll-margin-top: 16px;
+}
+
+/* ── Barra de compra fija (celular): una línea, con WhatsApp dentro ── */
+.cta-sticky-mobile {
+    gap: 10px;
+    padding-top: 8px;
+    min-height: 0;
+}
+
+.csm-thumb {
+    width: 44px;
+    height: 44px;
+}
+
+/* El nombre del producto ya se ve arriba y en la foto; aquí solo ocupaba el
+   sitio del botón (y salía cortado: "Bolso Orígam…"). Sigue para lectores de pantalla. */
+.csm-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.csm-current {
+    font-size: var(--fs-card-title);
+}
+
+.csm-wa {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #25d366;
+    color: #fff;
+}
+
+.csm-wa svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+/* El botón mide lo que mide su texto (no crece): el precio y el WhatsApp tienen que
+   caber siempre a su lado. A 14px una frase de 21 letras ocupa ~170px con su relleno. */
+.csm-cta {
+    flex: 0 1 auto;
+    max-width: none;
+    min-width: 0;
+    white-space: nowrap;
+    padding: 0 14px !important;
+    min-height: 48px;
+    font-size: var(--fs-text) !important;
+    max-height: none;
+}
+
+.csm-info {
+    flex: 1 1 auto;
+}
+
+/* En pantallas angostas (360px) la foto del producto cede su sitio al precio. */
+@media (max-width: 380px) {
+    .csm-thumb { display: none; }
+}
+
+@media (min-width: 1024px) {
+    .csm-wa { display: none; }
+}
+
+/* El botón flotante de WhatsApp: solo en pantallas grandes cuando existe la
+   barra de compra (en celular vive dentro de ella). Sin barra, flota como siempre. */
+@media (max-width: 1023px) {
+    .wa-float-btn--escritorio { display: none; }
+}
+
+/* ── Pasos "Así de simple": columna en celular ───────────────────
+   Tres tarjetas de 82px de texto en fila: "Empacamos" (114px) no cabía y se
+   cortaba, y las descripciones estaban ocultas. En columna entra el título
+   completo y vuelve la explicación de cada paso. */
+@media (max-width: 639px) {
+    .steps-grid {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .step-arrow-sep {
+        display: none;
+    }
+
+    .step-card {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 14px;
+        align-items: start;
+        padding: 16px;
+    }
+
+    .step-card .step-icon-wrap {
+        grid-row: 1 / span 2;
+        margin: 0;
+    }
+
+    .step-card h3 {
+        margin: 0 0 4px;
+        padding-right: 44px;
+    }
+
+    .step-card p {
+        display: block !important;
+        margin: 0;
+        font-size: var(--fs-text);
+    }
+
+    .step-num {
+        font-size: 40px !important;
+        top: 8px;
+        right: 14px;
+    }
+}
+
+/* ── Urgencia: un tono, no una alarma ─────────────────────────────
+   "Solo quedan N unidades" va en el punto de la decisión (junto al
+   formulario): se queda, pero en el color de la marca y no en rojo. */
+.offer-anchor__scarcity {
+    color: var(--cream-dim);
+    font-size: var(--fs-small);
+    font-weight: 600;
+}
+
+.offer-anchor__scarcity strong {
+    color: var(--gold-light);
+}
+
+/* ── Etiqueta de color sobre la foto de la galería ─────────────── */
+.gallery-color-caption__lbl {
+    opacity: 0.85;
+}
+
+/* ── Tamaños que seguían sueltos (cada uno con su regla más específica,
+   algunas con !important: por eso se repiten aquí con el mismo peso) ───── */
+:root {
+    --fs-stat: 28px;
+}
+
+.price-box .price-label,
+.price-box .save,
+.hero-media .hero-image-badge,
+.regalo-ribbon span {
+    font-size: var(--fs-micro) !important;
+}
+
+.price-box .old {
+    font-size: var(--fs-body) !important;
+}
+
+.price-box .btn-primary {
+    font-size: var(--fs-body) !important;
+}
+
+.comparison-list li,
+.garantia-card span {
+    font-size: var(--fs-small);
+}
+
+.para-quien-card .para-quien-list li {
+    font-size: var(--fs-text);
+}
+
+.accordion-header {
+    font-size: var(--fs-body) !important;
+}
+
+.comparison-header strong,
+.offer-anchor__product,
+.order-summary__title,
+.garantia-body h2 {
+    font-size: var(--fs-card-title);
+}
+
+.garantia-body h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.authority-stat__num {
+    font-size: clamp(var(--fs-stat), 5vw, 40px) !important;
+}
+
+.offer-anchor__new {
+    font-size: var(--fs-stat);
+}
+
+.order-summary__row--total strong {
+    font-size: var(--fs-h2) !important;
+}
+
+/* El botón de compra final: la misma píldora y el mismo trato que los demás. */
+.btn-submit-final {
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    text-transform: var(--btn-transform);
+    letter-spacing: 0.01em;
+    background: linear-gradient(180deg, var(--cta-soft) 0%, var(--cta) 100%);
+    box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--cta) 55%, transparent);
+    animation: none;
+}
+
+
+/* ── Ajustes finos de la capa de armonía ───────────────────────── */
+
+/* Contraste en los temas claros: el enlace de WhatsApp (verde de marca, 1,98:1 sobre
+   blanco) y el pie de página (gris fijo #9AA3A6, 2,4:1) no se leían. Ahora salen de
+   tokens del tema, igual que el resto del texto. */
+.form-wa-fallback a {
+    color: var(--wa-link);
+}
+
+.footer-text {
+    color: var(--cream-muted);
+}
+
+/* "Para quién es" / "No es para ti si…": las dos tarjetas miden lo mismo. */
+.para-quien-grid {
+    align-items: stretch;
+}
+
+/* ── Interlineado en tres valores ───────────────────────────────
+   Títulos 1,2 · interfaz y textos cortos 1,35 · lectura 1,6.
+   Había 15 distintos (1, 1,1, 1,13, 1,25, 1,3, 1,35, 1,4, 1,45, 1,5, 1,55, 1,6, 1,65, 1,7…). */
+.form-step__title {
+    line-height: var(--lh-title);
+}
+
+.radio-card__note,
+.order-modal-product-bar__name,
+.color-row__elegido,
+.authority-stat__label,
+.hero-trust-item__text,
+.porque-benefit-card__text,
+.benefit-card-h__text,
+.comparison-list li,
+.field-hint,
+.accordion-header,
+.caract-vol-btn__txt {
+    line-height: var(--lh-ui);
+}
+
+.porque-card__tagline,
+.wa-ticker__text,
+.regalo-label,
+.garantia-card span,
+.caract-text,
+.garantia-desc,
+.section-cta p,
+.porque-card__body p {
+    line-height: var(--lh-body);
 }

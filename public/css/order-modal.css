@@ -1005,3 +1005,70 @@ body.form-en-vista .wa-float-btn {
     font-size: clamp(15px, 4.4vw, 17px);
     text-wrap: balance;
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   CAPA DE ARMONÍA — FORMULARIO (continuación de style.css)
+   ══════════════════════════════════════════════════════════════
+   Esta hoja carga después de style.css, así que lo que toca al
+   formulario va aquí: de otro modo sus reglas, que pesan lo mismo,
+   le ganarían a las de la capa de arriba.
+   ══════════════════════════════════════════════════════════════ */
+:root {
+    --fs-form-h2: var(--fs-card-h2);
+}
+
+/* El título del bloque era MÁS CHICO (16,8px) que los títulos de sus propios
+   pasos (20px): la jerarquía estaba al revés. */
+.pedido-section .order-modal-form-title {
+    font-size: var(--fs-form-h2);
+    line-height: var(--lh-title);
+}
+
+/* Los tres pasos se titulan igual: centrados con su icono. El tercero ("¿A nombre
+   de quién va el pedido?") se partía en dos líneas y la segunda salía pegada a
+   la izquierda. */
+.pedido-section .form-step__head .form-step__title {
+    text-align: center;
+}
+
+.pedido-section .order-modal-product-bar__name {
+    font-size: var(--fs-text);
+}
+
+/* Campos: 12px de esquina (eran 6 en los de texto y 10 en los desplegables). */
+.pedido-section .input-lg,
+.pedido-section .select-lg,
+.pedido-section textarea {
+    border-radius: var(--radius-field);
+}
+
+/* Botón de compra final: tamaño de lectura, una sola línea. */
+.pedido-section .btn-submit-final {
+    font-size: var(--fs-body);
+    letter-spacing: 0.01em;
+    min-height: 56px;
+}
+
+/* ── El formulario a lo ancho en celular ──────────────────────────
+   Entre el borde de la pantalla y un campo había tres capas de margen:
+   la sección (16) + el panel (14 + borde) + el cuerpo (16) = 47px por lado,
+   así que los campos medían 296px de 390 (76%) mientras los botones de
+   arriba median 358. En celular el panel ocupa el ancho completo y solo
+   queda UN margen de 16px: los campos pasan a 358px, y el selector de color
+   gana de paso el sitio que le faltaba. */
+@media (max-width: 639px) {
+    .pedido-section {
+        padding-inline: 0;
+    }
+
+    .pedido-section .pedido-panel {
+        border-radius: 0;
+        border-inline-width: 0;
+        padding-inline: 16px;
+    }
+
+    .pedido-section .order-modal-body {
+        padding-inline: 0;
+    }
+}

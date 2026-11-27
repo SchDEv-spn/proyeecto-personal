@@ -49,16 +49,36 @@ $val = fn($k, $default) => (isset($cfg[$k]) && trim((string)$cfg[$k]) !== '') ? 
 $clamp = function (string $t, int $maxPalabras, int $maxChars): string {
     $t = trim(preg_replace('/\s+/u', ' ', $t));
     if ($t === '') return '';
+    $cortado  = false;
     $palabras = explode(' ', $t);
     if (count($palabras) > $maxPalabras) {
         $t = implode(' ', array_slice($palabras, 0, $maxPalabras));
+        $cortado = true;
     }
     if (mb_strlen($t, 'UTF-8') > $maxChars) {
         $corte = mb_substr($t, 0, $maxChars, 'UTF-8');
         $sp = mb_strrpos($corte, ' ', 0, 'UTF-8');
         $t = ($sp !== false && $sp > 0) ? mb_substr($corte, 0, $sp, 'UTF-8') : $corte;
+        $cortado = true;
     }
-    return preg_replace('/[\s·\-—,;:]+$/u', '', $t);
+    $t = preg_replace('/[\s·\-—,;:]+$/u', '', $t);
+    /* Si hubo que cortar, el texto no puede quedar colgando de una palabra de enlace:
+       "Lo quiero igual que en las" (le quitaron "fotos") suena roto. Se retiran hacia
+       atrás los artículos, preposiciones y conjunciones del final. */
+    if ($cortado) {
+        $t = preg_replace('/(?:\s+(?:a|al|con|de|del|el|en|la|las|lo|los|un|una|unos|unas|y|e|o|u|que|tu|tus|su|sus|mi|mis|para|por|sin|se|me|te|es|ya|no|si|como|más|muy))+$/iu', '', $t);
+        $t = preg_replace('/[\s·\-—,;:]+$/u', '', $t);
+    }
+    return $t;
+};
+
+/* Texto de un botón de acción. Dos reglas para que todos hablen igual:
+   1) sin adornos al final — flecha o emoji ("Hacer mi pedido ahora →", "…🔥"): antes unos
+      botones los llevaban y otros no, y al bajar por la página parecían de familias distintas;
+   2) hasta 8 palabras / 38 caracteres (antes 6 / 34, que partía frases a la mitad). */
+$ctaTxt = function (string $t) use ($clamp): string {
+    $t = trim(preg_replace('/[\s\p{So}\p{Sm}\x{FE0F}\x{200D}]+$/u', '', trim($t)));
+    return $clamp($t, 8, 38);
 };
 
 // Antetítulo (eyebrow) de una sección. Todos viven en un JSON
@@ -94,7 +114,7 @@ $heroSubtitle2   = trim($cfg['hero_subtitle_2'] ?? '');
 $heroSubtitle3   = trim($cfg['hero_subtitle_3'] ?? '');
 $heroSubtitles   = array_filter([$heroSubtitle, $heroSubtitle2, $heroSubtitle3], fn($s) => $s !== '');
 $heroNote        = $val('hero_note', 'Promoción válida solo por tiempo limitado.');
-$heroButtonText  = $clamp($val('hero_button_text', '¡Necesito el mío!'), 6, 34);
+$heroButtonText  = $ctaTxt($val('hero_button_text', '¡Necesito el mío!'));
 $heroMediaType   = $val('hero_media_type', 'imagen');
 $heroMediaPath   = $val('hero_media_path', (!empty($producto['imagen_principal']) ? $producto['imagen_principal'] : BASE_URL . '/public/img/producto/uso-1.png'));
 
@@ -267,21 +287,21 @@ $showFooter   = (int)($cfg['show_footer'] ?? 1);
    Ojo: esto son los valores por defecto. Sólo se ven cuando el campo
    correspondiente está vacío en el admin. */
 $ctaBenefitsText       = $val('cta_benefits_text', 'Ya sabes lo que hace. El siguiente paso es recibirlo en casa.');
-$ctaBenefitsButton     = $clamp($val('cta_benefits_button', 'Quiero aprovechar la oferta'), 6, 34);
+$ctaBenefitsButton     = $ctaTxt($val('cta_benefits_button', 'Quiero aprovechar la oferta'));
 
 $ctaGalleryText        = $val('cta_gallery_text', 'Lo que ves es lo que llega. Sin sorpresas, sin excusas.');
-$ctaGalleryButton      = $clamp($val('cta_gallery_button', 'Lo quiero igual'), 6, 34);
+$ctaGalleryButton      = $ctaTxt($val('cta_gallery_button', 'Lo quiero igual'));
 
 $ctaPorqueText         = $val('cta_porque_text', 'Miles lo recibieron. Tú eres el siguiente.');
-$ctaPorqueButton       = $clamp($val('cta_porque_button', 'Quiero sentir ese cambio'), 6, 34);
+$ctaPorqueButton       = $ctaTxt($val('cta_porque_button', 'Quiero sentir ese cambio'));
 
 $ctaTestimonialsText   = $val('cta_testimonials_text', 'Ellos ya lo tienen. Tu pedido tarda menos de 2 minutos.');
-$ctaTestimonialsButton = $clamp($val('cta_testimonials_button', 'Quiero ser el próximo'), 6, 34);
+$ctaTestimonialsButton = $ctaTxt($val('cta_testimonials_button', 'Quiero ser el próximo'));
 
 $ctaFaqText            = $val('cta_faq_text', 'Dudas resueltas. Esto solo falta: hacer tu pedido.');
-$ctaFaqButton          = $clamp($val('cta_faq_button', 'Sí, quiero pedirlo ahora'), 6, 34);
+$ctaFaqButton          = $ctaTxt($val('cta_faq_button', 'Sí, quiero pedirlo ahora'));
 
-$ctaStickyMobileText   = $clamp($stripLeadingEmoji($val('cta_sticky_mobile_text', 'Lo quiero ahora')), 4, 22);
+$ctaStickyMobileText   = $clamp(trim(preg_replace('/[\s\p{So}\p{Sm}\x{FE0F}\x{200D}]+$/u', '', $stripLeadingEmoji($val('cta_sticky_mobile_text', 'Lo quiero ahora')))), 4, 24);
 
 // ===== CTAs DE SECCIÓN — visibilidad =====
 $showCtaBenefits        = (int)($cfg['show_cta_benefits']        ?? 1);
@@ -291,13 +311,29 @@ $showCtaTestimonials    = (int)($cfg['show_cta_testimonials']    ?? 1);
 $showCtaFaq             = (int)($cfg['show_cta_faq']             ?? 1);
 $showCtaComoFunciona    = (int)($cfg['show_cta_como_funciona']   ?? 1);
 $ctaComoFuncionaText    = $val('cta_como_funciona_text', 'Así de simple. ¿Listo para empezar?');
-$ctaComoFuncionaButton  = $clamp($val('cta_como_funciona_button', 'Quiero hacer mi pedido'), 6, 34);
+$ctaComoFuncionaButton  = $ctaTxt($val('cta_como_funciona_button', 'Quiero hacer mi pedido'));
 $showCtaComparison      = (int)($cfg['show_cta_comparison']      ?? 1);
-$ctaComparisonButton    = $clamp($val('cta_comparison_button', 'Quiero ver la diferencia'), 6, 34);
+$ctaComparisonButton    = $ctaTxt($val('cta_comparison_button', 'Quiero ver la diferencia'));
 $showCtaParaQuien       = (int)($cfg['show_cta_para_quien']      ?? 1);
-$ctaParaQuienButton     = $clamp($val('cta_para_quien_button', 'Sí, es para mí'), 6, 34);
+$ctaParaQuienButton     = $ctaTxt($val('cta_para_quien_button', 'Sí, es para mí'));
 $showCtaWaTestimonios   = (int)($cfg['show_cta_wa_testimonios']  ?? 1);
-$ctaWaTestimoniasButton = $clamp($val('cta_wa_testimonios_button', 'Yo también lo quiero'), 6, 34);
+$ctaWaTestimoniasButton = $ctaTxt($val('cta_wa_testimonios_button', 'Yo también lo quiero'));
+
+/* Ritmo de botones. Cada sección cerraba con su propio llamado a comprar: 11 botones en 16
+   pantallas de celular, uno cada pantalla y media, con diez textos distintos. Una tienda de alto
+   nivel pide la compra pocas veces y en el momento justo, así que quedan los que cierran un
+   bloque de decisión: tras la galería (ya vio el producto), tras "¿Por qué te encantará?"
+   (ya sabe el motivo), tras los testimonios de WhatsApp (ya vio la prueba) y tras las preguntas
+   (ya no tiene dudas). A eso se suman el del hero, la barra fija y el del formulario.
+   Los demás interruptores del editor (beneficios, características, cómo funciona, comparación,
+   "para quién" y testimonios) ya no pintan botón: la tarjeta "para quién" lo llevaba apretado
+   dentro de una columna de 130px, y comparación y testimonios lo dejaban pegado a los bordes.
+   Un botón apagado en el editor sigue apagado. */
+$showCtaBenefits     = 0;
+$showCtaComoFunciona = 0;
+$showCtaComparison   = 0;
+$showCtaParaQuien    = 0;
+$showCtaTestimonials = 0;
 
 // ===== PARA QUIÉN ES =====
 $paraQuienSiItems = [];
@@ -774,7 +810,9 @@ $colorBorder     = $cfg['color_border']     ?? null;
                      significa algo después de los dos precios que lo producen.
                      .price-box es flex en columna, así que este orden del
                      marcado es literalmente el orden en pantalla. -->
-                <div class="price-label">Oferta exclusiva · Solo hoy</div>
+                <?php /* "Solo hoy" era un texto fijo que afirmaba algo que el contador de abajo y la nota ya dicen
+                         (y con otras palabras): tres avisos de urgencia seguidos en una sola caja. */ ?>
+                <div class="price-label">Oferta exclusiva</div>
                 <?php if ($precio_regular > $precio_venta): ?>
                 <div class="old">$<?= number_format($precio_regular, 0, ',', '.') ?></div>
                 <?php endif; ?>
@@ -1191,7 +1229,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
         </section>
         <?php endif; $sections['como_funciona'] = ob_get_clean(); ?>
 
-        <?php ob_start(); if ($showCountdown): ?>
+        <?php /* Un solo contador. El del precio (arriba, en el hero) ya cuenta hacia atrás; esta sección es el
+                 MISMO reloj repetido dos pantallas más abajo en una caja grande. Solo se pinta cuando no hay
+                 caja de precio, que es cuando de verdad hace falta. */
+        ob_start(); if ($showCountdown && !$showPriceBox): ?>
         <!-- CONTADOR PROMOCIÓN -->
         <section class="container">
             <div class="countdown">
@@ -2972,6 +3013,17 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 </div>
             </div>
         </div>
+        <?php if ($showWhatsappBtn): ?>
+        <?php /* En celular el WhatsApp vive dentro de la barra, junto al botón de compra, y no flota encima del
+                 contenido (tapaba texto, tarjetas y carruseles). El flotante queda para pantallas grandes. */ ?>
+        <a href="https://wa.me/<?= urlencode($waPhone) ?>?text=Hola%2C%20me%20interesa%20el%20producto%20y%20tengo%20una%20consulta."
+           class="csm-wa" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.557 4.116 1.526 5.845L.057 23.998l6.304-1.658A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.793 9.793 0 01-4.997-1.367l-.356-.212-3.745.985.993-3.644-.232-.373A9.79 9.79 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+                </svg>
+        </a>
+        <?php endif; ?>
         <a href="#form-pedido" class="btn-primary csm-cta">
             <?= htmlspecialchars($ctaStickyMobileText) ?>
         </a>
@@ -3043,7 +3095,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
     <?php if ($showWhatsappBtn): ?>
     <aside aria-label="Contacto directo">
     <a href="https://wa.me/<?= urlencode($waPhone) ?>?text=Hola%2C%20me%20interesa%20el%20producto%20y%20tengo%20una%20consulta."
-       class="wa-float-btn" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp">
+       class="wa-float-btn<?= $showCtaSticky ? ' wa-float-btn--escritorio' : '' ?>" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
             <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.557 4.116 1.526 5.845L.057 23.998l6.304-1.658A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.793 9.793 0 01-4.997-1.367l-.356-.212-3.745.985.993-3.644-.232-.373A9.79 9.79 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
