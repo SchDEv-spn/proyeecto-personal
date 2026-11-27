@@ -91,10 +91,11 @@ if ($productoId) {
 /* ── 2. Colores (activan las pills del paso 2 del formulario) ─── */
 $pdo->prepare('DELETE FROM producto_colores WHERE producto_id = ?')->execute([$productoId]);
 $insColor = $pdo->prepare('INSERT INTO producto_colores (producto_id, color, activo) VALUES (?, ?, 1)');
-foreach (['Negro', 'Camel', 'Vino tinto', 'Verde oliva'] as $color) {
+$coloresQa = ['Negro', 'Camel', 'Vino tinto', 'Verde oliva', 'Azul marino', 'Gris perla'];
+foreach ($coloresQa as $color) {
     $insColor->execute([$productoId, $color]);
 }
-echo "4 colores cargados\n";
+echo count($coloresQa) . " colores cargados\n";
 
 /* ── 3. Variantes de color de la galería ─────────────────────── */
 $colorVariants = json_encode([
@@ -127,6 +128,22 @@ $colorVariants = json_encode([
         'name'   => 'Verde oliva',
         'hex'    => '#4a5231',
         'images' => [UP . 'cv4_g1_file_1786735098_2278.jpg'],
+    ],
+    /* Colores 5 y 6: el editor admite hasta 6 variantes (LandingConfig::MAX_VARIANTES_COLOR).
+       Uno con 3 fotos y otro con 1 para cubrir la mezcla de tamaños en la galería. */
+    [
+        'name'   => 'Azul marino',
+        'hex'    => '#1f3a5f',
+        'images' => [
+            UP . 'cv1_g2_file_1781671182_8128.jpeg',
+            UP . 'cv1_g3_file_1781671888_4056.jpeg',
+            UP . 'cv1_g4_file_1781671888_8447.jpeg',
+        ],
+    ],
+    [
+        'name'   => 'Gris perla',
+        'hex'    => '#b8bcc4',
+        'images' => [UP . 'cv2_g1_file_1786735098_1909.jpg'],
     ],
 ], JSON_UNESCAPED_UNICODE);
 

@@ -7368,6 +7368,81 @@ img[loading="lazy"].loaded {
         0 0 0 2px color-mix(in srgb, var(--gold) 55%, transparent);
 }
 
+/* ── SEIS COLORES: 3 + 3 ─────────────────────────────────────
+   Con flex-wrap el reparto de 6 pastillas dependía de lo largo de cada
+   nombre: una sola fila en escritorio y 3/2/1 en móvil. Aquí queda una
+   cuadrícula fija de 3 columnas, o sea dos filas parejas a cualquier ancho.
+   Solo se activa con EXACTAMENTE 6 variantes (el PHP pone la clase): con
+   1 a 5 el diseño de arriba no cambia. El ancho máximo evita que en
+   escritorio cada pastilla se estire a un tercio de toda la sección. */
+.gallery-color-pills__row--trios {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* Las dos filas miden lo mismo aunque un nombre largo se parta en dos
+       líneas: sin esto la fila con ese nombre quedaba más alta que la otra. */
+    grid-auto-rows: 1fr;
+    gap: 8px;
+    max-width: 480px;
+    margin-inline: auto;
+}
+
+.gallery-color-pills__row--trios .gallery-color-pill {
+    justify-content: center;
+    min-width: 0;
+    padding: 9px 10px;
+    text-align: center;
+}
+
+/* El nombre se parte entre palabras ("Verde / oliva"), nunca a mitad de
+   una: break-word solo corta una palabra que no cabe entera en la línea. */
+.gallery-color-pills__row--trios .gallery-color-pill__name {
+    min-width: 0;
+    line-height: 1.15;
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
+}
+
+/* Móvil: cada celda mide ~105-122px y un nombre típico ("Azul marino",
+   "Verde menta") necesita ~75px, así que se aprieta el relleno y la letra
+   para que quepa en UNA línea. Medido en 414 / 390 / 360 / 320 px. */
+@media (max-width: 430px) {
+    .gallery-color-pills__row--trios { gap: 6px; }
+    .gallery-color-pills__row--trios .gallery-color-pill {
+        gap: 6px;
+        padding: 9px 6px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .gallery-color-pills__row--trios .gallery-color-pill {
+        padding: 8px 5px;
+        font-size: 0.75rem;
+    }
+}
+
+/* ── SEIS COLORES: MINIATURAS DE LOS OTROS 5 ─────────────────
+   La fila de miniaturas de los colores con una sola foto incluía también
+   la del color que ya se ve en grande (con su ✓): a la vista, 6 colores
+   daban 7 imágenes, y en pantallas angostas la sexta quedaba sola en una
+   segunda fila. Con exactamente 6 colores el activo se oculta y las otras
+   5 van en UNA fila que encoge un poco si hace falta (64px → ~50px a 320px).
+   El selector de color (is-active) lo sigue marcando el JS de la galería. */
+.gallery-color-thumbs--otros {
+    flex-wrap: nowrap;
+    gap: 8px;
+}
+
+.gallery-color-thumbs--otros .gallery-color-thumb {
+    flex: 0 1 64px;
+    min-width: 0;
+}
+
+.gallery-color-thumbs--otros .gallery-color-thumb.is-active {
+    display: none;
+}
+
 
 /* ══════════════════════════════════════════════════════════════
    CAPA VISUAL — SEÑALES DE CONFIANZA DEL HERO

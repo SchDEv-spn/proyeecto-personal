@@ -861,6 +861,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
                 $mainImg    = $firstColor['images'][0] ?? '';
                 $thumbImgs  = array_slice($firstColor['images'], 1, 3);
 
+                // Casillas de miniatura: las que pida el color con MÁS fotos, no solo
+                // las del primero. Si el primer color tiene 1 foto y otro tiene 4, las
+                // casillas no existirían y al cambiar de color las 3 fotos restantes
+                // no tendrían dónde pintarse. Las que el primer color no usa nacen
+                // ocultas y el JS de abajo las enciende al elegir un color que las llene.
+                $thumbSlots = 0;
+                foreach ($colorVariants as $cv) {
+                    $thumbSlots = max($thumbSlots, min(3, count($cv['images']) - 1));
+                }
+
                 // Colores que solo tienen 1 foto: se listan como miniaturas fijas
                 // (funcionan como selector rápido de color, independiente del color activo)
                 $singleImgColors = [];
@@ -882,15 +892,18 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     BASE_URL . '/public/img/producto/uso-1.png',
                     BASE_URL . '/public/img/producto/uso-1.png',
                 ];
-                $mainImg   = $gallery[0] ?? '';
-                $thumbImgs = array_slice($gallery, 1, 3);
+                $mainImg    = $gallery[0] ?? '';
+                $thumbImgs  = array_slice($gallery, 1, 3);
+                $thumbSlots = count($thumbImgs);
             }
             ?>
 
             <?php if (!empty($colorVariants)): ?>
             <div class="gallery-color-pills" role="group" aria-label="Colores disponibles">
                 <span class="gallery-color-pills__label">Color:</span>
-                <div class="gallery-color-pills__row">
+                <?php /* Con exactamente 6 colores las pastillas van 3 + 3 (ver style.css,
+                         "SEIS COLORES"); con 1 a 5 conservan el reparto de siempre. */ ?>
+                <div class="gallery-color-pills__row<?= count($colorVariants) === 6 ? ' gallery-color-pills__row--trios' : '' ?>">
                     <?php foreach ($colorVariants as $cIdx => $cv): ?>
                     <button
                         type="button"
@@ -929,18 +942,22 @@ $colorBorder     = $cfg['color_border']     ?? null;
                         aria-label="Video principal del producto"></video>
                 </figure>
 
-                <?php if (!empty($thumbImgs)): ?>
+                <?php if ($thumbSlots > 0): ?>
                     <div class="product-gallery__thumbs" role="group" aria-label="Miniaturas del producto">
-                        <?php foreach ($thumbImgs as $i => $src): ?>
-                            <?php if (trim($src) === '') continue; ?>
-                            <?php $thumbEsVideo = es_video($src); ?>
+                        <?php for ($i = 0; $i < $thumbSlots; $i++): ?>
+                            <?php
+                            $src          = trim((string)($thumbImgs[$i] ?? ''));
+                            $thumbVacia   = ($src === '');   // casilla reservada para otro color
+                            $thumbEsVideo = !$thumbVacia && es_video($src);
+                            ?>
                             <button
                                 type="button"
                                 class="product-gallery__thumb<?= $thumbEsVideo ? ' is-video' : '' ?>"
+                                <?php if ($thumbVacia): ?>style="display:none"<?php endif; ?>
                                 aria-label="Ver <?= $thumbEsVideo ? 'video' : 'imagen' ?> <?= (int)($i + 2) ?>"
                                 data-src="<?= htmlspecialchars($src) ?>">
                                 <img
-                                    <?php if (!$thumbEsVideo): ?>src="<?= htmlspecialchars($src) ?>"<?php else: ?>hidden<?php endif; ?>
+                                    <?php if (!$thumbVacia && !$thumbEsVideo): ?>src="<?= htmlspecialchars($src) ?>"<?php else: ?>hidden<?php endif; ?>
                                     alt="Miniatura <?= (int)($i + 2) ?>"
                                     loading="lazy"
                                     decoding="async">
@@ -948,13 +965,16 @@ $colorBorder     = $cfg['color_border']     ?? null;
                                     <?php if ($thumbEsVideo): ?>src="<?= htmlspecialchars($src) ?>#t=0.1"<?php else: ?>hidden<?php endif; ?>
                                     muted playsinline preload="metadata" tabindex="-1" aria-hidden="true"></video>
                             </button>
-                        <?php endforeach; ?>
+                        <?php endfor; ?>
                     </div>
                 <?php endif; ?>
             </div>
 
             <?php if (!empty($singleImgColors)): ?>
-            <div class="gallery-color-thumbs" role="group" aria-label="Otros colores disponibles">
+            <?php /* Con exactamente 6 colores la miniatura del color que ya se ve en grande
+                     se oculta (CSS, "SEIS COLORES"): foto grande + las otras 5 = 6 imágenes
+                     sin repetir. Con 1 a 5 colores la fila queda como siempre. */ ?>
+            <div class="gallery-color-thumbs<?= count($colorVariants) === 6 ? ' gallery-color-thumbs--otros' : '' ?>" role="group" aria-label="Otros colores disponibles">
                 <?php foreach ($singleImgColors as $sc): ?>
                 <button
                     type="button"
@@ -1945,9 +1965,10 @@ $colorBorder     = $cfg['color_border']     ?? null;
                            siendo el nombre de producto_colores (el servidor lo valida
                            contra esa lista): la foto solo decora. Un color sin pareja
                            conserva la pastilla de texto de siempre, no se rompe nada.
-                           El editor solo admite 4 variantes: con más de 4 colores unos
-                           llevan foto y otros no, y se marca la mezcla para que las
-                           pastillas de texto no queden más bajas que las tarjetas. */
+                           El editor admite hasta LandingConfig::MAX_VARIANTES_COLOR (6)
+                           variantes: con más colores que variantes, o con nombres sin
+                           pareja, unos llevan foto y otros no, y se marca la mezcla para
+                           que las pastillas de texto no queden más bajas que las tarjetas. */
                         $colorFotos = [];
                         $colorTonos = [];
                         foreach ($colorVariants as $_cv) {

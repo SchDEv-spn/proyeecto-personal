@@ -640,8 +640,9 @@
                         $cvDecoded = json_decode($config['color_variants'], true);
                         if (is_array($cvDecoded)) $cvData = $cvDecoded;
                     }
-                    // Rellenar hasta 4 slots vacíos
-                    while (count($cvData) < 4) $cvData[] = ['name' => '', 'hex' => '#000000', 'images' => ['', '', '', '']];
+                    // Rellenar los slots vacíos hasta el tope de variantes del editor
+                    $maxVariantes = LandingConfig::MAX_VARIANTES_COLOR;
+                    while (count($cvData) < $maxVariantes) $cvData[] = ['name' => '', 'hex' => '#000000', 'images' => ['', '', '', '']];
                     ?>
                     <div class="admin-form-group admin-form-group--full" style="margin-top:24px;">
                       <label style="font-weight:700; font-size:1rem; display:block; margin-bottom:6px;">
@@ -649,7 +650,7 @@
                       </label>
                       <p style="font-size:0.85rem; color:var(--tx-muted); margin-bottom:14px;">
                         Opcional: solo si quieres una <strong>galería por color</strong>. Al llenar una variante, la galería de la
-                        landing deja de mostrar tus fotos mixtas y muestra las de cada color. Define hasta 4 colores;
+                        landing deja de mostrar tus fotos mixtas y muestra las de cada color. Define hasta <?= $maxVariantes ?> colores;
                         deja el nombre en blanco para desactivar esa variante.<br>
                         La foto que ve el cliente al elegir color en el formulario de pedido se sube aparte, en cada
                         color del producto (Productos → Editar → Imagen y colores). No hace falta llenar esto para eso.
@@ -692,8 +693,10 @@
                       </p>
                       <?php endif; ?>
 
-                      <div class="stack-cards stack-cards--4col" style="align-items:start;">
-                        <?php for ($ci = 1; $ci <= 4; $ci++):
+                      <?php /* 3 por fila: seis tarjetas hacen dos filas parejas (con 4 columnas
+                               quedaban 4 + 2 y una fila coja). */ ?>
+                      <div class="stack-cards stack-cards--3col" style="align-items:start;">
+                        <?php for ($ci = 1; $ci <= $maxVariantes; $ci++):
                           $cv     = $cvData[$ci - 1] ?? [];
                           $cvName = htmlspecialchars($cv['name'] ?? '');
                           $cvHex  = htmlspecialchars($cv['hex']  ?? '#000000');
@@ -3650,6 +3653,8 @@
     const overlay = document.getElementById('iaImgOverlay');
     const panel   = document.getElementById('iaImgPanel');
     const titulo  = document.getElementById('iaImgPanelTitle');
+    // Índices de las variantes de color del editor (1…MAX), de la misma constante que usa el guardado.
+    const CV_INDICES = Array.from({ length: <?= (int)LandingConfig::MAX_VARIANTES_COLOR ?> }, (_, i) => i + 1);
 
     // Map: input name → section ID
     const sectionMap = {
@@ -3673,8 +3678,8 @@
       'test1_banner_file':           'test1_banner',
       'test2_banner_file':           'test2_banner',
       'test3_banner_file':           'test3_banner',
-      // Variantes de color: cv1_g1_file … cv4_g4_file
-      ...Object.fromEntries([1,2,3,4].flatMap(ci => [1,2,3,4].map(gi => [`cv${ci}_g${gi}_file`, `cv${ci}_g${gi}`]))),
+      // Variantes de color: cv1_g1_file … cv{MAX}_g4_file
+      ...Object.fromEntries(CV_INDICES.flatMap(ci => [1,2,3,4].map(gi => [`cv${ci}_g${gi}_file`, `cv${ci}_g${gi}`]))),
     };
     // Map: section ID → hidden _actual field name
     const actualMap = {
@@ -3699,7 +3704,7 @@
       'test2_banner':       'test2_banner_path_actual',
       'test3_banner':       'test3_banner_path_actual',
       // Variantes de color
-      ...Object.fromEntries([1,2,3,4].flatMap(ci => [1,2,3,4].map(gi => [`cv${ci}_g${gi}`, `cv${ci}_g${gi}_actual`]))),
+      ...Object.fromEntries(CV_INDICES.flatMap(ci => [1,2,3,4].map(gi => [`cv${ci}_g${gi}`, `cv${ci}_g${gi}_actual`]))),
     };
     const sectionLabels = {
       'hero': 'Hero', 'benefits': 'Beneficios',
@@ -3714,7 +3719,7 @@
       'test1_banner': 'Banner Testimonio 1', 'test2_banner': 'Banner Testimonio 2',
       'test3_banner': 'Banner Testimonio 3',
       // Variantes de color — el label se sobreescribe dinámicamente en openPanel()
-      ...Object.fromEntries([1,2,3,4].flatMap(ci => [1,2,3,4].map(gi => [`cv${ci}_g${gi}`, `Color ${ci} — Foto ${gi}`]))),
+      ...Object.fromEntries(CV_INDICES.flatMap(ci => [1,2,3,4].map(gi => [`cv${ci}_g${gi}`, `Color ${ci} — Foto ${gi}`]))),
     };
 
     let currentSection  = null;
@@ -3752,7 +3757,7 @@
 
       // Para variantes de color, mostrar nombre real del color en el título
       let label = sectionLabels[section] || section;
-      const cvMatch = section.match(/^cv(\d)_g(\d)$/);
+      const cvMatch = section.match(/^cv(\d+)_g(\d+)$/);
       if (cvMatch) {
         const ci = cvMatch[1];
         const gi = cvMatch[2];
@@ -3879,7 +3884,7 @@
       }
 
       // Variantes de color — cv{ci}_g{gi}
-      const cvMatch = section.match(/^cv(\d)_g(\d)$/);
+      const cvMatch = section.match(/^cv(\d+)_g(\d+)$/);
       if (cvMatch) {
         const ci = cvMatch[1];
         const gi = parseInt(cvMatch[2], 10);

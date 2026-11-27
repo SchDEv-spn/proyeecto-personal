@@ -780,7 +780,8 @@ class AdminLandingController extends Controller
         // Los paths actuales vienen de hidden inputs; las subidas nuevas se procesan abajo
         // y reemplazan los paths en el array antes de codificar a JSON
         $colorVariantsRaw = [];
-        for ($ci = 1; $ci <= 4; $ci++) {
+        $maxVariantes = LandingConfig::MAX_VARIANTES_COLOR;
+        for ($ci = 1; $ci <= $maxVariantes; $ci++) {
             $cName = trim($_POST["cv{$ci}_name"] ?? '');
             $cHex  = trim($_POST["cv{$ci}_hex"]  ?? '');
             if ($cName === '' && $cHex === '') continue;
@@ -847,9 +848,9 @@ class AdminLandingController extends Controller
             'regalo_image_file' => 'regalo_image_path',
         ];
 
-        // Archivos de variantes de color (cv1_g1_file … cv4_g4_file) — guardados en _tmp_cv_*
+        // Archivos de variantes de color (cv1_g1_file … cv6_g4_file) — guardados en _tmp_cv_*
         // para después inyectarlos en el JSON
-        for ($ci = 1; $ci <= 4; $ci++) {
+        for ($ci = 1; $ci <= $maxVariantes; $ci++) {
             for ($gi = 1; $gi <= 4; $gi++) {
                 $fileMap["cv{$ci}_g{$gi}_file"] = "_tmp_cv{$ci}_g{$gi}";
             }
@@ -892,7 +893,7 @@ class AdminLandingController extends Controller
         }
 
         // Inyectar paths de imágenes subidas en las variantes de color y guardar JSON
-        for ($ci = 1; $ci <= 4; $ci++) {
+        for ($ci = 1; $ci <= $maxVariantes; $ci++) {
             for ($gi = 1; $gi <= 4; $gi++) {
                 $tmpKey = "_tmp_cv{$ci}_g{$gi}";
                 if (!empty($data[$tmpKey]) && isset($colorVariantsRaw[$ci])) {

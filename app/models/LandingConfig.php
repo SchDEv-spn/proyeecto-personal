@@ -3,6 +3,15 @@
 class LandingConfig extends Model
 {
     /**
+     * Cuántas "Variantes de color" (galería por color) admite el editor.
+     * Una sola cifra para lo que antes estaba repetida a mano en el editor
+     * (HTML y JS) y en el controlador que guarda: si se cambia aquí, el
+     * formulario, las subidas de fotos y el guardado crecen juntos. La
+     * landing pública pinta lo que haya guardado, sin tope propio.
+     */
+    public const MAX_VARIANTES_COLOR = 6;
+
+    /**
      * Temas válidos, desde la fuente única app/config/themes.php.
      * Se cachea en estático porque el guardado la consulta una vez por
      * fila y el archivo no cambia dentro de una petición.
