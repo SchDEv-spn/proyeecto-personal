@@ -8050,6 +8050,49 @@ header.container,
     padding: 12px 16px;
 }
 
+/* ── Video del héroe: el MISMO recuadro que el de "¿Por qué te encantará?" ──
+   El héroe lo mostraba en 9:16 a 52% del alto de la pantalla y centrado: una
+   tira de 246px de ancho en un celular de 390, con bandas vacías a los lados,
+   mientras el video de "¿Por qué?" ocupa todo el ancho en 3:4 (358×477). Ahora
+   los dos miden y se recortan igual: ancho completo del contenedor, proporción
+   3:4 y el cuadro centrado (object-fit: cover, como el otro). Las reglas viejas
+   fijaban alto y ancho con !important, de ahí que esta también lo lleve. */
+.hero-media .caract-video-wrap {
+    width: 100%;
+    height: auto;
+}
+
+.hero-media .caract-video-wrap video,
+.hero-media video {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: 3 / 4 !important;
+    object-fit: cover;
+    object-position: center !important;
+    margin: 0 !important;
+    border-radius: var(--card-radius);
+}
+
+/* En pantallas medianas la tarjeta de "¿Por qué?" se queda en 480/520px de ancho;
+   el héroe ocupaba todo el contenedor y su video se habría hecho enorme. Mismo tope
+   (solo si lleva video: la foto del héroe conserva su formato). En escritorio el
+   héroe va en dos columnas y ya tiene su propio ancho máximo. */
+@media (max-width: 1023px) {
+    .hero-media:has(.caract-video-wrap) {
+        max-width: 480px;
+        margin-inline: auto;
+    }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+    .hero-media:has(.caract-video-wrap) {
+        max-width: 520px;
+    }
+}
+
 /* 12 a los lados (no 16): con el hueco de 16 entre fichas, "pedidos entregados"
    dejaba de caber en una línea. */
 .authority-stat {

@@ -721,8 +721,7 @@ $colorBorder     = $cfg['color_border']     ?? null;
                     <video src="<?= htmlspecialchars($heroMediaPath) ?>"
                         <?php if (!empty($cfg['hero_poster_path'])): ?>poster="<?= htmlspecialchars($cfg['hero_poster_path']) ?>"<?php endif; ?>
                         muted loop playsinline
-                        preload="metadata"
-                        style="max-width:100%; border-radius:10px;"></video>
+                        preload="metadata"></video>
                     <div class="caract-video-tap" aria-hidden="true"></div>
                     <div class="caract-play-overlay" aria-hidden="true">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="rgba(255,255,255,0.92)" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
