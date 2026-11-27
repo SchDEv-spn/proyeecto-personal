@@ -1078,4 +1078,23 @@ body.form-en-vista .wa-float-btn {
     .pedido-section .order-modal-body {
         padding-inline: 0;
     }
+
+    /* El panel ocupa todo el ancho y es del mismo color que la sección: su línea
+       inferior y los 28px de relleno de la sección debajo dibujaban una franja
+       vacía que hacía parecer que el formulario terminaba antes de lo que termina.
+       Ahora el formulario acaba directamente en el pie de página. */
+    .pedido-section {
+        padding-bottom: 0;
+    }
+
+    .pedido-section .pedido-panel {
+        border-bottom-width: 0;
+    }
+}
+
+/* Aire bajo los logos de "Enviamos con": 24px, no 81. El cuerpo del formulario
+   sumaba 28px de relleno inferior a los 24 (30 en pantallas anchas) que ya trae el
+   panel; con el que pone el panel basta. */
+.pedido-section .order-modal-body {
+    padding-bottom: 0;
 }
