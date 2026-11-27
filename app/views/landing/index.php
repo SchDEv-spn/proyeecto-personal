@@ -971,10 +971,11 @@ $colorBorder     = $cfg['color_border']     ?? null;
             </div>
 
             <?php if (!empty($singleImgColors)): ?>
-            <?php /* Con exactamente 6 colores la miniatura del color que ya se ve en grande
-                     se oculta (CSS, "SEIS COLORES"): foto grande + las otras 5 = 6 imágenes
-                     sin repetir. Con 1 a 5 colores la fila queda como siempre. */ ?>
-            <div class="gallery-color-thumbs<?= count($colorVariants) === 6 ? ' gallery-color-thumbs--otros' : '' ?>" role="group" aria-label="Otros colores disponibles">
+            <?php /* Con 5 o 6 colores la miniatura del color que ya se ve en grande se oculta
+                     (CSS, "CINCO O SEIS COLORES"): foto grande + las otras 4 o 5, sin repetir y
+                     siempre en una fila (con 5 de 64px la quinta caía sola a una segunda fila en
+                     pantallas angostas). Con 1 a 4 colores la fila queda como siempre. */ ?>
+            <div class="gallery-color-thumbs<?= in_array(count($colorVariants), [5, 6], true) ? ' gallery-color-thumbs--otros' : '' ?>" role="group" aria-label="Otros colores disponibles">
                 <?php foreach ($singleImgColors as $sc): ?>
                 <button
                     type="button"

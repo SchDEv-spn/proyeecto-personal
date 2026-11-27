@@ -7422,13 +7422,14 @@ img[loading="lazy"].loaded {
     }
 }
 
-/* ── SEIS COLORES: MINIATURAS DE LOS OTROS 5 ─────────────────
+/* ── CINCO O SEIS COLORES: MINIATURAS DE LOS OTROS ───────────
    La fila de miniaturas de los colores con una sola foto incluía también
    la del color que ya se ve en grande (con su ✓): a la vista, 6 colores
-   daban 7 imágenes, y en pantallas angostas la sexta quedaba sola en una
-   segunda fila. Con exactamente 6 colores el activo se oculta y las otras
-   5 van en UNA fila que encoge un poco si hace falta (64px → ~50px a 320px).
-   El selector de color (is-active) lo sigue marcando el JS de la galería. */
+   daban 7 imágenes, y en pantallas angostas la última (la 5.ª o la 6.ª)
+   quedaba sola en una segunda fila. Con 5 o 6 colores el activo se oculta y
+   las otras 4 o 5 van en UNA fila que encoge un poco si hace falta (64px →
+   ~50px a 320px). Con 1 a 4 colores no se toca: caben en una fila y el
+   activo sigue marcado con su ✓. El JS de la galería sigue poniendo is-active. */
 .gallery-color-thumbs--otros {
     flex-wrap: nowrap;
     gap: 8px;
