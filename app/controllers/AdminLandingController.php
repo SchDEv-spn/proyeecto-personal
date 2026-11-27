@@ -699,7 +699,11 @@ class AdminLandingController extends Controller
 
         // Características items (1..4)
         for ($i = 1; $i <= 4; $i++) {
-            $data["caract{$i}_active"]     = isset($_POST["caract{$i}_active"]) ? 1 : 0;
+            // El formulario manda un oculto en "0" y, si la casilla está encendida, el
+            // mismo nombre en "1" (gana el último). Con la casilla apagada llega "0":
+            // isset("0") es TRUE, así que el toggle nunca se podía guardar apagado y la
+            // característica seguía en la landing. Se lee el VALOR, no la presencia.
+            $data["caract{$i}_active"]     = ((string)($_POST["caract{$i}_active"] ?? '0') === '1') ? 1 : 0;
             // Tercer sitio con el mismo patrón. Esta columna es text y no
             // enum, así que un '' no reventaba — pero dejaba el tipo de
             // medio en blanco y la característica se pintaba como imagen
