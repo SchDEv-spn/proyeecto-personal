@@ -20,6 +20,20 @@
   $config      = $config ?? [];
   $success     = $success ?? '';
   $error       = $error ?? '';
+  /* Topes de subida de archivos. Los del editor son 2 MB para imágenes y 20 MB para videos,
+     pero nunca más de lo que PHP deja subir en ESTE servidor (upload_max_filesize / post_max_size):
+     un archivo mayor lo descartaba PHP sin avisar. 'envio' = todo el formulario junto. */
+  $limSrv     = limites_subida();
+  $limImagen  = 2 * 1024 * 1024;
+  $limVideo   = 20 * 1024 * 1024;
+  if ($limSrv['archivo'] > 0) {
+      $limImagen = min($limImagen, $limSrv['archivo']);
+      $limVideo  = min($limVideo,  $limSrv['archivo']);
+  }
+  $limitesSubida = [
+      'imagen' => $limImagen, 'video' => $limVideo, 'envio' => $limSrv['envio'],
+      'etiquetaImagen' => tamano_legible($limImagen), 'etiquetaVideo' => tamano_legible($limVideo),
+  ];
   $producto_id = isset($producto_id) ? (int)$producto_id : 1;
   $productos   = $productos ?? [];
   $producto    = $producto ?? null;
@@ -86,6 +100,11 @@
   $headerCta = $headerCtas[0];
   ?>
 
+  <?php /* Los topes de subida van AQUÍ, antes de cualquier script de la página: el validador de archivos
+           (más abajo) los lee al ejecutarse, y si este <script> iba después caía en sus valores por
+           defecto (sin tope por formulario completo ni adaptación al servidor). */ ?>
+  <script>window.__LIMITES_SUBIDA__ = <?= json_encode($limitesSubida) ?>;</script>
+
   <div class="sidebar-overlay" aria-hidden="true"></div>
 
   <!-- Mini diálogo de confirmación accesible (reemplaza confirm() nativo) -->
@@ -111,7 +130,7 @@
       <section class="material-content" id="top">
 
         <?= alert_success($success) ?>
-        <?= alert_error(!empty($error) ? [$error] : []) ?>
+        <?= alert_error(!empty($error) ? [$error] : [], 'Atención') ?>
 
         <?php
         // Toda la landing puede quedar sin un solo botón que abra el formulario
@@ -625,7 +644,7 @@
                             </div>
                             <input type="hidden" name="<?= $actual ?>" value="<?= htmlspecialchars($config[$key] ?? '') ?>">
                             <div class="admin-form-group">
-                              <label for="<?= $inputName ?>">Subir nueva <span style="font-weight:400;text-transform:none;opacity:.65">(imagen hasta 2 MB · video mp4/webm/mov hasta 10 MB)</span></label>
+                              <label for="<?= $inputName ?>">Subir nueva <span style="font-weight:400;text-transform:none;opacity:.65">(imagen hasta <?= $limitesSubida['etiquetaImagen'] ?> · video mp4/webm/mov hasta <?= $limitesSubida['etiquetaVideo'] ?>)</span></label>
                               <input type="file" id="<?= $inputName ?>" name="<?= $inputName ?>" accept="image/*,video/mp4,video/webm,video/quicktime">
                             </div>
                           </div>
@@ -2432,8 +2451,11 @@
     })();
 
     // Preview universal + validación de tamaño para todos los file inputs
-    const MAX_IMG = 2 * 1024 * 1024;   // 2 MB
-    const MAX_VID = 10 * 1024 * 1024;  // 10 MB
+    // Topes que calcula el servidor (ver $limitesSubida arriba): 2 MB imagen, 20 MB video, y nunca más de
+    // lo que PHP admite aquí por archivo ni por formulario completo (los archivos van todos en un solo envío).
+    const LIM = window.__LIMITES_SUBIDA__ || { imagen: 2 * 1024 * 1024, video: 20 * 1024 * 1024, envio: 0, etiquetaImagen: '2 MB', etiquetaVideo: '20 MB' };
+    const MAX_IMG = LIM.imagen;
+    const MAX_VID = LIM.video;
 
     function findPreview(input) {
       let el = input;
@@ -2452,7 +2474,7 @@
 
         const isVideo = file.type.startsWith('video/');
         const limit = isVideo ? MAX_VID : MAX_IMG;
-        const limitLabel = isVideo ? '10 MB' : '2 MB';
+        const limitLabel = isVideo ? LIM.etiquetaVideo : LIM.etiquetaImagen;
 
         if (file.size > limit) {
           alert('El archivo "' + file.name + '" pesa ' +
@@ -2460,6 +2482,22 @@
             'El máximo permitido es ' + limitLabel + '.');
           this.value = '';
           return;
+        }
+
+        // Todos los archivos viajan en UN solo envío: si juntos pasan el tope del servidor, PHP descarta
+        // el formulario entero. Se avisa aquí, al elegir, y no al guardar (con ~0,5 MB de margen para los textos).
+        if (LIM.envio > 0) {
+          let total = 0;
+          document.querySelectorAll('input[type="file"]').forEach(function(i) {
+            if (i.files && i.files[0]) total += i.files[0].size;
+          });
+          if (total > LIM.envio - 512 * 1024) {
+            alert('Con "' + file.name + '" los archivos elegidos pesarían ' + (total / 1024 / 1024).toFixed(1) +
+              ' MB en total y este servidor admite ' + (LIM.envio / 1024 / 1024).toFixed(0) + ' MB por guardado. ' +
+              'Guarda primero los que ya elegiste y súbelo en un segundo guardado.');
+            this.value = '';
+            return;
+          }
         }
 
         const preview = findPreview(this);

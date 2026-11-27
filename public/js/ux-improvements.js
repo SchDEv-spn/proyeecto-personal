@@ -314,11 +314,16 @@
   ───────────────────────────────────────────────────────── */
   function getAcceptLabel(accept) {
     if (!accept) return 'Cualquier archivo';
+    /* Los topes los calcula el servidor (window.__LIMITES_SUBIDA__, ver el editor de la landing):
+       20 MB video y 2 MB imagen, pero nunca más de lo que PHP admite en ese servidor. */
+    var lim = window.__LIMITES_SUBIDA__ || {};
+    var vid = lim.etiquetaVideo  || '20 MB';
+    var img = lim.etiquetaImagen || '2 MB';
     if (accept.indexOf('video') !== -1 && accept.indexOf('image') !== -1)
-      return 'Imagen o video · Máx 10 MB';
-    if (accept.indexOf('video') !== -1) return 'MP4, MOV, WEBM · Máx 10 MB';
+      return 'Imagen hasta ' + img + ' · video hasta ' + vid;
+    if (accept.indexOf('video') !== -1) return 'MP4, MOV, WEBM · Máx ' + vid;
     if (accept === 'image/gif')         return 'Solo GIF animado';
-    if (accept.indexOf('image') !== -1) return 'JPG, PNG, WEBP · Máx 2 MB';
+    if (accept.indexOf('image') !== -1) return 'JPG, PNG, WEBP · Máx ' + img;
     return '';
   }
 

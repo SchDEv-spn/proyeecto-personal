@@ -251,6 +251,34 @@ class AdminLandingController extends Controller
         return in_array($v, $permitidos, true) ? $v : $respaldo;
     }
 
+    /**
+     * Si el formulario ENTERO (todos sus archivos juntos) pasa post_max_size, PHP descarta
+     * $_POST y $_FILES por completo. Sin esta guarda, lo siguiente que pasaba era el chequeo
+     * de CSRF (el token también se perdió) y el editor respondía una página en blanco con
+     * "Acción no autorizada.", sin decir qué falló, y las ediciones se perdían.
+     * Aquí se explica y se vuelve al mismo producto del editor, sin guardar nada.
+     */
+    private function rechazarEnvioDemasiadoGrande(): void
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') return;
+        $largo = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+        $tope  = limites_subida()['envio'];
+        if ($tope <= 0 || $largo <= $tope || !empty($_POST)) return;
+
+        $_SESSION['admin_landing_error'] = 'No se guardó nada: los archivos que elegiste pesan '
+            . tamano_legible($largo) . ' en total y este servidor admite ' . tamano_legible($tope)
+            . ' por guardado. Guarda los videos de a uno (o comprime los más pesados) y vuelve a intentarlo.';
+
+        // De vuelta al editor del mismo producto: sale del Referer, solo si es este mismo editor.
+        $destino = BASE_URL . '/AdminLanding/index';
+        $ref = parse_url((string)($_SERVER['HTTP_REFERER'] ?? ''));
+        if (!empty($ref['path']) && strpos($ref['path'], BASE_URL . '/AdminLanding/index') === 0) {
+            $destino = $ref['path'] . (!empty($ref['query']) ? '?' . $ref['query'] : '');
+        }
+        header('Location: ' . preg_replace('/[\r\n]+/', '', $destino));
+        exit;
+    }
+
     private function requireLogin()
     {
         if (empty($_SESSION['usuario_id'])) {
@@ -431,6 +459,7 @@ class AdminLandingController extends Controller
     public function guardar()
     {
         $this->requireLogin();
+        $this->rechazarEnvioDemasiadoGrande();
         $this->requireCsrf();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -862,7 +891,21 @@ class AdminLandingController extends Controller
             'video/mp4', 'video/quicktime', 'video/webm',
         ];
 
+        // Archivos que PHP rechazó antes de que este código los viera (pasaron upload_max_filesize,
+        // o la subida se cortó): antes se ignoraban sin decir nada y el editor decía "guardado".
+        $subidasPesadas  = [];
+        $subidasFallidas = [];
+
         foreach ($fileMap as $inputName => $column) {
+            if (isset($_FILES[$inputName]) && !in_array($_FILES[$inputName]['error'], [UPLOAD_ERR_OK, UPLOAD_ERR_NO_FILE], true)) {
+                $nombreSubido = (string)($_FILES[$inputName]['name'] ?? $inputName);
+                if (in_array($_FILES[$inputName]['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+                    $subidasPesadas[] = $nombreSubido;
+                } else {
+                    $subidasFallidas[] = $nombreSubido;
+                }
+                continue;
+            }
             if (
                 isset($_FILES[$inputName]) &&
                 $_FILES[$inputName]['error'] === UPLOAD_ERR_OK &&
@@ -909,6 +952,15 @@ class AdminLandingController extends Controller
         $configModel->guardarPorProducto($productoId, $data);
 
         $_SESSION['admin_landing_success'] = "Cambios guardados correctamente.";
+        $avisos = [];
+        if ($subidasPesadas) {
+            $avisos[] = 'No se subió ' . implode(', ', $subidasPesadas) . ': pesa más de lo que admite este servidor ('
+                . tamano_legible(limites_subida()['archivo']) . ' por archivo). Lo demás sí se guardó.';
+        }
+        if ($subidasFallidas) {
+            $avisos[] = 'No se pudo subir ' . implode(', ', $subidasFallidas) . ' (la subida se cortó). Inténtalo de nuevo.';
+        }
+        if ($avisos) $_SESSION['admin_landing_error'] = implode(' ', $avisos);
         header("Location: " . BASE_URL . "/AdminLanding/index?producto_id=" . $productoId);
         exit;
     }

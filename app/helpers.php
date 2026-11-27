@@ -57,6 +57,48 @@ function es_video(?string $path): bool
 }
 
 /**
+ * Convierte un valor de php.ini ("40M", "128M", "2G", "512K", "1048576") a bytes.
+ * Sin ini_parse_quantity() (solo existe desde PHP 8.2; el hosting puede ser 7.4).
+ * 0 o -1 ("sin límite") devuelven 0.
+ */
+function ini_a_bytes(string $valor): int
+{
+    $valor = trim($valor);
+    if ($valor === '' || $valor === '-1') return 0;
+    $n = (int)$valor;
+    switch (strtolower(substr($valor, -1))) {
+        case 'g': $n *= 1024;   // no break: cada escalón multiplica otra vez
+        case 'm': $n *= 1024;
+        case 'k': $n *= 1024;
+    }
+    return max(0, $n);
+}
+
+/**
+ * Lo que PHP deja subir de verdad en este servidor, en bytes:
+ *  - 'archivo': el tope de CADA archivo (upload_max_filesize; si post_max_size es menor, ese).
+ *  - 'envio':   el tope del formulario ENTERO, todos sus archivos juntos (post_max_size).
+ * 0 = sin límite. Si el envío completo pasa 'envio', PHP descarta TODO el formulario
+ * ($_POST y $_FILES vacíos), no solo el archivo que sobra.
+ *
+ * @return array{archivo:int, envio:int}
+ */
+function limites_subida(): array
+{
+    $archivo = ini_a_bytes((string)ini_get('upload_max_filesize'));
+    $envio   = ini_a_bytes((string)ini_get('post_max_size'));
+    if ($envio > 0 && ($archivo === 0 || $archivo > $envio)) $archivo = $envio;
+    return ['archivo' => $archivo, 'envio' => $envio];
+}
+
+/** "20 MB", "512 KB"… para mostrar un tamaño en bytes. */
+function tamano_legible(int $bytes): string
+{
+    if ($bytes >= 1048576) return rtrim(rtrim(number_format($bytes / 1048576, 1, '.', ''), '0'), '.') . ' MB';
+    return max(1, (int)round($bytes / 1024)) . ' KB';
+}
+
+/**
  * Clave para comparar un nombre de color escrito en dos sitios distintos: los
  * colores del producto (producto_colores, se escriben al crear el producto) y las
  * "Variantes de color" del editor de la landing (nombre + tono + fotos). Se
